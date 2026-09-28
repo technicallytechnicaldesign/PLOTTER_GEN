@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear Weave Studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Gear weave studio</h1>
+  <p class="sub">A crowd of gears, twenty to four hundred, laid so they overlap and then woven: every rim goes under its neighbour on one side and over it on the other, like chainmail or a knot drawing. Export a millimetre SVG with two pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="sunflower">Sunflower</button><button data-preset="mail">Chainmail</button><button data-preset="swarm">Swarm</button><button data-preset="plates">Plates</button></div>
+  </fieldset>
+  <fieldset><legend>Crowd</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="11"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Layout <select id="layout"><option value="sunflower">sunflower spiral</option><option value="mail">chainmail lattice</option><option value="swarm">scattered swarm</option></select></label>
+    <label>Gears <output id="o-n"></output><input type="range" id="n" min="20" max="400" step="1" value="140"></label>
+    <label>Overlap <output id="o-ov"></output><input type="range" id="ov" min="0.8" max="1.8" step="0.02" value="1.3"></label>
+    <label>Size variety <output id="o-vari"></output><input type="range" id="vari" min="0" max="1" step="0.05" value="0.45"></label>
+    <label>Big in the middle, or at the edge <output id="o-grow"></output><input type="range" id="grow" min="-1" max="1" step="0.05" value="0.4"></label>
+  </fieldset>
+  <fieldset><legend>Each gear</legend>
+    <label>Body <select id="kind"><option value="spoked">spoked wheel</option><option value="ring">bare ring</option><option value="disc">solid plate</option><option value="mix">a mix</option></select></label>
+    <label>Tooth size, module (mm) <output id="o-mod"></output><input type="range" id="mod" min="0.5" max="2.5" step="0.05" value="0.9"></label>
+    <label>Rim depth (in modules) <output id="o-band"></output><input type="range" id="band" min="1.5" max="10" step="0.25" value="3.5"></label>
+    <label>Spokes <output id="o-spokes"></output><input type="range" id="spokes" min="2" max="8" step="1" value="5"></label>
+    <label>Knot gap (mm) <output id="o-gap"></output><input type="range" id="gap" min="0.3" max="2" step="0.05" value="0.7"></label>
+  </fieldset>
+  <fieldset><legend>Fill (second pen)</legend>
+    <label>Fill <select id="fill"><option value="mix">a mix</option><option value="hatch">hatch</option><option value="cross">crosshatch</option><option value="rings">growth rings</option><option value="radial">radial ticks</option><option value="alt">every other gear</option><option value="none">none</option></select></label>
+    <label>Share of gears filled <output id="o-share"></output><input type="range" id="share" min="0" max="1" step="0.05" value="0.6"></label>
+    <label>Fill pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (outline, then fill), numbered in plotting order. Both carry the same four corner ticks so Design Space sizes them identically: place each file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">Tooth outlines are the involute teeth from <code>gear-reverb-studio.html</code> (the port of <code>spur_gear_goblin_v0_6.scad</code>, checked against OpenSCAD), at any tooth count from 10 up. The weave rule is one line: where two gears overlap, a gear is on top on the left of the line to its neighbour and underneath on the right, so going round any rim it alternates under, over, under. Rims always pass over spokes and hubs. Where three gears pile up the rule can disagree with itself and a small patch drops out; the stats count those points. In Design Space: both layers to Pen, black 0.4 on the outlines, black 0.3 (or a colour) on the fill, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// ---------------- tooth outline (same involute as gear-reverb-studio's gearRings()[0]) ----------------
+const PA = 20 * Math.PI / 180, DED = 1.25, INV = 8, TIP = 4, FN = 96, BACKLASH = 0.15;
+function toothOutline(z, m) {
+  const pr = z * m / 2, br = pr * Math.cos(PA), orr = pr + m, rr = Math.max(0.01, pr - DED * m);
+  const invT = r => Math.sqrt(Math.max(0, (r / br) ** 2 - 1)), sweep = t => t - Math.atan(t);
+  const rot = Math.PI / (2 * z) - (BACKLASH / pr) / 2 + sweep(invT(pr));
+  const fa = r => rot - sweep(invT(r)), r0 = Math.max(rr, br), pol = (r, a) => [r * Math.cos(a), r * Math.sin(a)];
+  const right = []; for (let i = 0; i <= INV; i++) { const r = r0 + (orr - r0) * i / INV; right.push(pol(r, fa(r))); }
+  const left = right.map(([x, y]) => [x, -y]), ta = fa(orr), tip = [];
+  for (let i = 0; i <= TIP; i++) tip.push(pol(orr, -ta + 2 * ta * i / TIP));
+  const sa = fa(r0), tooth = [pol(rr, -sa), ...left, ...tip, ...right.slice().reverse(), pol(rr, sa)];
+  const out = [], step = 2 * Math.PI / z;
+  for (let i = 0; i < z; i++) {
+    const c = Math.cos(i * step), s = Math.sin(i * step);
+    for (const [x, y] of tooth) out.push([x * c - y * s, x * s + y * c]);
+    const a0 = i * step + sa, a1 = (i + 1) * step - sa, n = Math.max(1, Math.ceil((a1 - a0) / (2 * Math.PI / FN)));
+    for (let k = 1; k < n; k++) out.push(pol(rr, a0 + (a1 - a0) * k / n));
+  }
+  return out;
+}
+
+// Outline radius as a function of angle, at module 1, so "is this point inside the teeth" is one lookup.
+const NB = 2048, TABS = new Map();
+function radiusTable(z) {
+  if (TABS.has(z)) return TABS.get(z);
+  const p = toothOutline(z, 1), tab = new Float32Array(NB), TAU = 2 * Math.PI;
+  for (let i = 0; i < p.length; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % p.length];
+    let ta = Math.atan2(ay, ax), tb = Math.atan2(by, bx); if (tb - ta > Math.PI) tb -= TAU; if (ta - tb > Math.PI) tb += TAU;
+    const ra = Math.hypot(ax, ay), rb = Math.hypot(bx, by), lo = Math.min(ta, tb), hi = Math.max(ta, tb);
+    for (let k = Math.floor(lo / TAU * NB); k <= Math.ceil(hi / TAU * NB); k++) {
+      const t = k * TAU / NB, f = hi > lo ? (t - ta) / (tb - ta) : 0.5;
+      if (f < -1e-9 || f > 1 + 1e-9) continue;
+      const r = ra + (rb - ra) * Math.min(1, Math.max(0, f)), idx = ((k % NB) + NB) % NB;
+      if (r > tab[idx]) tab[idx] = r;
+    }
+  }
+  TABS.set(z, tab); return tab;
+}
+
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ---------------- layout ----------------
+function centres(o, rnd, W, H) {
+  const n = o.n, pts = [], x0 = o.margin, y0 = o.margin, x1 = W - o.margin, y1 = H - o.margin, A = (x1 - x0) * (y1 - y0);
+  let s;
+  if (o.layout === "sunflower") {
+    const c = Math.sqrt(A / (Math.PI * n)) * 0.93, GA = Math.PI * (3 - Math.sqrt(5)), cx = W / 2, cy = H / 2, jit = rnd() * 6.28;
+    for (let i = 0; pts.length < n && i < n * 8; i++) {
+      const r = c * Math.sqrt(i + 0.5), a = i * GA + jit, x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+      if (x > x0 && x < x1 && y > y0 && y < y1) pts.push([x, y]);
+    }
+    s = 1.77 * c;
+  } else if (o.layout === "mail") {
+    s = Math.sqrt(2 * A / (Math.sqrt(3) * n));
+    const dy = s * Math.sqrt(3) / 2, rows = Math.ceil((y1 - y0) / dy) + 1, cols = Math.ceil((x1 - x0) / s) + 1;
+    const ox = x0 + ((x1 - x0) - (cols - 1) * s) / 2, oy = y0 + ((y1 - y0) - (rows - 1) * dy) / 2;
+    for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+      const x = ox + q * s + (r % 2 ? s / 2 : 0) + (rnd() - 0.5) * o.vari * 0.3 * s, y = oy + r * dy + (rnd() - 0.5) * o.vari * 0.3 * s;
+      if (x > x0 - s * 0.2 && x < x1 + s * 0.2 && y > y0 - s * 0.2 && y < y1 + s * 0.2) pts.push([x, y]);
+    }
+  } else {
+    s = Math.sqrt(2 * A / (Math.sqrt(3) * n)) * 0.92;
+    const min = s * 0.72;
+    for (let t = 0; t < n * 60 && pts.length < n; t++) {
+      const x = x0 + rnd() * (x1 - x0), y = y0 + rnd() * (y1 - y0);
+      if (pts.every(([a, b]) => (a - x) ** 2 + (b - y) ** 2 > min * min)) pts.push([x, y]);
+    }
+  }
+  return { pts, s };
+}
+
+function makeGears(o, W, H) {
+  const rnd = mulberry32(o.seed * 7919 + 101), { pts, s } = centres(o, rnd, W, H), m = o.mod;
+  const half = Math.hypot(W, H) / 2, KINDS = ["spoked", "ring", "disc"];
+  return pts.map(([x, y], i) => {
+    const rho = Math.min(1, Math.hypot(x - W / 2, y - H / 2) / (Math.min(W, H) / 2));
+    let R = s / 2 * o.ov * (1 + o.vari * (rnd() * 2 - 1) * 0.6) * (1 + o.grow * (0.5 - rho) * 0.9);
+    const z = Math.max(10, Math.round(2 * R / m - 2)); R = (z + 2) * m / 2;
+    let kind = o.kind === "mix" ? KINDS[Math.floor(rnd() * 3)] : o.kind;
+    const rr = z * m / 2 - DED * m, R1 = rr - o.band * m;
+    if (kind !== "disc" && R1 < Math.max(2 * m, 0.34 * R)) kind = "disc";
+    const rb = Math.max(0.7, 0.1 * R), R2 = Math.max(rb + 1.1 * m, 0.3 * R1);
+    const k = kind === "spoked" ? Math.max(2, Math.min(o.spokes, Math.floor(Math.PI * (R1 + R2) / (3 * m)))) : 0;
+    const w = Math.max(1.1 * m, 0.13 * R1);
+    return { i, x, y, z, m, R, rr, R1, R2, rb, k, w, kind, rot: rnd() * 2 * Math.PI, tab: radiusTable(z), u: rnd(), v: rnd() };
+  });
+}
+
+// ---------------- the weave ----------------
+// Which part of gear G sits at (px,py)? 0 none, 1 rim (or plate body), 2 hub/spoke. g grows (+) or shrinks (-) every part.
+function partAt(G, px, py, g) {
+  const dx = px - G.x, dy = py - G.y, r = Math.hypot(dx, dy);
+  if (r > G.R + g) return 0;
+  let th = Math.atan2(dy, dx) - G.rot; th -= Math.floor(th / (2 * Math.PI)) * 2 * Math.PI;
+  const Rt = G.tab[Math.min(NB - 1, Math.floor(th / (2 * Math.PI) * NB))] * G.m;
+  if (G.kind === "disc") return r <= Rt + g && r >= G.rb - g ? 1 : 0;
+  if (r <= Rt + g && r >= G.R1 - g) return 1;
+  if (G.kind === "ring" || r < G.rb - g || r >= G.R1) return 0;
+  if (r <= G.R2 + g) return 2;
+  const sp = 2 * Math.PI / G.k; let t = th % sp; if (t > sp / 2) t -= sp;
+  return Math.abs(t) < Math.PI / 2 && r * Math.abs(Math.sin(t)) <= G.w / 2 + g ? 2 : 0;
+}
+const ownPart = (G, px, py) => G.kind === "disc" || Math.hypot(px - G.x, py - G.y) >= G.R1 - 0.05 ? 1 : 2;
+
+// A point on gear X is hidden when a neighbour Y covers it and Y is the one on top there.
+function hiddenBy(X, nb, px, py, part, g) {
+  let n = 0;
+  for (const Y of nb) {
+    const q = partAt(Y, px, py, g); if (!q) continue;
+    const under = part === 2 && q === 1 ? true : part === 1 && q === 2 ? false
+      : (Y.x - X.x) * (py - X.y) - (Y.y - X.y) * (px - X.x) < 0;
+    if (under) n++;
+  }
+  return n;
+}
+
+// ---------------- path helpers ----------------
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+// Keep the runs of a sampled path where ok[i] holds; closed paths stay closed when nothing is cut.
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+const arc = (cx, cy, r, a0, a1, rot) => { const n = Math.max(4, Math.ceil(Math.abs(a1 - a0) * r / 0.4)), p = []; for (let k = 0; k <= n; k++) { const a = rot + a0 + (a1 - a0) * k / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; };
+
+function boundaries(G) {
+  const c = Math.cos(G.rot), s = Math.sin(G.rot), out = [[toothOutline(G.z, G.m).map(([x, y]) => [x * c - y * s + G.x, x * s + y * c + G.y]), true]];
+  if (G.kind === "ring") out.push([arc(G.x, G.y, G.R1, 0, 2 * Math.PI, 0).slice(0, -1), true]);
+  if (G.kind === "disc") out.push([arc(G.x, G.y, G.rb, 0, 2 * Math.PI, 0).slice(0, -1), true]);
+  if (G.kind === "spoked") {
+    const d1 = Math.asin(Math.min(1, G.w / 2 / G.R1)), d2 = Math.asin(Math.min(1, G.w / 2 / G.R2)), sp = 2 * Math.PI / G.k;
+    for (let j = 0; j < G.k; j++) {
+      const a0 = j * sp, a1 = (j + 1) * sp;
+      if (a1 - d1 <= a0 + d1 || a1 - d2 <= a0 + d2) continue;
+      out.push([[...arc(G.x, G.y, G.R1, a0 + d1, a1 - d1, G.rot), ...arc(G.x, G.y, G.R2, a1 - d2, a0 + d2, G.rot)], true]);
+    }
+    out.push([arc(G.x, G.y, G.rb, 0, 2 * Math.PI, 0).slice(0, -1), true]);
+  }
+  return out;
+}
+
+function fillLines(G, mode, pitch) {
+  const L = [], seg = (a, b) => L.push([densify([a, b], false, 0.25), false]);
+  if (mode === "hatch" || mode === "cross") {
+    for (const phi of mode === "cross" ? [G.u * Math.PI, G.u * Math.PI + Math.PI / 2] : [G.u * Math.PI]) {
+      const dx = Math.cos(phi), dy = Math.sin(phi);
+      for (let t = -G.R + pitch / 2; t < G.R; t += pitch) seg([G.x - dy * t - dx * G.R, G.y + dx * t - dy * G.R], [G.x - dy * t + dx * G.R, G.y + dx * t + dy * G.R]);
+    }
+  } else if (mode === "rings") {
+    const lo = G.kind === "disc" ? G.rb : G.R1;
+    for (let r = lo + pitch; r < G.rr - 0.3; r += pitch) L.push([arc(G.x, G.y, r, 0, 2 * Math.PI, 0).slice(0, -1), true]);
+    if (G.kind === "spoked") for (let r = G.rb + pitch; r < G.R2 - 0.3; r += pitch) L.push([arc(G.x, G.y, r, 0, 2 * Math.PI, 0).slice(0, -1), true]);
+  } else if (mode === "radial") {
+    const lo = G.kind === "disc" ? Math.max(G.rb, G.rr * 0.45) : G.R1, n = Math.round(2 * Math.PI * lo / pitch);
+    for (let k = 0; k < n; k++) { const a = G.rot + 2 * Math.PI * k / n; seg([G.x + lo * Math.cos(a), G.y + lo * Math.sin(a)], [G.x + G.R * Math.cos(a), G.y + G.R * Math.sin(a)]); }
+  }
+  return L.map(([p, c]) => [c ? densify(p, true, 0.25) : p, c]);
+}
+
+// ---------------- build ----------------
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "layout", "n", "ov", "vari", "grow", "kind", "mod", "band", "spokes", "gap", "fill", "share", "pitch", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), EDGE = 4;
+  const gears = makeGears(o, W, H), maxR = Math.max(...gears.map(g => g.R)), cell = 2 * maxR + 2 * o.gap;
+  const grid = new Map(), key = (a, b) => a + "," + b;
+  for (const G of gears) { const k = key(Math.floor(G.x / cell), Math.floor(G.y / cell)); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(G); }
+  let pairs = 0;
+  for (const G of gears) {
+    G.nb = [];
+    const cx = Math.floor(G.x / cell), cy = Math.floor(G.y / cell);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const Y of grid.get(key(cx + a, cy + b)) || [])
+      if (Y !== G && Math.hypot(Y.x - G.x, Y.y - G.y) < G.R + Y.R + o.gap) G.nb.push(Y);
+    pairs += G.nb.length;
+  }
+  const onPage = (x, y) => x >= EDGE && x <= W - EDGE && y >= EDGE && y <= H - EDGE;
+  const key0 = [], fill = [];
+  let pileups = 0, samples = 0;
+  const frnd = mulberry32(o.seed * 31 + 5), MIX = ["hatch", "rings", "radial", "cross"];
+  for (const G of gears) {
+    for (const [p, closed] of boundaries(G)) {
+      const d = densify(p, closed, 0.25);
+      const ok = d.map(([x, y]) => { const h = hiddenBy(G, G.nb, x, y, ownPart(G, x, y), o.gap); if (h > 1) pileups++; return !h && onPage(x, y); });
+      samples += d.length;
+      runs(d, closed, ok, 0.4, key0);
+    }
+    let mode = o.fill;
+    if (mode === "mix") mode = frnd() < o.share ? MIX[Math.floor(frnd() * (o.pitch < 0.7 ? 3 : 4))] : "none";
+    else if (mode === "alt") mode = G.i % 2 ? "none" : (G.v < 0.5 ? "hatch" : "rings");
+    else if (mode !== "none" && frnd() >= o.share) mode = "none";
+    G.fill = mode;
+    if (mode === "none") continue;
+    const inset = 0.35;
+    for (const [d, closed] of fillLines(G, mode, o.pitch)) {
+      const ok = d.map(([x, y]) => { const q = partAt(G, x, y, -inset); return q > 0 && !hiddenBy(G, G.nb, x, y, q, o.gap) && onPage(x, y); });
+      runs(d, closed, ok, 0.8, fill);
+    }
+  }
+  return { W, H, gears, key: key0, fill, pairs: pairs / 2, pileups, samples, o, ms: performance.now() - t0 };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.fill, "#6b6356", 0.3); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const zs = r.gears.map(g => g.z), filled = r.gears.filter(g => g.fill !== "none").length;
+  const pile = r.pileups / Math.max(1, r.samples);
+  $("stats").innerHTML = `<b>${r.gears.length}</b> gears (z${Math.min(...zs)} to z${Math.max(...zs)}, m${r.o.mod}) · <b>${r.pairs}</b> overlapping pairs woven · ${filled} filled · ${r.ms.toFixed(0)} ms<br>`
+    + `0.4 pen (outlines): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 pen (fill): <b>${len(r.fill).toFixed(1)} m</b>, ${r.fill.length} paths<br>`
+    + `fill pitch <b class="${r.o.pitch >= 0.5 ? "pass" : "fail"}">${r.o.pitch} mm</b> · knot gap ${r.o.gap} mm · three-way pile-up points <b class="${pile < 0.01 ? "pass" : "note"}">${(pile * 100).toFixed(2)}%</b>`
+    + (pile >= 0.01 ? ` <span class="note">(lower the overlap for a cleaner weave)</span>` : "");
+}
+
+// The pen layers, in plotting order. A split export writes one file per layer that has any line.
+const penLayers = r => [{ name: "outline", colour: "000000", w: 0.4, paths: r.key }, { name: "fill", colour: "555555", w: 0.3, paths: r.fill }].filter(L => L.paths.length);
+// Four identical corner ticks: every split file then has the same bounding box, so Design Space sizes and places them alike.
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG gear-weave studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const PRESETS = {
+  sunflower: { layout: "sunflower", n: 140, ov: 1.3, vari: 0.45, grow: 0.4, kind: "spoked", mod: 0.9, band: 3.5, spokes: 5, fill: "mix", share: 0.6, pitch: 0.8, gap: 0.7 },
+  mail: { layout: "mail", n: 120, ov: 1.42, vari: 0.1, grow: 0, kind: "ring", mod: 0.8, band: 3, fill: "alt", share: 1, pitch: 0.7, gap: 0.6 },
+  swarm: { layout: "swarm", n: 260, ov: 1.12, vari: 0.8, grow: -0.3, kind: "mix", mod: 0.6, band: 3, spokes: 4, fill: "mix", share: 0.5, pitch: 0.7, gap: 0.5 },
+  plates: { layout: "sunflower", n: 70, ov: 1.25, vari: 0.3, grow: 0.8, kind: "disc", mod: 1.4, fill: "hatch", share: 1, pitch: 1.1, gap: 0.9 },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `gear-weave-s${r.o.seed}-${r.o.layout}-n${r.gears.length}-${r.o.kind}-${r.o.fill}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {   // read the settings an earlier export carried in its <desc>, and put them back on the sliders
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported before 2026-09-28, or by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, partAt, hiddenBy, toSVG, toothOutline, radiusTable };   // hooks for checking
+run();
+</script>
+</body>
+</html>
