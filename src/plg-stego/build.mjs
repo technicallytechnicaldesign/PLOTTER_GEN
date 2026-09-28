@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../../../..");
 const utp = path.join(root, "PROJECTS/UNRAVEL_THE_PURLOINED/LOCAL_UNRAVEL_THE_PURLOINED_CLAUDE");
-const PAGES = [["studio.js", "template.html", "stego-plot-studio.html"], ["cipher.js", "cipher-template.html", "cipher-garden-studio.html"]];
+const PAGES = [["studio.js", "template.html", "stego-plot-studio.html"], ["cipher.js", "cipher-template.html", "cipher-garden-studio.html"], ["decoder.js", "decoder-template.html", "plot-decoder.html"], ["overlay.js", "overlay-template.html", "overlay-studio.html"]];
 
 const { build } = await import(pathToFileURL(path.join(utp, "node_modules/esbuild/lib/main.js")).href);
 let rev = "unknown";
@@ -20,6 +20,7 @@ try {
 } catch { /* no git: keep "unknown" */ }
 
 for (const [entry, template, page] of PAGES) {
+  if (!fs.existsSync(path.join(here, entry))) continue;
   const res = await build({
     entryPoints: [path.join(here, entry)],
     bundle: true, format: "iife", target: "es2020", write: false, charset: "utf8", legalComments: "none",
@@ -34,3 +35,9 @@ for (const [entry, template, page] of PAGES) {
   fs.writeFileSync(out, html);
   console.log(`wrote ${path.relative(root, out)} (${Math.round(html.length / 1024)} KB, UTP ${rev})`);
 }
+// The decoder core again as a Node module, for decoder-test.mjs (synthetic photos through the real reading code).
+await build({
+  entryPoints: [path.join(here, "decoder-core.js")], bundle: true, format: "esm", platform: "node", target: "node20", outfile: path.join(here, "_build/decoder-core.mjs"),
+  alias: { "@utp": path.join(utp, "src/engine") }, define: { __UTP_REV__: JSON.stringify(rev) }, logLevel: "warning",
+});
+console.log("wrote 02_WORK/plg-stego/_build/decoder-core.mjs (for decoder-test.mjs)");

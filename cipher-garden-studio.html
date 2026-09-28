@@ -83,12 +83,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 <body>
 <header>
   <h1>Cipher garden <span>// plg-stego</span></h1>
-  <p class="sub">Eight ways to write a message where the drawing is the code: tiles, mazes, a space-filling thread, ridgelines, pigpen, constellations, a cipher disk and a Cardano grille. Everything here decodes by eye, and every export is checked by reading the drawing back.</p>
+  <p class="sub">Nine ways to write a message where the drawing is the code: tiles, mazes, a space-filling thread, ridgelines, pigpen, constellations, a cipher disk, a reversible automaton and knotwork. Everything here decodes by eye, and every export is checked by reading the drawing back.</p>
 </header>
 <div class="wrap">
 <aside>
   <fieldset><legend>Starting points</legend>
-    <div class="row"><button data-preset="arcs">Truchet arcs</button><button data-preset="truchet1704">Truchet 1704</button><button data-preset="tenprint">10 PRINT</button><button data-preset="ribbons">Ribbons</button><button data-preset="maze">Maze</button><button data-preset="bold">Bold maze</button><button data-preset="thread">Hilbert thread</button><button data-preset="loops">Knotted thread</button><button data-preset="ridges">Ridgelines</button><button data-preset="pigpen">Pigpen</button><button data-preset="stars">Constellations</button><button data-preset="disk">Cipher disk</button><button data-preset="grille">Cardano grille</button></div>
+    <div class="row"><button data-preset="arcs">Truchet arcs</button><button data-preset="truchet1704">Truchet 1704</button><button data-preset="tenprint">10 PRINT</button><button data-preset="ribbons">Ribbons</button><button data-preset="maze">Maze</button><button data-preset="bold">Bold maze</button><button data-preset="thread">Hilbert thread</button><button data-preset="loops">Knotted thread</button><button data-preset="ridges">Ridgelines</button><button data-preset="pigpen">Pigpen</button><button data-preset="stars">Constellations</button><button data-preset="disk">Cipher disk</button><button data-preset="automaton">Automaton</button><button data-preset="sierpinski">Sierpinski</button><button data-preset="knots">Knotwork</button></div>
   </fieldset>
   <fieldset><legend>Message</legend>
     <label>Say <input type="text" id="msg" value="NOTHING TO SEE HERE" maxlength="200"></label>
@@ -106,7 +106,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="route">route</option>
     </select></label>
     <label>Cipher key <input type="text" id="ckey" value="3" maxlength="24"></label>
-    <p class="hint">Pigpen, constellations and the grille draw letters, so they ignore "bits as". Classical ciphers are historical puzzles, not modern security.</p>
+    <p class="hint">Pigpen and constellations draw letters, so they ignore "bits as". Classical ciphers are historical puzzles, not modern security.</p>
   </fieldset>
   <fieldset><legend>Method</legend>
     <label>Method <select id="method">
@@ -117,7 +117,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="pigpen">pigpen</option>
       <option value="stars">constellations</option>
       <option value="disk">cipher disk</option>
-      <option value="grille">Cardano grille</option>
+      <option value="automaton">reversible automaton</option>
+      <option value="knots">knotwork</option>
     </select></label>
     <label data-for="truchet">Tiles <select id="tiles">
       <option value="arcs">quarter arcs (1 bit)</option>
@@ -134,9 +135,20 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="loop">a loop</option>
       <option value="zigzag">a zigzag</option>
     </select></label>
+    <label data-for="automaton">Cells <select id="cells">
+      <option value="squares">squares</option>
+      <option value="dots">dots</option>
+      <option value="diamonds">diamonds</option>
+    </select></label>
+    <label data-for="automaton">Rule <select id="rule">
+      <option value="30">30 (chaos)</option>
+      <option value="150">150 (Sierpinski lace)</option>
+      <option value="90">90 (Sierpinski)</option>
+      <option value="110">110 (gliders)</option>
+    </select></label>
     <label data-for="ridges">Ridge noise <output id="o-noise"></output><input type="range" id="noise" min="0" max="1" step="0.05" value="0.5"></label>
     <label data-for="stars">Polybius keyword <input type="text" id="pkey" value="" maxlength="20"></label>
-    <label data-for="truchet maze ridges pigpen grille">Grain: at least this many across <output id="o-size"></output><input type="range" id="size" min="4" max="48" step="1" value="22"></label>
+    <label data-for="truchet maze ridges pigpen automaton knots">Grain: at least this many across <output id="o-size"></output><input type="range" id="size" min="4" max="48" step="1" value="22"></label>
   </fieldset>
   <fieldset><legend>Hiding</legend>
     <label>Message <select id="hide">
@@ -150,7 +162,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     </select></label>
     <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="7"></label>
     <div class="row"><button id="reroll">Reroll seed</button></div>
-    <p class="hint">Scattered bits follow UTP's seeded route, so only the key finds them. Constellations use the setting for decoy stars, the grille for how many letters surround each real one.</p>
+    <p class="hint">Scattered bits follow UTP's seeded route, so only the key finds them. Constellations use the setting for decoy stars.</p>
   </fieldset>
   <fieldset><legend>Shading</legend>
     <label>Fill <select id="fill">
@@ -183,7 +195,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     </select></label>
     <label>Answer key layer <select id="reveal">
       <option value="off">off</option>
-      <option value="on">on (rings; the way through a maze; the grille to cut)</option>
+      <option value="on">on (rings; the way through a maze; ticks at the automaton's message rows)</option>
     </select></label>
     <label>Answer key pen preview <select id="rpen">
       <option value="#c23b3b">red</option>
@@ -197,13 +209,17 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="250x190">250 x 190 landscape</option>
       <option value="280x280">280 x 280 (12 x 12 mat)</option>
     </select></label>
+    <label>Machine marks (for the camera decoder) <select id="marks">
+      <option value="on">on: corner targets and key strip</option>
+      <option value="off">off: a clean page</option>
+    </select></label>
     <label>Corner ticks <select id="ticks">
       <option value="split">in split files only</option>
       <option value="on">in every file</option>
       <option value="off">never</option>
     </select></label>
     <div class="row"><button class="primary" id="export">Export SVG (all pens)</button><button id="split">Export each pen</button></div>
-    <p class="hint">Split export writes one SVG per pen, numbered in plotting order, each with the same corner ticks. For the grille, send the grille-cut file to the Cricut as a cut on card stock.</p>
+    <p class="hint">Split export writes one SVG per pen, numbered in plotting order, each with the same corner ticks. Machine marks let the plot decoder find the page and read how it was made; turn them off for a gallery copy.</p>
   </fieldset>
 </aside>
 <main>
@@ -587,12 +603,67 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     }
   }
   var cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map((p) => [p, false]);
-  function svgOf(r, layers, title, only = null, ticks = false) {
+  function svgOf(r, layers2, title, only = null, ticks = false) {
     const f = (v) => v.toFixed(3), group = (L) => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">
 ` + [...L.paths, ...ticks ? cornerTicks(r.W, r.H) : []].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
     return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">
 <title>${title}${only ? " (" + only + ")" : ""}</title>
-` + layers.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+` + layers2.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+  }
+
+  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/marks.js
+  var MARK = { inset: 4, size: 10, margin: 17, slots: 64, rows: 2 };
+  var PAGES = ["190x250", "250x190", "280x280"];
+  var DOT_R = 0.85;
+  var centre = MARK.inset + MARK.size / 2;
+  var finderCentres = (W, H) => [[centre, centre], [W - centre, centre], [W - centre, H - centre], [centre, H - centre]];
+  function stripSlots(W, H) {
+    const x0 = MARK.inset + MARK.size + 5, x1 = W - x0, pitch = (x1 - x0) / (MARK.slots - 1), ys = [H - MARK.inset - MARK.size * 0.78, H - MARK.inset - MARK.size * 0.22];
+    return { pitch, slots: Array.from({ length: MARK.slots * MARK.rows }, (_, i) => [x0 + i % MARK.slots * pitch, ys[Math.floor(i / MARK.slots)]]) };
+  }
+  var solidSquare = (cx, cy, s, upTo = s / 2) => {
+    const out = [];
+    for (let d = 0; d < upTo - 0.05; d += 0.4) out.push([rect(cx - s / 2 + d, cy - s / 2 + d, s - 2 * d, s - 2 * d), true]);
+    if (upTo >= s / 2 - 0.05) out.push([[[cx - 0.5, cy], [cx + 0.5, cy]], false], [[[cx, cy - 0.5], [cx, cy + 0.5]], false]);
+    return out;
+  };
+  function drawMarks(W, H, bits, L) {
+    finderCentres(W, H).forEach(([cx, cy], i) => {
+      L.outline.push(...solidSquare(cx, cy, MARK.size, 1.6));
+      L.outline.push(...i === 2 ? solidSquare(cx, cy, 3.2, 0.8) : solidSquare(cx, cy, 3.2));
+    });
+    const { slots } = stripSlots(W, H), r = DOT_R;
+    slots.forEach(([x, y], i) => {
+      if (bits[i]) for (let q = r; q > 0.05; q -= 0.3) L.outline.push([ellipse(x, y, q, q, 0, 16), true]);
+    });
+  }
+  var SYNC = [1, 0, 1, 1, 0];
+  var SCHEMAS = {
+    1: [["method", 4], ["variant", 2], ["enc", 2], ["hide", 1], ["density", 2], ["seed", 10], ["len", 12], ["size", 6], ["page", 2], ["cipher", 3], ["capH", 11], ["dy", 12, true], ["noise", 5], ["fill", 3], ["pitch", 6], ["angle", 8, true]],
+    // cipher garden (pitch: 0.05 mm steps above 0.5)
+    2: [["look", 3], ["carrier", 3], ["border", 1], ["enc", 3], ["check", 2], ["hide", 3], ["seed", 10], ["density", 2], ["cipher", 3], ["x0", 12], ["y0", 12], ["cw", 11], ["rows", 8], ["cols", 7], ["wobble", 5], ["gaps", 1], ["page", 2], ["len", 12], ["fill", 3]]
+    // purloined plot studio: chart, scatter and motif layouts
+  };
+  var crc8 = (bits) => {
+    let c = 0;
+    for (const b of bits) {
+      const top = c >> 7 & 1;
+      c = c << 1 & 255 ^ (top ^ b ? 7 : 0);
+    }
+    return Array.from({ length: 8 }, (_, i) => c >> 7 - i & 1);
+  };
+  var toBits = (v, n) => Array.from({ length: n }, (_, i) => v >> n - 1 - i & 1);
+  function packRecord(studio, fields) {
+    const body = [...toBits(studio, 3)];
+    for (const [name, n, signed] of SCHEMAS[studio]) {
+      let v = Math.round(fields[name] ?? 0);
+      if (signed) v = v < 0 ? v + (1 << n) : v;
+      if (v < 0 || v >= 1 << n) throw new Error(`key strip: ${name} = ${fields[name]} does not fit in ${n} bits`);
+      body.push(...toBits(v, n));
+    }
+    const bits = [...SYNC, ...body, ...crc8(body)];
+    if (bits.length > MARK.slots * MARK.rows) throw new Error("key strip record is too long");
+    return [...bits, ...new Array(MARK.slots * MARK.rows - bits.length).fill(0)];
   }
 
   // D:/CLAUDE/PROJECTS/UNRAVEL_THE_PURLOINED/LOCAL_UNRAVEL_THE_PURLOINED_CLAUDE/src/engine/normalize.ts
@@ -988,22 +1059,29 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return cells.slice(0, count);
   }
 
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/cipher.js
-  var UTP_REV = true ? "d74c18b" : "dev";
+  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/cipher-core.js
   var ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  var METHOD_LIST = ["truchet", "maze", "hilbert", "ridges", "pigpen", "stars", "disk", "automaton", "knots"];
+  var VARIANTS = { truchet: ["tiles", ["arcs", "triangles", "diag", "ribbons"]], maze: ["walls", ["line", "bands"]], hilbert: ["mark", ["wave", "loop", "zigzag"]], automaton: ["cells", ["squares", "dots", "diamonds"]] };
+  var ENCS = ["fivebit", "bacon26", "morse"];
+  var CIPHER_KINDS = ["none", "caesar", "keyword", "vigenere", "railfence", "route"];
+  var FILLS = ["contour", "lines", "cross", "zigzag", "wave", "stipple", "spiral", "none"];
   var cipherOf = (o) => o.cipher === "none" ? null : { kind: o.cipher, key: String(o.ckey || "") };
+  function readerFor(enc) {
+    return enc === "bacon26" ? (b) => decode2(b, "modern26").text : enc === "morse" ? (b) => decodeUnits(b).text : (b) => decode(b).text;
+  }
   function source(o) {
-    const cip = cipherOf(o), plain = normalize2(o.msg).text;
+    const cip = cipherOf(o), plain = normalize2(o.msg).text, read2 = readerFor(o.enc);
     if (o.enc === "bacon26") {
       const n2 = normalize3(o.msg, "modern26"), t2 = cip ? encipher(n2.text, cip) : n2.text, bits = encode3(t2, "modern26");
-      return { plain, text: t2, bits, code: toAB(bits), dropped: n2.dropped.filter((d) => !/\s/.test(d.char)), read: (b) => decode2(b, "modern26").text };
+      return { plain, text: t2, bits, code: toAB(bits), dropped: n2.dropped.filter((d) => !/\s/.test(d.char)), read: read2 };
     }
     if (o.enc === "morse") {
       const n2 = normalize2(o.msg), t2 = cip ? encipher(n2.text, cip) : n2.text;
-      return { plain, text: t2, bits: toUnits(encode2(t2)), code: transcribe(encode2(t2)), dropped: n2.dropped, read: (b) => decodeUnits(b).text };
+      return { plain, text: t2, bits: toUnits(encode2(t2)), code: transcribe(encode2(t2)), dropped: n2.dropped, read: read2 };
     }
     const n = normalize(o.msg), t = cip ? encipher(n.text, cip) : n.text;
-    return { plain, text: t, bits: encode(t), code: [...t].map((c) => encode(c).join("")).join(" "), dropped: n.dropped, read: (b) => decode(b).text };
+    return { plain, text: t, bits: encode(t), code: [...t].map((c) => encode(c).join("")).join(" "), dropped: n.dropped, read: read2 };
   }
   function letterText(o) {
     const cip = cipherOf(o), n = normalize2(o.msg), t = cip ? encipher(n.text, cip) : n.text;
@@ -1040,6 +1118,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
   var ringMark = (L, o, x, y, r) => {
     if (o.reveal === "on") L.reveal.push([ellipse(x, y, r, r, 0, 14), true]);
   };
+  var layers = () => ({ outline: [], fill: [], text: [], reveal: [] });
+  var RD = null;
+  var offer = (cands, bits = 1) => {
+    if (RD) RD.push({ cands, bits });
+  };
+  var mid = ([a, b], f = 0.6) => [lerp(a, b, (1 - f) / 2), lerp(a, b, (1 + f) / 2)];
   function truchet(o, S, B, L) {
     const bpt = o.tiles === "triangles" ? 2 : 1, [cols, rows] = gridFor(Math.ceil(need(S.bits.length, o) / bpt), B, Math.max(3, o.size));
     const cap = rows * cols * bpt, P = place(S.bits, cap, o), s = Math.min(B.w / cols, B.h / rows), x0 = B.x + (B.w - cols * s) / 2, y0 = B.y + (B.h - rows * s) / 2;
@@ -1048,33 +1132,43 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       for (let k = 0; k < bpt; k++) v = v * 2 + P.vals[i * bpt + k];
       return v;
     });
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const i = r * cols + c, v = state[i], x = x0 + c * s, y = y0 + r * s, h = s / 2;
-      if (P.carry.slice(i * bpt, i * bpt + bpt).some(Boolean)) ringMark(L, o, x + h, y + h, 0.12 * s);
+    const tile = (v, x, y) => {
+      const T = layers(), h = s / 2;
       if (o.tiles === "arcs" || o.tiles === "ribbons") {
         const corners = v ? [[x + s, y, Math.PI / 2, Math.PI], [x, y + s, -Math.PI / 2, 0]] : [[x, y, 0, Math.PI / 2], [x + s, y + s, Math.PI, 1.5 * Math.PI]];
         for (const [cx, cy, a0, a1] of corners) {
           if (o.tiles === "arcs") {
-            L.outline.push([arcPts(cx, cy, h, a0, a1), false]);
-            L.fill.push(...F(o, [[cx, cy], ...arcPts(cx, cy, h, a0, a1, 10)]));
+            T.outline.push([arcPts(cx, cy, h, a0, a1), false]);
+            T.fill.push(...F(o, [[cx, cy], ...arcPts(cx, cy, h, a0, a1, 10)]));
           } else {
             const rw = 0.16 * s;
-            L.outline.push([arcPts(cx, cy, h - rw, a0, a1), false], [arcPts(cx, cy, h + rw, a0, a1), false]);
-            for (const q of ringPieces(cx, cy, h - rw, h + rw, a0, a1)) L.fill.push(...F(o, q));
+            T.outline.push([arcPts(cx, cy, h - rw, a0, a1), false], [arcPts(cx, cy, h + rw, a0, a1), false]);
+            for (const q of ringPieces(cx, cy, h - rw, h + rw, a0, a1)) T.fill.push(...F(o, q));
           }
         }
       } else if (o.tiles === "diag") {
-        L.outline.push([v ? [[x, y + s], [x + s, y]] : [[x, y], [x + s, y + s]], false]);
-        L.fill.push(...F(o, v ? [[x, y + s], [x + s, y], [x + s, y + s]] : [[x, y], [x + s, y + s], [x, y + s]]));
+        T.outline.push([v ? [[x, y + s], [x + s, y]] : [[x, y], [x + s, y + s]], false]);
+        T.fill.push(...F(o, v ? [[x, y + s], [x + s, y], [x + s, y + s]] : [[x, y], [x + s, y + s], [x, y + s]]));
       } else {
-        const C4 = [[x, y], [x + s, y], [x + s, y + s], [x, y + s]], k = v, tri = [C4[k], C4[(k + 1) % 4], C4[(k + 3) % 4]];
-        L.outline.push([[C4[(k + 1) % 4], C4[(k + 3) % 4]], false]);
-        L.fill.push(...F(o, tri));
+        const C4 = [[x, y], [x + s, y], [x + s, y + s], [x, y + s]], tri = [C4[v], C4[(v + 1) % 4], C4[(v + 3) % 4]];
+        T.outline.push([[C4[(v + 1) % 4], C4[(v + 3) % 4]], false]);
+        T.fill.push(...F(o, tri));
       }
+      return T;
+    };
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const i = r * cols + c, x = x0 + c * s, y = y0 + r * s, T = tile(state[i], x, y);
+      L.outline.push(...T.outline);
+      L.fill.push(...T.fill);
+      if (P.carry.slice(i * bpt, i * bpt + bpt).some(Boolean)) ringMark(L, o, x + s / 2, y + s / 2, 0.12 * s);
+      if (RD) offer(Array.from({ length: 2 ** bpt }, (_, v) => {
+        const t = tile(v, x, y);
+        return [...t.outline, ...t.fill];
+      }), bpt);
     }
     if (o.tiles === "diag" || o.tiles === "triangles") L.outline.push([rect(x0, y0, cols * s, rows * s), true]);
     const flat = state.flatMap((v) => bpt === 2 ? [v >> 1, v & 1] : [v]);
-    return { dims: `${cols}X${rows}`, feature: s, read: S.read(P.route.map((p) => flat[p])), want: S.text, cap };
+    return { dims: `${cols}X${rows}`, feature: s, read: S.read(P.route.map((p) => flat[p])), want: S.text, cap, route: P.route };
   }
   function maze(o, S, B, L) {
     const n0 = need(S.bits.length, o);
@@ -1122,10 +1216,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
         }
       }
     }
+    const bw = 0.11 * s, band = ([a, b]) => a[0] === b[0] ? rect(a[0] - bw, Math.min(a[1], b[1]) - bw, 2 * bw, Math.abs(b[1] - a[1]) + 2 * bw) : rect(Math.min(a[0], b[0]) - bw, a[1] - bw, Math.abs(b[0] - a[0]) + 2 * bw, 2 * bw);
     if (o.walls === "bands") {
-      const bw = 0.11 * s;
-      for (const [a, b] of segs) {
-        const q = a[0] === b[0] ? rect(a[0] - bw, a[1] - bw, 2 * bw, b[1] - a[1] + 2 * bw) : rect(a[0] - bw, a[1] - bw, b[0] - a[0] + 2 * bw, 2 * bw);
+      for (const sg of segs) {
+        const q = band(sg);
         L.outline.push([q, true]);
         L.fill.push(...fillConvex(q, o.fill === "none" ? "lines" : o.fill, Math.min(o.pitch, bw * 0.9), o.angle, o.seed));
       }
@@ -1134,6 +1228,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
         const open = (carve[r][c] === "N" ? 1 : 0) + (carve[r][c] === "E" ? 1 : 0) + (r < R - 1 && carve[r + 1][c] === "N" ? 1 : 0) + (c > 0 && carve[r][c - 1] === "E" ? 1 : 0) + (r === R - 1 && c === 0 ? 1 : 0) + (r === 0 && c === C - 1 ? 1 : 0);
         if (open === 1) L.fill.push(...F(o, rect(X(c) + 0.2 * s, Y(r) + 0.2 * s, 0.6 * s, 0.6 * s)));
+      }
+    }
+    if (RD) {
+      for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (idx[r][c] >= 0) {
+        const north = mid([[X(c), Y(r)], [X(c + 1), Y(r)]]), east = mid([[X(c + 1), Y(r)], [X(c + 1), Y(r + 1)]]);
+        offer([[[east, false]], [[north, false]]]);
       }
     }
     if (o.reveal === "on") {
@@ -1149,7 +1249,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     }
     const flat = [];
     for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) if (idx[r][c] >= 0) flat[idx[r][c]] = carve[r][c] === "E" ? 1 : 0;
-    return { dims: `${C}X${R}`, feature: s, read: S.read(P.route.map((p) => flat[p])), want: S.text, cap };
+    return { dims: `${C}X${R}`, feature: s, read: S.read(P.route.map((p) => flat[p])), want: S.text, cap, route: P.route };
   }
   function d2xy(n, d) {
     let x = 0, y = 0, t = d;
@@ -1177,44 +1277,50 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       const [x, y] = d2xy(N, d);
       return [x0 + (x + 0.5) * s, y0 + (N - 1 - y + 0.5) * s];
     });
-    const path = [pts[0]], loops = [];
-    for (let i = 0; i < cap; i++) {
-      const a = pts[i], b = pts[i + 1], d = [(b[0] - a[0]) / s, (b[1] - a[1]) / s], nr = [-d[1], d[0]];
-      if (P.carry[i]) ringMark(L, o, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.1 * s);
-      if (!P.vals[i]) {
-        path.push(b);
-        continue;
-      }
+    const step = (i, v) => {
+      const a = pts[i], b = pts[i + 1], d = [(b[0] - a[0]) / s, (b[1] - a[1]) / s], nr = [-d[1], d[0]], out = [];
+      if (!v) return [b];
       if (o.mark === "wave") for (let k = 1; k <= 16; k++) {
         const t = k / 16, w = 0.26 * s * Math.sin(TAU * t);
-        path.push([a[0] + d[0] * s * t + nr[0] * w, a[1] + d[1] * s * t + nr[1] * w]);
+        out.push([a[0] + d[0] * s * t + nr[0] * w, a[1] + d[1] * s * t + nr[1] * w]);
       }
-      else if (o.mark === "zigzag") for (const [t, w] of [[0.17, 1], [0.5, -1], [0.83, 1], [1, 0]]) path.push([a[0] + d[0] * s * t + nr[0] * w * 0.22 * s, a[1] + d[1] * s * t + nr[1] * w * 0.22 * s]);
+      else if (o.mark === "zigzag") for (const [t, w] of [[0.17, 1], [0.5, -1], [0.83, 1], [1, 0]]) out.push([a[0] + d[0] * s * t + nr[0] * w * 0.22 * s, a[1] + d[1] * s * t + nr[1] * w * 0.22 * s]);
       else {
         const m = lerp(a, b, 0.5), rr = 0.2 * s, c = [m[0] + nr[0] * rr, m[1] + nr[1] * rr], a0 = Math.atan2(-nr[1], -nr[0]);
-        path.push(m);
-        for (let k = 1; k <= 20; k++) path.push([c[0] + rr * Math.cos(a0 + TAU * k / 20), c[1] + rr * Math.sin(a0 + TAU * k / 20)]);
-        path.push(b);
-        loops.push(ellipse(c[0], c[1], rr, rr, 0, 20));
+        out.push(m);
+        for (let k = 1; k <= 20; k++) out.push([c[0] + rr * Math.cos(a0 + TAU * k / 20), c[1] + rr * Math.sin(a0 + TAU * k / 20)]);
+        out.push(b);
       }
+      return out;
+    };
+    const path = [pts[0]], loops = [];
+    for (let i = 0; i < cap; i++) {
+      const a = pts[i], b = pts[i + 1];
+      if (P.carry[i]) ringMark(L, o, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.1 * s);
+      path.push(...step(i, P.vals[i]));
+      if (P.vals[i] && o.mark === "loop") {
+        const d = [(b[0] - a[0]) / s, (b[1] - a[1]) / s], m = lerp(a, b, 0.5);
+        loops.push(ellipse(m[0] - d[1] * 0.2 * s, m[1] + d[0] * 0.2 * s, 0.2 * s, 0.2 * s, 0, 20));
+      }
+      if (RD) offer([o.mark === "loop" ? [] : [[mid([a, b], 0.5), false]], [[[a, ...step(i, 1)].slice(1, -1), false]]]);
     }
     L.outline.push([simplify(path, 5e-3), false], [ellipse(pts[0][0], pts[0][1], 0.3 * s, 0.3 * s, 0, 16), true]);
     for (const q of loops) L.fill.push(...F(o, q));
     const e = pts.at(-1);
     L.outline.push([rect(e[0] - 0.22 * s, e[1] - 0.22 * s, 0.44 * s, 0.44 * s), true]);
-    return { dims: `H${n}`, feature: s, read: S.read(P.route.map((p) => P.vals[p])), want: S.text, cap };
+    return { dims: `H${n}`, feature: s, read: S.read(P.route.map((p) => P.vals[p])), want: S.text, cap, route: P.route };
   }
   function ridges(o, S, B, L) {
     const C = Math.max(3, o.size), R = Math.max(2, Math.ceil(need(S.bits.length, o) / C), Math.round(C * 0.95 * B.h / B.w)), cap = R * C, P = place(S.bits, cap, o);
-    const dy = B.h / (R + 2.6), A2 = 2.1 * dy, sw = B.w / (C + 1), bw = 0.46 * sw, pn = painter(Math.max(2, sw));
+    const dy = B.h / (R + 3), A2 = 2.5 * dy, sw = B.w / (C + 1), bw = 0.46 * sw, pn = painter(Math.max(2, sw));
     const nr = rng(o.seed * 13 + 3), waves = Array.from({ length: R }, () => [0, 1, 2].map((j) => [nr() * 6.28, (0.08 + 0.1 * nr()) * (j + 1)]));
+    const noiseAt = (r, x) => o.noise * 0.32 * dy * (1 + waves[r].reduce((s, [ph, f]) => s + Math.sin(x * f + ph), 0) / 3) / 2;
     for (let r = 0; r < R; r++) {
-      const base = B.y + 2.6 * dy + r * dy, curve = [];
+      const base = B.y + 3 * dy + r * dy, curve = [];
       for (let x = B.x; x <= B.x + B.w + 1e-9; x += 0.4) {
         let lift = 0;
         for (let k = 0; k < C; k++) if (P.vals[r * C + k]) lift += A2 * Math.exp(-(((x - (B.x + sw * (k + 1))) / bw) ** 2));
-        const noise = o.noise * 0.32 * dy * (1 + waves[r].reduce((s, [ph, f]) => s + Math.sin(x * f + ph), 0) / 3) / 2;
-        curve.push([x, base - lift - noise]);
+        curve.push([x, base - lift - noiseAt(r, x)]);
       }
       const occ = [], fill = [];
       for (let i = 0; i + 1 < curve.length; i++) {
@@ -1224,12 +1330,18 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       }
       pn.add({ outline: [[simplify(curve, 0.01), false]], fill }, occ);
       for (let k = 0; k < C; k++) if (P.carry[r * C + k]) ringMark(L, o, B.x + sw * (k + 1), base + 0.25 * dy, 0.12 * dy);
+      if (RD) for (let k = 0; k < C; k++) {
+        const cx = B.x + sw * (k + 1), crown = [];
+        for (let x = cx - 0.3 * bw; x <= cx + 0.3 * bw; x += 0.3) crown.push([x, base - A2 * Math.exp(-(((x - cx) / bw) ** 2)) - noiseAt(r, x)]);
+        offer([[], [[crown, false]]]);
+      }
     }
     pn.resolve(L);
-    return { dims: `${C}X${R}`, feature: dy, read: S.read(P.route.map((p) => P.vals[p])), want: S.text, cap };
+    return { dims: `${C}X${R}`, feature: dy, read: S.read(P.route.map((p) => P.vals[p])), want: S.text, cap, route: P.route };
   }
   function pigpenGlyph(ch, x, y, g, o, L) {
     const i = ALPH.indexOf(ch), cxy = [x + g / 2, y + g / 2];
+    if (i < 0) return;
     if (i < 18) {
       const k2 = i % 9, r = Math.floor(k2 / 3), c = k2 % 3, dot2 = i >= 9, C42 = [[x, y], [x + g, y], [x + g, y + g], [x, y + g]];
       const has = [r > 0, c < 2, r < 2, c > 0];
@@ -1251,7 +1363,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
         L.outline.push([d, true]);
         L.fill.push(...F(o, d, 0.8));
       } else L.fill.push(...F(o, rect(x + 0.2 * g, y + 0.2 * g, 0.6 * g, 0.6 * g)));
-      return { t: "g", k: k2, dot: dot2 };
+      return;
     }
     const k = (i - 18) % 4, dot = i >= 22, C4 = [[x, y], [x + g, y], [x + g, y + g], [x, y + g]];
     const pair = [[0, 1], [0, 3], [1, 2], [3, 2]][k], tri = [C4[pair[0]], cxy, C4[pair[1]]];
@@ -1265,12 +1377,19 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       const q = inset(tri, 0.08 * g);
       if (q) L.fill.push(...F(o, q));
     }
-    return { t: "x", k, dot };
   }
-  function pigpen(o, S, B, L) {
-    const T = S.text, words = T.split(" ").filter(Boolean), per = Math.max(4, o.size), lines = [];
+  function gridLines(text, per) {
+    const lines = [];
     let cur = "";
-    for (const w of words) {
+    for (let w of text.split(" ").filter(Boolean)) {
+      while (w.length > per) {
+        if (cur) {
+          lines.push(cur);
+          cur = "";
+        }
+        lines.push(w.slice(0, per));
+        w = w.slice(per);
+      }
       if (cur && cur.length + 1 + w.length > per) {
         lines.push(cur);
         cur = "";
@@ -1278,27 +1397,29 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       cur = cur ? cur + " " + w : w;
     }
     if (cur) lines.push(cur);
-    const maxLen = Math.max(1, ...lines.map((l) => l.length)), g = Math.min(B.w / (maxLen * 1.35), B.h / (lines.length * 1.5), 22), step = g * 1.35;
-    let read2 = "";
-    lines.forEach((line, li) => {
-      const x0 = B.x + (B.w - (line.length * step - 0.35 * g)) / 2, y = B.y + (B.h - (lines.length * 1.5 * g - 0.5 * g)) / 2 + li * 1.5 * g;
-      [...line].forEach((ch, i) => {
-        if (ch === " ") {
-          read2 += " ";
-          return;
-        }
-        const id = pigpenGlyph(ch, x0 + i * step, y, g, o, L);
-        read2 += id.t === "g" ? ALPH[id.k + (id.dot ? 9 : 0)] : ALPH[18 + id.k + (id.dot ? 4 : 0)];
-      });
-      read2 += " ";
-    });
-    return { dims: `${per}`, feature: g * 0.6, read: norm(read2), want: norm(T), cap: T.length };
+    return lines.map((l) => l.padEnd(per, " "));
+  }
+  function pigpen(o, S, B, L) {
+    const per = Math.max(4, o.size), lines = S.lines || gridLines(S.text, per), rows = lines.length;
+    const g = Math.min(B.w / (per * 1.35), B.h / (rows * 1.5), 22), step = g * 1.35, x0 = B.x + (B.w - (per * step - 0.35 * g)) / 2, y0 = B.y + (B.h - (rows * 1.5 * g - 0.5 * g)) / 2;
+    lines.forEach((line, li) => [...line].forEach((ch, i) => {
+      const x = x0 + i * step, y = y0 + li * 1.5 * g;
+      pigpenGlyph(ch, x, y, g, o, L);
+      if (RD) offer([...ALPH, " "].map((c) => {
+        const T = layers();
+        pigpenGlyph(c, x, y, g, o, T);
+        return [...T.outline, ...T.fill];
+      }), "letter");
+    }));
+    const read2 = lines.map((l) => l.trimEnd()).join(" ");
+    return { dims: `${per}X${rows}`, feature: g * 0.6, read: norm(read2), want: norm(S.text), cap: per * rows, rows };
   }
   function polybius(key) {
     const seq = [...(String(key || "").toUpperCase() + ALPH).replace(/J/g, "I")].filter((c) => /[A-IK-Z]/.test(c));
     return [...new Set(seq)].slice(0, 25);
   }
   function stars(o, S, B, L) {
+    if (RD) throw new Error("Constellations are read by eye: follow the chevrons from the ringed star.");
     const sq = polybius(o.pkey), words = S.text.replace(/J/g, "I").split(" ").filter(Boolean), W = Math.max(1, words.length);
     const pc = Math.max(1, Math.round(Math.sqrt(W * B.w / B.h))), pr = Math.ceil(W / pc), P = Math.min(B.w / pc, B.h / pr), m = 0.14 * P, q = (P - 2 * m) / 4;
     const ox = B.x + (B.w - pc * P) / 2, oy = B.y + (B.h - pr * P) / 2, rnd = rng(o.seed * 17 + 11);
@@ -1337,6 +1458,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
           L.outline.push([c, true]);
         }
         if (i === 0) L.outline.push([ellipse(p[0], p[1], 0.4 * q, 0.4 * q, 0, 24), true]);
+        ringMark(L, o, p[0], p[1], 0.5 * q);
         if (i > 0) {
           const a = pos[i - 1];
           if (a[0] === p[0] && a[1] === p[1]) {
@@ -1346,11 +1468,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
           const d = Math.hypot(p[0] - a[0], p[1] - a[1]), u = [(p[0] - a[0]) / d, (p[1] - a[1]) / d], g0 = 0.34 * q;
           if (d > 2 * g0) {
             L.outline.push([[[a[0] + u[0] * g0, a[1] + u[1] * g0], [p[0] - u[0] * g0, p[1] - u[1] * g0]], false]);
-            const mid = lerp(a, p, 0.5), hl = 0.12 * q;
-            L.outline.push([[[mid[0] - u[0] * hl - u[1] * hl, mid[1] - u[1] * hl + u[0] * hl], mid, [mid[0] - u[0] * hl + u[1] * hl, mid[1] - u[1] * hl - u[0] * hl]], false]);
+            const mp = lerp(a, p, 0.5), hl = 0.12 * q;
+            L.outline.push([[[mp[0] - u[0] * hl - u[1] * hl, mp[1] - u[1] * hl + u[0] * hl], mp, [mp[0] - u[0] * hl + u[1] * hl, mp[1] - u[1] * hl - u[0] * hl]], false]);
           }
         }
-        ringMark(L, o, p[0], p[1], 0.5 * q);
       });
       read2 += pos.map(([x, y]) => sq[Math.round((y - py - m) / q) * 5 + Math.round((x - px - m) / q)]).join("") + " ";
     });
@@ -1382,39 +1503,138 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     for (const g of rings) for (let j = 0; j < g.n; j++, k++) {
       const gap = 0.14 * sl / g.r, a0 = -Math.PI / 2 + TAU * j / g.n + gap, a1 = -Math.PI / 2 + TAU * (j + 1) / g.n - gap, r0 = g.r - 0.36 * g.rw, r1 = g.r + 0.36 * g.rw;
       if (P.carry[k]) ringMark(L, o, cx + g.r * Math.cos((a0 + a1) / 2), cy + g.r * Math.sin((a0 + a1) / 2), 0.15 * g.rw);
+      const slot = [[[...arcPts(cx, cy, r1, a0, a1, 10), ...arcPts(cx, cy, r0, a1, a0, 10)], true]], fill = ringPieces(cx, cy, r0, r1, a0, a1).flatMap((q) => F(o, q));
+      if (RD) offer([[], [...slot, ...fill]]);
       if (!P.vals[k]) continue;
-      L.outline.push([[...arcPts(cx, cy, r1, a0, a1, 10), ...arcPts(cx, cy, r0, a1, a0, 10)], true]);
-      for (const q of ringPieces(cx, cy, r0, r1, a0, a1)) L.fill.push(...F(o, q));
+      L.outline.push(...slot);
+      L.fill.push(...fill);
     }
     L.outline.push([[[cx - 0.02 * Rm, cy - rOut - 0.035 * Rm], [cx, cy - rOut - 5e-3 * Rm], [cx + 0.02 * Rm, cy - rOut - 0.035 * Rm]], true]);
     L.outline.push([ellipse(cx, cy, rIn * 0.85, rIn * 0.85, 0, 72), true], [[[cx - 0.3 * rIn, cy], [cx + 0.3 * rIn, cy]], false], [[[cx, cy - 0.3 * rIn], [cx, cy + 0.3 * rIn]], false]);
-    return { dims: `R${rings.length}.${shift3}`, feature: Math.min(sl, rings[0].rw), read: S.read(P.route.map((p) => P.vals[p])), want: S.text, cap };
+    return { dims: `R${rings.length}.${shift3}`, feature: Math.min(sl, rings[0].rw), read: S.read(P.route.map((p) => P.vals[p])), want: S.text, cap, route: P.route };
   }
-  var FREQ = "EEEEEEEEEEEETTTTTTTTTAAAAAAAAOOOOOOOIIIIIIINNNNNNNSSSSSSHHHHHHRRRRRRDDDDLLLLCCCUUUMMMWWFFGGYYPPBVK";
-  function grille(o, S, B, L) {
-    const T = S.text.replace(/ /g, ""), [C, R] = gridFor(Math.ceil(T.length * Math.max(2, +o.density)), { w: B.w, h: B.h * 0.7 }, Math.max(6, o.size));
-    const holes = scatterRoute(o.seed, T.length, C * R).slice().sort((a, b) => a - b), rnd = rng(o.seed * 7 + 29), field = Array.from({ length: C * R }, () => FREQ[Math.floor(rnd() * FREQ.length)]);
-    holes.forEach((p, i) => field[p] = T[i]);
-    const s = Math.min(B.w / (C + 2.7), B.h / (R + 2.7)), x0 = B.x + (B.w - C * s) / 2, y0 = B.y + (B.h - R * s) / 2, h = 0.58 * s;
-    field.forEach((ch, p) => drawText(ch, x0 + (p % C + 0.5) * s, y0 + Math.floor(p / C) * s + (s - h) / 2, h, L.outline));
-    const frame = rect(x0 - 0.3 * s, y0 - 0.3 * s, C * s + 0.6 * s, R * s + 0.6 * s), cr = 0.35 * s;
-    const crosses = [[x0 - 0.9 * s, y0 - 0.9 * s], [x0 + C * s + 0.9 * s, y0 - 0.9 * s], [x0 + C * s + 0.9 * s, y0 + R * s + 0.9 * s], [x0 - 0.9 * s, y0 + R * s + 0.9 * s]].flatMap(([x, y]) => [[[[x - cr, y], [x + cr, y]], false], [[[x, y - cr], [x, y + cr]], false]]);
-    L.outline.push([frame, true], ...crosses);
-    if (o.reveal === "on") {
-      L.reveal.push([frame, true], ...crosses);
-      for (const p of holes) L.reveal.push([rect(x0 + (p % C + 0.1) * s, y0 + (Math.floor(p / C) + 0.1) * s, 0.8 * s, 0.8 * s), true]);
+  function automaton(o, S, B, L) {
+    const n0 = need(S.bits.length, o), C = Math.max(o.size, Math.ceil(n0 / 2)), R = Math.max(8, Math.round(C * B.h / B.w)), cap = 2 * C, P = place(S.bits, cap, o);
+    const s = Math.min(B.w / C, B.h / R), x0 = B.x + (B.w - C * s) / 2, y0 = B.y + (B.h - R * s) / 2, rule = +o.rule || 30, m0 = Math.floor(R / 2) - 1;
+    const f = (row, i) => rule >> (row[(i + C - 1) % C] << 2 | row[i] << 1 | row[(i + 1) % C]) & 1;
+    const g = Array.from({ length: R }, () => new Array(C).fill(0));
+    for (let i = 0; i < C; i++) {
+      g[m0][i] = P.vals[i];
+      g[m0 + 1][i] = P.vals[C + i];
     }
-    return { dims: `${C}X${R}`, feature: h, read: holes.map((p) => field[p]).join(""), want: T, cap: C * R };
+    for (let t = m0 + 1; t + 1 < R; t++) for (let i = 0; i < C; i++) g[t + 1][i] = f(g[t], i) ^ g[t - 1][i];
+    for (let t = m0; t > 0; t--) for (let i = 0; i < C; i++) g[t - 1][i] = f(g[t], i) ^ g[t + 1][i];
+    const cell = (x, y) => {
+      const h = s / 2, cx = x + h, cy = y + h;
+      const P2 = o.cells === "dots" ? ellipse(cx, cy, 0.4 * s, 0.4 * s, 0, 20) : o.cells === "diamonds" ? [[cx, y + 0.04 * s], [x + s - 0.04 * s, cy], [cx, y + s - 0.04 * s], [x + 0.04 * s, cy]] : rect(x + 0.07 * s, y + 0.07 * s, 0.86 * s, 0.86 * s);
+      return [[P2, true], ...F(o, P2)];
+    };
+    for (let t = 0; t < R; t++) for (let i = 0; i < C; i++) {
+      const x = x0 + i * s, y = y0 + t * s, paths = cell(x, y);
+      if (g[t][i]) {
+        L.outline.push(paths[0]);
+        L.fill.push(...paths.slice(1));
+      }
+      if (RD && (t === m0 || t === m0 + 1)) offer([[], o.fill === "none" ? [[rect(x + 0.25 * s, y + 0.25 * s, 0.5 * s, 0.5 * s), true]] : F(o, rect(x + 0.22 * s, y + 0.22 * s, 0.56 * s, 0.56 * s))]);
+      if ((t === m0 || t === m0 + 1) && P.carry[(t - m0) * C + i]) ringMark(L, o, x + s / 2, y + s / 2, 0.15 * s);
+    }
+    if (o.reveal === "on") for (const t of [m0, m0 + 1]) for (const x of [x0 - 0.8 * s, x0 + C * s + 0.3 * s]) L.reveal.push([[[x, y0 + (t + 0.5) * s], [x + 0.5 * s, y0 + (t + 0.5) * s]], false]);
+    L.outline.push([rect(x0, y0, C * s, R * s), true]);
+    const flat = [...g[m0], ...g[m0 + 1]];
+    return { dims: `${C}X${R}.${rule}`, feature: s, read: S.read(P.route.map((p) => flat[p])), want: S.text, cap, route: P.route };
   }
-  var METHODS = { truchet, maze, hilbert, ridges, pigpen, stars, disk, grille };
-  var GLYPH_METHODS = /* @__PURE__ */ new Set(["pigpen", "stars", "grille"]);
-  var M_CODE = { truchet: "TR", maze: "MZ", hilbert: "HB", ridges: "RG", pigpen: "PP", stars: "ST", disk: "DK", grille: "GR" };
-  function keyOf(o, L, dims) {
+  function knots(o, S, B, L) {
+    const n0 = need(S.bits.length, o), crossings = (C2, R2) => {
+      const out = [];
+      for (let v = 1; v < 2 * R2; v++) for (let u = 1; u < 2 * C2; u++) if ((u + v) % 2) out.push([u, v]);
+      return out;
+    };
+    let [C, R] = gridFor(Math.ceil(n0 / 2), B, Math.max(3, Math.round(o.size / 2)));
+    while (crossings(C, R).length < n0) R++;
+    const X = crossings(C, R), cap = X.length, P = place(S.bits, cap, o), s = Math.min(B.w / (C + 0.6), B.h / (R + 0.6)), h = s / 2;
+    const x0 = B.x + (B.w - C * s) / 2, y0 = B.y + (B.h - R * s) / 2, at = (u, v) => [x0 + u * h, y0 + v * h];
+    const w = 0.3 * h * Math.SQRT2 / 2 * 1.35, gap = 0.12 * h, pn = painter(h);
+    const used = /* @__PURE__ */ new Set(), key = (a, b) => a < b ? a + "|" + b : b + "|" + a, loops = [];
+    for (let v = 0; v <= 2 * R; v++) for (let u = 0; u <= 2 * C; u++) {
+      if ((u + v) % 2 === 0) continue;
+      for (const d0 of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        let [cu, cv] = [u, v], d = [...d0];
+        const nu = cu + d[0], nv = cv + d[1];
+        if (nu < 0 || nu > 2 * C || nv < 0 || nv > 2 * R || used.has(key(`${cu},${cv}`, `${nu},${nv}`))) continue;
+        const loop = [[cu, cv]];
+        for (let guard = 0; guard < 1e5; guard++) {
+          const a = `${cu},${cv}`, bu = cu + d[0], bv = cv + d[1], b = `${bu},${bv}`;
+          if (used.has(key(a, b))) break;
+          used.add(key(a, b));
+          cu = bu;
+          cv = bv;
+          loop.push([cu, cv]);
+          if (cu === 0 || cu === 2 * C) d[0] = -d[0];
+          if (cv === 0 || cv === 2 * R) d[1] = -d[1];
+          let nx = cu + d[0], ny = cv + d[1];
+          if (nx < 0 || nx > 2 * C) {
+            d[0] = -d[0];
+            nx = cu + d[0];
+          }
+          if (ny < 0 || ny > 2 * R) {
+            d[1] = -d[1];
+            ny = cv + d[1];
+          }
+        }
+        loops.push(loop);
+      }
+    }
+    const offset = (pts, sgn) => pts.map((p, i) => {
+      const a = pts[(i - 1 + pts.length) % pts.length], b = pts[(i + 1) % pts.length];
+      const n1 = (() => {
+        const dx = p[0] - a[0], dy = p[1] - a[1], l = Math.hypot(dx, dy) || 1;
+        return [-dy / l, dx / l];
+      })(), n2 = (() => {
+        const dx = b[0] - p[0], dy = b[1] - p[1], l = Math.hypot(dx, dy) || 1;
+        return [-dy / l, dx / l];
+      })();
+      const m = [n1[0] + n2[0], n1[1] + n2[1]], ml = Math.hypot(...m) || 1, k = w / Math.max(0.3, (m[0] * n1[0] + m[1] * n1[1]) / ml);
+      return [p[0] + sgn * m[0] / ml * k, p[1] + sgn * m[1] / ml * k];
+    });
+    const edges = [], fills = [];
+    for (const lp of loops) {
+      const pts = lp.map(([u, v]) => at(u, v)), closed = lp.length > 2 && lp[0][0] === lp.at(-1)[0] && lp[0][1] === lp.at(-1)[1], ring = closed ? pts.slice(0, -1) : pts;
+      for (const sgn of [1, -1]) edges.push([offset(ring, sgn), closed]);
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const a = pts[i], b = pts[i + 1], d = [(b[0] - a[0]) / (h * Math.SQRT2), (b[1] - a[1]) / (h * Math.SQRT2)], n = [-d[1] * w, d[0] * w];
+        fills.push(...F(o, [[a[0] + n[0], a[1] + n[1]], [b[0] + n[0], b[1] + n[1]], [b[0] - n[0], b[1] - n[1]], [a[0] - n[0], a[1] - n[1]]]));
+      }
+    }
+    pn.add({ outline: edges, fill: fills });
+    const over = (p, dir, len) => {
+      const e = [dir[0] / Math.SQRT2, dir[1] / Math.SQRT2], n = [-e[1], e[0]], L2 = [];
+      for (const sg of [1, -1]) L2.push([[[p[0] - e[0] * len + n[0] * w * sg, p[1] - e[1] * len + n[1] * w * sg], [p[0] + e[0] * len + n[0] * w * sg, p[1] + e[1] * len + n[1] * w * sg]], false]);
+      const band = [[p[0] - e[0] * len + n[0] * w, p[1] - e[1] * len + n[1] * w], [p[0] + e[0] * len + n[0] * w, p[1] + e[1] * len + n[1] * w], [p[0] + e[0] * len - n[0] * w, p[1] + e[1] * len - n[1] * w], [p[0] - e[0] * len - n[0] * w, p[1] - e[1] * len - n[1] * w]];
+      const cover = [[p[0] - e[0] * len + n[0] * (w + gap), p[1] - e[1] * len + n[1] * (w + gap)], [p[0] + e[0] * len + n[0] * (w + gap), p[1] + e[1] * len + n[1] * (w + gap)], [p[0] + e[0] * len - n[0] * (w + gap), p[1] + e[1] * len - n[1] * (w + gap)], [p[0] - e[0] * len - n[0] * (w + gap), p[1] - e[1] * len - n[1] * (w + gap)]];
+      return { L2, band, cover };
+    };
+    X.forEach(([u, v], i) => {
+      const p = at(u, v), dir = P.vals[i] ? [1, -1] : [1, 1], O = over(p, dir, w + gap);
+      pn.add({ outline: O.L2, fill: F(o, O.band) }, [O.cover]);
+      if (P.carry[i]) ringMark(L, o, p[0], p[1], 0.35 * w);
+      const axis = (dir2) => {
+        const e = [dir2[0] / Math.SQRT2, dir2[1] / Math.SQRT2], d0 = w + 0.25 * gap, d1 = w + 0.75 * gap;
+        return [-1, 1].map((sg) => [[[p[0] + e[0] * d0 * sg, p[1] + e[1] * d0 * sg], [p[0] + e[0] * d1 * sg, p[1] + e[1] * d1 * sg]], false]);
+      };
+      if (RD) offer([[...over(p, [1, 1], w * 0.8).L2, ...axis([1, 1])], [...over(p, [1, -1], w * 0.8).L2, ...axis([1, -1])]]);
+    });
+    pn.resolve(L);
+    return { dims: `${C}X${R}`, feature: 2 * w, read: S.read(P.route.map((p) => P.vals[p])), want: S.text, cap, route: P.route };
+  }
+  var METHODS = { truchet, maze, hilbert, ridges, pigpen, stars, disk, automaton, knots };
+  var GLYPH_METHODS = /* @__PURE__ */ new Set(["pigpen", "stars"]);
+  var M_CODE = { truchet: "TR", maze: "MZ", hilbert: "HB", ridges: "RG", pigpen: "PP", stars: "ST", disk: "DK", automaton: "CA", knots: "KN" };
+  function keyOf(o, len, dims) {
     const e = GLYPH_METHODS.has(o.method) ? "LT" : { fivebit: "5B", bacon26: "BA", morse: "MR" }[o.enc];
-    const h = o.hide === "scatter" || o.method === "grille" ? `S${o.seed.toString(36).toUpperCase()}.${o.density}` : "O";
+    const h = o.hide === "scatter" ? `S${o.seed.toString(36).toUpperCase()}.${o.density}` : "O";
     const c = o.cipher === "none" ? "NC" : `${o.cipher.slice(0, 2).toUpperCase()}.${String(o.ckey).toUpperCase().replace(/[^A-Z0-9]/g, "")}`;
     const k = o.method === "stars" && o.pkey ? `-K.${String(o.pkey).toUpperCase().replace(/[^A-Z]/g, "")}` : "";
-    return ["PLG1", M_CODE[o.method], e, h, "L" + L, dims, c].join("-") + k;
+    return ["PLG1", M_CODE[o.method], e, h, "L" + len, dims, c].join("-") + k;
   }
   function howToRead(o) {
     const bits = { fivebit: "five-bit letters (A = 00000, T = 10011)", bacon26: "Bacon's A/B letters (1 is B)", morse: "Morse timing units (a run of 1s is a mark)" }[o.enc];
@@ -1424,57 +1644,102 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       maze: `A binary-tree maze: every cell opens either north (0) or east (1). The top row and right column are forced and carry nothing; read the rest left to right, top row first, as ${bits}.` + hidden,
       hilbert: `Follow the line from the ring to the square: every step of the space-filling curve is one bit, a straight step 0 and a ${o.mark === "loop" ? "looped" : o.mark === "zigzag" ? "zigzag" : "wavy"} step 1, as ${bits}.` + hidden,
       ridges: `Each ridgeline is a row of bits read left to right, back line first: a peak is 1, flat is 0, as ${bits}.` + hidden,
-      pigpen: "Pigpen: A to I sit in a noughts-and-crosses grid, J to R in a second grid with a dot, S to V in an X, W to Z in an X with a dot. Each shape is the walls round its letter's place. A historical / puzzle cipher, not modern security.",
+      pigpen: "Pigpen: A to I sit in a noughts-and-crosses grid, J to R in a second grid with a dot, S to V in an X, W to Z in an X with a dot. Each shape is the walls round its letter's place; a blank cell is a space. A historical / puzzle cipher, not modern security.",
       stars: `Each constellation is a word on a 5 x 5 Polybius square${o.pkey ? ` keyed by ${String(o.pkey).toUpperCase()}` : " (A B C D E across the top)"}: start at the ringed star and follow the chevrons, reading each star's row and column. A ring round a star doubles its letter; the small stars are decoys.`,
       disk: `Read the rotor clockwise from the mark at twelve, outer ring first: a filled arc is 1, a gap 0, as ${bits}. The letter rim is Alberti's cipher disk${o.cipher === "caesar" ? `, turned to the Caesar shift ${o.ckey}` : ""}.` + hidden,
-      grille: "A Cardano grille: lay the cut grille over the page, corner crosses on corner crosses, and read the letters showing through left to right, top row first. The answer key layer is the grille: cut it on the Cricut."
+      automaton: `A reversible automaton (rule ${o.rule}) grown up and down from the two rows in the middle: those two rows are the message, left to right, as ${bits}. Every other row follows from any two neighbours, so the whole picture can be run back to them.` + hidden,
+      knots: `Interlace: at every crossing inside the frame one strand goes over. Falling to the right on top is 0, rising to the right on top is 1; read the crossings left to right, top row first, as ${bits}.` + hidden
     }[o.method];
   }
-  var $ = (id) => document.getElementById(id);
-  var IDS = ["msg", "enc", "cipher", "ckey", "method", "hide", "density", "seed", "size", "tiles", "walls", "mark", "noise", "pkey", "fill", "pitch", "angle", "caption", "tsize", "tpen", "reveal", "rpen", "page"];
-  var read = () => Object.fromEntries(IDS.map((k) => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
-  var last = null;
   var shift2 = (L, dy) => {
     for (const k of Object.keys(L)) L[k] = L[k].map(([p, c]) => [p.map(([x, y]) => [x, y + dy]), c]);
   };
-  function build(o) {
-    const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), M = 10, L = { outline: [], fill: [], text: [], reveal: [] };
-    let S, res;
+  function variantIndex(o) {
+    const v = VARIANTS[o.method];
+    return v ? Math.max(0, v[1].indexOf(o[v[0]])) : 0;
+  }
+  function build(o, readRec = null) {
+    const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marks = o.marks === "on", M = marks ? MARK.margin : 10, L = layers();
+    let S, res, capH0, dy, key = "";
+    RD = readRec ? [] : null;
     try {
+      if (readRec) {
+        const lines2 = o.method === "pigpen" ? Array.from({ length: readRec.len }, () => " ".repeat(Math.max(4, o.size))) : null;
+        S = { bits: new Array(readRec.len).fill(0), text: "", lines: lines2, read: readerFor(o.enc) };
+        res = METHODS[o.method](o, S, { x: M, y: M, w: W - 2 * M, h: H - 2 * M - readRec.capH / 10 }, L);
+        shift2(L, readRec.dy / 10);
+        if (RD) for (const e of RD) e.cands = e.cands.map((ps) => ps.map(([p, c]) => [p.map(([x, y]) => [x, y + readRec.dy / 10]), c]));
+        return { W, H, o, res, cells: RD, ms: performance.now() - t0 };
+      }
       S = GLYPH_METHODS.has(o.method) ? letterText(o) : source(o);
       if (!S.text.trim()) throw new Error("Nothing left to draw: the message has no letters this method can carry.");
       const th = o.tsize, avail = W - 2 * M, len = S.bits ? S.bits.length : S.text.replace(/ /g, "").length;
-      const lines = (key2) => {
+      const lines = (k) => {
         const cap2 = [], add = (s, h) => wrap(s, Math.max(4, Math.floor((avail / h * 6 + 1.6) / ADV))).forEach((l) => cap2.push({ s: l, h }));
         if (/message/.test(o.caption)) add(S.plain, th);
         if (/code/.test(o.caption) && S.code) add(S.code, Math.max(2.5, th * 0.55));
-        if (o.caption === "key") add("KEY " + key2, Math.max(2.5, th * 0.5));
+        if (o.caption === "key") add("KEY " + k, Math.max(2.5, th * 0.5));
         return cap2;
       };
-      const capH0 = lines(keyOf(o, len, "00X00")).reduce((s, c) => s + c.h * 1.55, 0) + th * 0.8;
+      capH0 = Math.round((lines(keyOf(o, len, "00X00")).reduce((s, c) => s + c.h * 1.55, 0) + th * 0.8) * 10) / 10;
       res = METHODS[o.method](o, S, { x: M, y: M, w: W - 2 * M, h: H - 2 * M - capH0 }, L);
-      const key = keyOf(o, len, res.dims), cap = lines(key);
+      key = keyOf(o, len, res.dims);
+      const cap = lines(key);
       const all = [...L.outline, ...L.fill, ...L.text, ...L.reveal].flatMap(([p]) => p), bb = bbox(all.length ? all : [[W / 2, H / 2]]);
-      const capH2 = cap.reduce((s, c) => s + c.h * 1.55, 0) + (cap.length ? th * 0.8 : 0), total = bb[3] - bb[1] + capH2, dy = Math.max(M, (H - total) / 2) - bb[1];
+      const capH2 = cap.reduce((s, c) => s + c.h * 1.55, 0) + (cap.length ? th * 0.8 : 0), total = bb[3] - bb[1] + capH2;
+      dy = Math.round((Math.max(M, (H - total) / 2) - bb[1]) * 10) / 10;
       shift2(L, dy);
       let yy = bb[3] + dy + (cap.length ? th * 0.8 : 0);
       for (const c of cap) {
         drawText(c.s, W / 2, yy, c.h, L.text);
         yy += c.h * 1.55;
       }
-      res.key = key;
+      if (marks) {
+        if (o.method === "stars") throw new Error("Constellations are read by eye, so they take no machine marks: switch the marks off.");
+        drawMarks(W, H, packRecord(1, {
+          method: METHOD_LIST.indexOf(o.method),
+          variant: variantIndex(o),
+          enc: ENCS.indexOf(o.enc),
+          hide: o.hide === "scatter" ? 1 : 0,
+          density: +o.density - 2,
+          seed: o.seed,
+          len: o.method === "pigpen" ? res.rows : len,
+          size: o.size,
+          page: PAGES.indexOf(o.page),
+          cipher: CIPHER_KINDS.indexOf(o.cipher),
+          capH: Math.round(capH0 * 10),
+          dy: Math.round(dy * 10),
+          noise: Math.round(o.noise * 20),
+          fill: FILLS.indexOf(o.fill),
+          pitch: Math.round((o.pitch - 0.5) / 0.05),
+          angle: Math.round(o.angle)
+        }), L);
+      }
     } catch (err) {
+      RD = null;
       return { W, H, ...L, o, error: err instanceof Error ? err.message : String(err), gates: [["the settings make a drawing", false, String(err && err.message || err)]], ms: performance.now() - t0, notes: [] };
     }
-    const ok = norm(res.read) === norm(res.want), gates = [
+    RD = null;
+    const ok = norm(res.read) === norm(res.want), inPage = [...L.outline, ...L.fill, ...L.text, ...L.reveal].every(([p]) => p.every(([x, y]) => x >= 0.5 && y >= 0.5 && x <= W - 0.5 && y <= H - 0.5));
+    let bottom = 0;
+    for (const [p] of [...L.outline, ...L.fill, ...L.text, ...L.reveal]) for (const q of p) if (q[1] > bottom && (!marks || q[1] < H - MARK.inset - MARK.size - 1)) bottom = q[1];
+    const gates = [
       ["the drawing reads back to the message", ok, ok ? `"${norm(res.read).slice(0, 40)}"` : `read "${norm(res.read).slice(0, 30)}" want "${norm(res.want).slice(0, 30)}"`],
       ["smallest drawn unit at least 2 mm", res.feature >= 2 - 1e-9, `${res.feature.toFixed(2)} mm`],
-      ["everything fits the page", [...L.outline, ...L.fill, ...L.text, ...L.reveal].every(([p]) => p.every(([x, y]) => x >= 0.5 && y >= 0.5 && x <= W - 0.5 && y <= H - 0.5)), ""]
+      ["everything fits the page", inPage, ""]
     ];
+    if (marks) gates.push(["the drawing clears the key strip", bottom <= H - MARK.margin + 1, `${(H - bottom).toFixed(1)} mm from the bottom edge`]);
     const notes = S.dropped && S.dropped.length ? [`Left out (this method cannot carry them): ${[...new Set(S.dropped.map((d) => d.char))].join(" ")}`] : [];
     if (o.cipher !== "none") notes.push("Classical ciphers are historical / puzzle ciphers, not modern security.");
-    return { W, H, ...L, o, res, key: res.key, how: howToRead(o), gates, notes, points: [...L.outline, ...L.fill, ...L.text, ...L.reveal].reduce((s, [p]) => s + p.length, 0), ms: performance.now() - t0 };
+    return { W, H, ...L, o, res, key, how: howToRead(o), gates, notes, points: [...L.outline, ...L.fill, ...L.text, ...L.reveal].reduce((s, [p]) => s + p.length, 0), ms: performance.now() - t0 };
   }
+
+  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/cipher.js
+  var UTP_REV = true ? "d74c18b" : "dev";
+  var $ = (id) => document.getElementById(id);
+  var IDS = ["msg", "enc", "cipher", "ckey", "method", "hide", "density", "seed", "size", "tiles", "walls", "mark", "cells", "rule", "noise", "pkey", "fill", "pitch", "angle", "caption", "tsize", "tpen", "reveal", "rpen", "page", "marks"];
+  var read = () => Object.fromEntries(IDS.map((k) => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+  var last = null;
   function draw(r) {
     const cv = $("cv"), maxW = Math.min(780, Math.max(200, cv.parentElement.clientWidth - 30)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
     cv.width = Math.round(r.W * k * devicePixelRatio);
@@ -1489,7 +1754,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       $("how").textContent = "";
       return;
     }
-    $("stats").innerHTML = `${esc(r.o.method)} · ${r.res.cap} cells · ${r.points} points · ${r.ms.toFixed(0)} ms<br><span class="sw" style="background:#0b0f14"></span>0.4 outline <b>${len(r.outline).toFixed(1)} m</b> · <span class="sw" style="background:#5c7080"></span>0.3 fill <b>${len(r.fill).toFixed(1)} m</b> · <span class="sw" style="background:${r.o.tpen}"></span>text <b>${len(r.text).toFixed(1)} m</b>` + (r.reveal.length ? ` · <span class="sw" style="background:${r.o.rpen}"></span>${r.o.method === "grille" ? "grille (cut)" : r.o.method === "maze" ? "way through" : "reveal"} <b>${len(r.reveal).toFixed(1)} m</b>` : "") + "<br>" + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${esc(n)} ${esc(v)}`).join("<br>") + `<br>key <b>${esc(r.key)}</b>` + (r.notes.length ? `<br><span class="note">${r.notes.map(esc).join("<br>")}</span>` : "");
+    $("stats").innerHTML = `${esc(r.o.method)} · ${r.res.cap} cells · ${r.points} points · ${r.ms.toFixed(0)} ms<br><span class="sw" style="background:#0b0f14"></span>0.4 outline <b>${len(r.outline).toFixed(1)} m</b> · <span class="sw" style="background:#5c7080"></span>0.3 fill <b>${len(r.fill).toFixed(1)} m</b> · <span class="sw" style="background:${r.o.tpen}"></span>text <b>${len(r.text).toFixed(1)} m</b>` + (r.reveal.length ? ` · <span class="sw" style="background:${r.o.rpen}"></span>${r.o.method === "maze" ? "way through" : "reveal"} <b>${len(r.reveal).toFixed(1)} m</b>` : "") + "<br>" + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${esc(n)} ${esc(v)}`).join("<br>") + `<br>key <b>${esc(r.key)}</b>` + (r.notes.length ? `<br><span class="note">${r.notes.map(esc).join("<br>")}</span>` : "");
     $("how").textContent = r.how;
   }
   function paint(c, r) {
@@ -1517,7 +1782,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     { name: "outline", colour: "000000", w: 0.4, paths: r.outline },
     { name: "fill", colour: "555555", w: 0.3, paths: r.fill },
     { name: "text", colour: r.o.tpen.slice(1), w: 0.3, paths: r.text },
-    { name: r.o.method === "grille" ? "grille-cut" : "reveal", colour: r.o.rpen.slice(1), w: 0.3, paths: r.reveal }
+    { name: "reveal", colour: r.o.rpen.slice(1), w: 0.3, paths: r.reveal }
   ].filter((L) => L.paths.length);
   var toSVG = (r, only = null, ticks = false) => svgOf(r, penLayers(r), `PLG cipher garden (UTP ${UTP_REV})`, only, ticks);
   function sync() {
@@ -1548,12 +1813,15 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     loops: { method: "hilbert", mark: "loop", msg: "KNOTTED", enc: "morse", hide: "open", fill: "spiral", pitch: 0.5, caption: "message code" },
     ridges: { method: "ridges", msg: "UNKNOWN PLEASURES", enc: "fivebit", hide: "open", size: 16, noise: 0.5, fill: "lines", pitch: 0.7, angle: 0, caption: "message" },
     pigpen: { method: "pigpen", msg: "THE LODGE MEETS AT MIDNIGHT", cipher: "none", size: 12, fill: "lines", pitch: 0.6, angle: 45, caption: "message" },
-    stars: { method: "stars", msg: "ALL THE STARS ARE LETTERS", cipher: "none", pkey: "ORION", hide: "scatter", density: "3", fill: "spiral", pitch: 0.5, caption: "key" },
+    stars: { method: "stars", msg: "ALL THE STARS ARE LETTERS", cipher: "none", pkey: "ORION", hide: "scatter", density: "3", fill: "spiral", pitch: 0.5, caption: "key", marks: "off" },
     disk: { method: "disk", msg: "ALBERTI SENDS HIS REGARDS", enc: "fivebit", cipher: "caesar", ckey: "3", hide: "open", fill: "lines", pitch: 0.6, angle: 60, caption: "message" },
-    grille: { method: "grille", msg: "MEET ME BY THE OLD MILL", cipher: "none", size: 18, density: "4", reveal: "on", caption: "none" }
+    automaton: { method: "automaton", cells: "squares", rule: "30", msg: "RUN IT BACKWARDS", enc: "fivebit", hide: "open", size: 36, fill: "lines", pitch: 0.55, angle: 45, caption: "message" },
+    sierpinski: { method: "automaton", cells: "dots", rule: "150", msg: "ORDER FROM NOISE", enc: "fivebit", hide: "open", size: 40, fill: "spiral", pitch: 0.5, caption: "key" },
+    knots: { method: "knots", msg: "OVER UNDER", enc: "fivebit", hide: "open", size: 12, fill: "lines", pitch: 0.55, angle: -45, caption: "message" }
   };
   document.querySelectorAll("[data-preset]").forEach((b) => b.onclick = () => {
     for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v;
+    if (!("marks" in PRESETS[b.dataset.preset])) $("marks").value = "on";
     run();
   });
   $("reroll").onclick = () => {
@@ -1579,7 +1847,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
   };
   addEventListener("resize", () => last && draw(last));
   if ($("rev")) $("rev").textContent = UTP_REV;
-  window.__studio = { build, read, PRESETS, penLayers, paint, toSVG };
+  window.__studio = { build, read, PRESETS, penLayers, paint, toSVG, howToRead };
   run();
 })();
 </script>

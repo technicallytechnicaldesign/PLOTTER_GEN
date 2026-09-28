@@ -218,6 +218,10 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="250x190">250 x 190 landscape</option>
       <option value="280x280">280 x 280 (12 x 12 mat)</option>
     </select></label>
+    <label>Machine marks (for the camera decoder) <select id="marks">
+      <option value="on">on: corner targets and key strip</option>
+      <option value="off">off: a clean page</option>
+    </select></label>
     <label>Corner ticks <select id="ticks">
       <option value="split">in split files only</option>
       <option value="on">in every file</option>
@@ -2580,6 +2584,70 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 ` + layers.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
   }
 
+  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/marks.js
+  var MARK = { inset: 4, size: 10, margin: 17, slots: 64, rows: 2 };
+  var PAGES = ["190x250", "250x190", "280x280"];
+  var DOT_R = 0.85;
+  var centre = MARK.inset + MARK.size / 2;
+  var finderCentres = (W, H) => [[centre, centre], [W - centre, centre], [W - centre, H - centre], [centre, H - centre]];
+  function stripSlots(W, H) {
+    const x0 = MARK.inset + MARK.size + 5, x1 = W - x0, pitch = (x1 - x0) / (MARK.slots - 1), ys = [H - MARK.inset - MARK.size * 0.78, H - MARK.inset - MARK.size * 0.22];
+    return { pitch, slots: Array.from({ length: MARK.slots * MARK.rows }, (_, i) => [x0 + i % MARK.slots * pitch, ys[Math.floor(i / MARK.slots)]]) };
+  }
+  var solidSquare = (cx, cy, s, upTo = s / 2) => {
+    const out = [];
+    for (let d = 0; d < upTo - 0.05; d += 0.4) out.push([rect(cx - s / 2 + d, cy - s / 2 + d, s - 2 * d, s - 2 * d), true]);
+    if (upTo >= s / 2 - 0.05) out.push([[[cx - 0.5, cy], [cx + 0.5, cy]], false], [[[cx, cy - 0.5], [cx, cy + 0.5]], false]);
+    return out;
+  };
+  function drawMarks(W, H, bits, L) {
+    finderCentres(W, H).forEach(([cx, cy], i) => {
+      L.outline.push(...solidSquare(cx, cy, MARK.size, 1.6));
+      L.outline.push(...i === 2 ? solidSquare(cx, cy, 3.2, 0.8) : solidSquare(cx, cy, 3.2));
+    });
+    const { slots } = stripSlots(W, H), r = DOT_R;
+    slots.forEach(([x, y], i) => {
+      if (bits[i]) for (let q = r; q > 0.05; q -= 0.3) L.outline.push([ellipse(x, y, q, q, 0, 16), true]);
+    });
+  }
+  var STEGO = {
+    LOOKS: ["dots", "stitches", "cross", "punch", "blocks", "truchet"],
+    CARRIERS: ["purl-relief", "two-colour", "cable", "lace", "bobble", "bead", "stripes"],
+    ENCS: ["fivebit", "morse", "bacon26", "bacon24", "pixel5", "geometric3", "geometric4"],
+    CHECKS: ["none", "parity", "hamming"],
+    HIDES: ["columns", "tape", "chart", "scatter", "motif-window", "motif-diamond", "motif-cross"],
+    CIPHERS: ["none", "caesar", "keyword", "vigenere", "railfence", "route"],
+    FILLS: ["contour", "lines", "cross", "zigzag", "wave", "stipple", "spiral", "none"]
+  };
+  var SYNC2 = [1, 0, 1, 1, 0];
+  var SCHEMAS = {
+    1: [["method", 4], ["variant", 2], ["enc", 2], ["hide", 1], ["density", 2], ["seed", 10], ["len", 12], ["size", 6], ["page", 2], ["cipher", 3], ["capH", 11], ["dy", 12, true], ["noise", 5], ["fill", 3], ["pitch", 6], ["angle", 8, true]],
+    // cipher garden (pitch: 0.05 mm steps above 0.5)
+    2: [["look", 3], ["carrier", 3], ["border", 1], ["enc", 3], ["check", 2], ["hide", 3], ["seed", 10], ["density", 2], ["cipher", 3], ["x0", 12], ["y0", 12], ["cw", 11], ["rows", 8], ["cols", 7], ["wobble", 5], ["gaps", 1], ["page", 2], ["len", 12], ["fill", 3]]
+    // purloined plot studio: chart, scatter and motif layouts
+  };
+  var crc8 = (bits) => {
+    let c = 0;
+    for (const b of bits) {
+      const top = c >> 7 & 1;
+      c = c << 1 & 255 ^ (top ^ b ? 7 : 0);
+    }
+    return Array.from({ length: 8 }, (_, i) => c >> 7 - i & 1);
+  };
+  var toBits2 = (v, n) => Array.from({ length: n }, (_, i) => v >> n - 1 - i & 1);
+  function packRecord(studio, fields) {
+    const body = [...toBits2(studio, 3)];
+    for (const [name, n, signed] of SCHEMAS[studio]) {
+      let v = Math.round(fields[name] ?? 0);
+      if (signed) v = v < 0 ? v + (1 << n) : v;
+      if (v < 0 || v >= 1 << n) throw new Error(`key strip: ${name} = ${fields[name]} does not fit in ${n} bits`);
+      body.push(...toBits2(v, n));
+    }
+    const bits = [...SYNC2, ...body, ...crc8(body)];
+    if (bits.length > MARK.slots * MARK.rows) throw new Error("key strip record is too long");
+    return [...bits, ...new Array(MARK.slots * MARK.rows - bits.length).fill(0)];
+  }
+
   // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/studio.js
   var UTP_REV = true ? "d74c18b" : "dev";
   var ON = /* @__PURE__ */ new Set(["purl", "B", "c4b", "k2tog", "mb", "pb"]);
@@ -2977,11 +3045,12 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     leftLean ? (band(x0, x1), band(x1, x0)) : (band(x1, x0), band(x0, x1));
   }
   var $ = (id) => document.getElementById(id);
-  var IDS = ["msg", "enc", "check", "cipher", "ckey", "hide", "carrier", "border", "width", "perline", "density", "seed", "look", "boxes", "gaps", "wobble", "fill", "pitch", "angle", "offfill", "caption", "tsize", "reveal", "tpen", "rpen", "page", "cellmax"];
+  var IDS = ["msg", "enc", "check", "cipher", "ckey", "hide", "carrier", "border", "width", "perline", "density", "seed", "look", "boxes", "gaps", "wobble", "fill", "pitch", "angle", "offfill", "caption", "tsize", "reveal", "tpen", "rpen", "page", "cellmax", "marks"];
   var read2 = () => Object.fromEntries(IDS.map((k) => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
   var last = null;
+  var { LOOKS, CARRIERS, ENCS, CHECKS, HIDES, CIPHERS: CIPHERS2 } = STEGO;
   function build(o) {
-    const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), M = 10;
+    const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marksOn = o.marks === "on", M = marksOn ? MARK.margin : 10;
     const L = { outline: [], fill: [], text: [], reveal: [] }, gates = [];
     let G;
     const openLayout = o.hide === "columns" || o.hide === "tape", labels = openLayout && /message/.test(o.caption);
@@ -3005,9 +3074,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     const capH = cap.reduce((s, c) => s + c.h * 1.55, 0) + (cap.length ? th * 0.7 : 0);
     const rows = o.look === "stitches" ? G.stitches || G.rows : G.rows, R = rows.length, C = Math.max(...rows.map((r) => r.length));
     const aspect = o.look === "stitches" ? 0.78 : 1, extraC = o.look === "punch" ? 4.8 + 1.2 : o.look === "stitches" ? 0.8 : 0, extraR = o.look === "punch" ? 2 : o.look === "stitches" ? 0.8 : 0;
-    const cw = Math.min(o.cellmax, (W - 2 * M) / (C + extraC), (H - 2 * M - capH) / ((R + extraR) * aspect));
+    const cw = Math.floor(Math.min(o.cellmax, (W - 2 * M) / (C + extraC), (H - 2 * M - capH) / ((R + extraR) * aspect)) * 100) / 100;
     const ch = cw * aspect, bw = C * cw, bh = R * ch, blockH = bh + extraR * ch + capH;
-    const x0 = (W - bw) / 2, top = Math.max(M, (H - blockH) / 2), y0 = top + extraR * ch / 2;
+    const x0 = Math.round((W - bw) / 2 * 10) / 10, top = Math.max(M, (H - blockH) / 2), y0 = Math.round((top + extraR * ch / 2) * 10) / 10;
     const g = { x0, y0, cw, ch, labelMax: th };
     looks(G, g, o, L);
     let cy = y0 + bh + extraR * ch / 2 + (cap.length ? th * 0.7 : 0);
@@ -3015,12 +3084,37 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       drawText(c.s, W / 2, cy, c.h, L.text);
       cy += c.h * 1.55;
     }
+    const notes = [];
+    if (marksOn) {
+      const camera = G.kind === "chart" && C <= 127 && R <= 255 && !(o.look === "stitches" && UNITS2[o.carrier]);
+      if (camera) drawMarks(W, H, packRecord(2, {
+        look: LOOKS.indexOf(o.look),
+        carrier: CARRIERS.indexOf(o.carrier),
+        border: o.border === "on" ? 1 : 0,
+        enc: ENCS.indexOf(o.enc),
+        check: CHECKS.indexOf(o.check),
+        hide: HIDES.indexOf(o.hide),
+        seed: o.seed,
+        density: +o.density - 2,
+        cipher: CIPHERS2.indexOf(o.cipher),
+        x0: Math.round(x0 * 10),
+        y0: Math.round(y0 * 10),
+        cw: Math.round(cw * 100),
+        rows: R,
+        cols: C,
+        wobble: Math.round(o.wobble * 20),
+        gaps: o.gaps === "shaded" ? 1 : 0,
+        page: PAGES.indexOf(o.page),
+        len: G.P?.output.key?.length ?? 0,
+        fill: STEGO.FILLS.indexOf(o.fill)
+      }), L);
+      else notes.push(G.kind === "chart" ? "Machine marks left off: knitted cables, lace, bobbles and beads are read by eye." : "Machine marks left off: letter columns and tapes are read by eye.");
+    }
     const all = [...L.outline, ...L.fill, ...L.text, ...L.reveal];
     const decodeOK = G.read === G.want;
     gates.push([G.kind === "chart" ? "UTP decodes the plotted chart back to the message" : "the laid-out cells read back to the message", decodeOK, decodeOK ? `"${G.read.slice(0, 40)}${G.read.length > 40 ? "..." : ""}"` : `read "${G.read.slice(0, 30)}" want "${G.want.slice(0, 30)}"`]);
     gates.push(["cells at least 2 mm (the pen can still draw a mark inside)", cw >= 2 - 1e-9, `${cw.toFixed(2)} mm`]);
     gates.push(["message carries at least one mark", rows.some((r) => r.some((c) => c && c.on)), ""]);
-    const notes = [];
     const dropped = G.P ? G.P.message.dropped : G.M.dropped;
     if (dropped.length) notes.push(`Left out (the alphabet cannot carry them): ${[...new Set(dropped.map((d) => d.char))].join(" ")}`);
     if (G.P) notes.push(...G.P.message.notes, ...G.P.output.checks);

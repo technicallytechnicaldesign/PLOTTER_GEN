@@ -20,6 +20,7 @@ import { MOTIFS } from "@utp/motifs";
 const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 
 
+import { MARK, drawMarks, packRecord, PAGES, STEGO } from "./marks.js";
 import { TAU, lerp, area, centroid, bbox, ellipse, rect, capsule, sector, plen, densify, simplify, dashed, segIn, insideRuns, inset, hash2, fillConvex, painter, GLYPHS, ADV, textWidth, drawText, wrap, svgOf } from "./core.js";
 
 // ---------------- message to cells ----------------
@@ -293,12 +294,14 @@ function cable(P, x, y, w, h, leftLean, fill) {
 
 // ---------------- build ----------------
 const $ = id => document.getElementById(id);
-const IDS = ["msg", "enc", "check", "cipher", "ckey", "hide", "carrier", "border", "width", "perline", "density", "seed", "look", "boxes", "gaps", "wobble", "fill", "pitch", "angle", "offfill", "caption", "tsize", "reveal", "tpen", "rpen", "page", "cellmax"];
+const IDS = ["msg", "enc", "check", "cipher", "ckey", "hide", "carrier", "border", "width", "perline", "density", "seed", "look", "boxes", "gaps", "wobble", "fill", "pitch", "angle", "offfill", "caption", "tsize", "reveal", "tpen", "rpen", "page", "cellmax", "marks"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 
+const { LOOKS, CARRIERS, ENCS, CHECKS, HIDES, CIPHERS } = STEGO;   // key strip vocabularies, shared with the decoder
+
 function build(o) {
-  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), M = 10;
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marksOn = o.marks === "on", M = marksOn ? MARK.margin : 10;
   const L = { outline: [], fill: [], text: [], reveal: [] }, gates = [];
   let G;
   const openLayout = o.hide === "columns" || o.hide === "tape", labels = openLayout && /message/.test(o.caption);
@@ -319,20 +322,30 @@ function build(o) {
   // fit the cells into what is left
   const rows = o.look === "stitches" ? (G.stitches || G.rows) : G.rows, R = rows.length, C = Math.max(...rows.map(r => r.length));
   const aspect = o.look === "stitches" ? 0.78 : 1, extraC = o.look === "punch" ? 4.8 + 1.2 : o.look === "stitches" ? 0.8 : 0, extraR = o.look === "punch" ? 2 : o.look === "stitches" ? 0.8 : 0;
-  const cw = Math.min(o.cellmax, (W - 2 * M) / (C + extraC), (H - 2 * M - capH) / ((R + extraR) * aspect));
+  // rounded to what the key strip carries (0.01 mm cells, 0.1 mm origin), so the decoder rebuilds the same cells
+  const cw = Math.floor(Math.min(o.cellmax, (W - 2 * M) / (C + extraC), (H - 2 * M - capH) / ((R + extraR) * aspect)) * 100) / 100;
   const ch = cw * aspect, bw = C * cw, bh = R * ch, blockH = bh + extraR * ch + capH;
-  const x0 = (W - bw) / 2, top = Math.max(M, (H - blockH) / 2), y0 = top + extraR * ch / 2;
+  const x0 = Math.round((W - bw) / 2 * 10) / 10, top = Math.max(M, (H - blockH) / 2), y0 = Math.round((top + extraR * ch / 2) * 10) / 10;
   const g = { x0, y0, cw, ch, labelMax: th };
   looks(G, g, o, L);
   let cy = y0 + bh + extraR * ch / 2 + (cap.length ? th * 0.7 : 0);
   for (const c of cap) { drawText(c.s, W / 2, cy, c.h, L.text); cy += c.h * 1.55; }
 
+  const notes = [];
+  if (marksOn) {
+    const camera = G.kind === "chart" && C <= 127 && R <= 255 && !(o.look === "stitches" && UNITS[o.carrier]);
+    if (camera) drawMarks(W, H, packRecord(2, {
+      look: LOOKS.indexOf(o.look), carrier: CARRIERS.indexOf(o.carrier), border: o.border === "on" ? 1 : 0, enc: ENCS.indexOf(o.enc), check: CHECKS.indexOf(o.check), hide: HIDES.indexOf(o.hide),
+      seed: o.seed, density: +o.density - 2, cipher: CIPHERS.indexOf(o.cipher), x0: Math.round(x0 * 10), y0: Math.round(y0 * 10), cw: Math.round(cw * 100), rows: R, cols: C,
+      wobble: Math.round(o.wobble * 20), gaps: o.gaps === "shaded" ? 1 : 0, page: PAGES.indexOf(o.page), len: G.P?.output.key?.length ?? 0, fill: STEGO.FILLS.indexOf(o.fill),
+    }), L);
+    else notes.push(G.kind === "chart" ? "Machine marks left off: knitted cables, lace, bobbles and beads are read by eye." : "Machine marks left off: letter columns and tapes are read by eye.");
+  }
   const all = [...L.outline, ...L.fill, ...L.text, ...L.reveal];
   const decodeOK = G.read === G.want;
   gates.push([G.kind === "chart" ? "UTP decodes the plotted chart back to the message" : "the laid-out cells read back to the message", decodeOK, decodeOK ? `"${G.read.slice(0, 40)}${G.read.length > 40 ? "..." : ""}"` : `read "${G.read.slice(0, 30)}" want "${G.want.slice(0, 30)}"`]);
   gates.push(["cells at least 2 mm (the pen can still draw a mark inside)", cw >= 2 - 1e-9, `${cw.toFixed(2)} mm`]);
   gates.push(["message carries at least one mark", rows.some(r => r.some(c => c && c.on)), ""]);
-  const notes = [];
   const dropped = G.P ? G.P.message.dropped : G.M.dropped;
   if (dropped.length) notes.push(`Left out (the alphabet cannot carry them): ${[...new Set(dropped.map(d => d.char))].join(" ")}`);
   if (G.P) notes.push(...G.P.message.notes, ...G.P.output.checks);
