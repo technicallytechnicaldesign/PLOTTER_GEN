@@ -16,7 +16,7 @@ const args = process.argv.slice(2), opt = n => { const i = args.indexOf(n); retu
 const filter = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--")))[0] || "";
 const tilts = opt("--tilt") ? [+opt("--tilt")] : [0.03, 0.08], px = opt("--px") || "5";
 const svgs = [...fs.readdirSync(plots).map(f => path.join(plots, f)), ...["cipher-garden", "signals"].flatMap(d => fs.readdirSync(path.join(plots, d)).map(f => path.join(plots, d, f)))]
-  .filter(f => /\.svg$/.test(f) && !/-\d+of\d+-/.test(f) && f.includes(filter));
+  .filter(f => /\.svg$/.test(f) && !/-\d+of\d+-|-label\.svg$/.test(f) && f.includes(filter));
 const readPGM = file => { const b = fs.readFileSync(file), head = b.subarray(0, 40).toString("latin1").split(/\s+/), w = +head[1], h = +head[2], off = b.indexOf(0x0a, b.indexOf("255")) + 1; return { width: w, height: h, data: b.subarray(off, off + w * h) }; };
 const norm = s => String(s || "").replace(/\s+/g, " ").trim();
 let pass = 0, fail = 0, skip = 0;
@@ -28,7 +28,16 @@ for (const svg of svgs) {
   for (const tilt of tilts) {
     const pgm = path.join(out, path.basename(svg).replace(/\.svg$/, `-t${tilt}.pgm`));
     execFileSync("python", [path.join(here, "synth_photo.py"), svg, pgm, "--tilt", String(tilt), "--px", px, "--seed", String(Math.round(tilt * 1000)), ...(retro ? ["--markshift", "0.9,-0.7"] : [])], { encoding: "utf8" });
-    const r = decode(readPGM(pgm), { cipherKey: o.ckey });
+    // corners only: the settings label is photographed and read first, then the front with it
+    let label = null;
+    if (o.marks === "corners") {
+      const lp = pgm.replace(/\.pgm$/, "-label.pgm");
+      execFileSync("python", [path.join(here, "synth_photo.py"), svg.replace(/\.svg$/, "-label.svg"), lp, "--tilt", String(tilt), "--px", String(Math.max(+px, 8)), "--seed", String(Math.round(tilt * 1000) + 1)], { encoding: "utf8" });
+      const lr = decode(readPGM(lp));
+      if (!lr.label) { fail++; console.log(`FAIL  ${path.basename(svg).padEnd(34)} tilt ${tilt}  label: ${lr.message}`); continue; }
+      label = lr.record;
+    }
+    const r = decode(readPGM(pgm), { cipherKey: o.ckey, label });
     const want = norm(o.msg).toUpperCase(), got = norm(r.plain ?? r.text);
     // the message as the encoder carries it: five-bit/Morse keep letters, digits, space . ?; Bacon and pigpen keep letters
     // tap code shares C and K; ogham writes K V W J Y P X with other letters

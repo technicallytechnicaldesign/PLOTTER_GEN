@@ -2,10 +2,11 @@
 "use strict";
 import { plen, svgOf } from "./core.js";
 import { build, PEN } from "./signals-core.js";
+import { labelSheet } from "./marks.js";
 
 const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 const $ = id => document.getElementById(id);
-const IDS = ["msg", "cipher", "ckey", "alpha", "layout", "labels", "ink", "pitch", "angle", "ghost", "gsize", "caption", "tsize", "tpen", "page", "marks"];
+const IDS = ["msg", "cipher", "ckey", "alpha", "layout", "labels", "ink", "pitch", "angle", "ghost", "gsize", "caption", "tsize", "tpen", "page", "marks", "mount"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 
@@ -56,5 +57,10 @@ $("export").onclick = () => { if (last && !last.error) save(toSVG(last, null, $(
 $("split").onclick = () => { if (!last || last.error) return; const ls = penLayers(last), ticks = $("ticks").value !== "off"; ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last.o)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500)); };
 addEventListener("resize", () => last && draw(last));
 if ($("rev")) $("rev").textContent = UTP_REV;
-window.__studio = { build, read, PRESETS, penLayers, paint, toSVG };   // hooks for checking
+
+// Settings label for the back: the key strip with its own finders, and the settings in words (never the message or keys).
+const labelPairs = o => Object.entries(o).filter(([k]) => !/^(msg|ckey|pkey|tpen|rpen)$/.test(k));
+const labelSVG = r => { const lab = labelSheet(r.marks.bits, "PLG SIGNAL BOOK", labelPairs(r.o)); return svgOf(lab, [{ name: "marks", colour: "000000", w: 0.4, paths: lab.marks }, { name: "text", colour: "000000", w: 0.3, paths: lab.text }], "PLG SIGNAL BOOK settings label"); };
+$("label").onclick = () => { if (!last || last.error) return; if (!last.marks || !last.marks.bits) { $("stats").insertAdjacentHTML("afterbegin", '<span class="fail">Turn machine marks on (any kind) to make a settings label.</span><br>'); return; } save(labelSVG(last), stem(last.o) + "-label.svg"); };
+window.__studio = { labelSVG, build, read, PRESETS, penLayers, paint, toSVG };   // hooks for checking
 run();

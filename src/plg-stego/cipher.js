@@ -2,10 +2,11 @@
 "use strict";
 import { plen, svgOf } from "./core.js";
 import { build, howToRead } from "./cipher-core.js";
+import { labelSheet } from "./marks.js";
 
 const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 const $ = id => document.getElementById(id);
-const IDS = ["msg", "enc", "cipher", "ckey", "method", "hide", "density", "seed", "size", "tiles", "walls", "mark", "cells", "rule", "noise", "pkey", "fill", "pitch", "angle", "caption", "tsize", "tpen", "reveal", "rpen", "page", "marks"];
+const IDS = ["msg", "enc", "cipher", "ckey", "method", "hide", "density", "seed", "size", "tiles", "walls", "mark", "cells", "rule", "noise", "pkey", "fill", "pitch", "angle", "caption", "tsize", "tpen", "reveal", "rpen", "page", "marks", "mount"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 
@@ -72,5 +73,10 @@ $("split").onclick = () => {
 };
 addEventListener("resize", () => last && draw(last));
 if ($("rev")) $("rev").textContent = UTP_REV;
-window.__studio = { build, read, PRESETS, penLayers, paint, toSVG, howToRead };   // hooks for checking
+
+// Settings label for the back: the key strip with its own finders, and the settings in words (never the message or keys).
+const labelPairs = o => Object.entries(o).filter(([k]) => !/^(msg|ckey|pkey|tpen|rpen)$/.test(k));
+const labelSVG = r => { const lab = labelSheet(r.marks.bits, "PLG CIPHER GARDEN", labelPairs(r.o)); return svgOf(lab, [{ name: "marks", colour: "000000", w: 0.4, paths: lab.marks }, { name: "text", colour: "000000", w: 0.3, paths: lab.text }], "PLG CIPHER GARDEN settings label"); };
+$("label").onclick = () => { if (!last || last.error) return; if (!last.marks || !last.marks.bits) { $("stats").insertAdjacentHTML("afterbegin", '<span class="fail">Turn machine marks on (any kind) to make a settings label.</span><br>'); return; } save(labelSVG(last), stem(last.o) + "-label.svg"); };
+window.__studio = { labelSVG, build, read, PRESETS, penLayers, paint, toSVG, howToRead };   // hooks for checking
 run();

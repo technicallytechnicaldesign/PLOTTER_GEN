@@ -8,6 +8,9 @@ import { densify } from "./core.js";
 const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 const $ = id => document.getElementById(id);
 let stream = null, scanning = false, lastImage = null;
+// a settings label read off the back of a piece, kept for the corners-only front that comes next
+let label = null;
+const opts = () => ({ cipherKey: $("ckey").value.trim(), label });
 
 // ---------------- showing a read ----------------
 function show(img, r) {
@@ -28,24 +31,26 @@ function show(img, r) {
       c.stroke();
     }
   });
-  $("status").textContent = r.ok ? `read ${r.cellsRead} cells` : r.message;
+  $("status").textContent = r.label ? "settings label read: now the front" : r.ok ? `read ${r.cellsRead} cells` : r.message;
 }
 function report(r) {
   const box = $("result"); box.hidden = false;
   if (!r.ok) { $("head").innerHTML = ""; $("msg").innerHTML = `<span class="fail">${esc(r.message)}</span>`; $("plain").textContent = ""; $("how").textContent = ""; $("facts").innerHTML = ""; $("keyrow").hidden = true; return; }
   $("head").innerHTML = `<span class="chip">${esc(r.studio)}</span><span class="chip">${esc(r.method)}</span>`;
+  if (r.label) { $("msg").textContent = r.message; $("plain").textContent = ""; $("how").textContent = "The label carries the settings the front was made with. Point the camera at the front (or pick its photo) and it reads with these settings."; $("facts").innerHTML = ""; $("keyrow").hidden = true; return; }
   $("msg").textContent = r.text || "(nothing readable)";
   const ciphered = r.cipher && r.cipher !== "none";
   $("keyrow").hidden = !ciphered; $("keylabel").textContent = ciphered ? `Enciphered with ${r.cipher}: type its key to read it` : "";
   $("plain").textContent = r.plain ? r.plain : "";
   $("how").textContent = r.o ? howToRead(r.o) : r.studio === "signal book" ? SIGNAL_HOW[r.method] : "";
-  $("facts").innerHTML = [`${r.page} mm page`, `${r.cellsRead} cells`, `${r.ms} ms`, ...(r.marks === "retro" ? [`retrofit marks, shifted ${r.shift.map(v => v.toFixed(2)).join(", ")} mm`] : []), ...(r.weak ? [`<span class="chip warn">${r.weak} unsure</span>`] : []), ...(r.record.repaired !== undefined ? [`key strip repaired 1 bit`] : [])]
+  $("facts").innerHTML = [`${r.page} mm page`, `${r.cellsRead} cells`, `${r.ms} ms`, ...(r.fromLabel ? ["settings from the back label"] : []), ...(r.marks === "retro" || r.marks === "corners" ? [`${r.marks === "retro" ? "retrofit" : "corner"} marks, shifted ${r.shift.map(v => v.toFixed(2)).join(", ")} mm`] : []), ...(r.weak ? [`<span class="chip warn">${r.weak} unsure</span>`] : []), ...(r.record.repaired !== undefined ? [`key strip repaired 1 bit`] : [])]
     .map(s => (s.startsWith("<") ? s : `<span class="chip">${esc(s)}</span>`)).join("");
 }
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 function read(img) {
   lastImage = img;
-  const r = decode(img, { cipherKey: $("ckey").value.trim() });
+  const r = decode(img, opts());
+  if (r.label) label = r.record;
   show(img, r); report(r);
   return r;
 }
@@ -65,7 +70,9 @@ function loop() {
   const v = $("video"), g = $("grab");
   if (v.videoWidth) {
     g.width = v.videoWidth; g.height = v.videoHeight; const c = g.getContext("2d", { willReadFrequently: true }); c.drawImage(v, 0, 0);
-    const img = c.getImageData(0, 0, g.width, g.height), r = decode(img, { cipherKey: $("ckey").value.trim() });
+    const img = c.getImageData(0, 0, g.width, g.height), r = decode(img, opts());
+    // a label: keep it and keep looking, the front comes next
+    if (r.label) { if (!label || label !== r.record) { label = r.record; report(r); } $("status").textContent = "settings label read: now point at the front"; setTimeout(loop, 250); return; }
     if (r.ok && r.weak <= Math.max(2, r.cellsRead * 0.05)) { stopCamera(); lastImage = img; show(img, r); report(r); return; }
     $("status").textContent = r.ok ? `almost: ${r.weak} cells unsure, hold still` : r.message;
   }
@@ -86,6 +93,7 @@ const SAMPLES = {
   disk: { method: "disk", msg: "ALBERTI SENDS HIS REGARDS", cipher: "caesar", ckey: "3", fill: "lines", pitch: 0.6, angle: 60 },
   pigpen: { method: "pigpen", msg: "THE LODGE MEETS AT MIDNIGHT", size: 12, fill: "lines", pitch: 0.6 },
   automaton: { method: "automaton", cells: "squares", rule: "30", msg: "RUN IT BACKWARDS", size: 36, fill: "lines", pitch: 0.55 },
+  border: { method: "maze", walls: "line", msg: "THE FRAME IS THE KEY", size: 24, fill: "lines", pitch: 0.6, marks: "border-arcs" },
   flags: { signal: true, alpha: "flags", layout: "hoist", msg: "ENGLAND EXPECTS" },
   semaphore: { signal: true, alpha: "semaphore", layout: "lines", msg: "WAVE BACK AT 3", gsize: 30 },
 };
@@ -102,7 +110,7 @@ $("sample").addEventListener("change", e => {
   $("ckey").value = s.ckey || "";
   read(c.getImageData(0, 0, g.width, g.height));
 });
-$("ckey").addEventListener("input", () => { if (lastImage) { const r = decode(lastImage, { cipherKey: $("ckey").value.trim() }); report(r); } });
+$("ckey").addEventListener("input", () => { if (lastImage) { const r = decode(lastImage, opts()); report(r); } });
 $("scan").onclick = startCamera;
 $("stop").onclick = stopCamera;
 $("rev").textContent = UTP_REV;

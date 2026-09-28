@@ -11,7 +11,7 @@
 import { rect, ellipse, plen, fillConvex, painter, drawText, wrap, svgOf, ADV } from "./core.js";
 import * as morse from "@utp/morse";
 import { encipher, decipher } from "@utp/ciphers";
-import { MARK, LAYOUTS, drawMarks, packRecord, PAGES, marksClear } from "./marks.js";
+import { markMode, applyMarks, packRecord, PAGES } from "./marks.js";
 
 const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 
@@ -208,7 +208,7 @@ export function build(o) {
   if (o.caption === "name") add(ALPHABETS[o.alpha].name.toUpperCase(), o.tsize * 0.7);
   const capH = cap.reduce((s, c) => s + c.h * 1.55, 0) + (cap.length ? o.tsize * 0.8 : 0);
   // with machine marks, glyphs sit on a regular grid of cells, so the key strip can say where every one is
-  if ((o.marks === "on" || o.marks === "retro") && !chart) return gridBuild(o, T, L, W, H, cap, capH, cip, t0);
+  if (markMode(o).lay && !chart) return gridBuild(o, T, L, W, H, cap, capH, cip, t0);
   const labels = o.labels === "on", lab = 0.3;   // label height as a share of glyph height
   const gw = t => (o.alpha === "flags" ? (/[0-9]/.test(t.id) ? 1.9 : 1.25) : o.alpha === "ogham" ? (OGHAM[t.id][1] * 0.18 + 0.18) : ALPHABETS[o.alpha].ratio);
   const gap = o.alpha === "ogham" ? 0.12 : 0.18, wordGap = o.alpha === "ogham" ? 0.5 : 0.6;
@@ -297,7 +297,7 @@ const emptyL = () => ({ outline: [], hatch: [], red: [], blue: [], yellow: [], b
 // cell position: along a line (j) and which line (li); on a hoist lines are columns
 const cellAt = (g, li, j) => (g.hoist ? [g.x0 + li * g.rowStep, g.y0 + j * g.cellW] : [g.x0 + j * g.cellW, g.y0 + li * g.rowStep]);
 function gridBuild(o, T, L, W, H, cap, capH, cip, t0) {
-  const retro = o.marks === "retro", M = retro ? 10 : MARK.margin, labels = o.labels === "on", hoist = o.layout === "hoist" && o.alpha === "flags";
+  const mode = markMode(o), M = mode.M, labels = o.labels === "on", hoist = o.layout === "hoist" && o.alpha === "flags";
   const wide = o.alpha === "flags" && T.words.some(w => w.some(t => /[0-9]/.test(t.id))), u = unitW(o.alpha, wide), gap = o.alpha === "ogham" ? 0.12 : 0.18;
   const B = { x: M, y: M, w: W - 2 * M, h: H - 2 * M - capH };
   let g, grid;
@@ -346,15 +346,14 @@ function gridBuild(o, T, L, W, H, cap, capH, cip, t0) {
   });
   let bottom = 0; for (const k of ["outline", "hatch", "red", "blue", "yellow", "black", "green", "text"]) for (const [p] of L[k]) for (const q of p) if (q[1] > bottom) bottom = q[1];
   let cy = bottom + (cap.length ? o.tsize * 0.8 : 0); for (const c of cap) { drawText(c.s, W / 2, cy, c.h, L.text); cy += c.h * 1.55; }
-  const lay = retro ? LAYOUTS.retro : LAYOUTS.normal, drawn = ["outline", "hatch", "red", "blue", "yellow", "black", "green", "text"].flatMap(k => L[k]);
-  const clear = marksClear(W, H, drawn, lay);
-  drawMarks(W, H, packRecord(3, {
+  const drawn = ["outline", "hatch", "red", "blue", "yellow", "black", "green", "text"].flatMap(k => L[k]);
+  const markG = applyMarks(W, H, packRecord(3, {
     alpha: ALPHAS.indexOf(o.alpha), hoist: g.hoist ? 1 : 0, ink: INKS.indexOf(o.ink), pitch: Math.round((o.pitch - 0.5) / 0.05), angle: Math.round(o.angle), x0: Math.round(g.x0 * 10), y0: Math.round(g.y0 * 10),
     h: Math.round(g.h * 10), cellW: Math.round(g.cellW * 10), rowStep: Math.round(g.rowStep * 10), per: g.per, lines: g.lines, page: PAGES.indexOf(o.page), cipher: CIPHERS.indexOf(o.cipher), ghost: o.ghost === "on" ? 1 : 0,
-  }), L, lay);
+  }), L, mode, drawn);
   const words = [], back = readBack(o, T.words), want = T.words.map(w => w.map(t => (t.label === "abc" || t.label === "#" ? "" : t.label)).join("")).join(" ");
   const inPage = Object.values(L).every(ps => ps.every(([p]) => p.every(([x, y]) => x >= 0.5 && y >= 0.5 && x <= W - 0.5 && y <= H - 0.5)));
-  const gates = [["the chart reads the drawing back to the text", back === want, back === want ? `"${back.slice(0, 40)}"` : `read "${back.slice(0, 30)}"`], ["everything fits the page", inPage, ""], ["glyphs at least 6 mm tall", g.h >= 6, `${g.h.toFixed(1)} mm`], clear];
+  const gates = [["the chart reads the drawing back to the text", back === want, back === want ? `"${back.slice(0, 40)}"` : `read "${back.slice(0, 30)}"`], ["everything fits the page", inPage, ""], ["glyphs at least 6 mm tall", g.h >= 6, `${g.h.toFixed(1)} mm`], ...markG];
   // coloured-pen hatching (0.4 mm pens) under 1 mm apart blurs solid in a phone photo, and the flags' colours stop reading
   if (o.ink === "pens" && o.alpha === "flags") gates.push(["pen-per-colour hatch at least 1 mm apart (so the camera can read it)", o.pitch >= 1 - 1e-9, `${o.pitch} mm`]);
   const notes = [...T.notes, ...(cip ? ["Classical ciphers are historical / puzzle ciphers, not modern security."] : []), ...(o.alpha === "braille" ? ["Braille shapes drawn with a pen are not tactile braille: raised dots need embossing."] : [])];

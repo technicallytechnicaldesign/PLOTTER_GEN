@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 
-const args = process.argv.slice(2), split = args.includes("--split"), [html, out, preset, ...kv] = args.filter(a => a !== "--split");
+const args = process.argv.slice(2), split = args.includes("--split"), wantLabel = args.includes("--label"), [html, out, preset, ...kv] = args.filter(a => a !== "--split" && a !== "--label");
 if (!html || !out) { console.error("usage: node studio_export.mjs <studio.html> <out.svg> [preset] [key=value ...]"); process.exit(2); }
 const src = fs.readFileSync(html, "utf8");
 
@@ -69,6 +69,8 @@ const pass = gates.every(g => g[1]);
 
 const svg = S.toSVG(r);
 fs.writeFileSync(out, svg);
+// the settings label for the back (always for a corners-only front, which cannot be read without it)
+if ((wantLabel || o.marks === "corners") && S.labelSVG && r.marks && r.marks.bits) { fs.writeFileSync(out.replace(/\.svg$/, "-label.svg"), S.labelSVG(r)); splits.push("label"); }
 fs.writeFileSync(out.replace(/\.svg$/, ".json"), JSON.stringify({ studio: html.split(/[\\/]/).pop(), preset: preset || null, controls: o, gears: r.gears?.length ?? 0, layers: lens, ms: Math.round(r.ms), gates: gates.map(([n, ok, v]) => ({ gate: n, pass: ok, value: v })), pass, kb: Math.round(svg.length / 1024), splits }, null, 1));
 for (const [n, ok, v] of gates) console.log(`${ok ? "pass" : "FAIL"}  ${n}: ${v}`);
 console.log(Object.entries(lens).map(([n, v]) => `${n}: ${v.metres} m in ${v.paths} paths`).join(" | "), `| ${r.gears ? r.gears.length + " gears" : (r.G ? r.G.C + "x" + r.G.R + " cells" : "")} | ${Math.round(svg.length / 1024)} KB | ${Math.round(r.ms)} ms`);

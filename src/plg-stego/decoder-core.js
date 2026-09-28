@@ -10,7 +10,7 @@
 //                 strokes it does not have) is the value
 "use strict";
 import { homography, project } from "@utp/photo";
-import { MARK, PAGES, STEGO, DOT_R, LAYOUTS, finderCentres, stripSlots, unpackRecord } from "./marks.js";
+import { MARK, PAGES, STEGO, DOT_R, LAYOUTS, finderCentres, stripSlots, unpackRecord, borderTiles, tileWays, TILE_MASK } from "./marks.js";
 import { readPlan, METHOD_LIST } from "./cipher-core.js";
 import { readPlan as signalPlan } from "./signals-core.js";
 import { ellipse, rect, densify, fillConvex } from "./core.js";
@@ -99,7 +99,10 @@ export function orderFinders(cands) {
   for (const br of hol.slice(0, 4)) for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) for (let k = j + 1; k < top.length; k++) {
     const three = [top[i], top[j], top[k]], sizes = [br, ...three].map(c => c.size);
     if (Math.max(...sizes) / Math.min(...sizes) > 2.2) continue;
-    const tl = three.slice().sort((a, b) => Math.hypot(b.x - br.x, b.y - br.y) - Math.hypot(a.x - br.x, a.y - br.y))[0], [p, q] = three.filter(c => c !== tl);
+    // top left is the finder diagonal to the hollow one: the other two lie on opposite sides of the line between them.
+    // (Farthest from the hollow one failed on the 170 x 60 label seen at a slant: bottom left looked farther.)
+    const side = (c, d) => (c.x - br.x) * (d.y - br.y) - (c.y - br.y) * (d.x - br.x);
+    const tl = three.find(c => { const [p, q] = three.filter(d => d !== c); return side(c, p) * side(c, q) < 0; }) || three.slice().sort((a, b) => Math.hypot(b.x - br.x, b.y - br.y) - Math.hypot(a.x - br.x, a.y - br.y))[0], [p, q] = three.filter(c => c !== tl);
     const cross = (p.x - tl.x) * (q.y - tl.y) - (p.y - tl.y) * (q.x - tl.x), [tr, bl] = cross > 0 ? [p, q] : [q, p];
     const quad = [tl, tr, br, bl], a = area(quad);
     if (!best || a > best.a) best = { a, quad };
@@ -114,19 +117,31 @@ function sampler(I, Hm, off = [0, 0]) {
   const P = ([x, y]) => project(Hm, [x + off[0], y + off[1]]);
   return { ppm, Hm, off, px: P, dark: (p, rMm = 0.28) => { const [x, y] = P(p); return darkNear(I, x, y, Math.max(0.8, rMm * ppm)); }, area: p => { const [x, y] = P(p); return at(I, x, y); } };
 }
-// Both mark layouts (normal, and the small retrofit ones) and every page size are tried; the strip that passes its
-// sync and checksum says which it was.
+// A dot strip: each slot is the mean darkness of five points inside where a dot would be (one noisy pixel cannot fake
+// a dot); the cut between dot and paper comes from the strip's own two levels, not a fixed number.
+function readDots(sp, W, H, lay) {
+  const { slots } = stripSlots(W, H, lay), q = lay.dot * 0.45;
+  const lv = slots.map(([x, y]) => [[0, 0], [q, 0], [-q, 0], [0, q], [0, -q]].reduce((s, [dx, dy]) => s + sp.area([x + dx, y + dy]), 0) / 5);
+  let lo = Math.min(...lv), hi = Math.max(...lv);
+  for (let k = 0; k < 20; k++) { const c = (lo + hi) / 2, a = lv.filter(v => v <= c), b = lv.filter(v => v > c); if (a.length) lo = a.reduce((s, v) => s + v, 0) / a.length; if (b.length) hi = b.reduce((s, v) => s + v, 0) / b.length; }
+  const cut = (lo + hi) / 2;
+  return lv.map(v => ({ bit: v > cut ? 1 : 0, margin: Math.abs(v - cut) }));
+}
+// A border: each tile is read like a message cell (which of its two drawings is inked), unscrambled, and every bit takes
+// the more certain of the tiles that carry it (the border repeats the record where it is longer than 128 tiles).
+function readTiles(sp, W, H, lay) {
+  const N = MARK.slots * MARK.rows, best = Array.from({ length: N }, () => ({ bit: 0, margin: -1 }));
+  borderTiles(W, H, lay).forEach((T, i) => { const p = pick(sp, tileWays(T, lay.tiles)), j = i % N; if (p.conf > best[j].margin) best[j] = { bit: p.value ^ TILE_MASK[i], margin: p.conf }; });
+  return best;
+}
+// Every mark layout (normal, retrofit, the two borders, the settings label) and every page size is tried; the key that
+// passes its sync and checksum says which it was. The label is its own 170 x 60 card, so its record's page is the front's.
 export function readStrip(I, quad) {
   const tried = [];
-  for (const lay of Object.values(LAYOUTS)) for (const page of PAGES) {
-    const [W, H] = page.split("x").map(Number), Hm = homography(finderCentres(W, H, lay), quad), sp = sampler(I, Hm), { slots } = stripSlots(W, H, lay), q = lay.dot * 0.45;
-    // each slot: the mean darkness of five points inside where a dot would be (one noisy pixel cannot fake a dot);
-    // the cut between dot and paper comes from the strip's own two levels, not a fixed number
-    const lv = slots.map(([x, y]) => [[0, 0], [q, 0], [-q, 0], [0, q], [0, -q]].reduce((s, [dx, dy]) => s + sp.area([x + dx, y + dy]), 0) / 5);
-    let lo = Math.min(...lv), hi = Math.max(...lv);
-    for (let k = 0; k < 20; k++) { const c = (lo + hi) / 2, a = lv.filter(v => v <= c), b = lv.filter(v => v > c); if (a.length) lo = a.reduce((s, v) => s + v, 0) / a.length; if (b.length) hi = b.reduce((s, v) => s + v, 0) / b.length; }
-    const cut = (lo + hi) / 2, reads = lv.map(v => ({ bit: v > cut ? 1 : 0, margin: Math.abs(v - cut) }));
-    const bits = reads.map(q => q.bit), ok = b => { const x = unpackRecord(b); return !x.error && PAGES[x.fields.page] === page ? x : null; };
+  for (const lay of Object.values(LAYOUTS)) for (const page of lay.strip === false ? [] : lay.page ? [lay.page] : PAGES) {
+    const [W, H] = page.split("x").map(Number), Hm = homography(finderCentres(W, H, lay), quad), sp = sampler(I, Hm);
+    const reads = lay.tiles ? readTiles(sp, W, H, lay) : readDots(sp, W, H, lay);
+    const bits = reads.map(q => q.bit), ok = b => { const x = unpackRecord(b); return !x.error && (lay.page || PAGES[x.fields.page] === page) ? x : null; };
     let rec = ok(bits);
     // the checksum failed: try flipping each of the six least certain bits (a flip only counts if the page matches too)
     if (!rec) for (const i of reads.map((q, i) => [q.margin, i]).sort((a, b) => a[0] - b[0]).slice(0, 6).map(q => q[1])) { const b = bits.slice(); b[i] ^= 1; if ((rec = ok(b))) { rec.repaired = i; break; } }
@@ -164,7 +179,8 @@ function pick(sp, cands, rMm = 0.28) {
     return mean(inV) - (outV.length ? mean(outV) : 0.4);
   });
   const order = scores.map((s, v) => [s, v]).sort((a, b) => b[0] - a[0]);
-  return { value: order[0][1], conf: order[0][0] - (order[1] ? order[1][0] : 0) };
+  // top: how well the winner's own strokes sit on ink, for fitting a hand-tapped anchor (a margin can be decisive and wrong)
+  return { value: order[0][1], conf: order[0][0] - (order[1] ? order[1][0] : 0), top: order[0][0] };
 }
 
 // Template matching, for glyphs dense with hatching (the signal flags): each candidate is rendered as the darkness it
@@ -312,30 +328,62 @@ function pickAll(sp, cells, rMm = 0.28) {
 }
 // Retrofit marks were plotted onto a sheet put back on the mat by hand, so they may sit a millimetre or two off the
 // drawing. Try shifts on a sample of cells and keep the one whose cells read most decisively.
-function findShift(I, Hm, cells, how = 0.28) {
+function findShift(I, Hm, cells, how = 0.28, span0 = 2) {
   const sample = cells.filter((_, i) => i % Math.max(1, Math.floor(cells.length / 50)) === 0), score = off => { const ps = pickAll(sampler(I, Hm, off), sample, how); return ps.reduce((s, p) => s + (p.fit ?? Math.max(0, p.conf)), 0) / ps.length; };
   let best = [0, 0], bs = score(best);
-  for (const [span, step] of [[2, 0.5], [0.5, 0.125]]) {
+  for (const [span, step] of [[span0, 0.5], [0.5, 0.125]]) {
     const [cx, cy] = best;
     for (let dx = -span; dx <= span + 1e-9; dx += step) for (let dy = -span; dy <= span + 1e-9; dy += step) { const s = score([cx + dx, cy + dy]); if (s > bs) { bs = s; best = [cx + dx, cy + dy]; } }
   }
   return best;
 }
 
+const STUDIO_NAMES = { 1: "cipher garden", 2: "purloined plot", 3: "signal book", 4: "cipher garden", 5: "cipher garden" };
+// Tapped corners miss by a few millimetres each, and independently, which warps the fit as well as shifting it. Nudge each
+// corner in turn (8 px down to 1 px steps) and keep a move when the sample cells read more decisively.
+function refineAnchor(I, mm, quad, cells, how) {
+  const sample = cells.filter((_, i) => i % Math.max(1, Math.floor(cells.length / 60)) === 0);
+  const score = q => { const ps = pickAll(sampler(I, homography(mm, q)), sample, how); return ps.reduce((s, p) => s + (p.fit ?? p.top ?? 0), 0) / ps.length; };
+  let q = quad.map(p => [...p]), best = score(q);
+  // first the whole quad together (the taps' shared error), on a grid a quarter cell apart and wide enough for a cell
+  const span = Math.round(Math.hypot(quad[1][0] - quad[0][0], quad[1][1] - quad[0][1]) * 0.04), st0 = Math.max(2, Math.round(span / 6));
+  const q0 = q;
+  for (let dx = -span; dx <= span; dx += st0) for (let dy = -span; dy <= span; dy += st0) { const tq = q0.map(([x, y]) => [x + dx, y + dy]), s = score(tq); if (s > best) { best = s; q = tq; } }
+  for (const step of [8, 4, 2, 1]) {
+    for (let pass = 0, moved = true; pass < 8 && moved; pass++) {
+      moved = false;
+      for (let i = 0; i < 4; i++) for (const [dx, dy] of [[step, 0], [-step, 0], [0, step], [0, -step]]) {
+        const tq = q.map((p, k) => (k === i ? [p[0] + dx, p[1] + dy] : p)), s = score(tq);
+        if (s > best) { best = s; q = tq; moved = true; }
+      }
+    }
+  }
+  return q;
+}
 // The whole read: image in, message out, plus everything the page needs to show its working.
-export function decode(src, { cipherKey = "", quad = null } = {}) {
+// label: a record read earlier off a settings label, for a front that carries only its four corner finders.
+// anchor (with label): no marks at all, four points tapped on the photo (px) that sit at known page millimetres (mm),
+// usually the corners of the drawing; a wider shift search then pulls the rebuilt drawing onto the ink.
+export function decode(src, { cipherKey = "", quad = null, label = null, anchor = null } = {}) {
   const t0 = Date.now(), I = prepare(src);
   let q = quad ? quad.map(([x, y]) => [x * I.scale, y * I.scale]) : null, finders = [];
+  if (anchor && label) q = anchor.px.map(([x, y]) => [x * I.scale, y * I.scale]);
   if (!q) { finders = findFinders(I); q = orderFinders(finders); }
   if (!q) return { ok: false, stage: "finders", message: `Found ${finders.length} corner target${finders.length === 1 ? "" : "s"} (need four, one of them hollow). Get the whole page in, flat and in even light.`, finders, I };
-  const S = readStrip(I, q);
-  if (!S.rec) return { ok: false, stage: "strip", message: "Found the corners but could not read the key strip. Get closer, or hold the phone square to the page.", tried: S.tried, finders, quad: q, I };
+  let S = anchor && label ? { tried: [] } : readStrip(I, q);
+  if (anchor && label && PAGES[label.fields.page]) { const page = PAGES[label.fields.page], [W, H] = page.split("x").map(Number), Hm = homography(anchor.mm, q); S = { page, W, H, Hm, sp: sampler(I, Hm), rec: label, lay: { name: "hand" } }; }
+  if (S.rec && S.lay.name === "label") return { ok: true, label: true, record: S.rec, studio: STUDIO_NAMES[S.rec.studio] || "unknown", method: "settings label", text: "", cells: [], picks: [], page: S.page, marks: "label", finders, quad: q, I, Hm: S.sp, weak: 0, cellsRead: 0, ms: Date.now() - t0,
+    message: `Settings label read (${STUDIO_NAMES[S.rec.studio] || "unknown"}, ${PAGES[S.rec.fields.page]} mm page). Now scan the front of the piece.` };
+  // no key on the page: the corners-only front, with its settings from a label read before
+  if (!S.rec && label && PAGES[label.fields.page]) { const page = PAGES[label.fields.page], [W, H] = page.split("x").map(Number), Hm = homography(finderCentres(W, H, LAYOUTS.corners), q); S = { page, W, H, Hm, sp: sampler(I, Hm), rec: label, lay: LAYOUTS.corners }; }
+  if (!S.rec) return { ok: false, stage: "strip", message: "Found the corners but could not read the key strip. Get closer, or hold the phone square to the page. A piece with corner targets only needs its settings label scanned first.", tried: S.tried, finders, quad: q, I };
   try {
-    const st = S.rec.studio, plan = st === 1 || st === 4 ? cipherPlan(S.rec.fields, st) : st === 3 ? signalBookPlan(S.rec.fields) : stegoPlan(S.rec.fields);
-    const shift = S.lay.name === "retro" ? findShift(I, S.Hm, plan.cells, st === 3 ? "template" : 0.28) : [0, 0], sp = sampler(I, S.Hm, shift);
+    const st = S.rec.studio, plan = st === 1 || st === 4 || st === 5 ? cipherPlan(S.rec.fields, st) : st === 3 ? signalBookPlan(S.rec.fields) : stegoPlan(S.rec.fields);
+    if (S.lay.name === "hand") { q = refineAnchor(I, anchor.mm, q, plan.cells, st === 3 ? "template" : 0.28); S.Hm = homography(anchor.mm, q); }
+    const shift = S.lay.name === "retro" || S.lay.name === "corners" ? findShift(I, S.Hm, plan.cells, st === 3 ? "template" : 0.28) : [0, 0], sp = sampler(I, S.Hm, shift);
     const how = st === 3 ? "template" : 0.28, picks = pickAll(sp, plan.cells, how), res = plan.finish(picks, cipherKey);
     const confs = picks.map(p => p.conf), weak = confs.filter(c => c < 0.08).length;
-    return { ok: true, ...res, picks, cells: plan.cells, page: S.page, marks: S.lay.name, shift, record: S.rec, Hm: sp, quad: q, finders, I, weak, cellsRead: confs.length, ms: Date.now() - t0 };
+    return { ok: true, ...res, picks, cells: plan.cells, page: S.page, marks: S.lay.name, fromLabel: S.lay.name === "corners", shift, record: S.rec, Hm: sp, quad: q, finders, I, weak, cellsRead: confs.length, ms: Date.now() - t0 };
   } catch (err) {
     return { ok: false, stage: "cells", message: String(err && err.message || err), finders, quad: q, I, record: S.rec };
   }
