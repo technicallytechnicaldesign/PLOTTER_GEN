@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<!-- identity: RISO -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear BAM Studio</title>
+<style>
+:root {
+  --page:#f4ead4; --surface:#ffffff; --ink:#19151e; --ink-2:#4b3f57; --muted:#7a6f74;
+  --grid:#e3d3ad; --ring:rgba(25,21,30,0.14); --accent:#74439a; --on-accent:#ffffff; --accent-2:#078c8c;
+  --good:#3f8f5c; --warn:#c44a1f; --crit:#b23423;
+  --font-body:"Trebuchet MS","Arial Rounded MT Bold",Arial,sans-serif; --font-head:"Trebuchet MS","Arial Rounded MT Bold",Arial,sans-serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:20px;
+  --paper:#f4ead4; --paper-deep:#ead8b7; --pink:#f4479a; --yellow:#f5c928; --soft-violet:#d8c5e6;
+  --page-shadow:0 28px 70px rgba(54,35,54,0.25);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#241a2e; --surface:#2f2138; --ink:#f4ead4; --ink-2:#d9c9b0; --muted:#a4909a;
+  --grid:#3a2a44; --ring:rgba(244,234,212,0.14); --accent:#c49bea; --on-accent:#241a2e; --accent-2:#3fd6d6;
+  --good:#6fce93; --warn:#ff9a5c; --crit:#ff7a68;
+  --paper:#2f2138; --paper-deep:#241a2e; --pink:#ff7ab8; --yellow:#f5c928; --soft-violet:#b79bd6; } }
+:root[data-theme="dark"] {
+  --page:#241a2e; --surface:#2f2138; --ink:#f4ead4; --ink-2:#d9c9b0; --muted:#a4909a;
+  --grid:#3a2a44; --ring:rgba(244,234,212,0.14); --accent:#c49bea; --on-accent:#241a2e; --accent-2:#3fd6d6;
+  --good:#6fce93; --warn:#ff9a5c; --crit:#ff7a68;
+  --paper:#2f2138; --paper-deep:#241a2e; --pink:#ff7ab8; --yellow:#f5c928; --soft-violet:#b79bd6; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.55; }
+header { padding:30px 24px 6px; max-width:1240px; margin:0 auto; }
+h1 { font-size:2.1rem; margin:0; letter-spacing:0.01em; }
+h1 .pow { display:inline-block; background:var(--pink); color:#fff; padding:0 12px; border-radius:12px; transform:rotate(-4deg); margin-left:6px; box-shadow:3px 3px 0 var(--ink); }
+.sub { color:var(--ink-2); font-size:0.95rem; margin:8px 0 0; max-width:78ch; }
+.wrap { display:grid; grid-template-columns:310px 1fr; gap:26px; padding:18px 24px 56px; max-width:1240px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border-radius:var(--radius); padding:16px 18px; align-self:start; box-shadow:var(--page-shadow); }
+fieldset { border:0; border-top:2px dotted var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-weight:bold; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.85rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text], select { font:inherit; font-size:0.85rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:10px; padding:2px 8px; }
+input[type=text] { width:100%; grid-column:1 / -1; margin-top:3px; text-transform:uppercase; font-weight:bold; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.82rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:999px; padding:3px 11px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:bold; }
+button.w { font-weight:bold; }
+main { min-width:0; }
+.paper { background:#fbf6ea; border-radius:var(--radius); box-shadow:var(--page-shadow); display:flex; justify-content:center; padding:14px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:12px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.sw { display:inline-block; width:0.8em; height:0.8em; border-radius:50%; vertical-align:-0.05em; margin-right:3px; }
+.hint { color:var(--muted); font-size:0.78rem; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; margin-top:14px; max-width:78ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Gear <span class="pow">BAM!</span> studio</h1>
+  <p class="sub">Solid 3D gears meshing under a comic sound effect. Walls are shaded with crosshatching that follows the teeth, tops with a riso halftone that can sit a little off register, and a jagged burst and chunky extruded letters go off where the teeth bite. Three pen layers, all plottable.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="bam">BAM!</button><button data-preset="krrnk">Low angle</button><button data-preset="pow">Top down</button><button data-preset="quiet">No words</button><button data-preset="outline">Outline only</button></div>
+  </fieldset>
+  <fieldset><legend>Gears</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="4"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Gears <output id="o-gears"></output><input type="range" id="gears" min="2" max="9" step="1" value="4"></label>
+    <label>Module (mm, before fitting) <output id="o-mod"></output><input type="range" id="mod" min="1" max="6" step="0.5" value="3"></label>
+    <label>Thickness (in modules) <output id="o-thick"></output><input type="range" id="thick" min="1" max="10" step="0.25" value="4"></label>
+    <label>Zoom (crops into the panel) <output id="o-zoom"></output><input type="range" id="zoom" min="0.6" max="3" step="0.05" value="1.15"></label>
+    <label>Motion arrows <select id="arrows"><option value="on">on</option><option value="off">off</option></select></label>
+  </fieldset>
+  <fieldset><legend>Camera and light</legend>
+    <label>Turn (deg) <output id="o-az"></output><input type="range" id="az" min="-180" max="180" step="1" value="18"></label>
+    <label>Height (deg) <output id="o-el"></output><input type="range" id="el" min="15" max="90" step="1" value="40"></label>
+    <label>Light from (deg) <output id="o-la"></output><input type="range" id="la" min="-180" max="180" step="1" value="-130"></label>
+    <label>Light height (deg) <output id="o-le"></output><input type="range" id="le" min="12" max="80" step="1" value="38"></label>
+    <label>Floor shadows <select id="shadow"><option value="on">on</option><option value="off">off</option></select></label>
+  </fieldset>
+  <fieldset><legend>The word</legend>
+    <label>Say <input type="text" id="word" value="BAM!" maxlength="80"></label>
+    <label>Letters per line (a / forces a break) <output id="o-perline"></output><input type="range" id="perline" min="3" max="30" step="1" value="10"></label>
+    <div class="row"><button class="w">BAM!</button><button class="w">KRRNK!</button><button class="w">CLANK!</button><button class="w">WHIRR</button><button class="w">ZZT?!</button><button class="w">YOU GRIND MY GEARS</button><button class="w"></button></div>
+    <label>Word width (share of panel) <output id="o-wsize"></output><input type="range" id="wsize" min="0.2" max="0.95" step="0.01" value="0.62"></label>
+    <label>Wobble (deg) <output id="o-wob"></output><input type="range" id="wob" min="0" max="25" step="1" value="9"></label>
+    <label>Arch <output id="o-arch"></output><input type="range" id="arch" min="-2" max="2" step="0.1" value="0.6"></label>
+    <label>Extrude depth <output id="o-depth"></output><input type="range" id="depth" min="0" max="2.5" step="0.1" value="1.1"></label>
+    <label>Push out from the gears (share of panel) <output id="o-lift"></output><input type="range" id="lift" min="-0.4" max="0.6" step="0.01" value="0.18"></label>
+    <label>Letter face <select id="lfill"><option value="dots">spot dots</option><option value="hatch">hatch</option><option value="blank">blank</option></select></label>
+  </fieldset>
+  <fieldset><legend>Burst</legend>
+    <label>Burst <select id="burst"><option value="behind">behind the gears</option><option value="front">in front</option><option value="off">off</option></select></label>
+    <label>Size (share of panel) <output id="o-bsize"></output><input type="range" id="bsize" min="0.15" max="1" step="0.01" value="0.55"></label>
+    <label>Spikes <output id="o-spikes"></output><input type="range" id="spikes" min="6" max="30" step="1" value="15"></label>
+    <label>Speed lines <output id="o-speed"></output><input type="range" id="speed" min="0" max="120" step="1" value="46"></label>
+  </fieldset>
+  <fieldset><legend>Ink</legend>
+    <label>Shading <select id="ink"><option value="full">hatch and dots</option><option value="lines">hatch only</option><option value="dots">dots only</option><option value="outline">outline only</option></select></label>
+    <label>Hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
+    <label>Halftone pitch (mm) <output id="o-dp"></output><input type="range" id="dp" min="1" max="4" step="0.05" value="1.9"></label>
+    <label>Screen angle (deg) <output id="o-da"></output><input type="range" id="da" min="0" max="90" step="1" value="15"></label>
+    <label>Off register (mm) <output id="o-mis"></output><input type="range" id="mis" min="0" max="2" step="0.05" value="0.6"></label>
+    <label>Spot pen preview <select id="spot"><option value="#f4479a">pink</option><option value="#078c8c">teal</option><option value="#e8b400">yellow</option><option value="#74439a">violet</option><option value="#19151e">black</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Comic panel frame <select id="frame"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen that has line (outline, hatch, dots), numbered in plotting order. Each carries the same four corner ticks so Design Space sizes them identically: place every file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">Gears are the <code>spur_gear_goblin_v0_6.scad</code> sections from <code>gear-reverb-studio.html</code> (teeth, keyed bore, web pocket drawn as engraved rings), meshing with the SCAD's pair phase, extruded and seen through an orthographic camera. Hidden lines come from a painter's raster at 6 px per mm: every face is filled into an ID buffer back to front, outlines are traced where the owner changes, and every hatch line, dot and crease is kept only where its own face won. Three layers in the SVG: black 0.4 for outlines, black 0.3 for hatching and speed lines, and a spot layer of spiral halftone dots for any pen you like (a coloured pen is the point). In Design Space: all three to Pen, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// ---------------- gear geometry (port of plg/gears.py, copied from gear-reverb-studio.html) ----------------
+const PA = 20 * Math.PI / 180, DED = 1.25, INV = 8, TIP = 4, FN = 96, CLEAR = 0.2, FILLET = 2, BACKLASH = 0.15;
+const KEYS = [[6,8,2,1.0],[8,10,3,1.4],[10,12,4,1.8],[12,17,5,2.3],[17,22,6,2.8],[22,30,8,3.3],[30,38,10,3.3],[38,44,12,3.3]];
+const keyData = d => { for (const [lo, hi, b, t] of KEYS) if ((lo === 6 ? d >= lo : d > lo) && d <= hi) return [b, t]; return null; };
+const sround = v => Math.sign(v) * Math.floor(Math.abs(v) + 0.5);
+function dims(z, m) {
+  const bore = z < 18 ? 6 : 8, pr = z * m / 2, rr = pr - DED * m;
+  const hub = sround(Math.min(Math.max(0.45 * z * m, 2 * bore), 2 * rr - 3) * 10) / 10;
+  const gw = 4 * m, webT = sround(gw * 2 / 3 * 10) / 10, rin = hub / 2, rout = rr - 2 * m;
+  const pocket = rout - rin >= 2 * FILLET + 1.5 + 0.5;
+  return { z, m, bore, rin, rout, pocket, zc: pocket ? (webT + gw) / 2 : gw / 2, zf: webT, ro: pr + m, rr, pr };
+}
+function circlePts(r, n = FN) { const p = []; for (let i = 0; i < n; i++) p.push([r * Math.cos(2 * Math.PI * i / n), r * Math.sin(2 * Math.PI * i / n)]); return p; }
+function gearRings(z, m) {
+  const d = dims(z, m), pr = d.pr, br = pr * Math.cos(PA), orr = pr + m, rr = Math.max(0.01, d.rr);
+  const invT = r => Math.sqrt(Math.max(0, (r / br) ** 2 - 1)), sweep = t => t - Math.atan(t);
+  const rot = Math.PI / (2 * z) - (BACKLASH / pr) / 2 + sweep(invT(pr));
+  const fa = r => rot - sweep(invT(r)), r0 = Math.max(rr, br), pol = (r, a) => [r * Math.cos(a), r * Math.sin(a)];
+  const right = []; for (let i = 0; i <= INV; i++) { const r = r0 + (orr - r0) * i / INV; right.push(pol(r, fa(r))); }
+  const left = right.map(([x, y]) => [x, -y]), ta = fa(orr), tip = [];
+  for (let i = 0; i <= TIP; i++) tip.push(pol(orr, -ta + 2 * ta * i / TIP));
+  const sa = fa(r0), tooth = [pol(rr, -sa), ...left, ...tip, ...right.slice().reverse(), pol(rr, sa)];
+  const outline = [], step = 2 * Math.PI / z;
+  for (let i = 0; i < z; i++) {
+    const c = Math.cos(i * step), s = Math.sin(i * step);
+    for (const [x, y] of tooth) outline.push([x * c - y * s, x * s + y * c]);
+    const a0 = i * step + sa, a1 = (i + 1) * step - sa, n = Math.max(1, Math.ceil((a1 - a0) / (2 * Math.PI / FN)));
+    for (let k = 1; k < n; k++) outline.push(pol(rr, a0 + (a1 - a0) * k / n));
+  }
+  const rings = [outline];
+  if (d.pocket) {
+    const h = d.zc - d.zf, rh = d.rin + (h < FILLET ? FILLET - Math.sqrt(Math.max(0, FILLET ** 2 - (FILLET - h) ** 2)) : 0);
+    rings.push(circlePts(d.rout), circlePts(rh));
+  }
+  const r = (d.bore + CLEAR) / 2, kd = keyData(d.bore);
+  if (!kd) rings.push(circlePts(r));
+  else {
+    const w = kd[0] + CLEAR, top = r + kd[1] + 0.02, a0 = Math.atan2(Math.sqrt(r * r - w * w / 4), w / 2), span = Math.PI + 2 * a0;
+    const n = Math.ceil(FN * span / (2 * Math.PI)), bore = [];
+    for (let k = 0; k <= n; k++) bore.push(pol(r, a0 - span * k / n));
+    bore.push([-w / 2, top], [w / 2, top]);
+    rings.push(bore);
+  }
+  return rings;
+}
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// A meshing tree around a big root gear; same pair phase as the SCAD (see gear-reverb-studio meshTree).
+function meshTree(rnd, m, n) {
+  const ROOTS = [24, 30, 40], KIDS = [12, 15, 18, 24, 30], ro = z => z * m / 2 + m, gap = 2 * m;
+  const z0 = ROOTS[Math.floor(rnd() * ROOTS.length)], gears = [{ z: z0, x: 0, y: 0, rot: rnd() * 360, parent: -1, spin: 1 }];
+  for (let t = 0; t < 3000 && gears.length < n; t++) {
+    const pi = gears.length < 3 ? 0 : Math.floor(rnd() * gears.length), par = gears[pi], z = KIDS[Math.floor(rnd() * KIDS.length)], th = rnd() * 360;
+    const c = (par.z + z) * m / 2, x = par.x + c * Math.cos(th * Math.PI / 180), y = par.y + c * Math.sin(th * Math.PI / 180);
+    if (Math.hypot(x, y) > 70 * m) continue;
+    if (gears.some((o, oi) => oi !== pi && Math.hypot(x - o.x, y - o.y) < ro(z) + ro(o.z) + gap)) continue;
+    gears.push({ z, x, y, rot: th + 180 - 180 / z - (par.rot - th) * par.z / z, parent: pi, spin: -par.spin });
+  }
+  return gears;
+}
+
+// ---------------- the painter's raster ----------------
+const RES = 6;   // px per mm
+function fillRings(B, rings, label) {
+  const E = []; let y0 = 1e9, y1 = -1e9;
+  for (const ring of rings) for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length], ay = a[1] * RES, by = b[1] * RES;
+    if (ay === by) continue; E.push(a[0] * RES, ay, b[0] * RES, by); y0 = Math.min(y0, ay, by); y1 = Math.max(y1, ay, by);
+  }
+  const j0 = Math.max(0, Math.ceil(y0 - 0.5)), j1 = Math.min(B.ny - 1, Math.floor(y1 - 0.5)), xs = [];
+  for (let j = j0; j <= j1; j++) {
+    const yc = j + 0.5; xs.length = 0;
+    for (let e = 0; e < E.length; e += 4) { const ay = E[e + 1], by = E[e + 3]; if ((ay <= yc) !== (by <= yc)) xs.push(E[e] + (yc - ay) * (E[e + 2] - E[e]) / (by - ay)); }
+    xs.sort((p, q) => p - q);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const i0 = Math.max(0, Math.ceil(xs[k] - 0.5)), i1 = Math.min(B.nx - 1, Math.floor(xs[k + 1] - 0.5));
+      for (let i = i0; i <= i1; i++) B.buf[j * B.nx + i] = label;
+    }
+  }
+}
+function stampSeg(B, ax, ay, bx, by, r, label) {   // a round-ended stroke, in mm
+  ax *= RES; ay *= RES; bx *= RES; by *= RES; r *= RES;
+  const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy || 1e-9, r2 = r * r;
+  const i0 = Math.max(0, Math.floor(Math.min(ax, bx) - r)), i1 = Math.min(B.nx - 1, Math.ceil(Math.max(ax, bx) + r));
+  const j0 = Math.max(0, Math.floor(Math.min(ay, by) - r)), j1 = Math.min(B.ny - 1, Math.ceil(Math.max(ay, by) + r));
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+    const px = i + 0.5 - ax, py = j + 0.5 - ay, t = Math.min(1, Math.max(0, (px * dx + py * dy) / L2)), ex = px - t * dx, ey = py - t * dy;
+    if (ex * ex + ey * ey <= r2) B.buf[j * B.nx + i] = label;
+  }
+}
+
+// ---------------- contours (marching squares, from gear-reverb-studio) ----------------
+const CASES = [[], [[3, 0]], [[0, 1]], [[3, 1]], [[1, 2]], null, [[0, 2]], [[3, 2]], [[2, 3]], [[0, 2]], null, [[1, 2]], [[1, 3]], [[0, 1]], [[3, 0]], []];
+function contour(F, L) {
+  const { nx, ny, f } = F, segs = [], pts = new Map(), X = i => i + 0.5;
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const a = f[j * nx + i], b = f[j * nx + i + 1], c = f[(j + 1) * nx + i + 1], e = f[(j + 1) * nx + i];
+    const idx = (a > L) | (b > L) << 1 | (c > L) << 2 | (e > L) << 3;
+    if (idx === 0 || idx === 15) continue;
+    let cs = CASES[idx];
+    if (!cs) { const up = (a + b + c + e) / 4 > L; cs = idx === 5 ? (up ? [[0, 1], [2, 3]] : [[3, 0], [1, 2]]) : (up ? [[3, 0], [1, 2]] : [[0, 1], [2, 3]]); }
+    const key = [(j * nx + i) * 2, (j * nx + i + 1) * 2 + 1, ((j + 1) * nx + i) * 2, (j * nx + i) * 2 + 1];
+    const P = [() => [X(i) + (L - a) / (b - a), X(j)], () => [X(i + 1), X(j) + (L - b) / (c - b)], () => [X(i) + (L - e) / (c - e), X(j + 1)], () => [X(i), X(j) + (L - a) / (e - a)]];
+    for (const [p, q] of cs) { if (!pts.has(key[p])) pts.set(key[p], P[p]()); if (!pts.has(key[q])) pts.set(key[q], P[q]()); segs.push(key[p], key[q]); }
+  }
+  return chain(segs, pts);
+}
+function chain(s, pts) {
+  const adj = new Map(), n = s.length / 2, used = new Uint8Array(n), out = [];
+  for (let i = 0; i < s.length; i++) { const kk = s[i]; if (!adj.has(kk)) adj.set(kk, []); adj.get(kk).push(i >> 1); }
+  const walk = (start, seg) => { const keys = []; let cur = start; while (true) { const nxt = (adj.get(cur) || []).find(t => !used[t]); if (nxt === undefined) break; used[nxt] = 1; cur = s[2 * nxt] === cur ? s[2 * nxt + 1] : s[2 * nxt]; keys.push(cur); if (cur === seg) break; } return keys; };
+  for (let i = 0; i < n; i++) {
+    if (used[i]) continue; used[i] = 1;
+    const a = s[2 * i], b = s[2 * i + 1], fwd = walk(b, a), closed = fwd.length && fwd[fwd.length - 1] === a;
+    const back = closed ? [] : walk(a, b), keys = [...back.reverse(), a, b, ...fwd];
+    if (closed) keys.pop();
+    out.push([keys.map(kk => pts.get(kk)), closed]);
+  }
+  return out;
+}
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function chaikin(p, closed) {
+  if (p.length < 3) return p;
+  const out = closed ? [] : [p[0]], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) { const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n]; out.push([0.75 * ax + 0.25 * bx, 0.75 * ay + 0.25 * by], [0.25 * ax + 0.75 * bx, 0.25 * ay + 0.75 * by]); }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+function runs(p, closed, ok, minLen, out, smooth) {
+  const fin = q => simplify(smooth ? chaikin(chaikin(q, false), false) : q, 0.03);
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([closed ? simplify(smooth ? chaikin(chaikin(p, true), true) : p, 0.03) : fin(p), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([fin(cur), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+
+// ---------------- chunky stroke font (units: 4 wide, 6 tall, y down) ----------------
+const GLYPHS = {
+  A: [[[0,6],[2,0],[4,6]], [[0.8,3.9],[3.2,3.9]]],
+  B: [[[0,3],[0,0],[2.6,0],[3.6,0.8],[3.6,2.2],[2.6,3],[0,3],[0,6],[2.8,6],[4,5],[4,4],[2.8,3]]],
+  C: [[[4,1],[3,0],[1,0],[0,1],[0,5],[1,6],[3,6],[4,5]]],
+  D: [[[0,0],[0,6],[2.4,6],[4,4.4],[4,1.6],[2.4,0],[0,0]]],
+  E: [[[4,0],[0,0],[0,6],[4,6]], [[0,3],[3,3]]],
+  F: [[[4,0],[0,0],[0,6]], [[0,3],[3,3]]],
+  G: [[[4,1],[3,0],[1,0],[0,1],[0,5],[1,6],[3,6],[4,5],[4,3.4],[2.3,3.4]]],
+  H: [[[0,0],[0,6]], [[4,0],[4,6]], [[0,3],[4,3]]],
+  I: [[[2,0],[2,6]], [[0.8,0],[3.2,0]], [[0.8,6],[3.2,6]]],
+  J: [[[4,0],[4,5],[3,6],[1,6],[0,5]]],
+  K: [[[0,0],[0,6]], [[4,0],[0,3.6]], [[1.4,2.6],[4,6]]],
+  L: [[[0,0],[0,6],[4,6]]],
+  M: [[[0,6],[0,0],[2,3.4],[4,0],[4,6]]],
+  N: [[[0,6],[0,0],[4,6],[4,0]]],
+  O: [[[1,0],[3,0],[4,1],[4,5],[3,6],[1,6],[0,5],[0,1],[1,0]]],
+  P: [[[0,6],[0,0],[3,0],[4,1],[4,2],[3,3],[0,3]]],
+  Q: [[[1,0],[3,0],[4,1],[4,5],[3,6],[1,6],[0,5],[0,1],[1,0]], [[2.6,4.4],[4.2,6.2]]],
+  R: [[[0,6],[0,0],[3,0],[4,1],[4,2],[3,3],[0,3]], [[2,3],[4,6]]],
+  S: [[[4,1],[3,0],[1,0],[0,1],[0,2],[1,3],[3,3],[4,4],[4,5],[3,6],[1,6],[0,5]]],
+  T: [[[0,0],[4,0]], [[2,0],[2,6]]],
+  U: [[[0,0],[0,5],[1,6],[3,6],[4,5],[4,0]]],
+  V: [[[0,0],[2,6],[4,0]]],
+  W: [[[0,0],[1,6],[2,2.4],[3,6],[4,0]]],
+  X: [[[0,0],[4,6]], [[4,0],[0,6]]],
+  Y: [[[0,0],[2,3],[4,0]], [[2,3],[2,6]]],
+  Z: [[[0,0],[4,0],[0,6],[4,6]]],
+  "!": [[[2,0],[2,3.9]], [[2,5.95],[2,6]]],
+  "?": [[[0,1],[1,0],[3,0],[4,1],[4,2],[2,3.4],[2,4]], [[2,5.95],[2,6]]],
+  "*": [[[2,1],[2,5]], [[0.3,2],[3.7,4]], [[0.3,4],[3.7,2]]],
+  "#": [[[1.3,0.5],[1,5.5]], [[3,0.5],[2.7,5.5]], [[0,2],[4,2]], [[0,4],[4,4]]],
+  "-": [[[0.5,3],[3.5,3]]],
+  "'": [[[2.2,0],[1.8,1.6]]],
+  ".": [[[2,5.95],[2,6]]],
+  ",": [[[2.2,5.6],[1.6,7]]],
+};
+
+// ---------------- build ----------------
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "gears", "mod", "thick", "zoom", "arrows", "az", "el", "la", "le", "shadow", "word", "perline", "wsize", "wob", "arch", "depth", "lift", "lfill", "burst", "bsize", "spikes", "speed", "ink", "hp", "dp", "da", "mis", "spot", "page", "frame"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+const V = 1, H = 2, D1 = 4, D2 = 8, C = 16;   // hatch patterns a face can ask for
+let last = null;
+
+function build(o) {
+  const t0 = performance.now(), [W, Hh] = o.page.split("x").map(Number), M = o.frame === "on" ? 9 : 4;
+  const panel = [M, M, W - M, Hh - M], PW = panel[2] - panel[0], PH = panel[3] - panel[1];
+  const rnd = mulberry32(o.seed * 7919 + 3), m = o.mod, hgt = o.thick * m;
+  const tree = meshTree(rnd, m, o.gears);
+  const az = o.az * Math.PI / 180, el = o.el * Math.PI / 180, ca = Math.cos(az), sa = Math.sin(az), se = Math.sin(el), ce = Math.cos(el);
+  const rot = ([x, y]) => [x * ca - y * sa, x * sa + y * ca];
+  const proj = (X, Y, z) => [X, -Y * se - z * ce], depth = (Y, z) => -Y * ce + z * se;
+  const la = o.la * Math.PI / 180, le = o.le * Math.PI / 180, Lt = [Math.cos(le) * Math.cos(la), Math.cos(le) * Math.sin(la), Math.sin(le)];
+
+  // gears in the camera-turned plan
+  const shapes = {};
+  const gears = tree.map((g, gi) => {
+    const rings = (shapes[g.z] = shapes[g.z] || gearRings(g.z, m)), a = g.rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    const place = r => r.map(([x, y]) => rot([x * c - y * s + g.x, x * s + y * c + g.y]));
+    const [cx, cy] = rot([g.x, g.y]);
+    return { ...g, gi, cx, cy, R: g.z * m / 2 + m, outline: place(rings[0]), bore: place(rings.at(-1)), pocket: rings.length === 4 ? [place(rings[1]), place(rings[2])] : [] };
+  });
+
+  // fit the gears (tops, bottoms, shadows) into the panel
+  const sh = o.shadow === "on" ? [-hgt * Lt[0] / Lt[2], -hgt * Lt[1] / Lt[2]] : [0, 0];
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  const grow = ([u, v]) => { x0 = Math.min(x0, u); y0 = Math.min(y0, v); x1 = Math.max(x1, u); y1 = Math.max(y1, v); };
+  for (const g of gears) for (const [X, Y] of g.outline) { grow(proj(X, Y, hgt)); grow(proj(X, Y, 0)); grow(proj(X + sh[0], Y + sh[1], 0)); }
+  const pad = 0.07, s = o.zoom * Math.min(PW * (1 - 2 * pad) / (x1 - x0), PH * (1 - 2 * pad) / (y1 - y0));
+  const ox = panel[0] + (PW - s * (x1 - x0)) / 2 - s * x0, oy = panel[1] + (PH - s * (y1 - y0)) / 2 - s * y0;
+  const P = (X, Y, z) => { const [u, v] = proj(X, Y, z); return [s * u + ox, s * v + oy]; };
+
+  // faces and groups, in painter's order
+  const B = { nx: Math.ceil(W * RES), ny: Math.ceil(Hh * RES) }; B.buf = new Int32Array(B.nx * B.ny);
+  const groups = [], faces = [];
+  const group = (outline, extra = {}) => { groups.push({ outline, ...extra }); return groups.length - 1; };
+  const face = (g, tone, pats, dot = null, extra = {}) => { faces.push({ g, tone, pats, dot, ...extra }); return faces.length - 1; };
+  const GBG = group(false, { bg: true }), GVOID = group(false, { void: true });
+  face(GBG, 0, 0); face(GVOID, 0, 0);   // face 0 = paper, face 1 = outside the panel
+  const draws = [];   // [rings, faceId] or a stamp fn, rasterised in order
+
+  const wallTone = (nx, ny) => Math.min(1, Math.max(0, 1 - Math.max(0, nx * Lt[0] + ny * Lt[1]) * 1.25 - 0.06));
+  const patsFor = t => (t > 0.18 ? V : 0) | (t > 0.42 ? C : 0) | (t > 0.66 ? D1 : 0) | (t > 0.86 ? D2 : 0);
+  const Lscr = (() => { const u = Lt[0], v = -Lt[1] * se, n = Math.hypot(u, v) || 1; return [u / n, v / n]; })();
+
+  if (o.shadow === "on") {
+    const gs = group(!/full|lines/.test(o.ink), { bg: true }), f = face(gs, 0.7, D2), N = Math.min(60, Math.max(2, Math.ceil(Math.hypot(...sh) * s * RES / 1.2)));
+    for (const g of gears) for (let k = 0; k <= N; k++) draws.push([[g.outline.map(([X, Y]) => P(X + sh[0] * k / N, Y + sh[1] * k / N, 0))], f]);
+  }
+
+  // burst, at the bite between gear 0 and gear 1
+  const g0 = gears[0], g1 = gears[1] || gears[0], dd = Math.hypot(g1.cx - g0.cx, g1.cy - g0.cy) || 1, pr0 = g0.z * m / 2;
+  const bite = P(g0.cx + (g1.cx - g0.cx) / dd * pr0, g0.cy + (g1.cy - g0.cy) / dd * pr0, hgt);
+  const Rb = o.bsize * Math.min(PW, PH) / 2, brnd = mulberry32(o.seed * 17 + 9);
+  const jag = (R, k) => { const p = [], ph = brnd() * 6.28; for (let i = 0; i < 2 * k; i++) { const a = ph + Math.PI * i / k + (brnd() - 0.5) * 0.35 * Math.PI / k, r = (i % 2 ? 0.58 : 1) * R * (0.82 + 0.36 * brnd()); p.push([bite[0] + r * Math.cos(a), bite[1] + r * Math.sin(a)]); } return p; };
+  const burstDraws = [];
+  if (o.burst !== "off") {
+    const outer = jag(Rb, o.spikes), inner = jag(Rb * 0.6, Math.max(5, o.spikes - 3));
+    burstDraws.push([[outer], face(group(true), 0, 0, (x, y) => Math.min(0.62, 0.1 + 0.5 * Math.hypot(x - bite[0], y - bite[1]) / Rb))]);
+    burstDraws.push([[inner], face(group(true), 0, 0)]);
+  }
+  if (o.burst === "behind") draws.push(...burstDraws);
+
+  // gears, back to front: bore walls, outer walls, top
+  const creases = [], capDetail = [];
+  gears.slice().sort((a, b) => depth(a.cy, 0) - depth(b.cy, 0)).forEach(g => {
+    const gBore = group(true), gWall = group(true), gCap = group(true);
+    const walls = [], n = g.outline.length, ef = new Int32Array(n).fill(-1);
+    g.bore.forEach((a, i) => {
+      const b = g.bore[(i + 1) % g.bore.length], mx = (a[0] + b[0]) / 2 - g.cx, my = (a[1] + b[1]) / 2 - g.cy;
+      let nx = b[1] - a[1], ny = a[0] - b[0]; if (nx * -mx + ny * -my < 0) { nx = -nx; ny = -ny; }
+      const L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+      if (ny >= 0) return;
+      walls.push([depth((a[1] + b[1]) / 2, 0) - 1e6, [[P(a[0], a[1], hgt), P(b[0], b[1], hgt), P(b[0], b[1], 0), P(a[0], a[1], 0)]], face(gBore, 0.9, V | H | D1, null, { gear: g.gi })]);
+    });
+    for (let i = 0; i < n; i++) {
+      const a = g.outline[i], b = g.outline[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = (b[1] - a[1]) / L, ny = -(b[0] - a[0]) / L;
+      if (ny >= 0) continue;
+      const t = wallTone(nx, ny);
+      ef[i] = face(gWall, t, patsFor(t), null, { gear: g.gi });
+      walls.push([depth((a[1] + b[1]) / 2, 0), [[P(a[0], a[1], hgt), P(b[0], b[1], hgt), P(b[0], b[1], 0), P(a[0], a[1], 0)]], ef[i]]);
+    }
+    walls.sort((p, q) => p[0] - q[0]).forEach(([, r, f]) => draws.push([r, f]));
+    const [ccx, ccy] = P(g.cx, g.cy, hgt), Rs = g.R * s;
+    const cap = face(gCap, 0, 0, (x, y) => Math.min(0.6, Math.max(0.06, 0.3 - 0.26 * ((x - ccx) * Lscr[0] + (y - ccy) * Lscr[1]) / Rs)), { gear: g.gi });
+    draws.push([[g.outline.map(([X, Y]) => P(X, Y, hgt)), g.bore.map(([X, Y]) => P(X, Y, hgt))], cap]);
+    // sharp vertical edges (tooth tips and roots), kept only on their own two wall faces
+    for (let i = 0; i < n; i++) {
+      const a = g.outline[(i - 1 + n) % n], b = g.outline[i], c = g.outline[(i + 1) % n];
+      const t = Math.abs(Math.atan2((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]), (b[0] - a[0]) * (c[0] - b[0]) + (b[1] - a[1]) * (c[1] - b[1])));
+      if (t > 0.45 && (ef[i] >= 0 || ef[(i - 1 + n) % n] >= 0)) creases.push([P(b[0], b[1], hgt), P(b[0], b[1], 0), ef[(i - 1 + n) % n], ef[i]]);
+    }
+    for (const r of g.pocket) capDetail.push([r.map(([X, Y]) => P(X, Y, hgt)), cap]);
+    g.ef = ef; g.capFace = cap;
+  });
+  if (o.burst === "front") draws.push(...burstDraws);
+
+  // letters: halo, then per letter the extruded side and the face
+  // wrap the phrase into lines: at "/" always, otherwise at spaces once a line passes the per-line limit
+  const lines = [];
+  for (const part of (o.word || "").toUpperCase().split("/")) {
+    let cur = "";
+    for (const w of part.split(/\s+/).filter(Boolean).map(w => w.split("").filter(ch => GLYPHS[ch]).join("")).filter(Boolean)) {
+      if (cur && cur.length + 1 + w.length > o.perline) { lines.push(cur); cur = w; } else cur = cur ? cur + " " + w : w;
+    }
+    if (cur) lines.push(cur);
+  }
+  const letters = [];
+  if (lines.length) {
+    const T = 1.45, gapU = 0.35, adv = 4 + T + gapU, stepU = 6 + T + 1.1 + 0.85 * o.depth, maxLen = Math.max(...lines.map(l => l.length));
+    const u = Math.min(o.wsize * PW / (maxLen * adv - gapU), 0.8 * PH / (lines.length * stepU));
+    const lrnd = mulberry32(o.seed * 101 + 7), ww = (maxLen * adv - gapU) * u, wh = (lines.length * stepU - 1.1) * u;
+    // try 24 directions round the bite, keep the one whose word box covers the least gear
+    const discs = gears.flatMap(g => [[...P(g.cx, g.cy, hgt), g.R * s], [...P(g.cx, g.cy, 0), g.R * s]]);
+    const clampX = x => Math.min(panel[2] - ww / 2 - 2 * u, Math.max(panel[0] + ww / 2 + 1.5 * u, x)), clampY = y => Math.min(panel[3] - wh / 2 - 1.5 * u, Math.max(panel[1] + wh / 2 + 1.5 * u, y));
+    let best = [1e9, bite[0], bite[1]];
+    for (let k = 0; k < (o.lift > 0 ? 72 : 1); k++) {
+      const a = -Math.PI / 2 + (k % 24) * Math.PI / 12, dist = o.lift * PH * (1 + Math.floor(k / 24) * 0.6), x = clampX(bite[0] + Math.cos(a) * dist), y = clampY(bite[1] + Math.sin(a) * dist);
+      let sc = (k % 24) * 1e-3 + Math.floor(k / 24) * 2;
+      for (let i = 0; i <= 10; i++) for (let j = 0; j <= 4; j++) { const px = x - ww / 2 + ww * i / 10, py = y - wh / 2 + wh * j / 4; if (discs.some(([cx, cy, r]) => Math.hypot(px - cx, py - cy) < r)) sc++; }
+      if (sc < best[0]) best = [sc, x, y];
+    }
+    const ax = best[1], ay = best[2], e = [0.5 * o.depth * u, 0.85 * o.depth * u];
+    const halo = group(true), rw = T / 2 * u, hr = rw + 0.9, steps = Math.max(1, Math.ceil(Math.hypot(...e) * RES * 1.5));
+    const lfFace = { dots: (x, y) => 0.5, hatch: null, blank: null }[o.lfill];
+    let n = 0;
+    lines.forEach((line, li) => line.split("").forEach((ch, i) => {
+      if (ch === " ") return;
+      const lw = (line.length * adv - gapU) * u, ly = ay - wh / 2 + (li * stepU + 3) * u;
+      const mid = (i - (line.length - 1) / 2) / Math.max(1, line.length / 2), th = (n++ % 2 ? 1 : -1) * o.wob * Math.PI / 180 * (0.6 + 0.4 * lrnd());
+      const sc = 1 + (lrnd() - 0.5) * 0.18, cx = ax - lw / 2 + (i * adv + (4 + T) / 2) * u, cy = ly - o.arch * u * 3 * (1 - mid * mid) / Math.sqrt(lines.length) + (lrnd() - 0.5) * u;
+      const ct = Math.cos(th), st = Math.sin(th), X = ([x, y]) => { const qx = (x - 2 + (3 - y) * 0.18) * u * sc, qy = (y - 3) * u * sc; return [cx + qx * ct - qy * st, cy + qx * st + qy * ct]; };
+      const strokes = GLYPHS[ch].map(pl => pl.map(X));
+      const side = face(group(true), 0.95, V | D1), front = face(group(true), 0, o.lfill === "hatch" ? D2 : 0, lfFace);
+      const hf = letters.haloFace ?? (letters.haloFace = face(halo, 0, 0));
+      letters.push({ ch, strokes });
+      draws.push(Bf => { for (let k = 0; k <= steps; k++) for (const pl of strokes) for (let q = 0; q + 1 < pl.length; q++) stampSeg(Bf, pl[q][0] + e[0] * k / steps, pl[q][1] + e[1] * k / steps, pl[q + 1][0] + e[0] * k / steps, pl[q + 1][1] + e[1] * k / steps, hr, hf); });
+      draws.push(Bf => { for (let k = 1; k <= steps; k++) for (const pl of strokes) for (let q = 0; q + 1 < pl.length; q++) stampSeg(Bf, pl[q][0] + e[0] * k / steps, pl[q][1] + e[1] * k / steps, pl[q + 1][0] + e[0] * k / steps, pl[q + 1][1] + e[1] * k / steps, rw, side); });
+      draws.push(Bf => { for (const pl of strokes) for (let q = 0; q + 1 < pl.length; q++) stampSeg(Bf, pl[q][0], pl[q][1], pl[q + 1][0], pl[q + 1][1], rw, front); });
+    }));
+  }
+
+  // rasterise, then blank everything outside the panel
+  for (const d of draws) typeof d === "function" ? d(B) : fillRings(B, d[0], d[1]);
+  const [pi0, pj0, pi1, pj1] = panel.map(v => Math.round(v * RES));
+  for (let j = 0; j < B.ny; j++) for (let i = 0; i < B.nx; i++) if (i < pi0 || i >= pi1 || j < pj0 || j >= pj1) B.buf[j * B.nx + i] = 1;
+  const fAt = (x, y) => { const i = Math.floor(x * RES), j = Math.floor(y * RES); return i < 0 || j < 0 || i >= B.nx || j >= B.ny ? 1 : B.buf[j * B.nx + i]; };
+  const gOf = f => faces[f].g;
+
+  // outlines: trace every group that wants one, draw each shared edge once
+  const key = [], shade = [], spot = [];
+  const bbox = groups.map(() => [1e9, 1e9, -1e9, -1e9]);
+  for (let j = 0; j < B.ny; j++) for (let i = 0; i < B.nx; i++) { const b = bbox[faces[B.buf[j * B.nx + i]].g]; if (i < b[0]) b[0] = i; if (j < b[1]) b[1] = j; if (i > b[2]) b[2] = i; if (j > b[3]) b[3] = j; }
+  groups.forEach((G, gi) => {
+    if (!G.outline || bbox[gi][2] < 0) return;
+    const [bi0, bj0, bi1, bj1] = [bbox[gi][0] - 1, bbox[gi][1] - 1, bbox[gi][2] + 1, bbox[gi][3] + 1], nx = bi1 - bi0 + 1, ny = bj1 - bj0 + 1, f = new Float32Array(nx * ny);
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const I = bi0 + i, J = bj0 + j; f[j * nx + i] = I >= 0 && J >= 0 && I < B.nx && J < B.ny && gOf(B.buf[J * B.nx + I]) === gi ? 1 : 0; }
+    for (const [p, closed] of contour({ nx, ny, f }, 0.5)) {
+      const pts = p.map(([x, y]) => [x + bi0, y + bj0]);
+      const ok = pts.map(([x, y]) => {
+        for (const [dx, dy] of [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]]) {
+          const I = Math.floor(x + dx), J = Math.floor(y + dy);
+          const O = I < 0 || J < 0 || I >= B.nx || J >= B.ny ? GVOID : gOf(B.buf[J * B.nx + I]);
+          if (O !== gi) return O !== GVOID && (!groups[O].outline || O < gi);
+        }
+        return true;
+      });
+      runs(pts.map(([x, y]) => [x / RES, y / RES]), closed, ok, 0.5, key, true);
+    }
+  });
+  if (o.frame === "on") key.push([[[panel[0], panel[1]], [panel[2], panel[1]], [panel[2], panel[3]], [panel[0], panel[3]]], true]);
+
+  // creases and engraved pocket rings
+  for (const [a, b, fa, fb] of creases) {
+    const d = densify([a, b], false, 0.15);
+    runs(d, false, d.map(([x, y]) => { for (const [dx, dy] of [[0, 0], [0.12, 0], [-0.12, 0], [0, 0.12], [0, -0.12]]) { const f = fAt(x + dx, y + dy); if (f === fa || f === fb) return true; } return false; }), 0.4, key, false);
+  }
+  for (const [r, cap] of capDetail) { const d = densify(r, true, 0.2); runs(d, true, d.map(([x, y]) => fAt(x, y) === cap), 0.6, /full|lines/.test(o.ink) ? shade : key, false); }
+
+  // hatching: straight screen patterns, plus contour rings that wrap each gear's walls
+  const hp = o.hp, diag = Math.hypot(W, Hh), cxp = W / 2, cyp = Hh / 2;
+  const straight = (ang, bit) => {
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    for (let t = -diag / 2; t < diag / 2; t += hp) {
+      const pts = []; for (let q = -diag / 2; q <= diag / 2; q += 0.2) { const x = cxp - dy * t + dx * q, y = cyp + dx * t + dy * q; if (x >= panel[0] && x <= panel[2] && y >= panel[1] && y <= panel[3]) pts.push([x, y]); }
+      if (pts.length > 1) runs(pts, false, pts.map(([x, y]) => (faces[fAt(x, y)].pats & bit) > 0), 0.6, shade, false);
+    }
+  };
+  const hatchOn = /full|lines/.test(o.ink), dotsOn = /full|dots/.test(o.ink);
+  if (hatchOn) { straight(Math.PI / 2, V); straight(0, H); straight(Math.PI / 4, D1); straight(-Math.PI / 4, D2); }
+  if (hatchOn && ce > 0.08) {
+    const dz = hp / (s * ce);
+    for (const g of gears) for (let z = dz; z < hgt - dz * 0.4; z += dz) {
+      const d = densify(g.outline.map(([X, Y]) => P(X, Y, z)), true, 0.2);
+      runs(d, true, d.map(([x, y]) => { const f = faces[fAt(x, y)]; return f.gear === g.gi && (f.pats & C) > 0; }), 0.6, shade, false);
+    }
+  }
+
+  // speed lines from the bite, only on bare paper or shadow
+  const srnd = mulberry32(o.seed * 5 + 1), onBg = ([x, y]) => groups[gOf(fAt(x, y))].bg === true;
+  for (let k = 0; k < o.speed; k++) {
+    const a = srnd() * 2 * Math.PI, r0 = Rb * (1.05 + 0.35 * srnd()) + 2, r1 = r0 + Math.min(PW, PH) * (0.08 + 0.3 * srnd());
+    const d = densify([[bite[0] + r0 * Math.cos(a), bite[1] + r0 * Math.sin(a)], [bite[0] + r1 * Math.cos(a), bite[1] + r1 * Math.sin(a)]], false, 0.2);
+    runs(d, false, d.map(onBg), 1.5, o.ink === "outline" ? key : shade, false);
+  }
+  // motion arrows round each gear, on the floor-level paper only
+  if (o.arrows === "on") for (const g of gears) {
+    const Ra = g.R + 1.6 * m, a0 = srnd() * 2 * Math.PI, span = 1.1 * g.spin, arcPts = [];
+    for (let k = 0; k <= 40; k++) { const a = a0 + span * k / 40; arcPts.push(P(g.cx + Ra * Math.cos(a), g.cy + Ra * Math.sin(a), hgt)); }
+    const [ex, ey] = arcPts.at(-1), [px, py] = arcPts.at(-3), L = Math.hypot(ex - px, ey - py) || 1, tx = (ex - px) / L, ty = (ey - py) / L, hl = Math.max(2, 0.9 * m * s);
+    const head = sgn => [[ex, ey], [ex - hl * (tx * 0.87 - sgn * ty * 0.5), ey - hl * (ty * 0.87 + sgn * tx * 0.5)]];
+    for (const p of [arcPts, head(1), head(-1)]) { const d = densify(p, false, 0.2); runs(d, false, d.map(onBg), 0.8, key, false); }
+  }
+
+  // riso halftone: a rotated screen of spiral dots, drawn a little off register
+  const dp = o.dp, da = o.da * Math.PI / 180, cda = Math.cos(da), sda = Math.sin(da), mx = o.mis * 0.866, my = o.mis * 0.5, PEN = 0.3;
+  let dots = 0, minGap = 99;
+  if (dotsOn) for (let a = -diag / 2; a < diag / 2; a += dp) for (let b = -diag / 2; b < diag / 2; b += dp) {
+    const x = cxp + a * cda - b * sda, y = cyp + a * sda + b * cda;
+    if (x < panel[0] || x > panel[2] || y < panel[1] || y > panel[3]) continue;
+    const f = faces[fAt(x, y)]; if (!f.dot) continue;
+    let r = Math.min(dp * Math.sqrt(f.dot(x, y) / Math.PI), dp / 2 - 0.25);
+    for (let tries = 0; tries < 3 && r >= 0.2; tries++) {
+      let fits = true;
+      for (let k = 0; k < 8 && fits; k++) { const q = fAt(x + (r + 0.2) * Math.cos(k * Math.PI / 4), y + (r + 0.2) * Math.sin(k * Math.PI / 4)); if (faces[q].g !== f.g) fits = false; }
+      if (fits) break; r *= 0.7;
+    }
+    if (r < 0.2) continue;
+    const turns = Math.max(1, r / 0.27), pts = [], N = Math.ceil(turns * Math.max(10, r * 14));
+    for (let k = 0; k <= N; k++) { const t = k / N, rr = r * (1 - t) + 0.05, ang = t * turns * 2 * Math.PI; pts.push([x + mx + rr * Math.cos(ang), y + my + rr * Math.sin(ang)]); }
+    spot.push([pts, false]); dots++; minGap = Math.min(minGap, dp - 2 * r - PEN);
+  }
+  return { W, H: Hh, key, shade, spot, gears, dots, minGap, s, o, faces: faces.length, groups: groups.length, ms: performance.now() - t0, B, panel, bite };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(780, Math.max(200, cv.parentElement.clientWidth - 30)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  paint(c, r, 0, 0, r.W);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const meshes = r.gears.length - 1;
+  $("stats").innerHTML = `<b>${r.gears.length}</b> gears, <b>${meshes}</b> meshes (SCAD pair phase) · ${r.faces} faces in ${r.groups} groups · ${r.ms.toFixed(0)} ms<br>`
+    + `<span class="sw" style="background:#19151e"></span>0.4 key: <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · `
+    + `<span class="sw" style="background:#7a6f74"></span>0.3 hatch: <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · `
+    + `<span class="sw" style="background:${r.o.spot}"></span>spot: <b>${len(r.spot).toFixed(1)} m</b>, ${r.dots} dots<br>`
+    + `hatch pitch <b class="${r.o.hp >= 0.5 ? "pass" : "fail"}">${r.o.hp} mm</b> · tightest dot-to-dot gap after a 0.3 pen <b class="${r.minGap >= 0.2 ? "pass" : "fail"}">${r.minGap === 99 ? "n/a" : r.minGap.toFixed(2) + " mm"}</b> · off register ${r.o.mis} mm`;
+}
+function paint(c, r, x0, y0, w) {
+  c.fillStyle = "#fbf6ea"; c.fillRect(x0, y0, w, w * 2); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, lw) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  c.globalAlpha = 0.9; stroke(r.spot, r.o.spot, 0.3); c.globalAlpha = 1;
+  stroke(r.shade, "#3b3340", 0.3); stroke(r.key, "#19151e", 0.4);
+}
+// The pen layers, in plotting order. A split export writes one file per layer that has any line.
+const penLayers = r => [
+  { name: "outline", colour: "000000", w: 0.4, paths: r.key },
+  { name: "hatch", colour: "555555", w: 0.3, paths: r.shade },
+  { name: "dots", colour: r.o.spot.slice(1), w: 0.3, paths: r.spot },
+].filter(L => L.paths.length);
+// Four identical corner ticks: every split file then has the same bounding box, so Design Space sizes and places them alike.
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG gear-bam studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
+
+const PRESETS = {
+  bam: { ink: "full", zoom: 1.15, gears: 4, mod: 3, thick: 4, az: 18, el: 40, la: -130, le: 38, word: "BAM!", wsize: 0.62, wob: 9, arch: 0.6, depth: 1.1, lift: 0.18, burst: "behind", bsize: 0.55, spikes: 15, speed: 46 },
+  krrnk: { ink: "full", zoom: 1.7, gears: 3, mod: 4, thick: 6, az: -35, el: 22, la: -150, le: 30, word: "KRRNK!", wsize: 0.8, wob: 12, arch: -0.6, depth: 1.6, lift: 0.25, burst: "behind", bsize: 0.75, spikes: 22, speed: 70 },
+  pow: { ink: "full", zoom: 1.25, gears: 7, mod: 2.5, thick: 3, az: 0, el: 78, la: -120, le: 50, word: "WHIRR", wsize: 0.5, wob: 6, arch: 1, depth: 0.8, lift: 0.3, burst: "front", bsize: 0.35, spikes: 12, speed: 30 },
+  outline: { ink: "outline", speed: 30 },
+  quiet: { ink: "full", zoom: 1.6, gears: 6, mod: 3, thick: 5, az: 30, el: 35, la: -140, le: 34, word: "", burst: "off", speed: 0 },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+document.querySelectorAll("button.w").forEach(b => { if (!b.textContent) b.textContent = "(none)"; b.onclick = () => { $("word").value = b.textContent === "(none)" ? "" : b.textContent; run(); }; });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = o => `gear-bam-s${o.seed}-${(o.word || "quiet").replace(/[^A-Z0-9]/gi, "").slice(0, 24)}-az${o.az}el${o.el}-m${o.mod}x${o.thick}-${o.ink}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last.o) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last.o)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {   // read the settings an earlier export carried in its <desc>, and put them back on the sliders
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported before 2026-09-28, or by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, paint, toSVG, gearRings };   // hooks for checking
+run();
+</script>
+</body>
+</html>
