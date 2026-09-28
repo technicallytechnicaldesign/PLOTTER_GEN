@@ -13,7 +13,7 @@
 // Bits come from UNRAVEL THE PURLOINED's encoders; hiding uses its seeded scatter route. Drawing helpers in core.js.
 "use strict";
 import { TAU, lerp, bbox, ellipse, rect, simplify, inset, fillConvex, painter, drawText, drawGlyphAt, wrap, ADV } from "./core.js";
-import { MARK, LAYOUTS, drawMarks, packRecord, PAGES, marksClear } from "./marks.js";
+import { markMode, applyMarks, packRecord, PAGES } from "./marks.js";
 import * as fivebit from "@utp/fivebit";
 import * as morse from "@utp/morse";
 import * as bacon from "@utp/bacon";
@@ -27,7 +27,7 @@ export const VARIANTS = { truchet: ["tiles", ["arcs", "triangles", "diag", "ribb
 export const ENCS = ["fivebit", "bacon26", "morse"];
 export const CIPHER_KINDS = ["none", "caesar", "keyword", "vigenere", "railfence", "route"];
 export const FILLS = ["contour", "lines", "cross", "zigzag", "wave", "stipple", "spiral", "none"];
-export const DEFAULTS = { msg: "", enc: "fivebit", cipher: "none", ckey: "", method: "truchet", hide: "open", density: "2", seed: 7, size: 22, tiles: "arcs", walls: "line", mark: "wave", cells: "squares", rule: "30", noise: 0.5, pkey: "", fill: "contour", pitch: 0.7, angle: 45, caption: "key", tsize: 6, tpen: "#0b0f14", reveal: "off", rpen: "#c23b3b", page: "190x250", marks: "on" };
+export const DEFAULTS = { mount: 25, msg: "", enc: "fivebit", cipher: "none", ckey: "", method: "truchet", hide: "open", density: "2", seed: 7, size: 22, tiles: "arcs", walls: "line", mark: "wave", cells: "squares", rule: "30", noise: 0.5, pkey: "", fill: "contour", pitch: 0.7, angle: 45, caption: "key", tsize: 6, tpen: "#0b0f14", reveal: "off", rpen: "#c23b3b", page: "190x250", marks: "on" };
 
 // ---------------- message to bits, bits to cells ----------------
 const cipherOf = o => (o.cipher === "none" ? null : { kind: o.cipher, key: String(o.ckey || "") });
@@ -461,10 +461,11 @@ function variantIndex(o) { const v = VARIANTS[o.method]; return v ? Math.max(0, 
 
 // o: every setting. readRec (decoder only): { len, capH, dy, rows } from a key strip; the drawing is rebuilt around blank bits.
 export function build(o, readRec = null) {
-  // marks: "on" lays the drawing out inside the 17 mm mark margin; "retro" keeps the usual 10 mm layout and adds the small
-  // retrofit marks round it, so a sheet already plotted without marks can have them plotted on afterwards
-  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), retro = o.marks === "retro", marks = o.marks === "on" || retro, M = o.marks === "on" ? MARK.margin : 10, L = { ...layers(), marks: [] };
-  let S, res, capH0, dy, key = "";
+  // marks (markMode): "on" and the borders lay the drawing out inside the 17 mm mark margin; "retro" and "corners" keep the
+  // usual 10 mm layout (retrofit marks round it, or corner finders with the settings on a back label); "mount" keeps it
+  // inside the mount window
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), mode = markMode(o), marks = !!mode.lay, M = mode.M, L = { ...layers(), marks: [] };
+  let S, res, capH0, dy, key = "", markBits = null;
   RD = readRec ? [] : null;
   try {
     if (readRec) {
@@ -499,11 +500,11 @@ export function build(o, readRec = null) {
     for (const c of cap) { drawText(c.s, W / 2, yy, c.h, L.text); yy += c.h * 1.55; }
     if (marks) {
       if (o.method === "stars") throw new Error("Constellations are read by eye, so they take no machine marks: switch the marks off.");
-      drawMarks(W, H, packRecord(retro ? 4 : 1, {
+      markBits = packRecord(mode.mount ? 5 : mode.M === 10 ? 4 : 1, {
         method: METHOD_LIST.indexOf(o.method), variant: variantIndex(o), enc: ENCS.indexOf(o.enc), hide: o.hide === "scatter" ? 1 : 0, density: +o.density - 2, seed: o.seed,
         len: o.method === "pigpen" ? res.rows : len, size: o.size, page: PAGES.indexOf(o.page), cipher: CIPHER_KINDS.indexOf(o.cipher), capH: Math.round(capH0 * 10), dy: Math.round(dy * 10), noise: Math.round(o.noise * 20),
-        fill: FILLS.indexOf(o.fill), pitch: Math.round((o.pitch - 0.5) / 0.05), angle: Math.round(o.angle),
-      }), L, retro ? LAYOUTS.retro : LAYOUTS.normal);
+        fill: FILLS.indexOf(o.fill), pitch: Math.round((o.pitch - 0.5) / 0.05), angle: Math.round(o.angle), mount: mode.mount || 0,
+      });
     }
   } catch (err) {
     RD = null;
@@ -516,7 +517,7 @@ export function build(o, readRec = null) {
     ["smallest drawn unit at least 2 mm", res.feature >= 2 - 1e-9, `${res.feature.toFixed(2)} mm`],
     ["everything fits the page", inPage, ""],
   ];
-  if (marks) gates.push(marksClear(W, H, [...L.outline, ...L.fill, ...L.text], retro ? LAYOUTS.retro : LAYOUTS.normal));
+  if (marks) gates.push(...applyMarks(W, H, markBits, L, mode, [...L.outline, ...L.fill, ...L.text]));
   const notes = S.dropped && S.dropped.length ? [`Left out (this method cannot carry them): ${[...new Set(S.dropped.map(d => d.char))].join(" ")}`] : [];
   if (o.cipher !== "none") notes.push("Classical ciphers are historical / puzzle ciphers, not modern security.");
   return { W, H, ...L, o, res, key, how: howToRead(o), gates, notes, points: [...L.outline, ...L.fill, ...L.text, ...L.reveal].reduce((s, [p]) => s + p.length, 0), ms: performance.now() - t0 };
@@ -527,7 +528,7 @@ export function build(o, readRec = null) {
 export function readPlan(f, studio = 1) {
   const method = METHOD_LIST[f.method];
   if (!method) throw new Error(`unknown method ${f.method}`);
-  const o = { ...DEFAULTS, method, enc: ENCS[f.enc] || "fivebit", hide: f.hide ? "scatter" : "open", density: String(f.density + 2), seed: f.seed, size: f.size, page: PAGES[f.page], cipher: CIPHER_KINDS[f.cipher] || "none", noise: f.noise / 20, marks: studio === 4 ? "retro" : "on",
+  const o = { ...DEFAULTS, method, enc: ENCS[f.enc] || "fivebit", hide: f.hide ? "scatter" : "open", density: String(f.density + 2), seed: f.seed, size: f.size, page: PAGES[f.page], cipher: CIPHER_KINDS[f.cipher] || "none", noise: f.noise / 20, marks: studio === 4 ? "retro" : studio === 5 ? "mount" : "on", mount: f.mount || 25,
     fill: FILLS[f.fill] || "lines", pitch: Math.round((0.5 + f.pitch * 0.05) * 100) / 100, angle: f.angle };
   const v = VARIANTS[method]; if (v) o[v[0]] = v[1][f.variant] || v[1][0];
   const r = build(o, { len: f.len, capH: f.capH, dy: f.dy });

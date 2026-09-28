@@ -18,3 +18,14 @@ for p in hoist flagline flagchart pens semaphore semachart ogham braille tap; do
 run cipher-garden-studio.html "$R/03_OUTPUT/plg-stego/cipher-garden/cipher-maze-retro" maze marks=retro
 run stego-plot-studio.html "$R/03_OUTPUT/plg-stego/stego-stitches-retro" stitches marks=retro
 run signal-book-studio.html "$R/03_OUTPUT/plg-stego/signals/signals-hoist-retro" hoist marks=retro
+# the key hidden in plain sight: woven into a border, tucked under a mount, or carried on a label for the back
+run cipher-garden-studio.html "$R/03_OUTPUT/plg-stego/cipher-garden/cipher-maze-border" maze marks=border-arcs
+run cipher-garden-studio.html "$R/03_OUTPUT/plg-stego/cipher-garden/cipher-knots-border" knots marks=border-diag
+run stego-plot-studio.html "$R/03_OUTPUT/plg-stego/stego-stitches-border" stitches marks=border-arcs
+run signal-book-studio.html "$R/03_OUTPUT/plg-stego/signals/signals-hoist-border" hoist marks=border-diag
+run cipher-garden-studio.html "$R/03_OUTPUT/plg-stego/cipher-garden/cipher-arcs-mount" arcs marks=mount
+run stego-plot-studio.html "$R/03_OUTPUT/plg-stego/stego-scatter-mount" scatter marks=mount mount=30
+run signal-book-studio.html "$R/03_OUTPUT/plg-stego/signals/signals-semaphore-mount" semaphore marks=mount
+run cipher-garden-studio.html "$R/03_OUTPUT/plg-stego/cipher-garden/cipher-disk-corners" disk marks=corners
+run stego-plot-studio.html "$R/03_OUTPUT/plg-stego/stego-motif-corners" motif marks=corners
+run signal-book-studio.html "$R/03_OUTPUT/plg-stego/signals/signals-ogham-corners" ogham marks=corners

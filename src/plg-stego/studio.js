@@ -20,7 +20,7 @@ import { MOTIFS } from "@utp/motifs";
 const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 
 
-import { MARK, LAYOUTS, drawMarks, packRecord, PAGES, STEGO, marksClear } from "./marks.js";
+import { markMode, applyMarks, packRecord, PAGES, STEGO, labelSheet } from "./marks.js";
 import { TAU, lerp, area, centroid, bbox, ellipse, rect, capsule, sector, plen, densify, simplify, dashed, segIn, insideRuns, inset, hash2, fillConvex, painter, GLYPHS, ADV, textWidth, drawText, wrap, svgOf } from "./core.js";
 
 // ---------------- message to cells ----------------
@@ -294,15 +294,15 @@ function cable(P, x, y, w, h, leftLean, fill) {
 
 // ---------------- build ----------------
 const $ = id => document.getElementById(id);
-const IDS = ["msg", "enc", "check", "cipher", "ckey", "hide", "carrier", "border", "width", "perline", "density", "seed", "look", "boxes", "gaps", "wobble", "fill", "pitch", "angle", "offfill", "caption", "tsize", "reveal", "tpen", "rpen", "page", "cellmax", "marks"];
+const IDS = ["msg", "enc", "check", "cipher", "ckey", "hide", "carrier", "border", "width", "perline", "density", "seed", "look", "boxes", "gaps", "wobble", "fill", "pitch", "angle", "offfill", "caption", "tsize", "reveal", "tpen", "rpen", "page", "cellmax", "marks", "mount"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 
 const { LOOKS, CARRIERS, ENCS, CHECKS, HIDES, CIPHERS } = STEGO;   // key strip vocabularies, shared with the decoder
 
 function build(o) {
-  // marks "on" lays the page out inside the 17 mm mark margin; "retro" keeps the plain 10 mm layout and adds small marks round it
-  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marksOn = o.marks === "on" || o.marks === "retro", M = o.marks === "on" ? MARK.margin : 10;
+  // marks: the layout and margin come from markMode (on, borders, mount, retrofit, corners with a back label)
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), mode = markMode(o), marksOn = !!mode.lay, M = mode.M;
   const L = { outline: [], fill: [], text: [], reveal: [] }, gates = [];
   let G;
   const openLayout = o.hide === "columns" || o.hide === "tape", labels = openLayout && /message/.test(o.caption);
@@ -334,13 +334,12 @@ function build(o) {
 
   const notes = [];
   if (marksOn) {
-    const camera = G.kind === "chart" && C <= 127 && R <= 255 && !(o.look === "stitches" && UNITS[o.carrier]), lay = o.marks === "retro" ? LAYOUTS.retro : LAYOUTS.normal;
-    if (camera) gates.push(marksClear(W, H, [...L.outline, ...L.fill, ...L.text], lay));
-    if (camera) drawMarks(W, H, packRecord(2, {
+    const camera = G.kind === "chart" && C <= 127 && R <= 255 && !(o.look === "stitches" && UNITS[o.carrier]);
+    if (camera) gates.push(...applyMarks(W, H, packRecord(2, {
       look: LOOKS.indexOf(o.look), carrier: CARRIERS.indexOf(o.carrier), border: o.border === "on" ? 1 : 0, enc: ENCS.indexOf(o.enc), check: CHECKS.indexOf(o.check), hide: HIDES.indexOf(o.hide),
       seed: o.seed, density: +o.density - 2, cipher: CIPHERS.indexOf(o.cipher), x0: Math.round(x0 * 10), y0: Math.round(y0 * 10), cw: Math.round(cw * 100), rows: R, cols: C,
       wobble: Math.round(o.wobble * 20), gaps: o.gaps === "shaded" ? 1 : 0, page: PAGES.indexOf(o.page), len: G.P?.output.key?.length ?? 0, fill: STEGO.FILLS.indexOf(o.fill),
-    }), L, lay);
+    }), L, mode, [...L.outline, ...L.fill, ...L.text]));
     else notes.push(G.kind === "chart" ? "Machine marks left off: knitted cables, lace, bobbles and beads are read by eye." : "Machine marks left off: letter columns and tapes are read by eye.");
   }
   const all = [...L.outline, ...L.fill, ...L.text, ...L.reveal];
@@ -428,5 +427,10 @@ $("split").onclick = () => {
 };
 addEventListener("resize", () => last && draw(last));
 if ($("rev")) $("rev").textContent = UTP_REV;
-window.__studio = { build, read, PRESETS, penLayers, paint, toSVG, fillConvex };   // hooks for checking
+
+// Settings label for the back: the key strip with its own finders, and the settings in words (never the message or keys).
+const labelPairs = o => Object.entries(o).filter(([k]) => !/^(msg|ckey|pkey|tpen|rpen)$/.test(k));
+const labelSVG = r => { const lab = labelSheet(r.marks.bits, "PLG PURLOINED PLOT", labelPairs(r.o)); return svgOf(lab, [{ name: "marks", colour: "000000", w: 0.4, paths: lab.marks }, { name: "text", colour: "000000", w: 0.3, paths: lab.text }], "PLG PURLOINED PLOT settings label"); };
+$("label").onclick = () => { if (!last || last.error) return; if (!last.marks || !last.marks.bits) { $("stats").insertAdjacentHTML("afterbegin", '<span class="fail">Turn machine marks on (any kind) to make a settings label.</span><br>'); return; } save(labelSVG(last), stem(last.o) + "-label.svg"); };
+window.__studio = { labelSVG, build, read, PRESETS, penLayers, paint, toSVG, fillConvex };   // hooks for checking
 run();
