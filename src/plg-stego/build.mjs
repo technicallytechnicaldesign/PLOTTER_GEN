@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../../../..");
 const utp = path.join(root, "PROJECTS/UNRAVEL_THE_PURLOINED/LOCAL_UNRAVEL_THE_PURLOINED_CLAUDE");
-const PAGES = [["studio.js", "template.html", "stego-plot-studio.html"], ["cipher.js", "cipher-template.html", "cipher-garden-studio.html"], ["decoder.js", "decoder-template.html", "plot-decoder.html"], ["overlay.js", "overlay-template.html", "overlay-studio.html"]];
+const PAGES = [["studio.js", "template.html", "stego-plot-studio.html"], ["cipher.js", "cipher-template.html", "cipher-garden-studio.html"], ["decoder.js", "decoder-template.html", "plot-decoder.html"], ["overlay.js", "overlay-template.html", "overlay-studio.html"], ["signals.js", "signals-template.html", "signal-book-studio.html"]];
 
 const { build } = await import(pathToFileURL(path.join(utp, "node_modules/esbuild/lib/main.js")).href);
 let rev = "unknown";
