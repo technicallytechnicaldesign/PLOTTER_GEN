@@ -14,6 +14,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument("svg"); ap.add_argument("out")
 ap.add_argument("--seed", type=int, default=1); ap.add_argument("--tilt", type=float, default=0.08); ap.add_argument("--px", type=float, default=5.0)
 ap.add_argument("--turn", type=float, default=8.0); ap.add_argument("--blur", type=float, default=1.0); ap.add_argument("--noise", type=float, default=6.0)
+# a retrofit: the marks were plotted in a second run on a sheet put back by hand, so they sit a little off (mm, "dx,dy")
+ap.add_argument("--markshift", default="0,0")
 a = ap.parse_args()
 rnd = random.Random(a.seed)
 
@@ -26,8 +28,9 @@ for g in re.finditer(r'<g id="pen-([\w-]+)" stroke="#(\w+)" stroke-width="([\d.]
     if g.group(1) == "reveal":
         continue   # the answer key is its own pen; a photo of the plain plot does not show it
     w = max(1, round(float(g.group(3)) * k))
+    sx, sy = [float(v) for v in a.markshift.split(",")] if g.group(1) == "marks" else (0.0, 0.0)
     for m in re.finditer(r'd="M([^"]+?)( Z)?"', g.group(4)):
-        pts = [tuple(float(v) * k for v in p.split(",")) for p in m.group(1).split(" L")]
+        pts = [tuple((float(v) + (sx if i == 0 else sy)) * k for i, v in enumerate(p.split(","))) for p in m.group(1).split(" L")]
         if m.group(2):
             pts.append(pts[0])
         if len(pts) > 1:

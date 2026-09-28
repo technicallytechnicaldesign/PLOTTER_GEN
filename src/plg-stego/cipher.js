@@ -25,10 +25,12 @@ function draw(r) {
 function paint(c, r) {
   c.fillStyle = "#fbfaf6"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
   const stroke = (paths, col, lw) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); if (cl) c.closePath(); } c.stroke(); };
-  stroke(r.fill, "#5c7080", 0.3); stroke(r.outline, "#0b0f14", 0.4); stroke(r.text, r.o.tpen, 0.3);
+  stroke(r.fill, "#5c7080", 0.3); stroke(r.outline, "#0b0f14", 0.4); stroke(r.marks || [], "#0b0f14", 0.4); stroke(r.text, r.o.tpen, 0.3);
   c.globalAlpha = 0.85; stroke(r.reveal, r.o.rpen, 0.35); c.globalAlpha = 1;
 }
+// marks are their own pen, first: a retrofit plots only this file onto a sheet that is already drawn
 const penLayers = r => [
+  { name: "marks", colour: "000000", w: 0.4, paths: r.marks || [] },
   { name: "outline", colour: "000000", w: 0.4, paths: r.outline },
   { name: "fill", colour: "555555", w: 0.3, paths: r.fill },
   { name: "text", colour: r.o.tpen.slice(1), w: 0.3, paths: r.text },

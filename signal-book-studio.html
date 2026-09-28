@@ -149,6 +149,11 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="250x190">250 x 190 landscape</option>
       <option value="280x280">280 x 280 (12 x 12 mat)</option>
     </select></label>
+    <label>Machine marks (for the camera decoder) <select id="marks">
+      <option value="on">on: corner targets and key strip</option>
+      <option value="off">off: a clean page</option>
+      <option value="retro">retrofit: small marks round a plot made without them</option>
+    </select></label>
     <label>Corner ticks <select id="ticks">
       <option value="split">in split files only</option>
       <option value="on">in every file</option>
@@ -166,7 +171,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 </div>
 <script>"use strict";
 (() => {
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/core.js
+  // core.js
   var TAU = 2 * Math.PI;
   var lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   var area = (P) => {
@@ -196,6 +201,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     }
     return p;
   }
+  var rect = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
   var plen = (p, closed) => {
     let L = 0;
     for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
@@ -709,13 +715,88 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return all.join("");
   }
 
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/signals.js
-  var UTP_REV = true ? "d74c18b" : "dev";
+  // marks.js
+  var MARK = { inset: 4, size: 10, margin: 17, slots: 64, rows: 2 };
+  var LAYOUTS = {
+    normal: { name: "normal", inset: 4, size: 10, ring: 1.6, core: 3.2, hollow: 0.8, stripX: 5, rowsAt: [0.78, 0.22], dot: 0.85 },
+    retro: { name: "retro", inset: 2, size: 7, ring: 1.1, core: 2.2, hollow: 0.6, stripX: 3, rowsAt: [0.7, 0.25], dot: 0.8 }
+  };
+  var PAGES = ["190x250", "250x190", "280x280"];
+  var finderCentres = (W, H, lay = LAYOUTS.normal) => {
+    const c = lay.inset + lay.size / 2;
+    return [[c, c], [W - c, c], [W - c, H - c], [c, H - c]];
+  };
+  function stripSlots(W, H, lay = LAYOUTS.normal) {
+    const x0 = lay.inset + lay.size + lay.stripX, x1 = W - x0, pitch = (x1 - x0) / (MARK.slots - 1), ys = lay.rowsAt.map((f) => H - lay.inset - lay.size * f);
+    return { pitch, slots: Array.from({ length: MARK.slots * MARK.rows }, (_, i) => [x0 + i % MARK.slots * pitch, ys[Math.floor(i / MARK.slots)]]) };
+  }
+  function marksClear(W, H, layers, lay = LAYOUTS.normal) {
+    const Z = markZones(W, H, lay);
+    let hits = 0;
+    for (const [p] of layers) for (const [x, y] of p) if (Z.some(([a, b, c, d]) => x > a && x < c && y > b && y < d)) hits++;
+    return [`the ${lay.name === "retro" ? "retrofit " : ""}marks land on bare paper`, hits === 0, hits ? `${hits} drawn points inside the mark zones` : ""];
+  }
+  function markZones(W, H, lay = LAYOUTS.normal) {
+    const z = finderCentres(W, H, lay).map(([x, y]) => [x - lay.size / 2 - 0.5, y - lay.size / 2 - 0.5, x + lay.size / 2 + 0.5, y + lay.size / 2 + 0.5]);
+    const { slots } = stripSlots(W, H, lay);
+    z.push([slots[0][0] - lay.dot - 0.5, Math.min(...slots.map((s) => s[1])) - lay.dot - 0.5, slots[MARK.slots - 1][0] + lay.dot + 0.5, Math.max(...slots.map((s) => s[1])) + lay.dot + 0.5]);
+    return z;
+  }
+  var solidSquare = (cx, cy, s, upTo = s / 2) => {
+    const out = [];
+    for (let d = 0; d < upTo - 0.05; d += 0.4) out.push([rect(cx - s / 2 + d, cy - s / 2 + d, s - 2 * d, s - 2 * d), true]);
+    if (upTo >= s / 2 - 0.05) out.push([[[cx - 0.5, cy], [cx + 0.5, cy]], false], [[[cx, cy - 0.5], [cx, cy + 0.5]], false]);
+    return out;
+  };
+  function drawMarks(W, H, bits, L, lay = LAYOUTS.normal) {
+    const out = L.marks || (L.marks = []);
+    finderCentres(W, H, lay).forEach(([cx, cy], i) => {
+      out.push(...solidSquare(cx, cy, lay.size, lay.ring));
+      out.push(...i === 2 ? solidSquare(cx, cy, lay.core, lay.hollow) : solidSquare(cx, cy, lay.core));
+    });
+    const { slots } = stripSlots(W, H, lay), r = lay.dot;
+    slots.forEach(([x, y], i) => {
+      if (bits[i]) for (let q = r; q > 0.05; q -= 0.3) out.push([ellipse(x, y, q, q, 0, 16), true]);
+    });
+  }
+  var SYNC = [1, 0, 1, 1, 0];
+  var SCHEMAS = {
+    1: [["method", 4], ["variant", 2], ["enc", 2], ["hide", 1], ["density", 2], ["seed", 10], ["len", 12], ["size", 6], ["page", 2], ["cipher", 3], ["capH", 11], ["dy", 12, true], ["noise", 5], ["fill", 3], ["pitch", 6], ["angle", 8, true]],
+    // cipher garden (pitch: 0.05 mm steps above 0.5)
+    2: [["look", 3], ["carrier", 3], ["border", 1], ["enc", 3], ["check", 2], ["hide", 3], ["seed", 10], ["density", 2], ["cipher", 3], ["x0", 12], ["y0", 12], ["cw", 11], ["rows", 8], ["cols", 7], ["wobble", 5], ["gaps", 1], ["page", 2], ["len", 12], ["fill", 3]],
+    // purloined plot studio: chart, scatter and motif layouts
+    // signal book: a regular grid of glyph cells (x0, y0 of the first cell; cell and row pitch; cells a line, lines), in tenths of a mm
+    3: [["alpha", 3], ["hoist", 1], ["ink", 2], ["pitch", 6], ["angle", 8, true], ["x0", 12], ["y0", 12], ["h", 10], ["cellW", 10], ["rowStep", 10], ["per", 7], ["lines", 7], ["page", 2], ["cipher", 3], ["ghost", 1]]
+  };
+  SCHEMAS[4] = SCHEMAS[1];
+  var crc8 = (bits) => {
+    let c = 0;
+    for (const b of bits) {
+      const top = c >> 7 & 1;
+      c = c << 1 & 255 ^ (top ^ b ? 7 : 0);
+    }
+    return Array.from({ length: 8 }, (_, i) => c >> 7 - i & 1);
+  };
+  var toBits = (v, n) => Array.from({ length: n }, (_, i) => v >> n - 1 - i & 1);
+  function packRecord(studio, fields) {
+    const body = [...toBits(studio, 3)];
+    for (const [name, n, signed] of SCHEMAS[studio]) {
+      let v = Math.round(fields[name] ?? 0);
+      if (signed) v = v < 0 ? v + (1 << n) : v;
+      if (v < 0 || v >= 1 << n) throw new Error(`key strip: ${name} = ${fields[name]} does not fit in ${n} bits`);
+      body.push(...toBits(v, n));
+    }
+    const bits = [...SYNC, ...body, ...crc8(body)];
+    if (bits.length > MARK.slots * MARK.rows) throw new Error("key strip record is too long");
+    return [...bits, ...new Array(MARK.slots * MARK.rows - bits.length).fill(0)];
+  }
+
+  // signals-core.js
   var HERALDIC = { red: ["lines", 90, 1], blue: ["lines", 0, 1], yellow: ["stipple", 0, 1.3], black: ["cross", 0, 0.9], green: ["lines", 45, 1] };
   var PEN = { red: "c23b3b", blue: "1f4e8c", yellow: "e0a800", black: "111111", green: "2f7a4f" };
   function colourFill(o, poly, colour) {
     if (colour === "white" || o.ink === "outline") return {};
-    if (o.ink === "pens") return { [colour]: fillConvex(poly, "lines", o.pitch, o.angle, 1) };
+    if (o.ink === "pens") return { [colour]: fillConvex(poly, "lines", o.pitch, o.angle + { red: 0, blue: 90, yellow: 45, black: -45, green: 22 }[colour], 1) };
     const [style, ang, k] = HERALDIC[colour];
     return { hatch: fillConvex(poly, style, o.pitch * k, ang, 1) };
   }
@@ -957,10 +1038,6 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       return s;
     }).join(" ");
   }
-  var $ = (id) => document.getElementById(id);
-  var IDS = ["msg", "cipher", "ckey", "alpha", "layout", "labels", "ink", "pitch", "angle", "ghost", "gsize", "caption", "tsize", "tpen", "page"];
-  var read = () => Object.fromEntries(IDS.map((k) => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
-  var last = null;
   function build(o) {
     const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), M = 14, L = { outline: [], hatch: [], red: [], blue: [], yellow: [], black: [], green: [], text: [] };
     const n = normalize(o.msg), cip = o.cipher === "none" ? null : { kind: o.cipher, key: String(o.ckey || "") };
@@ -972,6 +1049,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     if (o.caption === "message" && !chart) add(n.text, o.tsize);
     if (o.caption === "name") add(ALPHABETS[o.alpha].name.toUpperCase(), o.tsize * 0.7);
     const capH = cap.reduce((s, c) => s + c.h * 1.55, 0) + (cap.length ? o.tsize * 0.8 : 0);
+    if ((o.marks === "on" || o.marks === "retro") && !chart) return gridBuild(o, T, L, W, H, cap, capH, cip, t0);
     const labels = o.labels === "on", lab = 0.3;
     const gw = (t) => o.alpha === "flags" ? /[0-9]/.test(t.id) ? 1.9 : 1.25 : o.alpha === "ogham" ? OGHAM[t.id][1] * 0.18 + 0.18 : ALPHABETS[o.alpha].ratio;
     const gap = o.alpha === "ogham" ? 0.12 : 0.18, wordGap = o.alpha === "ogham" ? 0.5 : 0.6;
@@ -1064,6 +1142,122 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     braille: "Braille cells: dots 1 2 3 down the left, 4 5 6 down the right. A number sign turns A to J into 1 to 9 and 0. Drawn shapes only, not tactile braille.",
     tap: "Tap code: letters on a 5 x 5 square (C and K share a place). Each letter is two columns of knocks, the row, then the column."
   };
+  var ALPHAS = ["flags", "semaphore", "ogham", "braille", "tap"];
+  var INKS = ["heraldic", "pens", "outline"];
+  var CIPHERS = ["none", "caesar", "keyword", "vigenere", "railfence", "route"];
+  var unitW = (alpha, wide) => ({ flags: wide ? 1.9 : 1.25, semaphore: 0.9, ogham: 1.08, braille: 0.62, tap: 0.45 })[alpha];
+  function drawGlyph(o, id, x, y, h, L) {
+    if (o.alpha === "flags") {
+      const pn = painter(h / 3);
+      drawFlag(id, x, y, h, o, pn);
+      pn.resolve(L);
+    } else ALPHABETS[o.alpha].draw(id, x, y, h, o, L);
+  }
+  var cellAt = (g, li, j) => g.hoist ? [g.x0 + li * g.rowStep, g.y0 + j * g.cellW] : [g.x0 + j * g.cellW, g.y0 + li * g.rowStep];
+  function gridBuild(o, T, L, W, H, cap, capH, cip, t0) {
+    const retro = o.marks === "retro", M = retro ? 10 : MARK.margin, labels = o.labels === "on", hoist = o.layout === "hoist" && o.alpha === "flags";
+    const wide = o.alpha === "flags" && T.words.some((w) => w.some((t) => /[0-9]/.test(t.id))), u = unitW(o.alpha, wide), gap = o.alpha === "ogham" ? 0.12 : 0.18;
+    const B = { x: M, y: M, w: W - 2 * M, h: H - 2 * M - capH };
+    let g, grid;
+    for (let h = o.gsize; h > 2; h *= 0.96) {
+      const hh = Math.floor(h * 10) / 10, cellW = Math.round((hoist ? 1 + gap : u + gap) * hh * 10) / 10, rowStep = Math.round((hoist ? u + (labels ? 0.9 : 0.5) : 1 + (labels ? 0.45 : 0) + 0.35) * hh * 10) / 10;
+      const per = hoist ? Math.max(...T.words.map((w) => w.length)) : Math.max(1, Math.floor((B.w - u * hh) / cellW) + 1);
+      const lines = [];
+      let cur = [];
+      for (const w0 of T.words) {
+        let w = w0;
+        if (hoist) {
+          lines.push(w.slice());
+          continue;
+        }
+        while (w.length > per) {
+          if (cur.length) {
+            lines.push(cur);
+            cur = [];
+          }
+          lines.push(w.slice(0, per));
+          w = w.slice(per);
+        }
+        if (cur.length && cur.length + 1 + w.length > per) {
+          lines.push(cur);
+          cur = [];
+        }
+        if (cur.length) cur.push(null);
+        cur.push(...w);
+      }
+      if (cur.length) lines.push(cur);
+      if (!hoist && per < Math.max(...T.words.map((w) => w.length))) continue;
+      const spanAlong = (per - 1) * cellW + (hoist ? hh : u * hh), spanAcross = (lines.length - 1) * rowStep + (hoist ? u * hh : hh);
+      const fitsW = (hoist ? spanAcross : spanAlong) <= B.w, fitsH = (hoist ? spanAlong : spanAcross) <= B.h;
+      if (fitsW && fitsH) {
+        const x0 = Math.round((B.x + (B.w - (hoist ? spanAcross : spanAlong)) / 2) * 10) / 10, y0 = Math.round((B.y + (B.h - (hoist ? spanAlong : spanAcross)) / 2) * 10) / 10;
+        g = { h: hh, cellW, rowStep, per, lines: lines.length, x0, y0, hoist, wide };
+        grid = lines;
+        break;
+      }
+    }
+    if (!g) return { W, H, ...L, o, error: "The message does not fit the page at any glyph size.", gates: [["the message fits", false, ""]], ms: 0, notes: T.notes };
+    grid.forEach((line, li) => {
+      if (o.alpha === "ogham") {
+        for (let j = 0; j < line.length; j++) if (line[j] && (j === 0 || !line[j - 1])) {
+          let k = j;
+          while (k + 1 < line.length && line[k + 1]) k++;
+          const [xa, y] = cellAt(g, li, j), [xb] = cellAt(g, li, k), cy2 = y + g.h / 2, xe = xb + u * g.h;
+          L.outline.push([[[xa - 0.1 * g.h, cy2], [xe + 0.1 * g.h, cy2]], false]);
+          if (j === 0) L.outline.push([[[xa - 0.1 * g.h, cy2], [xa - 0.3 * g.h, cy2]], false], [[[xa - 0.5 * g.h, cy2 - 0.15 * g.h], [xa - 0.3 * g.h, cy2], [xa - 0.5 * g.h, cy2 + 0.15 * g.h]], false]);
+        }
+      }
+      if (g.hoist) {
+        const [x, y] = cellAt(g, li, 0);
+        L.outline.push([[[x, y - 0.2 * g.h], [x, y + line.length * g.cellW]], false], [ellipse(x, y - 0.2 * g.h, 0.06 * g.h, 0.06 * g.h, 0, 12), true]);
+      }
+      line.forEach((t, j) => {
+        if (!t) return;
+        const [x, y] = cellAt(g, li, j);
+        drawGlyph(o, t.id, x, y, g.h, L);
+        if (labels && t.label !== "abc") g.hoist ? drawText(t.label, x + u * g.h + 0.3 * g.h, y + 0.35 * g.h, 0.3 * g.h, L.text) : drawText(t.label, x + u * g.h / 2, y + g.h + 0.15 * g.h, 0.3 * g.h, L.text);
+      });
+    });
+    let bottom = 0;
+    for (const k of ["outline", "hatch", "red", "blue", "yellow", "black", "green", "text"]) for (const [p] of L[k]) for (const q of p) if (q[1] > bottom) bottom = q[1];
+    let cy = bottom + (cap.length ? o.tsize * 0.8 : 0);
+    for (const c of cap) {
+      drawText(c.s, W / 2, cy, c.h, L.text);
+      cy += c.h * 1.55;
+    }
+    const lay = retro ? LAYOUTS.retro : LAYOUTS.normal, drawn = ["outline", "hatch", "red", "blue", "yellow", "black", "green", "text"].flatMap((k) => L[k]);
+    const clear = marksClear(W, H, drawn, lay);
+    drawMarks(W, H, packRecord(3, {
+      alpha: ALPHAS.indexOf(o.alpha),
+      hoist: g.hoist ? 1 : 0,
+      ink: INKS.indexOf(o.ink),
+      pitch: Math.round((o.pitch - 0.5) / 0.05),
+      angle: Math.round(o.angle),
+      x0: Math.round(g.x0 * 10),
+      y0: Math.round(g.y0 * 10),
+      h: Math.round(g.h * 10),
+      cellW: Math.round(g.cellW * 10),
+      rowStep: Math.round(g.rowStep * 10),
+      per: g.per,
+      lines: g.lines,
+      page: PAGES.indexOf(o.page),
+      cipher: CIPHERS.indexOf(o.cipher),
+      ghost: o.ghost === "on" ? 1 : 0
+    }), L, lay);
+    const words = [], back = readBack(o, T.words), want = T.words.map((w) => w.map((t) => t.label === "abc" || t.label === "#" ? "" : t.label).join("")).join(" ");
+    const inPage = Object.values(L).every((ps) => ps.every(([p]) => p.every(([x, y]) => x >= 0.5 && y >= 0.5 && x <= W - 0.5 && y <= H - 0.5)));
+    const gates = [["the chart reads the drawing back to the text", back === want, back === want ? `"${back.slice(0, 40)}"` : `read "${back.slice(0, 30)}"`], ["everything fits the page", inPage, ""], ["glyphs at least 6 mm tall", g.h >= 6, `${g.h.toFixed(1)} mm`], clear];
+    if (o.ink === "pens" && o.alpha === "flags") gates.push(["pen-per-colour hatch at least 1 mm apart (so the camera can read it)", o.pitch >= 1 - 1e-9, `${o.pitch} mm`]);
+    const notes = [...T.notes, ...cip ? ["Classical ciphers are historical / puzzle ciphers, not modern security."] : [], ...o.alpha === "braille" ? ["Braille shapes drawn with a pen are not tactile braille: raised dots need embossing."] : []];
+    return { W, H, ...L, o, gates, notes, how: HOW[o.alpha], grid: g, points: Object.values(L).reduce((s, ps) => s + ps.reduce((a, [p]) => a + p.length, 0), 0), ms: performance.now() - t0 };
+  }
+
+  // signals.js
+  var UTP_REV = true ? "d74c18b" : "dev";
+  var $ = (id) => document.getElementById(id);
+  var IDS = ["msg", "cipher", "ckey", "alpha", "layout", "labels", "ink", "pitch", "angle", "ghost", "gsize", "caption", "tsize", "tpen", "page", "marks"];
+  var read = () => Object.fromEntries(IDS.map((k) => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+  var last = null;
   function draw(r) {
     const cv = $("cv"), maxW = Math.min(780, Math.max(200, cv.parentElement.clientWidth - 30)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
     cv.width = Math.round(r.W * k * devicePixelRatio);
@@ -1097,6 +1291,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     }
   }
   var penLayers = (r) => [
+    { name: "marks", colour: "111111", w: 0.4, paths: r.marks || [] },
     { name: "outline", colour: "111111", w: 0.4, paths: r.outline },
     { name: "hatch", colour: "555555", w: 0.3, paths: r.hatch },
     ...["red", "blue", "yellow", "black", "green"].map((k) => ({ name: k, colour: PEN[k], w: 0.4, paths: r[k] })),
@@ -1124,7 +1319,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     hoist: { alpha: "flags", layout: "hoist", msg: "ENGLAND EXPECTS", labels: "on", ink: "heraldic", pitch: 0.7, gsize: 22, caption: "none" },
     flagline: { alpha: "flags", layout: "lines", msg: "HELLO FROM THE PLOTTER", labels: "off", ink: "heraldic", pitch: 0.6, gsize: 18, caption: "message" },
     flagchart: { alpha: "flags", layout: "chart", labels: "on", ink: "heraldic", pitch: 0.6, gsize: 16, caption: "name" },
-    pens: { alpha: "flags", layout: "hoist", msg: "PEN PALS", labels: "off", ink: "pens", pitch: 0.7, angle: 45, gsize: 24, caption: "none" },
+    pens: { alpha: "flags", layout: "hoist", msg: "PEN PALS", labels: "off", ink: "pens", pitch: 1, angle: 45, gsize: 24, caption: "none" },
     semaphore: { alpha: "semaphore", layout: "lines", msg: "WAVE BACK AT 3", labels: "on", ink: "heraldic", pitch: 0.6, gsize: 30, caption: "none" },
     semachart: { alpha: "semaphore", layout: "chart", labels: "on", ink: "heraldic", pitch: 0.6, gsize: 22, caption: "name" },
     ogham: { alpha: "ogham", layout: "lines", msg: "STONES REMEMBER", labels: "on", ink: "heraldic", gsize: 24, caption: "none" },

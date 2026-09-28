@@ -172,7 +172,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 </div>
 <script>"use strict";
 (() => {
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/core.js
+  // core.js
   var TAU = 2 * Math.PI;
   function ellipse(cx, cy, rx, ry, rotDeg = 0, n = 28) {
     const a = rotDeg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), p = [];
@@ -613,7 +613,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return cells.slice(0, count);
   }
 
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/overlay.js
+  // overlay.js
   var UTP_REV = true ? "d74c18b" : "dev";
   var FREQ = "EEEEEEEEEEEETTTTTTTTTAAAAAAAAOOOOOOOIIIIIIINNNNNNNSSSSSSHHHHHHRRRRRRDDDDLLLLCCCUUUMMMWWFFGGYYPPBVK";
   var cipherOf = (o) => o.cipher === "none" ? null : { kind: o.cipher, key: String(o.ckey || "") };

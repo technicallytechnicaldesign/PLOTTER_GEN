@@ -13,7 +13,7 @@
 // Bits come from UNRAVEL THE PURLOINED's encoders; hiding uses its seeded scatter route. Drawing helpers in core.js.
 "use strict";
 import { TAU, lerp, bbox, ellipse, rect, simplify, inset, fillConvex, painter, drawText, drawGlyphAt, wrap, ADV } from "./core.js";
-import { MARK, drawMarks, packRecord, PAGES } from "./marks.js";
+import { MARK, LAYOUTS, drawMarks, packRecord, PAGES, marksClear } from "./marks.js";
 import * as fivebit from "@utp/fivebit";
 import * as morse from "@utp/morse";
 import * as bacon from "@utp/bacon";
@@ -461,7 +461,9 @@ function variantIndex(o) { const v = VARIANTS[o.method]; return v ? Math.max(0, 
 
 // o: every setting. readRec (decoder only): { len, capH, dy, rows } from a key strip; the drawing is rebuilt around blank bits.
 export function build(o, readRec = null) {
-  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marks = o.marks === "on", M = marks ? MARK.margin : 10, L = layers();
+  // marks: "on" lays the drawing out inside the 17 mm mark margin; "retro" keeps the usual 10 mm layout and adds the small
+  // retrofit marks round it, so a sheet already plotted without marks can have them plotted on afterwards
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), retro = o.marks === "retro", marks = o.marks === "on" || retro, M = o.marks === "on" ? MARK.margin : 10, L = { ...layers(), marks: [] };
   let S, res, capH0, dy, key = "";
   RD = readRec ? [] : null;
   try {
@@ -497,11 +499,11 @@ export function build(o, readRec = null) {
     for (const c of cap) { drawText(c.s, W / 2, yy, c.h, L.text); yy += c.h * 1.55; }
     if (marks) {
       if (o.method === "stars") throw new Error("Constellations are read by eye, so they take no machine marks: switch the marks off.");
-      drawMarks(W, H, packRecord(1, {
+      drawMarks(W, H, packRecord(retro ? 4 : 1, {
         method: METHOD_LIST.indexOf(o.method), variant: variantIndex(o), enc: ENCS.indexOf(o.enc), hide: o.hide === "scatter" ? 1 : 0, density: +o.density - 2, seed: o.seed,
         len: o.method === "pigpen" ? res.rows : len, size: o.size, page: PAGES.indexOf(o.page), cipher: CIPHER_KINDS.indexOf(o.cipher), capH: Math.round(capH0 * 10), dy: Math.round(dy * 10), noise: Math.round(o.noise * 20),
         fill: FILLS.indexOf(o.fill), pitch: Math.round((o.pitch - 0.5) / 0.05), angle: Math.round(o.angle),
-      }), L);
+      }), L, retro ? LAYOUTS.retro : LAYOUTS.normal);
     }
   } catch (err) {
     RD = null;
@@ -509,23 +511,23 @@ export function build(o, readRec = null) {
   }
   RD = null;
   const ok = norm(res.read) === norm(res.want), inPage = [...L.outline, ...L.fill, ...L.text, ...L.reveal].every(([p]) => p.every(([x, y]) => x >= 0.5 && y >= 0.5 && x <= W - 0.5 && y <= H - 0.5));
-  let bottom = 0; for (const [p] of [...L.outline, ...L.fill, ...L.text, ...L.reveal]) for (const q of p) if (q[1] > bottom && (!marks || q[1] < H - MARK.inset - MARK.size - 1)) bottom = q[1];   // a loop: spreading this many points into Math.max overflows the stack
   const gates = [
     ["the drawing reads back to the message", ok, ok ? `"${norm(res.read).slice(0, 40)}"` : `read "${norm(res.read).slice(0, 30)}" want "${norm(res.want).slice(0, 30)}"`],
     ["smallest drawn unit at least 2 mm", res.feature >= 2 - 1e-9, `${res.feature.toFixed(2)} mm`],
     ["everything fits the page", inPage, ""],
   ];
-  if (marks) gates.push(["the drawing clears the key strip", bottom <= H - MARK.margin + 1, `${(H - bottom).toFixed(1)} mm from the bottom edge`]);
+  if (marks) gates.push(marksClear(W, H, [...L.outline, ...L.fill, ...L.text], retro ? LAYOUTS.retro : LAYOUTS.normal));
   const notes = S.dropped && S.dropped.length ? [`Left out (this method cannot carry them): ${[...new Set(S.dropped.map(d => d.char))].join(" ")}`] : [];
   if (o.cipher !== "none") notes.push("Classical ciphers are historical / puzzle ciphers, not modern security.");
   return { W, H, ...L, o, res, key, how: howToRead(o), gates, notes, points: [...L.outline, ...L.fill, ...L.text, ...L.reveal].reduce((s, [p]) => s + p.length, 0), ms: performance.now() - t0 };
 }
 
 // Key strip fields back to settings, the rebuilt drawing, and how to turn read cell values into the message.
-export function readPlan(f) {
+// studio 4 is the same record for a drawing laid out in the plain 10 mm margin (retrofit marks).
+export function readPlan(f, studio = 1) {
   const method = METHOD_LIST[f.method];
   if (!method) throw new Error(`unknown method ${f.method}`);
-  const o = { ...DEFAULTS, method, enc: ENCS[f.enc] || "fivebit", hide: f.hide ? "scatter" : "open", density: String(f.density + 2), seed: f.seed, size: f.size, page: PAGES[f.page], cipher: CIPHER_KINDS[f.cipher] || "none", noise: f.noise / 20, marks: "on",
+  const o = { ...DEFAULTS, method, enc: ENCS[f.enc] || "fivebit", hide: f.hide ? "scatter" : "open", density: String(f.density + 2), seed: f.seed, size: f.size, page: PAGES[f.page], cipher: CIPHER_KINDS[f.cipher] || "none", noise: f.noise / 20, marks: studio === 4 ? "retro" : "on",
     fill: FILLS[f.fill] || "lines", pitch: Math.round((0.5 + f.pitch * 0.05) * 100) / 100, angle: f.angle };
   const v = VARIANTS[method]; if (v) o[v[0]] = v[1][f.variant] || v[1][0];
   const r = build(o, { len: f.len, capH: f.capH, dy: f.dy });
