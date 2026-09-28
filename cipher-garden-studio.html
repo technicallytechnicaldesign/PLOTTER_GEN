@@ -212,6 +212,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     <label>Machine marks (for the camera decoder) <select id="marks">
       <option value="on">on: corner targets and key strip</option>
       <option value="off">off: a clean page</option>
+      <option value="retro">retrofit: small marks round a plot made without them</option>
     </select></label>
     <label>Corner ticks <select id="ticks">
       <option value="split">in split files only</option>
@@ -219,7 +220,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="off">never</option>
     </select></label>
     <div class="row"><button class="primary" id="export">Export SVG (all pens)</button><button id="split">Export each pen</button></div>
-    <p class="hint">Split export writes one SVG per pen, numbered in plotting order, each with the same corner ticks. Machine marks let the plot decoder find the page and read how it was made; turn them off for a gallery copy.</p>
+    <p class="hint">Split export writes one SVG per pen, numbered in plotting order, each with the same corner ticks. Machine marks let the plot decoder find the page and read how it was made; turn them off for a gallery copy. Retrofit: set everything exactly as the plot was made, choose retrofit, export each pen, then plot only the marks file onto the finished sheet in the same place on the mat.</p>
   </fieldset>
 </aside>
 <main>
@@ -231,7 +232,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 </div>
 <script>"use strict";
 (() => {
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/core.js
+  // core.js
   var TAU = 2 * Math.PI;
   var lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   var area = (P) => {
@@ -612,15 +613,32 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 ` + layers2.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
   }
 
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/marks.js
+  // marks.js
   var MARK = { inset: 4, size: 10, margin: 17, slots: 64, rows: 2 };
+  var LAYOUTS = {
+    normal: { name: "normal", inset: 4, size: 10, ring: 1.6, core: 3.2, hollow: 0.8, stripX: 5, rowsAt: [0.78, 0.22], dot: 0.85 },
+    retro: { name: "retro", inset: 2, size: 7, ring: 1.1, core: 2.2, hollow: 0.6, stripX: 3, rowsAt: [0.7, 0.25], dot: 0.8 }
+  };
   var PAGES = ["190x250", "250x190", "280x280"];
-  var DOT_R = 0.85;
-  var centre = MARK.inset + MARK.size / 2;
-  var finderCentres = (W, H) => [[centre, centre], [W - centre, centre], [W - centre, H - centre], [centre, H - centre]];
-  function stripSlots(W, H) {
-    const x0 = MARK.inset + MARK.size + 5, x1 = W - x0, pitch = (x1 - x0) / (MARK.slots - 1), ys = [H - MARK.inset - MARK.size * 0.78, H - MARK.inset - MARK.size * 0.22];
+  var finderCentres = (W, H, lay = LAYOUTS.normal) => {
+    const c = lay.inset + lay.size / 2;
+    return [[c, c], [W - c, c], [W - c, H - c], [c, H - c]];
+  };
+  function stripSlots(W, H, lay = LAYOUTS.normal) {
+    const x0 = lay.inset + lay.size + lay.stripX, x1 = W - x0, pitch = (x1 - x0) / (MARK.slots - 1), ys = lay.rowsAt.map((f) => H - lay.inset - lay.size * f);
     return { pitch, slots: Array.from({ length: MARK.slots * MARK.rows }, (_, i) => [x0 + i % MARK.slots * pitch, ys[Math.floor(i / MARK.slots)]]) };
+  }
+  function marksClear(W, H, layers2, lay = LAYOUTS.normal) {
+    const Z = markZones(W, H, lay);
+    let hits = 0;
+    for (const [p] of layers2) for (const [x, y] of p) if (Z.some(([a, b, c, d]) => x > a && x < c && y > b && y < d)) hits++;
+    return [`the ${lay.name === "retro" ? "retrofit " : ""}marks land on bare paper`, hits === 0, hits ? `${hits} drawn points inside the mark zones` : ""];
+  }
+  function markZones(W, H, lay = LAYOUTS.normal) {
+    const z = finderCentres(W, H, lay).map(([x, y]) => [x - lay.size / 2 - 0.5, y - lay.size / 2 - 0.5, x + lay.size / 2 + 0.5, y + lay.size / 2 + 0.5]);
+    const { slots } = stripSlots(W, H, lay);
+    z.push([slots[0][0] - lay.dot - 0.5, Math.min(...slots.map((s) => s[1])) - lay.dot - 0.5, slots[MARK.slots - 1][0] + lay.dot + 0.5, Math.max(...slots.map((s) => s[1])) + lay.dot + 0.5]);
+    return z;
   }
   var solidSquare = (cx, cy, s, upTo = s / 2) => {
     const out = [];
@@ -628,23 +646,27 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     if (upTo >= s / 2 - 0.05) out.push([[[cx - 0.5, cy], [cx + 0.5, cy]], false], [[[cx, cy - 0.5], [cx, cy + 0.5]], false]);
     return out;
   };
-  function drawMarks(W, H, bits, L) {
-    finderCentres(W, H).forEach(([cx, cy], i) => {
-      L.outline.push(...solidSquare(cx, cy, MARK.size, 1.6));
-      L.outline.push(...i === 2 ? solidSquare(cx, cy, 3.2, 0.8) : solidSquare(cx, cy, 3.2));
+  function drawMarks(W, H, bits, L, lay = LAYOUTS.normal) {
+    const out = L.marks || (L.marks = []);
+    finderCentres(W, H, lay).forEach(([cx, cy], i) => {
+      out.push(...solidSquare(cx, cy, lay.size, lay.ring));
+      out.push(...i === 2 ? solidSquare(cx, cy, lay.core, lay.hollow) : solidSquare(cx, cy, lay.core));
     });
-    const { slots } = stripSlots(W, H), r = DOT_R;
+    const { slots } = stripSlots(W, H, lay), r = lay.dot;
     slots.forEach(([x, y], i) => {
-      if (bits[i]) for (let q = r; q > 0.05; q -= 0.3) L.outline.push([ellipse(x, y, q, q, 0, 16), true]);
+      if (bits[i]) for (let q = r; q > 0.05; q -= 0.3) out.push([ellipse(x, y, q, q, 0, 16), true]);
     });
   }
   var SYNC = [1, 0, 1, 1, 0];
   var SCHEMAS = {
     1: [["method", 4], ["variant", 2], ["enc", 2], ["hide", 1], ["density", 2], ["seed", 10], ["len", 12], ["size", 6], ["page", 2], ["cipher", 3], ["capH", 11], ["dy", 12, true], ["noise", 5], ["fill", 3], ["pitch", 6], ["angle", 8, true]],
     // cipher garden (pitch: 0.05 mm steps above 0.5)
-    2: [["look", 3], ["carrier", 3], ["border", 1], ["enc", 3], ["check", 2], ["hide", 3], ["seed", 10], ["density", 2], ["cipher", 3], ["x0", 12], ["y0", 12], ["cw", 11], ["rows", 8], ["cols", 7], ["wobble", 5], ["gaps", 1], ["page", 2], ["len", 12], ["fill", 3]]
+    2: [["look", 3], ["carrier", 3], ["border", 1], ["enc", 3], ["check", 2], ["hide", 3], ["seed", 10], ["density", 2], ["cipher", 3], ["x0", 12], ["y0", 12], ["cw", 11], ["rows", 8], ["cols", 7], ["wobble", 5], ["gaps", 1], ["page", 2], ["len", 12], ["fill", 3]],
     // purloined plot studio: chart, scatter and motif layouts
+    // signal book: a regular grid of glyph cells (x0, y0 of the first cell; cell and row pitch; cells a line, lines), in tenths of a mm
+    3: [["alpha", 3], ["hoist", 1], ["ink", 2], ["pitch", 6], ["angle", 8, true], ["x0", 12], ["y0", 12], ["h", 10], ["cellW", 10], ["rowStep", 10], ["per", 7], ["lines", 7], ["page", 2], ["cipher", 3], ["ghost", 1]]
   };
+  SCHEMAS[4] = SCHEMAS[1];
   var crc8 = (bits) => {
     let c = 0;
     for (const b of bits) {
@@ -1060,7 +1082,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return cells.slice(0, count);
   }
 
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/cipher-core.js
+  // cipher-core.js
   var ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   var METHOD_LIST = ["truchet", "maze", "hilbert", "ridges", "pigpen", "stars", "disk", "automaton", "knots"];
   var VARIANTS = { truchet: ["tiles", ["arcs", "triangles", "diag", "ribbons"]], maze: ["walls", ["line", "bands"]], hilbert: ["mark", ["wave", "loop", "zigzag"]], automaton: ["cells", ["squares", "dots", "diamonds"]] };
@@ -1660,7 +1682,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return v ? Math.max(0, v[1].indexOf(o[v[0]])) : 0;
   }
   function build(o, readRec = null) {
-    const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marks = o.marks === "on", M = marks ? MARK.margin : 10, L = layers();
+    const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), retro = o.marks === "retro", marks = o.marks === "on" || retro, M = o.marks === "on" ? MARK.margin : 10, L = { ...layers(), marks: [] };
     let S, res, capH0, dy, key = "";
     RD = readRec ? [] : null;
     try {
@@ -1697,7 +1719,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       }
       if (marks) {
         if (o.method === "stars") throw new Error("Constellations are read by eye, so they take no machine marks: switch the marks off.");
-        drawMarks(W, H, packRecord(1, {
+        drawMarks(W, H, packRecord(retro ? 4 : 1, {
           method: METHOD_LIST.indexOf(o.method),
           variant: variantIndex(o),
           enc: ENCS.indexOf(o.enc),
@@ -1714,7 +1736,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
           fill: FILLS.indexOf(o.fill),
           pitch: Math.round((o.pitch - 0.5) / 0.05),
           angle: Math.round(o.angle)
-        }), L);
+        }), L, retro ? LAYOUTS.retro : LAYOUTS.normal);
       }
     } catch (err) {
       RD = null;
@@ -1722,20 +1744,18 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     }
     RD = null;
     const ok = norm(res.read) === norm(res.want), inPage = [...L.outline, ...L.fill, ...L.text, ...L.reveal].every(([p]) => p.every(([x, y]) => x >= 0.5 && y >= 0.5 && x <= W - 0.5 && y <= H - 0.5));
-    let bottom = 0;
-    for (const [p] of [...L.outline, ...L.fill, ...L.text, ...L.reveal]) for (const q of p) if (q[1] > bottom && (!marks || q[1] < H - MARK.inset - MARK.size - 1)) bottom = q[1];
     const gates = [
       ["the drawing reads back to the message", ok, ok ? `"${norm(res.read).slice(0, 40)}"` : `read "${norm(res.read).slice(0, 30)}" want "${norm(res.want).slice(0, 30)}"`],
       ["smallest drawn unit at least 2 mm", res.feature >= 2 - 1e-9, `${res.feature.toFixed(2)} mm`],
       ["everything fits the page", inPage, ""]
     ];
-    if (marks) gates.push(["the drawing clears the key strip", bottom <= H - MARK.margin + 1, `${(H - bottom).toFixed(1)} mm from the bottom edge`]);
+    if (marks) gates.push(marksClear(W, H, [...L.outline, ...L.fill, ...L.text], retro ? LAYOUTS.retro : LAYOUTS.normal));
     const notes = S.dropped && S.dropped.length ? [`Left out (this method cannot carry them): ${[...new Set(S.dropped.map((d) => d.char))].join(" ")}`] : [];
     if (o.cipher !== "none") notes.push("Classical ciphers are historical / puzzle ciphers, not modern security.");
     return { W, H, ...L, o, res, key, how: howToRead(o), gates, notes, points: [...L.outline, ...L.fill, ...L.text, ...L.reveal].reduce((s, [p]) => s + p.length, 0), ms: performance.now() - t0 };
   }
 
-  // WORKSHOPS/CRICUT/PLOTTER_GEN/02_WORK/plg-stego/cipher.js
+  // cipher.js
   var UTP_REV = true ? "d74c18b" : "dev";
   var $ = (id) => document.getElementById(id);
   var IDS = ["msg", "enc", "cipher", "ckey", "method", "hide", "density", "seed", "size", "tiles", "walls", "mark", "cells", "rule", "noise", "pkey", "fill", "pitch", "angle", "caption", "tsize", "tpen", "reveal", "rpen", "page", "marks"];
@@ -1774,12 +1794,14 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     };
     stroke(r.fill, "#5c7080", 0.3);
     stroke(r.outline, "#0b0f14", 0.4);
+    stroke(r.marks || [], "#0b0f14", 0.4);
     stroke(r.text, r.o.tpen, 0.3);
     c.globalAlpha = 0.85;
     stroke(r.reveal, r.o.rpen, 0.35);
     c.globalAlpha = 1;
   }
   var penLayers = (r) => [
+    { name: "marks", colour: "000000", w: 0.4, paths: r.marks || [] },
     { name: "outline", colour: "000000", w: 0.4, paths: r.outline },
     { name: "fill", colour: "555555", w: 0.3, paths: r.fill },
     { name: "text", colour: r.o.tpen.slice(1), w: 0.3, paths: r.text },

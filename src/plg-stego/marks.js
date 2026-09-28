@@ -9,13 +9,32 @@
 import { ellipse, rect } from "./core.js";
 
 export const MARK = { inset: 4, size: 10, margin: 17, slots: 64, rows: 2 };
+// Two mark layouts. "normal" is drawn with a plot laid out inside a 17 mm margin. "retro" is small enough to plot onto a
+// sheet already drawn inside the usual 10 mm margin: 7 mm targets 2 mm in from the corners, the strip in the bottom 8 mm.
+// The decoder tries both, so no record says which.
+export const LAYOUTS = {
+  normal: { name: "normal", inset: 4, size: 10, ring: 1.6, core: 3.2, hollow: 0.8, stripX: 5, rowsAt: [0.78, 0.22], dot: 0.85 },
+  retro: { name: "retro", inset: 2, size: 7, ring: 1.1, core: 2.2, hollow: 0.6, stripX: 3, rowsAt: [0.7, 0.25], dot: 0.8 },
+};
 export const PAGES = ["190x250", "250x190", "280x280"];
 export const DOT_R = 0.85;   // strip dot radius (mm): the 190 mm page's 2.44 mm pitch leaves 0.7 mm of paper between dots
-const centre = MARK.inset + MARK.size / 2;
-export const finderCentres = (W, H) => [[centre, centre], [W - centre, centre], [W - centre, H - centre], [centre, H - centre]];   // TL TR BR BL
-export function stripSlots(W, H) {
-  const x0 = MARK.inset + MARK.size + 5, x1 = W - x0, pitch = (x1 - x0) / (MARK.slots - 1), ys = [H - MARK.inset - MARK.size * 0.78, H - MARK.inset - MARK.size * 0.22];
+export const finderCentres = (W, H, lay = LAYOUTS.normal) => { const c = lay.inset + lay.size / 2; return [[c, c], [W - c, c], [W - c, H - c], [c, H - c]]; };   // TL TR BR BL
+export function stripSlots(W, H, lay = LAYOUTS.normal) {
+  const x0 = lay.inset + lay.size + lay.stripX, x1 = W - x0, pitch = (x1 - x0) / (MARK.slots - 1), ys = lay.rowsAt.map(f => H - lay.inset - lay.size * f);
   return { pitch, slots: Array.from({ length: MARK.slots * MARK.rows }, (_, i) => [x0 + (i % MARK.slots) * pitch, ys[Math.floor(i / MARK.slots)]]) };
+}
+// Gate: no drawn point inside any mark's zone (a mark over ink would not read, and would spoil the drawing).
+export function marksClear(W, H, layers, lay = LAYOUTS.normal) {
+  const Z = markZones(W, H, lay); let hits = 0;
+  for (const [p] of layers) for (const [x, y] of p) if (Z.some(([a, b, c, d]) => x > a && x < c && y > b && y < d)) hits++;
+  return [`the ${lay.name === "retro" ? "retrofit " : ""}marks land on bare paper`, hits === 0, hits ? `${hits} drawn points inside the mark zones` : ""];
+}
+// The rectangles marks occupy, to check a retrofit does not land on the drawing.
+export function markZones(W, H, lay = LAYOUTS.normal) {
+  const z = finderCentres(W, H, lay).map(([x, y]) => [x - lay.size / 2 - 0.5, y - lay.size / 2 - 0.5, x + lay.size / 2 + 0.5, y + lay.size / 2 + 0.5]);
+  const { slots } = stripSlots(W, H, lay);
+  z.push([slots[0][0] - lay.dot - 0.5, Math.min(...slots.map(s => s[1])) - lay.dot - 0.5, slots[MARK.slots - 1][0] + lay.dot + 0.5, Math.max(...slots.map(s => s[1])) + lay.dot + 0.5]);
+  return z;
 }
 
 // Concentric squares 0.4 mm apart read as solid ink once a 0.4 mm pen has drawn them.
@@ -25,14 +44,16 @@ const solidSquare = (cx, cy, s, upTo = s / 2) => {
   if (upTo >= s / 2 - 0.05) out.push([[[cx - 0.5, cy], [cx + 0.5, cy]], false], [[[cx, cy - 0.5], [cx, cy + 0.5]], false]);
   return out;
 };
-export function drawMarks(W, H, bits, L) {
-  finderCentres(W, H).forEach(([cx, cy], i) => {
-    L.outline.push(...solidSquare(cx, cy, MARK.size, 1.6));   // ring 1.6, clear gap 1.8 (1.4 after the pen), core 3.2: blur must not bridge it
-    L.outline.push(...(i === 2 ? solidSquare(cx, cy, 3.2, 0.8) : solidSquare(cx, cy, 3.2)));
+// Marks go to their own pen layer (L.marks), so a retrofit can export them alone.
+export function drawMarks(W, H, bits, L, lay = LAYOUTS.normal) {
+  const out = L.marks || (L.marks = []);
+  finderCentres(W, H, lay).forEach(([cx, cy], i) => {
+    out.push(...solidSquare(cx, cy, lay.size, lay.ring));   // normal: ring 1.6, clear gap 1.8 (1.4 after the pen), core 3.2: blur must not bridge it
+    out.push(...(i === 2 ? solidSquare(cx, cy, lay.core, lay.hollow) : solidSquare(cx, cy, lay.core)));
   });
   // a 1 is a solid dot, a 0 is bare paper (a ring round every slot blurred into its dot below about 5 px per mm)
-  const { slots } = stripSlots(W, H), r = DOT_R;
-  slots.forEach(([x, y], i) => { if (bits[i]) for (let q = r; q > 0.05; q -= 0.3) L.outline.push([ellipse(x, y, q, q, 0, 16), true]); });
+  const { slots } = stripSlots(W, H, lay), r = lay.dot;
+  slots.forEach(([x, y], i) => { if (bits[i]) for (let q = r; q > 0.05; q -= 0.3) out.push([ellipse(x, y, q, q, 0, 16), true]); });
 }
 
 // ---------------- records ----------------
@@ -48,7 +69,10 @@ export const SYNC = [1, 0, 1, 1, 0];
 export const SCHEMAS = {
   1: [["method", 4], ["variant", 2], ["enc", 2], ["hide", 1], ["density", 2], ["seed", 10], ["len", 12], ["size", 6], ["page", 2], ["cipher", 3], ["capH", 11], ["dy", 12, true], ["noise", 5], ["fill", 3], ["pitch", 6], ["angle", 8, true]],   // cipher garden (pitch: 0.05 mm steps above 0.5)
   2: [["look", 3], ["carrier", 3], ["border", 1], ["enc", 3], ["check", 2], ["hide", 3], ["seed", 10], ["density", 2], ["cipher", 3], ["x0", 12], ["y0", 12], ["cw", 11], ["rows", 8], ["cols", 7], ["wobble", 5], ["gaps", 1], ["page", 2], ["len", 12], ["fill", 3]],   // purloined plot studio: chart, scatter and motif layouts
+  // signal book: a regular grid of glyph cells (x0, y0 of the first cell; cell and row pitch; cells a line, lines), in tenths of a mm
+  3: [["alpha", 3], ["hoist", 1], ["ink", 2], ["pitch", 6], ["angle", 8, true], ["x0", 12], ["y0", 12], ["h", 10], ["cellW", 10], ["rowStep", 10], ["per", 7], ["lines", 7], ["page", 2], ["cipher", 3], ["ghost", 1]],
 };
+SCHEMAS[4] = SCHEMAS[1];   // cipher garden laid out for a retrofit (10 mm margin): the same record under its own studio id
 const crc8 = bits => { let c = 0; for (const b of bits) { const top = (c >> 7) & 1; c = ((c << 1) & 0xff) ^ ((top ^ b) ? 0x07 : 0); } return Array.from({ length: 8 }, (_, i) => (c >> (7 - i)) & 1); };
 const toBits = (v, n) => Array.from({ length: n }, (_, i) => (v >> (n - 1 - i)) & 1);
 export function packRecord(studio, fields) {

@@ -20,7 +20,7 @@ import { MOTIFS } from "@utp/motifs";
 const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 
 
-import { MARK, drawMarks, packRecord, PAGES, STEGO } from "./marks.js";
+import { MARK, LAYOUTS, drawMarks, packRecord, PAGES, STEGO, marksClear } from "./marks.js";
 import { TAU, lerp, area, centroid, bbox, ellipse, rect, capsule, sector, plen, densify, simplify, dashed, segIn, insideRuns, inset, hash2, fillConvex, painter, GLYPHS, ADV, textWidth, drawText, wrap, svgOf } from "./core.js";
 
 // ---------------- message to cells ----------------
@@ -301,7 +301,8 @@ let last = null;
 const { LOOKS, CARRIERS, ENCS, CHECKS, HIDES, CIPHERS } = STEGO;   // key strip vocabularies, shared with the decoder
 
 function build(o) {
-  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marksOn = o.marks === "on", M = marksOn ? MARK.margin : 10;
+  // marks "on" lays the page out inside the 17 mm mark margin; "retro" keeps the plain 10 mm layout and adds small marks round it
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), marksOn = o.marks === "on" || o.marks === "retro", M = o.marks === "on" ? MARK.margin : 10;
   const L = { outline: [], fill: [], text: [], reveal: [] }, gates = [];
   let G;
   const openLayout = o.hide === "columns" || o.hide === "tape", labels = openLayout && /message/.test(o.caption);
@@ -333,12 +334,13 @@ function build(o) {
 
   const notes = [];
   if (marksOn) {
-    const camera = G.kind === "chart" && C <= 127 && R <= 255 && !(o.look === "stitches" && UNITS[o.carrier]);
+    const camera = G.kind === "chart" && C <= 127 && R <= 255 && !(o.look === "stitches" && UNITS[o.carrier]), lay = o.marks === "retro" ? LAYOUTS.retro : LAYOUTS.normal;
+    if (camera) gates.push(marksClear(W, H, [...L.outline, ...L.fill, ...L.text], lay));
     if (camera) drawMarks(W, H, packRecord(2, {
       look: LOOKS.indexOf(o.look), carrier: CARRIERS.indexOf(o.carrier), border: o.border === "on" ? 1 : 0, enc: ENCS.indexOf(o.enc), check: CHECKS.indexOf(o.check), hide: HIDES.indexOf(o.hide),
       seed: o.seed, density: +o.density - 2, cipher: CIPHERS.indexOf(o.cipher), x0: Math.round(x0 * 10), y0: Math.round(y0 * 10), cw: Math.round(cw * 100), rows: R, cols: C,
       wobble: Math.round(o.wobble * 20), gaps: o.gaps === "shaded" ? 1 : 0, page: PAGES.indexOf(o.page), len: G.P?.output.key?.length ?? 0, fill: STEGO.FILLS.indexOf(o.fill),
-    }), L);
+    }), L, lay);
     else notes.push(G.kind === "chart" ? "Machine marks left off: knitted cables, lace, bobbles and beads are read by eye." : "Machine marks left off: letter columns and tapes are read by eye.");
   }
   const all = [...L.outline, ...L.fill, ...L.text, ...L.reveal];
@@ -385,10 +387,12 @@ function draw(r) {
 function paint(c, r) {
   c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
   const stroke = (paths, col, lw) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); if (cl) c.closePath(); } c.stroke(); };
-  stroke(r.fill, "#736b56", 0.3); stroke(r.outline, "#26200f", 0.4); stroke(r.text, r.o.tpen, 0.3);
+  stroke(r.fill, "#736b56", 0.3); stroke(r.outline, "#26200f", 0.4); stroke(r.marks || [], "#26200f", 0.4); stroke(r.text, r.o.tpen, 0.3);
   c.globalAlpha = 0.85; stroke(r.reveal, r.o.rpen, 0.35); c.globalAlpha = 1;
 }
+// marks are their own pen, first: a retrofit plots only this file onto a sheet that is already drawn
 const penLayers = r => [
+  { name: "marks", colour: "000000", w: 0.4, paths: r.marks || [] },
   { name: "outline", colour: "000000", w: 0.4, paths: r.outline },
   { name: "fill", colour: "555555", w: 0.3, paths: r.fill },
   { name: "text", colour: r.o.tpen.slice(1), w: 0.3, paths: r.text },

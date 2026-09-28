@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../../../..");
 const utp = path.join(root, "unravel-the-purloined");
-const PAGES = [["studio.js", "template.html", "stego-plot-studio.html"], ["cipher.js", "cipher-template.html", "cipher-garden-studio.html"], ["decoder.js", "decoder-template.html", "plot-decoder.html"], ["overlay.js", "overlay-template.html", "overlay-studio.html"], ["signals.js", "signals-template.html", "signal-book-studio.html"]];
+const PAGES = [["studio.js", "template.html", "stego-plot-studio.html"], ["cipher.js", "cipher-template.html", "cipher-garden-studio.html"], ["decoder.js", "decoder-template.html", "plot-decoder.html"], ["overlay.js", "overlay-template.html", "overlay-studio.html"], ["signals.js", "signals-template.html", "signal-book-studio.html"]];   // signals.js draws with signals-core.js
 
 const { build } = await import(pathToFileURL(path.join(utp, "node_modules/esbuild/lib/main.js")).href);
 let rev = "unknown";
@@ -41,3 +41,7 @@ await build({
   alias: { "@utp": path.join(utp, "src/engine") }, define: { __UTP_REV__: JSON.stringify(rev) }, logLevel: "warning",
 });
 console.log("wrote 02_WORK/plg-stego/_build/decoder-core.mjs (for decoder-test.mjs)");
+await build({
+  entryPoints: [path.join(here, "freegrid.js")], bundle: true, format: "esm", platform: "node", target: "node20", outfile: path.join(here, "_build/freegrid.mjs"),
+  alias: { "@utp": path.join(utp, "src/engine") }, logLevel: "warning",
+});

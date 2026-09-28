@@ -10,8 +10,9 @@
 //                 strokes it does not have) is the value
 "use strict";
 import { homography, project } from "@utp/photo";
-import { MARK, PAGES, STEGO, DOT_R, finderCentres, stripSlots, unpackRecord } from "./marks.js";
+import { MARK, PAGES, STEGO, DOT_R, LAYOUTS, finderCentres, stripSlots, unpackRecord } from "./marks.js";
 import { readPlan, METHOD_LIST } from "./cipher-core.js";
+import { readPlan as signalPlan } from "./signals-core.js";
 import { ellipse, rect, densify, fillConvex } from "./core.js";
 import { readGrid, unframe } from "@utp/grid";
 import { decodeFrame, DEFAULT_OPTIONS } from "@utp/errorcontrol";
@@ -107,14 +108,18 @@ export function orderFinders(cands) {
 }
 
 // ---------------- strip and sampling ----------------
-function sampler(I, Hm) {
+// off: a shift in page millimetres, for retrofit marks that sit a little off the drawing they were plotted round
+function sampler(I, Hm, off = [0, 0]) {
   const [ax, ay] = project(Hm, [50, 50]), [bx, by] = project(Hm, [51, 50]), [cx, cy] = project(Hm, [50, 51]), ppm = (Math.hypot(bx - ax, by - ay) + Math.hypot(cx - ax, cy - ay)) / 2;
-  return { ppm, px: p => project(Hm, p), dark: (p, rMm = 0.28) => { const [x, y] = project(Hm, p); return darkNear(I, x, y, Math.max(0.8, rMm * ppm)); }, area: p => { const [x, y] = project(Hm, p); return at(I, x, y); } };
+  const P = ([x, y]) => project(Hm, [x + off[0], y + off[1]]);
+  return { ppm, Hm, off, px: P, dark: (p, rMm = 0.28) => { const [x, y] = P(p); return darkNear(I, x, y, Math.max(0.8, rMm * ppm)); }, area: p => { const [x, y] = P(p); return at(I, x, y); } };
 }
+// Both mark layouts (normal, and the small retrofit ones) and every page size are tried; the strip that passes its
+// sync and checksum says which it was.
 export function readStrip(I, quad) {
   const tried = [];
-  for (const page of PAGES) {
-    const [W, H] = page.split("x").map(Number), Hm = homography(finderCentres(W, H), quad), sp = sampler(I, Hm), { slots } = stripSlots(W, H), q = DOT_R * 0.45;
+  for (const lay of Object.values(LAYOUTS)) for (const page of PAGES) {
+    const [W, H] = page.split("x").map(Number), Hm = homography(finderCentres(W, H, lay), quad), sp = sampler(I, Hm), { slots } = stripSlots(W, H, lay), q = lay.dot * 0.45;
     // each slot: the mean darkness of five points inside where a dot would be (one noisy pixel cannot fake a dot);
     // the cut between dot and paper comes from the strip's own two levels, not a fixed number
     const lv = slots.map(([x, y]) => [[0, 0], [q, 0], [-q, 0], [0, q], [0, -q]].reduce((s, [dx, dy]) => s + sp.area([x + dx, y + dy]), 0) / 5);
@@ -125,9 +130,9 @@ export function readStrip(I, quad) {
     let rec = ok(bits);
     // the checksum failed: try flipping each of the six least certain bits (a flip only counts if the page matches too)
     if (!rec) for (const i of reads.map((q, i) => [q.margin, i]).sort((a, b) => a[0] - b[0]).slice(0, 6).map(q => q[1])) { const b = bits.slice(); b[i] ^= 1; if ((rec = ok(b))) { rec.repaired = i; break; } }
-    if (rec) return { page, W, H, Hm, sp, rec };
+    if (rec) return { page, W, H, Hm, sp, rec, lay };
     rec = unpackRecord(bits);
-    tried.push({ page, error: rec.error, bits: bits.join("") });
+    tried.push({ page, lay: lay.name, error: rec.error, bits: bits.join("") });
   }
   return { tried };
 }
@@ -135,29 +140,87 @@ export function readStrip(I, quad) {
 // ---------------- reading cells ----------------
 // cands: one list of [points, closed] paths per possible value (an empty list is "nothing drawn").
 // Work on a 0.3 mm grid of sample cells: every candidate claims the cells its strokes pass through (a bit mask per
-// cell, so up to 31 candidates), and "near" means the 3 x 3 cells round a cell.
-function pick(sp, cands) {
+// cell), and "near" means the 3 x 3 cells round a cell. Masks are plain numbers up to 30 candidates, BigInts beyond
+// (the signal flags offer 37: 26 letters, 10 pennants and a blank).
+function pick(sp, cands, rMm = 0.28) {
+  const big = cands.length > 30, Z = big ? 0n : 0, bitOf = v => (big ? 1n << BigInt(v) : 1 << v);
   const G = 0.3, K = (i, j) => i * 65536 + j, owner = new Map(), where = new Map();
   cands.forEach((ps, v) => ps.forEach(([p, c]) => (p.length > 1 ? densify(p, c, 0.35) : p).forEach(([x, y]) => {
     const i = Math.round(x / G), j = Math.round(y / G), k = K(i, j);
-    owner.set(k, (owner.get(k) || 0) | (1 << v)); if (!where.has(k)) where.set(k, [x, y]);   // sample the stroke point itself
+    owner.set(k, (owner.get(k) || Z) | bitOf(v)); if (!where.has(k)) where.set(k, [x, y]);   // sample the stroke point itself
   })));
   const keys = [...owner.keys()], near = new Map(), dark = new Map();
   for (const k of keys) {
-    const i = Math.floor(k / 65536), j = k - i * 65536; let m = 0;
-    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) m |= owner.get(K(i + a, j + b)) || 0;
-    near.set(k, m); dark.set(k, sp.dark(where.get(k)));
+    const i = Math.floor(k / 65536), j = k - i * 65536; let m = Z;
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) m |= owner.get(K(i + a, j + b)) || Z;
+    near.set(k, m); dark.set(k, sp.dark(where.get(k), rMm));
   }
   const mean = ks => (ks.length ? ks.reduce((s, k) => s + dark.get(k), 0) / ks.length : null);
   const scores = cands.map((ps, v) => {
-    const bit = 1 << v;
+    const bit = bitOf(v);
     if (!ps.length) return 0.4 - (mean(keys) ?? 0);
-    const mine = keys.filter(k => owner.get(k) & bit), own = mine.filter(k => !(near.get(k) & ~bit)), inV = own.length >= 3 ? own : mine;
-    const outV = keys.filter(k => !(near.get(k) & bit));
+    const mine = keys.filter(k => (owner.get(k) & bit) !== Z), own = mine.filter(k => (near.get(k) & ~bit) === Z), inV = own.length >= 3 ? own : mine;
+    const outV = keys.filter(k => (near.get(k) & bit) === Z);
     return mean(inV) - (outV.length ? mean(outV) : 0.4);
   });
   const order = scores.map((s, v) => [s, v]).sort((a, b) => b[0] - a[0]);
   return { value: order[0][1], conf: order[0][0] - (order[1] ? order[1][0] : 0) };
+}
+
+// Template matching, for glyphs dense with hatching (the signal flags): each candidate is rendered as the darkness it
+// would leave on a 0.35 mm grid (pen width and a little blur included), the photo is sampled on the same grid, and the
+// candidate that correlates best wins. Stroke scoring could not tell hatch directions apart: every hatched flag read as E.
+// Candidates are the same shapes in every cell, only moved, so their renders are cached by shape and reused.
+const TPL = new Map();
+function templates(cands) {
+  const pts = cands.flatMap(ps => ps.flatMap(([p]) => p)), b = pts.length ? pts.reduce((a, [x, y]) => [Math.min(a[0], x), Math.min(a[1], y), Math.max(a[2], x), Math.max(a[3], y)], [1e9, 1e9, -1e9, -1e9]) : [0, 0, 1, 1];
+  const key = `${cands.length}:${(b[2] - b[0]).toFixed(1)}x${(b[3] - b[1]).toFixed(1)}:${pts.length}`;
+  if (TPL.has(key)) return { ...TPL.get(key), ox: b[0], oy: b[1] };
+  const S = 0.35, m = 0.6, nx = Math.ceil((b[2] - b[0] + 2 * m) / S), ny = Math.ceil((b[3] - b[1] + 2 * m) / S), sig = 0.22;
+  const pred = cands.map(ps => {
+    const r = new Float32Array(nx * ny);
+    for (const [p, c] of ps) for (const [x, y] of p.length > 1 ? densify(p, c, 0.1) : p) {
+      const fx = (x - b[0] + m) / S, fy = (y - b[1] + m) / S;
+      for (let j = Math.floor(fy - 2); j <= fy + 2; j++) for (let i = Math.floor(fx - 2); i <= fx + 2; i++) {
+        if (i < 0 || j < 0 || i >= nx || j >= ny) continue;
+        const d = Math.hypot((i + 0.5 - fx) * S, (j + 0.5 - fy) * S), v = Math.exp(-((Math.max(0, d - 0.15) / sig) ** 2));
+        if (v > r[j * nx + i]) r[j * nx + i] = v;
+      }
+    }
+    return r;
+  });
+  const t = { pred, nx, ny, S, m };
+  TPL.set(key, t);
+  return { ...t, ox: b[0], oy: b[1] };
+}
+function observe(sp, cands) {
+  const t = templates(cands), obs = new Float32Array(t.nx * t.ny);
+  for (let j = 0; j < t.ny; j++) for (let i = 0; i < t.nx; i++) obs[j * t.nx + i] = sp.dark([t.ox - t.m + (i + 0.5) * t.S, t.oy - t.m + (j + 0.5) * t.S], 0.06);
+  return { t, obs, mo: obs.reduce((s, v) => s + v, 0) / obs.length };
+}
+// bareCut: the ink level under which a cell counts as blank, set from the page's own cells (see pickAll)
+function pickTemplate(sp, cands, bareCut) {
+  const { t: { pred }, obs, mo } = observe(sp, cands), n = obs.length, so = Math.sqrt(obs.reduce((s, v) => s + (v - mo) ** 2, 0) / n) || 1e-6;
+  const means = pred.map(p => p.reduce((s, v) => s + v, 0) / n);
+  const ncc = pred.map((p, v) => {
+    if (!means[v]) return -Infinity;
+    // a glyph is only a candidate if its own strokes are inked: a sparse glyph (one ogham notch, a stick figure) can
+    // correlate with bare-paper noise, but its stroke points then sit near the noise level (about 0.2), not the ink (0.9)
+    let si = 0, sn = 0; for (let k = 0; k < n; k++) if (p[k] > 0.6) { si += obs[k]; sn++; }
+    if (sn && si / sn < 0.5) return -1;
+    const mp = means[v], sd = Math.sqrt(p.reduce((s, x) => s + (x - mp) ** 2, 0) / n) || 1e-6;
+    let c = 0; for (let k = 0; k < n; k++) c += (obs[k] - mo) * (p[k] - mp);
+    return c / (n * so * sd);
+  });
+  // blank takes both tests: little ink (by the page's own levels) and no glyph that fits. Ink alone called the mostly
+  // white flags (A, S, X) blank; correlation alone let bare-paper noise match a template.
+  // also blank when no glyph's strokes are inked at all (then every candidate scored -1 and the first one won by default)
+  const bestFit = Math.max(...ncc), bare = (mo < bareCut && bestFit < 0.35) || bestFit <= -1;
+  const scores = ncc.map((s, v) => (!means[v] ? (bare ? 10 : -10) : bare ? -1 : s));
+  const order = scores.map((s, v) => [s, v]).sort((a, b) => b[0] - a[0]);
+  // fit: how well the best glyph matches, what the retrofit shift search maximises (the winning margin let a badly
+  // shifted template win with confidence, and the hoist read as a column of B flags)
+  return { value: order[0][1], conf: order[0][0] - (order[1] ? order[1][0] : 0), fit: bare ? 0.5 : bestFit };
 }
 
 // Hatch-filled or not: the mean darkness over the inside (a hatch at 0.5 to 1 mm pitch covers roughly 30 to 60 per cent);
@@ -170,13 +233,17 @@ function pickArea(sp, { area, edge }) {
 const gridPts = (x, y, w, h, n = 7) => Array.from({ length: n * n }, (_, i) => [x + w * ((i % n) + 0.5) / n, y + h * (Math.floor(i / n) + 0.5) / n]);
 const ellipsePts = (cx, cy, rx, ry, rot) => { const a = rot * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), out = []; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const u = i / 2.5 * rx, v = j / 2.5 * ry; if ((u / rx) ** 2 + (v / ry) ** 2 <= 1) out.push([cx + u * c - v * s, cy + u * s + v * c]); } return out; };
 
-// ---------------- the two studios ----------------
-function readCipher(sp, fields, cipherKey) {
-  const plan = readPlan(fields), picks = plan.cells.map(c => pick(sp, c.cands));
-  const out = plan.finish(picks.map(p => p.value), cipherKey);
-  return { studio: "cipher garden", method: METHOD_LIST[fields.method], ...out, cipher: plan.cipher, picks, cells: plan.cells, o: plan.o };
+// ---------------- the studios ----------------
+// Each studio's plan: its cells (candidates per cell, or an area to measure) and how to turn the picked values into text.
+function cipherPlan(fields, studio) {
+  const plan = readPlan(fields, studio);
+  return { cells: plan.cells, finish: (picks, key) => ({ studio: "cipher garden", method: METHOD_LIST[fields.method], cipher: plan.cipher, o: plan.o, ...plan.finish(picks.map(p => p.value), key) }) };
 }
-function readStego(sp, f, cipherKey) {
+function signalBookPlan(fields) {
+  const plan = signalPlan(fields);
+  return { cells: plan.cells, finish: (picks, key) => ({ studio: "signal book", method: plan.o.alpha, cipher: plan.cipher, ...plan.finish(picks.map(p => p.value), key) }) };
+}
+function stegoPlan(f) {
   const look = STEGO.LOOKS[f.look], carrier = STEGO.CARRIERS[f.carrier], enc = STEGO.ENCS[f.enc], hide = STEGO.HIDES[f.hide], cipher = STEGO.CIPHERS[f.cipher];
   const cw = f.cw / 100, x0 = f.x0 / 10, y0 = f.y0 / 10, R = f.rows, C = f.cols, aspect = look === "stitches" ? 0.78 : 1, ch = cw * aspect, wob = f.wobble / 20;
   // cell geometry, rebuilt the way studio.js drew it (stitches replay its seeded wobble call for call)
@@ -206,30 +273,53 @@ function readStego(sp, f, cipherKey) {
     }
     cells.push({ cands, r: rr, c });
   }
-  // area cells: no fixed cut-off (empty paper measured 0.15, shaded 1.0 in the first test photo); split the
-  // measured levels into two groups instead, and call the darker group 1
+  const finish = (picks, cipherKey) => {
+    const grid = Array.from({ length: R }, (_, rr) => Array.from({ length: C }, (_, c) => picks[rr * C + c].value)), bottomUp = grid.slice().reverse(), b = f.border ? 1 : 0;
+    const encoding = enc === "morse" ? { alphabet: "morse" } : enc.startsWith("bacon") ? { alphabet: "bacon", variant: enc === "bacon24" ? "historical24" : "modern26" } : { alphabet: "fivebit", errorControl: [{ code: "plain", separator: false, checksum: false }, DEFAULT_OPTIONS, { code: "hamming", separator: true, checksum: true }][f.check] };
+    let text;
+    if (hide === "chart") {
+      if (["pixel5", "geometric3", "geometric4"].includes(enc)) text = readGlyphs(unframe(bottomUp, b), enc).text;
+      else { const bits = readGrid(bottomUp, b).bits; text = enc === "morse" ? morse.decodeUnits(bits).text : enc.startsWith("bacon") ? bacon.decode(bits, encoding.variant).text : decodeFrame(bits, encoding.errorControl).text; }
+    } else {
+      const motif = hide.startsWith("motif-") ? hide.slice(6) : null, m = motif ? MOTIFS[motif].size : 1;
+      const key = { format: KEY_FORMAT, version: 1, hide: motif ? { mode: "motif", motif } : { mode: "scatter", seed: f.seed, filler: "texture", density: f.density + 2 }, encoding, carrier, border: b, width: (C - 2 * b) / m, height: (R - 2 * b) / m, ...(motif ? {} : { length: f.len }) };
+      text = decodeWithKey(bottomUp, key).text;
+    }
+    return { studio: "purloined plot studio", method: `${hide}, ${look}`, text, plain: cipher !== "none" && cipherKey ? decipher(text, { kind: cipher, key: cipherKey }) : null, cipher };
+  };
+  return { cells, finish };
+}
+// Pick every cell. Area cells have no fixed cut-off (empty paper measured 0.15, shaded 1.0 in the first test photo):
+// their measured levels split into two groups and the darker group is 1.
+// rMm: how far round a stroke point to look for ink. 0.28 mm forgives a little misplacement; the signal flags need
+// 0.1, or their hatching (0.7 mm apart) reads as ink whichever way it runs and every flag looks like E.
+function pickAll(sp, cells, rMm = 0.28) {
   const levels = cells.map(c => (Array.isArray(c.cands) ? null : c.cands.area.reduce((s, p) => s + sp.area(p), 0) / c.cands.area.length));
   const lv = levels.filter(v => v !== null);
-  let lo = Math.min(...lv), hi = Math.max(...lv);
+  let lo = lv.length ? Math.min(...lv) : 0, hi = lv.length ? Math.max(...lv) : 1;
   for (let k = 0; k < 20 && lv.length; k++) { const cut = (lo + hi) / 2, a = lv.filter(v => v <= cut), b = lv.filter(v => v > cut); if (a.length) lo = a.reduce((s, v) => s + v, 0) / a.length; if (b.length) hi = b.reduce((s, v) => s + v, 0) / b.length; }
   const cut = hi - lo > 0.15 ? (lo + hi) / 2 : 0.35;   // one group only (all blank or all shaded): fall back to a fixed cut
-  const picks = cells.map((c, i) => (Array.isArray(c.cands) ? pick(sp, c.cands) : { value: levels[i] > cut ? 1 : 0, conf: Math.min(1, Math.abs(levels[i] - cut) / Math.max(0.1, (hi - lo) / 2)) * 0.3 })), grid = Array.from({ length: R }, (_, rr) => Array.from({ length: C }, (_, c) => picks[rr * C + c].value));
-  const bottomUp = grid.slice().reverse(), b = f.border ? 1 : 0;
-  const encoding = enc === "morse" ? { alphabet: "morse" } : enc.startsWith("bacon") ? { alphabet: "bacon", variant: enc === "bacon24" ? "historical24" : "modern26" } : { alphabet: "fivebit", errorControl: [{ code: "plain", separator: false, checksum: false }, DEFAULT_OPTIONS, { code: "hamming", separator: true, checksum: true }][f.check] };
-  let text;
-  if (hide === "chart") {
-    if (["pixel5", "geometric3", "geometric4"].includes(enc)) text = readGlyphs(unframe(bottomUp, b), enc).text;
-    else {
-      const bits = readGrid(bottomUp, b).bits;
-      text = enc === "morse" ? morse.decodeUnits(bits).text : enc.startsWith("bacon") ? bacon.decode(bits, encoding.variant).text : decodeFrame(bits, encoding.errorControl).text;
-    }
-  } else {
-    const motif = hide.startsWith("motif-") ? hide.slice(6) : null, m = motif ? MOTIFS[motif].size : 1;
-    const key = { format: KEY_FORMAT, version: 1, hide: motif ? { mode: "motif", motif } : { mode: "scatter", seed: f.seed, filler: "texture", density: f.density + 2 }, encoding, carrier, border: b, width: (C - 2 * b) / m, height: (R - 2 * b) / m, ...(motif ? {} : { length: f.len }) };
-    text = decodeWithKey(bottomUp, key).text;
+  // template cells: blank against inked by the page's own two ink levels (bare paper read about 0.2 through sensor noise,
+  // glyphs 0.7 to 0.95 in the first test photos, so no fixed cut works everywhere)
+  let bareCut = 0;
+  if (rMm === "template") {
+    const mos = cells.filter(c => Array.isArray(c.cands)).map(c => observe(sp, c.cands).mo);
+    let a = Math.min(...mos), z = Math.max(...mos);
+    for (let k = 0; k < 20; k++) { const m = (a + z) / 2, lo2 = mos.filter(v => v <= m), hi2 = mos.filter(v => v > m); if (lo2.length) a = lo2.reduce((s, v) => s + v, 0) / lo2.length; if (hi2.length) z = hi2.reduce((s, v) => s + v, 0) / hi2.length; }
+    bareCut = z - a > 0.15 ? (a + z) / 2 : a * 0.5;   // one level only: every cell holds a glyph
   }
-  const plain = cipher !== "none" && cipherKey ? decipher(text, { kind: cipher, key: cipherKey }) : null;
-  return { studio: "purloined plot studio", method: `${hide}, ${look}`, text, plain, cipher, picks, cells };
+  return cells.map((c, i) => (Array.isArray(c.cands) ? (rMm === "template" ? pickTemplate(sp, c.cands, bareCut) : pick(sp, c.cands, rMm)) : { value: levels[i] > cut ? 1 : 0, conf: Math.min(1, Math.abs(levels[i] - cut) / Math.max(0.1, (hi - lo) / 2)) * 0.3 }));
+}
+// Retrofit marks were plotted onto a sheet put back on the mat by hand, so they may sit a millimetre or two off the
+// drawing. Try shifts on a sample of cells and keep the one whose cells read most decisively.
+function findShift(I, Hm, cells, how = 0.28) {
+  const sample = cells.filter((_, i) => i % Math.max(1, Math.floor(cells.length / 50)) === 0), score = off => { const ps = pickAll(sampler(I, Hm, off), sample, how); return ps.reduce((s, p) => s + (p.fit ?? Math.max(0, p.conf)), 0) / ps.length; };
+  let best = [0, 0], bs = score(best);
+  for (const [span, step] of [[2, 0.5], [0.5, 0.125]]) {
+    const [cx, cy] = best;
+    for (let dx = -span; dx <= span + 1e-9; dx += step) for (let dy = -span; dy <= span + 1e-9; dy += step) { const s = score([cx + dx, cy + dy]); if (s > bs) { bs = s; best = [cx + dx, cy + dy]; } }
+  }
+  return best;
 }
 
 // The whole read: image in, message out, plus everything the page needs to show its working.
@@ -241,9 +331,11 @@ export function decode(src, { cipherKey = "", quad = null } = {}) {
   const S = readStrip(I, q);
   if (!S.rec) return { ok: false, stage: "strip", message: "Found the corners but could not read the key strip. Get closer, or hold the phone square to the page.", tried: S.tried, finders, quad: q, I };
   try {
-    const res = S.rec.studio === 1 ? readCipher(S.sp, S.rec.fields, cipherKey) : readStego(S.sp, S.rec.fields, cipherKey);
-    const confs = res.picks.map(p => p.conf), weak = confs.filter(c => c < 0.08).length;
-    return { ok: true, ...res, page: S.page, record: S.rec, Hm: S.sp, quad: q, finders, I, weak, cellsRead: confs.length, ms: Date.now() - t0 };
+    const st = S.rec.studio, plan = st === 1 || st === 4 ? cipherPlan(S.rec.fields, st) : st === 3 ? signalBookPlan(S.rec.fields) : stegoPlan(S.rec.fields);
+    const shift = S.lay.name === "retro" ? findShift(I, S.Hm, plan.cells, st === 3 ? "template" : 0.28) : [0, 0], sp = sampler(I, S.Hm, shift);
+    const how = st === 3 ? "template" : 0.28, picks = pickAll(sp, plan.cells, how), res = plan.finish(picks, cipherKey);
+    const confs = picks.map(p => p.conf), weak = confs.filter(c => c < 0.08).length;
+    return { ok: true, ...res, picks, cells: plan.cells, page: S.page, marks: S.lay.name, shift, record: S.rec, Hm: sp, quad: q, finders, I, weak, cellsRead: confs.length, ms: Date.now() - t0 };
   } catch (err) {
     return { ok: false, stage: "cells", message: String(err && err.message || err), finders, quad: q, I, record: S.rec };
   }
