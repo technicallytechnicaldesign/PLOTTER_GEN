@@ -1,0 +1,30 @@
+{
+  "studio": "gear-weave-studio.html",
+  "id": "weave-swarm",
+  "title": "Organised chaos",
+  "preset": "swarm",
+  "settings": {
+    "seed": "11",
+    "n": "260",
+    "ov": "1.12",
+    "vari": "0.8",
+    "grow": "-0.3",
+    "mod": "0.6",
+    "band": "3",
+    "spokes": "4",
+    "gap": "0.5",
+    "share": "0.5",
+    "pitch": "0.7",
+    "margin": "10",
+    "layout": "swarm",
+    "kind": "mix",
+    "fill": "mix",
+    "page": "190x250",
+    "ticks": "split"
+  },
+  "sourceHash": "f88589c129b9c1d77bf3e917411873b39353b011e8c49f1299ea21438941d1c3",
+  "svg": "site/art/weave-swarm.svg",
+  "image": "site/art/weave-swarm.webp",
+  "page": "190x250",
+  "seed": 11
+}

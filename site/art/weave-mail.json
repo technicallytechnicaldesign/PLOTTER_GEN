@@ -1,0 +1,30 @@
+{
+  "studio": "gear-weave-studio.html",
+  "id": "weave-mail",
+  "title": "Chain reaction",
+  "preset": "mail",
+  "settings": {
+    "seed": "11",
+    "n": "120",
+    "ov": "1.42",
+    "vari": "0.1",
+    "grow": "0",
+    "mod": "0.8",
+    "band": "3",
+    "spokes": "5",
+    "gap": "0.6",
+    "share": "1",
+    "pitch": "0.7",
+    "margin": "10",
+    "layout": "mail",
+    "kind": "ring",
+    "fill": "alt",
+    "page": "190x250",
+    "ticks": "split"
+  },
+  "sourceHash": "f88589c129b9c1d77bf3e917411873b39353b011e8c49f1299ea21438941d1c3",
+  "svg": "site/art/weave-mail.svg",
+  "image": "site/art/weave-mail.webp",
+  "page": "190x250",
+  "seed": 11
+}

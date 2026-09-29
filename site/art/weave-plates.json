@@ -1,0 +1,30 @@
+{
+  "studio": "gear-weave-studio.html",
+  "id": "weave-plates",
+  "title": "Heavy metal",
+  "preset": "plates",
+  "settings": {
+    "seed": "11",
+    "n": "70",
+    "ov": "1.26",
+    "vari": "0.3",
+    "grow": "0.8",
+    "mod": "1.4",
+    "band": "3.5",
+    "spokes": "5",
+    "gap": "0.9",
+    "share": "1",
+    "pitch": "1.1",
+    "margin": "10",
+    "layout": "sunflower",
+    "kind": "disc",
+    "fill": "hatch",
+    "page": "190x250",
+    "ticks": "split"
+  },
+  "sourceHash": "f88589c129b9c1d77bf3e917411873b39353b011e8c49f1299ea21438941d1c3",
+  "svg": "site/art/weave-plates.svg",
+  "image": "site/art/weave-plates.webp",
+  "page": "190x250",
+  "seed": 11
+}

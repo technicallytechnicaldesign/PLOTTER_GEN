@@ -1,0 +1,33 @@
+{
+  "studio": "overlay-studio.html",
+  "id": "overlay-fleissner",
+  "title": "A quarter turn",
+  "preset": "fleissner",
+  "settings": {
+    "msg": "TURN THE CARD A QUARTER",
+    "ckey": "3",
+    "per": "6",
+    "cell": "1.4",
+    "pitch": "0.8",
+    "noise": "0.4",
+    "gsize": "6",
+    "seed": "7",
+    "slide": "0",
+    "tsize": "5",
+    "cipher": "none",
+    "method": "fleissner",
+    "mark": "squares",
+    "wave": "off",
+    "density": "4",
+    "view": "stacked",
+    "caption": "key",
+    "tpen": "#111111",
+    "opcol": "#111111",
+    "page": "190x250"
+  },
+  "sourceHash": "b3f8967af11c7e14e0e01c9196342abe11e3418a58d7814199197a81b01efcfb",
+  "svg": "site/art/overlay-fleissner.svg",
+  "image": "site/art/overlay-fleissner.webp",
+  "page": "190x250",
+  "seed": 7
+}
