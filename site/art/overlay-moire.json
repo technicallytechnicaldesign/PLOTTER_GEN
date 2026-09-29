@@ -1,0 +1,33 @@
+{
+  "studio": "overlay-studio.html",
+  "id": "overlay-moire",
+  "title": "Look closer",
+  "preset": "moire",
+  "settings": {
+    "msg": "LOOK CLOSER",
+    "ckey": "3",
+    "per": "6",
+    "cell": "1.4",
+    "pitch": "0.8",
+    "noise": "0.4",
+    "gsize": "8",
+    "seed": "7",
+    "slide": "0",
+    "tsize": "5",
+    "cipher": "none",
+    "method": "moire",
+    "mark": "squares",
+    "wave": "off",
+    "density": "4",
+    "view": "stacked",
+    "caption": "none",
+    "tpen": "#111111",
+    "opcol": "#111111",
+    "page": "190x250"
+  },
+  "sourceHash": "b3f8967af11c7e14e0e01c9196342abe11e3418a58d7814199197a81b01efcfb",
+  "svg": "site/art/overlay-moire.svg",
+  "image": "site/art/overlay-moire.webp",
+  "page": "190x250",
+  "seed": 7
+}
