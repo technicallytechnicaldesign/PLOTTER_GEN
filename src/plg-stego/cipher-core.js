@@ -73,7 +73,7 @@ const ringMark = (L, o, x, y, r) => { if (o.reveal === "on") L.reveal.push([elli
 const layers = () => ({ outline: [], fill: [], text: [], reveal: [] });
 // Read mode: RD collects, in message-cell order, what every possible value of a cell would draw. { cands: [paths...], bits }.
 let RD = null;
-const offer = (cands, bits = 1) => { if (RD) RD.push({ cands, bits }); };
+const offer = (cands, bits = 1, kind) => { if (RD) RD.push(kind ? { cands, bits, kind } : { cands, bits }); };
 // The middle of a segment, so a sampled wall never picks up the corner it shares with its neighbours.
 const mid = ([a, b], f = 0.6) => [lerp(a, b, (1 - f) / 2), lerp(a, b, (1 + f) / 2)];
 
@@ -251,7 +251,7 @@ function pigpen(o, S, B, L) {
   lines.forEach((line, li) => [...line].forEach((ch, i) => {
     const x = x0 + i * step, y = y0 + li * 1.5 * g;
     pigpenGlyph(ch, x, y, g, o, L);
-    if (RD) offer([...ALPH, " "].map(c => { const T = layers(); pigpenGlyph(c, x, y, g, o, T); return [...T.outline, ...T.fill]; }), "letter");
+    if (RD) offer([...ALPH, " "].map(c => { const T = layers(); pigpenGlyph(c, x, y, g, o, T); return [...T.outline, ...T.fill]; }), "letter", "pigpen");
   }));
   const read = lines.map(l => l.trimEnd()).join(" ");
   return { dims: `${per}X${rows}`, feature: g * 0.6, read: norm(read), want: norm(S.text), cap: per * rows, rows };

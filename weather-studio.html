@@ -50,6 +50,88 @@ canvas { display:block; max-width:100%; height:auto; }
 .foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
 code { font-family:var(--font-mono); font-size:0.85em; }
 </style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
 </head>
 <body>
 <header>
@@ -297,10 +379,11 @@ function sky(o, R, B, rnd, nz) {
   }
 
   // ---- sun and rainbow geometry
-  const orbKind = o.orb !== "auto" ? o.orb : ({ fair: "rings", fog: "rings", rainbow: "rays" }[weather] || "none");
   const bowOn = o.bow === "on" || (o.bow === "auto" && weather === "rainbow");
+  // a rainbow faces away from the sun: with a bow and orb on auto the sun is behind the viewer (omitted)
+  const orbKind = o.orb !== "auto" ? o.orb : (bowOn ? "none" : ({ fair: "rings", fog: "rings", rainbow: "rays" }[weather] || "none"));
   const sunSide = rnd() < 0.5 ? -1 : 1;
-  const sx = x0 + Wd * (sunSide < 0 ? 0.1 + 0.15 * rnd() : 0.75 + 0.15 * rnd()), sy = bowOn ? yh - skyH * (0.12 + 0.08 * rnd()) : y0 + S * (0.14 + 0.1 * rnd());
+  const sx = x0 + Wd * (sunSide < 0 ? 0.1 + 0.15 * rnd() : 0.75 + 0.15 * rnd()), sy = y0 + S * (0.14 + 0.1 * rnd());
   const cyb = yh + S * 0.05, rmid = Math.min(clamp(0.55 * Wd, 80, 140), cyb - y0 - 12), cxb = clamp(x0 + x1 - sx, x0 + rmid * 0.75, x1 - rmid * 0.75);
   const arcHits = c => { for (let a = Math.PI; a <= 2 * Math.PI; a += 2 / rmid) { const x = cxb + rmid * Math.cos(a), y = cyb + rmid * Math.sin(a); if (y <= yh && x >= x0 && x <= x1 && c.ins(x, y, -4)) return true; } return false; };
 
@@ -358,7 +441,7 @@ function sky(o, R, B, rnd, nz) {
     const c = blob("cu", ells, yb, depth, true); underHatch(c, c.h * 0.3); contourShade(c, Math.min(0.15 * w, 12)); return c;
   }
   function cumulonimbus(cx0, yb, w, depth) {
-    const Hc = Math.min(w * 1.6, yb - y0 - 3), ells = [], L = 3, cell = Hc / L, lo = dir > 0 ? x0 + 3 + 0.65 * w : x0 + 3 + 1.6 * w, hi = dir > 0 ? x1 - 3 - 1.6 * w : x1 - 3 - 0.65 * w;
+    const Hc = Math.min(w * 2.1, yb - y0 - 3 - w * 0.42), ells = [], L = 5, cell = Hc / L, lo = dir > 0 ? x0 + 3 + 0.65 * w : x0 + 3 + 1.6 * w, hi = dir > 0 ? x1 - 3 - 1.6 * w : x1 - 3 - 0.65 * w;
     const cx = lo <= hi ? clamp(cx0, lo, hi) : (x0 + x1) / 2, ext = dir > 0 ? x1 - 3 - cx : cx - (x0 + 3);
     for (let l = 0; l < L; l++) {
       const u = (l + 0.5) / L, yl = yb - u * Hc, hw = 0.5 * w * (0.9 + 0.25 * u) * (0.94 + 0.12 * rnd()), wob = (rnd() - 0.5) * 0.06 * w, R = cell * (1.0 + 0.1 * rnd());
@@ -367,11 +450,16 @@ function sky(o, R, B, rnd, nz) {
         ells.push([cx + wob + sd * hw * (0.62 + 0.12 * rnd()), yl + (rnd() - 0.5) * R * 0.3, R * (0.62 + 0.15 * rnd()), R * (0.7 + 0.15 * rnd())]);
         ells.push([cx + wob + sd * hw * (0.8 + 0.1 * rnd()), yl - R * (0.35 + 0.25 * rnd()), R * (0.3 + 0.12 * rnd()), R * (0.3 + 0.12 * rnd())]);
         if (rnd() < 0.6) ells.push([cx + wob + sd * hw * (0.55 + 0.2 * rnd()), yl + R * 0.55, R * 0.3, R * 0.3]);
+        ells.push([cx + wob + sd * hw * (0.98 + 0.14 * rnd()), yl + R * ((l % 2 ? 0.45 : -0.35) + 0.2 * rnd()), R * (0.5 + 0.2 * rnd()), R * (0.52 + 0.18 * rnd())]);
+        ells.push([cx + wob + sd * hw * (1.12 + 0.1 * rnd()), yl + R * ((l % 2 ? -0.35 : 0.5) + 0.2 * rnd()), R * (0.36 + 0.14 * rnd()), R * (0.38 + 0.14 * rnd())]);
+        if (l > 1 && rnd() < 0.7) ells.push([cx + wob + sd * hw * (0.35 + 0.2 * rnd()), yl - R * (0.55 + 0.25 * rnd()), R * (0.32 + 0.12 * rnd()), R * (0.32 + 0.12 * rnd())]);
       }
     }
     ells.push([cx, yb - w * 0.12, w * 0.5, w * 0.14]);
     const yt = yb - Hc * 0.98, Wa = Math.max(w * 1.2, Math.min(w * 2.3, (ext - 0.22 * w) / 0.633));
     for (let q = 0; q < 4; q++) ells.push([cx + (q - 1.5) * w * 0.16, yt + w * 0.05, w * 0.12, w * 0.12]);
+    for (let q = 0; q < 5; q++) { const t = (q - 2) / 2, r = w * (0.11 + 0.05 * rnd()) * (1 - 0.25 * Math.abs(t)); ells.push([cx + t * w * 0.3, yt - r * (0.35 + 0.35 * (1 - Math.abs(t))) - w * 0.04, r, r]); }
+    for (let q = 0; q < 4; q++) { const t = (q - 1.5) / 1.5, r = w * (0.06 + 0.03 * rnd()); ells.push([cx + t * w * 0.22, yt - w * (0.2 + 0.09 * (1 - Math.abs(t))) - r * 0.3, r, r]); }
     for (let j = 0; j <= 7; j++) { const t = j / 7, ry = 0.05 * Wa * (1 - 0.5 * t) + 1.0; ells.push([cx + dir * t * Wa * 0.55, yt + ry * 0.9 + t * ry * 0.6, Wa * 0.15 * (1 - 0.45 * t) + w * 0.22, ry]); }
     for (let q = 0; q < 6; q++) { const t = 0.15 + 0.8 * q / 5, rr = 1.2 + 1.4 * rnd(); ells.push([cx + dir * t * Wa * 0.55 * (0.9 + 0.2 * rnd()), yt + 0.1 * Wa * (1 - 0.5 * t) + t * 1.5 + rr * 0.6, rr, rr]); }
     ells.push([cx - dir * w * 0.3, yt + 1.6, w * 0.3, 1.6]);
@@ -448,7 +536,8 @@ function sky(o, R, B, rnd, nz) {
   // ---- near-ridge details (their occluders join the scene before anything is drawn)
   const kn = nr - 1, TOP = nr + 2, detailDraw = [];
   const wantD = o.details === "all" ? ["fence", "tree", "windmill"] : o.details === "none" ? [] : [o.details];
-  const zones = [0, 1, 2].sort(() => rnd() - 0.5), zoneX = i => x0 + Wd * (0.08 + 0.29 * zones[i] + 0.12 * rnd());
+  const zones = [0, 1, 2]; for (let i = zones.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [zones[i], zones[j]] = [zones[j], zones[i]]; }
+  const zoneX = i => x0 + Wd * (0.08 + 0.29 * zones[i] + 0.12 * rnd());
   wantD.forEach((dn, i) => {
     const px = zoneX(i);
     if (dn === "fence") {

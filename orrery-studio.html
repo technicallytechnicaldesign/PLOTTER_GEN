@@ -50,6 +50,88 @@ canvas { display:block; max-width:100%; height:auto; }
 .foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
 code { font-family:var(--font-mono); font-size:0.85em; }
 </style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
 </head>
 <body>
 <header>
@@ -470,7 +552,7 @@ function makeSystem(o, W, H) {
   const planets = [], ecc = [];
   for (let k = 0; k < n; k++) {
     const kind = kinds[k];
-    const pr = kind === "rocky" ? 2.4 + 1.0 * R() : kind === "gas" ? 6 + 2.4 * R() : 4.5 + 1.5 * R();
+    const pr = (kind === "rocky" ? 2.4 + 1.0 * R() : kind === "gas" ? 6 + 2.4 * R() : 4.5 + 1.5 * R());
     const raw = kind === "rocky" ? 0.9 + 1.5 * R() : kind === "gas" ? 4.6 + 2.6 * R() : 3 + 1.6 * R();
     const ringP = o.rings === "none" ? 0 : o.rings === "many" ? (kind === "gas" ? 1 : kind === "ice" ? 0.8 : 0.35) : (kind === "gas" ? 0.7 : kind === "ice" ? 0.3 : 0.03);
     const rr1 = R(), rr2 = R(), ringRoll = R();
@@ -491,6 +573,16 @@ function makeSystem(o, W, H) {
     else P.a = (prev.a * (1 + prev.ecc) + Math.max(pext, ext) * 1.08 + 1.5 * Math.pow(gr, k) + 1.2) / (1 - e);
     P.nu = (((P.target - P.om) % TAU) + TAU) % TAU;
   });
+  // plan view: planets are drawn up to 1.3x after the orbits are spaced, each capped so its disc still clears the neighbouring orbits, the belt and the corona (same test as the clearance gate)
+  if (o.view === "plan") {
+    const orbs = planets.map(P => orbitPts(P.a, P.ecc, P.om, 0, 0, 240));
+    planets.forEach((P, i) => {
+      const [X, Y] = posOn(P.a, P.ecc, P.om, 0, P.nu), r = Math.hypot(X, Y), clear = [r - Rx];
+      for (const j of [i - 1, i + 1]) if (j >= 0 && j < planets.length) clear.push(Math.min(...orbs[j].map(([x, y]) => Math.hypot(x - X, y - Y))));
+      if (belt) clear.push(Math.max(0, Math.abs(r - belt.rb) - belt.wb));
+      P.pr *= clamp(0.995 * Math.min(...clear) / (P.pr * 1.15), 1, 1.3);
+    });
+  }
   const last = planets.at(-1), rOut = last.a * (1 + last.ecc) + last.pr * last.E * 0.8;
   let subject = planets.findIndex(p => p.kind === "gas"); if (subject < 0) subject = planets.reduce((b, p, i) => p.raw > planets[b].raw ? i : b, 0);
   const cometOn = o.comet === "on" || (o.comet === "auto" && R() < 0.35);
@@ -696,6 +788,9 @@ function brassView(S, o, sys, W, H, mg, info) {
     for (const sd of [-1, 1]) add3(S, cam, "key", dense3([[A0[0] + nx * hw * sd, A0[1] + ny * hw * sd, Z], [A1[0] + nx * hw * sd, A1[1] + ny * hw * sd, Z]], false, step), false, { ex: [armId, "col"], tag: "arm" });
     const hub = (cx, cy, cz, hr) => add3(S, cam, "key", dense3(circ(0, 0, hr, 0.4).map(([x, y]) => [cx + x, cy + y, cz]), true, step), true, { ex: [armId, "col"], tag: "arm" });
     hub(0, 0, Z, rc * 1.5); hub(X, Y, Z, 2.2);
+    // hidden-line gap: any orbit ring that passes an arm on screen is broken there, so the arm reads cleanly
+    const gapPoly = [[A0, 1], [A1, 1], [A1, -1], [A0, -1]].map(([A, sd]) => prj(A[0] + nx * (hw + 0.7) * sd, A[1] + ny * (hw + 0.7) * sd, A[2]));
+    occPoly(S, "gap" + i, gapPoly, { dep: 1e9, tagOnly: "orbit" });
     const Zc = Z - rod - prb[i], q = cam.proj(X, Y, Zc), Rp = prb[i] * s;
     const lsc = norm3(cam.dir(-X, -Y, Zs - Zc));
     const Pb = Object.assign({}, P, { moons: P.moons.slice(0, 2), ring: P.ring && Rp > 3 ? P.ring : null });
