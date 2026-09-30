@@ -48,6 +48,7 @@ function report(r) {
 }
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 function read(img) {
+  clearTapping();
   lastImage = img;
   const r = decode(img, opts());
   if (r.label) label = r.record;
@@ -57,6 +58,7 @@ function read(img) {
 
 // ---------------- camera ----------------
 async function startCamera() {
+  clearTapping();
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false });
   } catch (err) { $("stage").classList.add("on"); $("status").textContent = `No camera: ${err.message || err}. Use a photo instead.`; return; }
@@ -89,7 +91,73 @@ $("file").addEventListener("change", async e => {
 // Needs a settings label already read (it gives the page size and layout). Taps go top-left, top-right, bottom-right,
 // bottom-left of the PAGE as it lies on the mat; a fifth tap starts over. The fit snaps each tap to the real paper edge
 // and slides the drawing into place, so a tap off by a few mm still reads.
-let taps = [], tapImage = null;
+let taps = [], tapImage = null, tapMode = "label", replaceCorner = null, marklessWorker = null;
+function cancelMarkless() {
+  if (marklessWorker) marklessWorker.terminate();
+  marklessWorker = null; $("tap-cancel").disabled = true;
+}
+function clearTapping() {
+  cancelMarkless(); tapImage = null; taps = []; replaceCorner = null; $("tap-tools").hidden = true;
+}
+function tapStatus(text) { $("status").textContent = text; $("tap-progress").textContent = text; }
+function cornerControls() {
+  for (let i = 0; i < 4; i++) { $("tap-" + i).disabled = i >= taps.length; $("tap-" + i).setAttribute("aria-pressed", String(replaceCorner === i)); }
+  $("tap-read").disabled = taps.length !== 4;
+}
+function validCorners() {
+  const cross = (a,b,c) => (b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);
+  if (taps.length !== 4 || taps.some((a,i) => cross(a,taps[(i+1)%4],taps[(i+2)%4]) <= 0)) return false;
+  const sides = taps.map((a,i) => Math.hypot(a[0]-taps[(i+1)%4][0],a[1]-taps[(i+1)%4][1]));
+  return Math.min(...sides) >= 20 && Math.max(...sides)/Math.min(...sides) < 5;
+}
+async function loadTapPhoto(file, mode) {
+  clearTapping(); stopCamera(); tapMode = mode; $("result").hidden = true;
+  try {
+    const bmp = await createImageBitmap(file), g = $("grab"); g.width = bmp.width; g.height = bmp.height;
+    const c = g.getContext("2d", { willReadFrequently: true }); c.drawImage(bmp, 0, 0); bmp.close();
+    tapImage = c.getImageData(0, 0, g.width, g.height);
+    const view = $("view"); $("stage").classList.add("on"); $("video").style.display = "none"; view.style.display = "block"; view.width = g.width; view.height = g.height;
+    $("tap-tools").hidden = false; drawTaps(); cornerControls();
+    tapStatus(`Tap the ${mode === "free" ? "drawing grid" : "page"}: top-left, top-right, bottom-right, bottom-left.`);
+  } catch { tapStatus("Could not open this photo. Try a JPEG or PNG."); }
+}
+function readTapped() {
+  cancelMarkless();
+  if (!validCorners()) { tapStatus("Corners must surround the drawing in order: top-left, top-right, bottom-right, bottom-left. Correct a corner or start over."); return; }
+  $("result").hidden = true;
+  if (tapMode === "free") {
+    tapStatus("Finding the grid… this can take a minute. You can cancel or correct a corner.");
+    try {
+      const url = URL.createObjectURL(new Blob([__MARKLESS_WORKER__], { type: "text/javascript" }));
+      try { marklessWorker = new Worker(url); } finally { URL.revokeObjectURL(url); }
+      $("tap-cancel").disabled = false;
+      marklessWorker.onmessage = ({data}) => {
+        if (data.progress) { tapStatus(data.progress); return; }
+        cancelMarkless();
+        if (data.error) { tapStatus("No usable grid found. Check the pattern and adjust the drawing corners, then read again."); return; }
+        const r = data.result, best = r.readings[0]; drawTaps();
+        $("result").hidden = false; $("keyrow").hidden = true; $("plain").textContent = "";
+        $("head").textContent = "Experimental · suggested reading, not verified";
+        $("msg").textContent = best?.text?.trim() || "No readable candidate. Adjust the corners and try again.";
+        $("how").textContent = "Less reliable than marks or a settings label. Check the text against your plot; a plausible result can still be wrong.";
+        $("facts").textContent = `${r.C} × ${r.R} cells · ${r.weak} uncertain cells` + (best ? ` · ${best.layout} · ${best.enc}` : "");
+        tapStatus("Finished. Choose a corner to adjust it, or read again.");
+      };
+      marklessWorker.onerror = () => { cancelMarkless(); tapStatus("The experimental reader could not run. Try another photo or use marked/labelled decoding."); };
+      marklessWorker.postMessage({ image: tapImage, taps, look: $("free-look").value });
+    } catch { cancelMarkless(); tapStatus("This browser could not start the experimental reader. Use marked or labelled decoding."); }
+    return;
+  }
+  const [W, H] = pageMm(label);
+  tapStatus("Fitting…");
+  const image = tapImage, points = taps.map(p => [...p]);
+  setTimeout(() => {
+    if (tapImage !== image || tapMode !== "label") return;
+    const res = decode(image, { ...opts(), anchor: { mm: [[0, 0], [W, 0], [W, H], [0, H]], px: points } });
+    lastImage = image; show(image, res); report(res);
+    tapStatus(res.ok ? `Read ${res.cellsRead} cells. Choose a corner to adjust it.` : res.message + " Adjust the corners and retry.");
+  }, 30);
+}
 function drawTaps() {
   const img = tapImage, view = $("view"), c = view.getContext("2d"); c.putImageData(img, 0, 0);
   const lw = Math.max(3, img.width / 300); c.fillStyle = c.strokeStyle = "#a568e0"; c.lineWidth = lw;
@@ -97,29 +165,25 @@ function drawTaps() {
   taps.forEach(([x, y], i) => { c.beginPath(); c.arc(x, y, lw * 2.5, 0, 7); c.fill(); c.font = `${lw * 6}px sans-serif`; c.fillText(["TL", "TR", "BR", "BL"][i], x + lw * 3, y - lw * 3); });
 }
 $("nomarks").addEventListener("change", async e => {
-  const f = e.target.files[0]; if (!f) return; e.target.value = ""; stopCamera();
-  if (!label) { $("stage").classList.add("on"); $("status").textContent = "scan or pick the settings label from the back first, then pick the front here"; return; }
-  const bmp = await createImageBitmap(f), g = $("grab"); g.width = bmp.width; g.height = bmp.height;
-  const c = g.getContext("2d", { willReadFrequently: true }); c.drawImage(bmp, 0, 0);
-  tapImage = c.getImageData(0, 0, g.width, g.height); taps = [];
-  const view = $("view"), stage = $("stage"); stage.classList.add("on"); $("video").style.display = "none"; view.style.display = "block"; view.width = g.width; view.height = g.height;
-  drawTaps(); $("status").textContent = "tap the page corners: top-left, top-right, bottom-right, bottom-left";
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  if (!label) { clearTapping(); $("result").hidden = true; $("stage").classList.add("on"); tapStatus("Scan the settings label first, or open the experimental reader for a plot without a label."); return; }
+  await loadTapPhoto(f, "label");
 });
+$("free-photo").addEventListener("change", async e => { const f = e.target.files[0]; e.target.value = ""; if (f) await loadTapPhoto(f, "free"); });
+$("free-look").addEventListener("change", () => { if (tapMode === "free" && tapImage) { cancelMarkless(); $("result").hidden = true; tapStatus("Pattern changed. Tap Read again when your corners are ready."); } });
+for (let i = 0; i < 4; i++) $("tap-" + i).onclick = () => { cancelMarkless(); replaceCorner = i; cornerControls(); tapStatus(`Tap the new ${["top-left", "top-right", "bottom-right", "bottom-left"][i]} corner.`); };
+$("tap-reset").onclick = () => { cancelMarkless(); taps = []; replaceCorner = null; drawTaps(); cornerControls(); $("result").hidden = true; tapStatus("Tap the top-left corner first."); };
+$("tap-read").onclick = readTapped;
+$("tap-cancel").onclick = () => { cancelMarkless(); tapStatus("Reading cancelled. Adjust corners or read again."); };
 $("view").addEventListener("click", e => {
-  if (!tapImage) return;
-  if (taps.length === 4) taps = [];
+  if (!tapImage || (taps.length === 4 && replaceCorner === null)) return;
+  cancelMarkless();
   const view = $("view"), r = view.getBoundingClientRect();
-  taps.push([(e.clientX - r.left) * view.width / r.width, (e.clientY - r.top) * view.height / r.height]);
-  drawTaps();
-  if (taps.length < 4) { $("status").textContent = `tapped ${["top-left", "top-right", "bottom-right", "bottom-left"][taps.length - 1]}; next: ${["top-right", "bottom-right", "bottom-left"][taps.length - 1]}`; return; }
-  const [W, H] = pageMm(label);
-  $("status").textContent = "fitting…";
-  setTimeout(() => {
-    const res = decode(tapImage, { ...opts(), anchor: { mm: [[0, 0], [W, 0], [W, H], [0, H]], px: taps } });
-    lastImage = tapImage; show(tapImage, res); report(res);
-    if (res.ok) $("status").textContent = `read ${res.cellsRead} cells from the tapped corners (tap again to redo)`;
-    else $("status").textContent = res.message + " (tap four corners again to retry)";
-  }, 30);
+  const point = [(e.clientX - r.left) * view.width / r.width, (e.clientY - r.top) * view.height / r.height];
+  if (replaceCorner !== null) { taps[replaceCorner] = point; replaceCorner = null; } else taps.push(point);
+  drawTaps(); cornerControls();
+  if (taps.length < 4) { tapStatus(`Next: ${["top-left", "top-right", "bottom-right", "bottom-left"][taps.length]}.`); return; }
+  readTapped();
 });
 const SAMPLES = {
   arcs: { method: "truchet", tiles: "arcs", msg: "NOTHING TO SEE HERE", hide: "scatter", density: "2", size: 22, fill: "contour", pitch: 0.7 },

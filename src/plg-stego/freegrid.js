@@ -334,11 +334,10 @@ export function readMarkless(I, taps, look, { C = null, R = null, slack = 1, see
   // already, so both quads are carried and the readings themselves decide which fits.
   const quads = [{ tag: "snapped", q: snapped }, { tag: "taps", q: taps }];
   const near = (list, k) => [...new Set(list.flatMap(c => range(c - k, c + k)))].filter(c => c >= 3);
-  let cs, rs;
-  if (C && R) { cs = range(C - slack, C + slack); rs = range(R - slack, R + slack); }
-  else { const g = guessCounts(I, snapped); cs = C ? range(C - slack, C + slack) : near(g.cols, 1); rs = R ? range(R - slack, R + slack) : near(g.rows, 1); }
   // every candidate size is tried first on a small straightened picture (cheap), the best few are then read at full detail
   const quality = m => m.score * (1 - m.weak / m.f.length), pre = [];
+  const g = C && R ? null : guessCounts(I, snapped);
+  const cs = C ? range(C - slack, C + slack) : near(g.cols, 1), rs = R ? range(R - slack, R + slack) : near(g.rows, 1);
   for (const Q of quads) for (const c of cs) for (const r of rs) pre.push({ C: c, R: r, Q, s: quality(measureAligned(I, Q.q, c, r, look, { res: 10, iters: 4 })) });   // separation, less the share of cells that sit between the two kinds
   pre.sort((x, y) => y.s - x.s); log?.(`candidates ${pre.length}: ` + pre.slice(0, 6).map(t => `${t.Q.tag} ${t.C}x${t.R}=${t.s.toFixed(2)}`).join(" "));
   const tried = [];
@@ -355,6 +354,7 @@ export function readMarkless(I, taps, look, { C = null, R = null, slack = 1, see
     if (t.readings.length && (!best || t.readings[0].worth > best.readings[0].worth)) best = t;
   }
   best = best || tried[0];
+  if (!best) throw new Error("No repeating grid found; check the pattern and drawing corners.");
   return { quad: best.quad, paper, C: best.C, R: best.R, grid: best.grid, score: best.m.score, weak: best.m.weak, offsets: best.m.off, aligned: best.m, from: best.from, readings: best.readings || [], tried: tried.map(t => ({ from: t.from, C: t.C, R: t.R, score: +t.m.score.toFixed(2), weak: t.m.weak, worth: t.readings?.[0] ? Math.round(t.readings[0].worth) : null })) };
 }
 const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);

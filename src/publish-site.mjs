@@ -24,6 +24,7 @@ export const PAGES = [
   ["orrery-studio.html", "Scenes", "Orrery studio", "A new star system every seed: plan, tilted, textbook plate and brass orrery views."],
   ["island-atlas-studio.html", "Scenes", "Island atlas studio", "Islands nobody has visited, as survey sheets, antique charts, portolans and treasure maps."],
   ["underground-studio.html", "Scenes", "Underground studio", "A cut-away slice of the earth: roots, mycelium, burrows, strata and a buried fossil."],
+  ["archaeology-studio.html", "Scenes", "Archaeology studio", "Trench sections, site plans with findspots, a finds sieve and a pottery refit, drawn to excavation conventions."],
   ["gear-3d-studio.html", "Gears", "Gear 3D studio", "3D gears under a perspective lens on floors of rays, rings, ripples and Truchet ribbons."],
   ["gear-bam-studio.html", "Gears", "Gear BAM studio", "Comic 3D gears with crosshatched walls, riso halftone tops and extruded sound effects."],
   ["gear-weave-studio.html", "Gears", "Gear weave studio", "Hundreds of overlapping gears woven over and under like chainmail."],
@@ -31,7 +32,7 @@ export const PAGES = [
 ];
 export const SOURCES = ["plg-stego/core.js", "plg-stego/marks.js", "plg-stego/studio.js", "plg-stego/cipher-core.js", "plg-stego/cipher.js", "plg-stego/overlay.js", "plg-stego/signals.js", "plg-stego/signals-core.js", "plg-stego/decoder-core.js", "plg-stego/decoder.js",
   "plg-stego/build.mjs", "plg-stego/decoder-test.mjs", "plg-stego/decoder-debug.mjs", "plg-stego/synth_photo.py", "plg-stego/export-all.sh", "studio_export.mjs",
-  "plg-stego/align.js", "plg-stego/freegrid.js", "plg-stego/template.html", "plg-stego/cipher-template.html",
+  "plg-stego/markless-worker.js", "plg-stego/align.js", "plg-stego/freegrid.js", "plg-stego/template.html", "plg-stego/cipher-template.html",
   "plg-stego/decoder-template.html", "plg-stego/overlay-template.html", "plg-stego/signals-template.html",
   "plg-stego/anchor-test.mjs", "plg-stego/settings-test.mjs", "plg-stego/studio-vm.mjs", "plg-stego/README.md",
   "publish-site.mjs", "site-index.template.html", "site-public-readme.md",

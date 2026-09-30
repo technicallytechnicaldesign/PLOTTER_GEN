@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archaeology studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Archaeology studio</h1>
+  <p class="sub">Four kinds of archaeological drawing, laid out the way a site report plate is laid out: a trench section with numbered contexts and the cuts that truncate them, a site plan with contours, walls, postholes and findspots, a sieve tray of finds, and a pot refitted from its sherds. Export a millimetre SVG with up to three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="midden">Shell midden</button><button data-preset="posthole">Postholes and ditch</button><button data-preset="wall">Wall foundation</button><button data-preset="farmstead">Farmstead plan</button><button data-preset="survey">Contour survey</button><button data-preset="sieve">Sieve of flints</button><button data-preset="sieveMixed">Mixed sieve</button><button data-preset="refit">Jar refit</button><button data-preset="beaker">Beaker refit</button><button data-preset="bowl">Bowl refit</button></div>
+  </fieldset>
+  <fieldset><legend>The drawing</legend>
+    <label>Kind of drawing <select id="mode"><option value="section">trench section (stratigraphy)</option><option value="plan">site plan (landscape)</option><option value="sieve">sieve tray (finds)</option><option value="refit">pottery refit</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="14"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Labels and numbers <select id="labels"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Colour pen <select id="colour"><option value="on">on</option><option value="off">off (all in black)</option></select></label>
+    <label>Texture and hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+  </fieldset>
+  <fieldset data-for="section"><legend>Trench section</legend>
+    <label>Deposits (contexts) <output id="o-layers"></output><input type="range" id="layers" min="3" max="8" step="1" value="6"></label>
+    <label>Cut features <output id="o-ncut"></output><input type="range" id="ncut" min="1" max="9" step="1" value="3"></label>
+    <label>Kinds of cut <select id="cutmix"><option value="midden">shell midden with pits</option><option value="mixed">a mixed set</option><option value="postholes">postholes and a ditch</option><option value="wall">wall foundation, ditch, pit</option></select></label>
+    <label>Wandering of boundaries <output id="o-wander"></output><input type="range" id="wander" min="0" max="1" step="0.05" value="0.6"></label>
+    <label>Artefacts <output id="o-finds"></output><input type="range" id="finds" min="0" max="1" step="0.05" value="0.7"></label>
+  </fieldset>
+  <fieldset data-for="plan"><legend>Site plan</legend>
+    <label>Ruined stone houses <output id="o-houses"></output><input type="range" id="houses" min="0" max="4" step="1" value="1"></label>
+    <label>Posthole buildings <output id="o-posts"></output><input type="range" id="posts" min="0" max="4" step="1" value="1"></label>
+    <label>Fence lines <output id="o-fences"></output><input type="range" id="fences" min="0" max="3" step="1" value="1"></label>
+    <label>Boundary ditch <select id="ditch"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Trenches <output id="o-trenches"></output><input type="range" id="trenches" min="0" max="4" step="1" value="2"></label>
+    <label>Findspots <output id="o-spots"></output><input type="range" id="spots" min="0" max="60" step="1" value="20"></label>
+    <label>Contour interval (m) <output id="o-interval"></output><input type="range" id="interval" min="0.5" max="5" step="0.5" value="1"></label>
+    <label>Relief of the land <output id="o-relief"></output><input type="range" id="relief" min="0" max="1" step="0.05" value="0.5"></label>
+  </fieldset>
+  <fieldset data-for="sieve"><legend>Sieve tray</legend>
+    <label>Finds on the tray <output id="o-pieces"></output><input type="range" id="pieces" min="10" max="140" step="1" value="60"></label>
+    <label>What was found <select id="mixture"><option value="flint">mostly flint</option><option value="mixed">a mixed assemblage</option><option value="pottery">mostly pottery</option></select></label>
+    <label>Mesh pitch (mm) <output id="o-meshp"></output><input type="range" id="meshp" min="2" max="8" step="0.5" value="4"></label>
+  </fieldset>
+  <fieldset data-for="refit"><legend>Pottery refit</legend>
+    <label>Vessel <select id="vessel"><option value="jar">jar</option><option value="bowl">bowl</option><option value="beaker">beaker</option><option value="amphora">amphora</option></select></label>
+    <label>Decoration <select id="decor"><option value="incised">incised lines</option><option value="cord">cord impressions</option><option value="stamped">stamped rows</option><option value="mixed">a mix of bands</option><option value="plain">plain</option></select></label>
+    <label>Sherds <output id="o-sherds"></output><input type="range" id="sherds" min="8" max="40" step="1" value="22"></label>
+    <label>Sherds missing <output id="o-missing"></output><input type="range" id="missing" min="0" max="12" step="1" value="3"></label>
+    <label>Missing sherds <select id="laid"><option value="beside">laid out beside the pot</option><option value="none">left out</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="6" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (key line, shade, colour), numbered in plotting order. Every file carries the same four corner ticks so Design Space sizes them identically: place each file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">Trench section: deposits are numbered contexts, each hatched with its own convention (dense stipple for topsoil, fine stipple for sand, short dashes for clay, pebble outlines for gravel, cross-hatch for burnt layers, angular outlines for rubble). Cuts are drawn in the colour pen and truncate only the deposits older than them, while younger deposits run unbroken across the top; where a younger cut is dug through an older fill, the older lines stop at its edge. Tip-lines inside fills taper to the cut edge, and the artefacts are drawn a little larger than true scale so they read at 1:20. Site plan: 1 mm is 250 mm on the ground (1:250). Walls are double lines with jointed masonry, dashed where robbed out and open at doors; postholes are circles, hatched when excavated; the ditch is a pair of dashed lines; findspots are triangles (flint), circles (pottery), squares (metal) and stars (coin), each kept clear of walls and of every other symbol and number. Sieve tray: the mesh is drawn first and every find hides the wire beneath it; nothing overlaps. Pottery refit: the left half is the outside of the vessel with its decoration and the fracture lines between sherds, the right half is the wall in section, and dashed outlines in the colour pen mark sherds that have not been found. In Design Space: send all layers to Pen, black 0.4 for the key line, black 0.3 for shade and texture, and a coloured pen for the colour layer, then Attach and Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = Math.PI * 2, $ = id => document.getElementById(id);
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function mkNoise(seed) { const r = mulberry32(seed), v = new Float32Array(512); for (let i = 0; i < 512; i++) v[i] = r() * 2 - 1; return x => { const i = Math.floor(x), f = x - i, s = f * f * (3 - 2 * f); return v[i & 511] * (1 - s) + v[(i + 1) & 511] * s; }; }
+function mkNoise2(seed) {
+  const r = mulberry32(seed), v = new Float32Array(1024); for (let i = 0; i < 1024; i++) v[i] = r() * 2 - 1;
+  const h = (a, b) => v[(Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) & 1023];
+  return (x, y) => { const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    return (h(i, j) * (1 - sx) + h(i + 1, j) * sx) * (1 - sy) + (h(i, j + 1) * (1 - sx) + h(i + 1, j + 1) * sx) * sy; };
+}
+const fbm1 = (nz, x, oct = 3) => { let s = 0, a = 1, f = 1, t = 0; for (let k = 0; k < oct; k++) { s += a * nz(x * f + k * 17.3); t += a; a *= 0.5; f *= 2.1; } return s / t; };
+const fbm2 = (nz, x, y, oct = 3) => { let s = 0, a = 1, f = 1, t = 0; for (let k = 0; k < oct; k++) { s += a * nz(x * f + k * 11.7, y * f + k * 5.3); t += a; a *= 0.5; f *= 2.05; } return s / t; };
+
+// ---------------- path helpers ----------------
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+// keep the parts of a path where hit(x,y) is false
+function clipHit(p, closed, hit, minLen, out, step = 0.3) { const d = densify(p, closed, step); runs(d, closed, d.map(([x, y]) => !hit(x, y)), minLen, out); }
+function orderPaths(paths) {
+  const n = paths.length; if (n < 3) return paths;
+  const C = 6, m = new Map(), used = new Uint8Array(n), K = (i, j) => i * 2048 + j;
+  const add = (x, y, k) => { const q = K(Math.floor(x / C), Math.floor(y / C)); let l = m.get(q); if (!l) m.set(q, l = []); l.push(k); };
+  paths.forEach(([p, c], k) => { add(p[0][0], p[0][1], k); if (!c) add(p.at(-1)[0], p.at(-1)[1], k); });
+  const out = [paths[0]]; used[0] = 1;
+  let [cx, cy] = paths[0][1] ? paths[0][0][0] : paths[0][0].at(-1);
+  for (let done = 1; done < n; done++) {
+    let best = 1e18, bk = -1; const ci = Math.floor(cx / C), cj = Math.floor(cy / C);
+    for (let r = 0; r < 260; r++) {
+      if (bk >= 0 && r > Math.sqrt(best) / C + 1.5) break;
+      for (let i = ci - r; i <= ci + r; i++) {
+        const edge = Math.abs(i - ci) === r;
+        for (let j = cj - r; j <= cj + r; j += (edge || r === 0) ? 1 : 2 * r) {
+          const l = m.get(K(i, j)); if (!l) continue;
+          for (let a = l.length - 1; a >= 0; a--) {
+            const k = l[a]; if (used[k]) { l[a] = l[l.length - 1]; l.pop(); continue; }
+            const [p, c] = paths[k], d0 = (p[0][0] - cx) ** 2 + (p[0][1] - cy) ** 2; if (d0 < best) { best = d0; bk = k; }
+            if (!c) { const e = p.at(-1), d1 = (e[0] - cx) ** 2 + (e[1] - cy) ** 2; if (d1 < best) { best = d1; bk = k; } }
+          }
+        }
+      }
+    }
+    if (bk < 0) break;
+    used[bk] = 1; let [p, c] = paths[bk];
+    if (!c && (p.at(-1)[0] - cx) ** 2 + (p.at(-1)[1] - cy) ** 2 < (p[0][0] - cx) ** 2 + (p[0][1] - cy) ** 2) p = p.slice().reverse();
+    out.push([p, c]); [cx, cy] = c ? p[0] : p.at(-1);
+  }
+  return out;
+}
+
+// ---------------- geometry ----------------
+const inPoly = (P, x, y) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+const bbox = P => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of P) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+const area2 = P => { let a = 0; for (let i = 0; i < P.length; i++) { const [x0, y0] = P[i], [x1, y1] = P[(i + 1) % P.length]; a += x0 * y1 - x1 * y0; } return a; };
+const centroid = P => { let x = 0, y = 0; for (const p of P) { x += p[0]; y += p[1]; } return [x / P.length, y / P.length]; };
+function growPoly(P, d) {
+  const n = P.length, s = area2(P) > 0 ? 1 : -1, nrm = (A, B) => { const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy) || 1; return [s * dy / l, -s * dx / l]; };
+  return P.map((p, i) => {
+    const n1 = nrm(P[(i + n - 1) % n], p), n2 = nrm(p, P[(i + 1) % n]); let mx = n1[0] + n2[0], my = n1[1] + n2[1]; const l = Math.hypot(mx, my);
+    if (l < 1e-6) { mx = n1[0]; my = n1[1]; } else { mx /= l; my /= l; }
+    const c = Math.max(0.5, mx * n1[0] + my * n1[1]); return [p[0] + mx * d / c, p[1] + my * d / c];
+  });
+}
+const rot2 = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+const place = (pts, x, y, a = 0, s = 1) => pts.map(([px, py]) => { const [qx, qy] = rot2(px * s, py * s, a); return [x + qx, y + qy]; });
+const ring = (cx, cy, r, n = 12, a0 = 0) => { const p = []; for (let i = 0; i < n; i++) { const a = a0 + TAU * i / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; };
+function blob(cx, cy, rx, ry, rot, rnd, n = 14, rough = 0.12) {
+  const ph = [rnd() * TAU, rnd() * TAU, rnd() * TAU], am = [rough * (0.6 + 0.8 * rnd()), rough * 0.6 * rnd(), rough * 0.4 * rnd()], p = [];
+  for (let i = 0; i < n; i++) { const a = TAU * i / n, k = 1 + am[0] * Math.sin(2 * a + ph[0]) + am[1] * Math.sin(3 * a + ph[1]) + am[2] * Math.sin(5 * a + ph[2]); const [qx, qy] = rot2(rx * k * Math.cos(a), ry * k * Math.sin(a), rot); p.push([cx + qx, cy + qy]); }
+  return p;
+}
+const chaikin = (p, it = 1, closed = false) => {
+  for (let k = 0; k < it; k++) {
+    const q = [], n = p.length; if (!closed) q.push(p[0]);
+    for (let i = 0; i < (closed ? n : n - 1); i++) { const a = p[i], b = p[(i + 1) % n]; q.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); }
+    if (!closed) q.push(p[n - 1]); p = q;
+  }
+  return p;
+};
+const shrink = (P, f) => { const [cx, cy] = centroid(P); return P.map(([x, y]) => [cx + (x - cx) * f, cy + (y - cy) * f]); };
+const rectPoly = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+function mkGrid(cell) {
+  const m = new Map();
+  return {
+    add(P) { const bb = bbox(P), o = { P, bb }; for (let i = Math.floor(bb[0] / cell); i <= Math.floor(bb[2] / cell); i++) for (let j = Math.floor(bb[1] / cell); j <= Math.floor(bb[3] / cell); j++) { const k = i * 4096 + j; let l = m.get(k); if (!l) m.set(k, l = []); l.push(o); } },
+    test(x, y) { const l = m.get(Math.floor(x / cell) * 4096 + Math.floor(y / cell)); if (!l) return false; for (const o of l) { const b = o.bb; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && inPoly(o.P, x, y)) return true; } return false; },
+  };
+}
+function poisson(x0, y0, x1, y1, r, ok, rnd, tries) {
+  const cs = r / Math.SQRT2, gw = Math.ceil((x1 - x0) / cs) + 1, gh = Math.ceil((y1 - y0) / cs) + 1, g = new Int32Array(gw * gh).fill(-1), pts = [];
+  const n = tries || Math.ceil((x1 - x0) * (y1 - y0) / (r * r) * 2.6);
+  for (let t = 0; t < n; t++) {
+    const x = x0 + rnd() * (x1 - x0), y = y0 + rnd() * (y1 - y0); if (!ok(x, y)) continue;
+    const gi = Math.floor((x - x0) / cs), gj = Math.floor((y - y0) / cs); let bad = false;
+    for (let i = Math.max(0, gi - 2); i <= Math.min(gw - 1, gi + 2) && !bad; i++) for (let j = Math.max(0, gj - 2); j <= Math.min(gh - 1, gj + 2); j++) { const q = g[j * gw + i]; if (q >= 0 && (pts[q][0] - x) ** 2 + (pts[q][1] - y) ** 2 < r * r) { bad = true; break; } }
+    if (bad) continue; g[gj * gw + gi] = pts.length; pts.push([x, y]);
+  }
+  return pts;
+}
+// polygon-to-polygon clearance
+function segX(a, b, c, d) {
+  const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+  const d1 = o(a, b, c), d2 = o(a, b, d), d3 = o(c, d, a), d4 = o(c, d, b);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+}
+function ptSeg2(p, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy; let t = L ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L : 0; t = t < 0 ? 0 : t > 1 ? 1 : t; const x = a[0] + t * dx - p[0], y = a[1] + t * dy - p[1]; return x * x + y * y; }
+function polyDist(A, B) {   // 0 when they touch or overlap
+  let best = 1e18;
+  for (let i = 0; i < A.length; i++) {
+    const a = A[i], b = A[(i + 1) % A.length];
+    for (let j = 0; j < B.length; j++) {
+      const c = B[j], d = B[(j + 1) % B.length];
+      if (segX(a, b, c, d)) return 0;
+      const v = Math.min(ptSeg2(a, c, d), ptSeg2(c, a, b)); if (v < best) best = v;
+    }
+  }
+  if (inPoly(B, A[0][0], A[0][1]) || inPoly(A, B[0][0], B[0][1])) return 0;
+  return Math.sqrt(best);
+}
+function polysApart(A, B, clr) {   // early exit: false as soon as the polygons touch or come closer than clr
+  const c2 = clr * clr, nA = A.length, nB = B.length;
+  for (let i = 0; i < nA; i++) {
+    const a = A[i], b = A[(i + 1) % nA];
+    for (let j = 0; j < nB; j++) {
+      const c = B[j], d = B[(j + 1) % nB];
+      if (Math.max(a[0], b[0]) + clr < Math.min(c[0], d[0]) || Math.min(a[0], b[0]) - clr > Math.max(c[0], d[0]) || Math.max(a[1], b[1]) + clr < Math.min(c[1], d[1]) || Math.min(a[1], b[1]) - clr > Math.max(c[1], d[1])) continue;
+      if (segX(a, b, c, d) || ptSeg2(a, c, d) < c2 || ptSeg2(c, a, b) < c2) return false;
+    }
+  }
+  return !inPoly(B, A[0][0], A[0][1]) && !inPoly(A, B[0][0], B[0][1]);
+}
+function mkClash(cell) {
+  const m = new Map(), list = [];
+  const cells = (bb, g, f) => { for (let i = Math.floor((bb[0] - g) / cell); i <= Math.floor((bb[2] + g) / cell); i++) for (let j = Math.floor((bb[1] - g) / cell); j <= Math.floor((bb[3] + g) / cell); j++) f(i * 8192 + j); };
+  return {
+    list,
+    ok(P, clr) {
+      const bb = bbox(P), seen = new Set(); let good = true;
+      cells(bb, clr, k => {
+        if (!good) return; const l = m.get(k); if (!l) return;
+        for (const o of l) {
+          if (seen.has(o)) continue; seen.add(o); const b = o.bb;
+          if (b[0] > bb[2] + clr || b[2] < bb[0] - clr || b[1] > bb[3] + clr || b[3] < bb[1] - clr) continue;
+          if (!polysApart(P, o.P, clr)) { good = false; return; }
+        }
+      });
+      return good;
+    },
+    add(P) { const o = { P, bb: bbox(P) }; list.push(o); cells(o.bb, 0, k => { let l = m.get(k); if (!l) m.set(k, l = []); l.push(o); }); },
+  };
+}
+// hatch lines clipped exactly to a polygon (scanline in a rotated frame)
+function hatchPoly(P, ang, pitch, out, minLen = 0.6, off = 0) {
+  const dx = Math.cos(ang), dy = Math.sin(ang), U = P.map(([x, y]) => [x * dx + y * dy, -x * dy + y * dx]);
+  let v0 = 1e9, v1 = -1e9; for (const q of U) { if (q[1] < v0) v0 = q[1]; if (q[1] > v1) v1 = q[1]; }
+  for (let v = v0 + pitch / 2 + off; v < v1; v += pitch) {
+    const us = [];
+    for (let i = 0; i < U.length; i++) { const a = U[i], b = U[(i + 1) % U.length]; if ((a[1] > v) !== (b[1] > v)) us.push(a[0] + (v - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); }
+    us.sort((p, q) => p - q);
+    for (let k = 0; k + 1 < us.length; k += 2) if (us[k + 1] - us[k] >= minLen) out.push([[[us[k] * dx - v * dy, us[k] * dy + v * dx], [us[k + 1] * dx - v * dy, us[k + 1] * dy + v * dx]], false]);
+  }
+}
+function dashify(p, on, off, out, closed = false, phase = 0) {
+  const q = closed ? [...p, p[0]] : p; let cur = [], inDash = true, left = on * (0.5 + 0.5 * phase);
+  for (let i = 1; i < q.length; i++) {
+    let [ax, ay] = q[i - 1]; const [bx, by] = q[i]; let rem = Math.hypot(bx - ax, by - ay); const ux = (bx - ax) / (rem || 1), uy = (by - ay) / (rem || 1);
+    if (!cur.length && inDash) cur.push([ax, ay]);
+    while (rem > 1e-9) {
+      const step = Math.min(rem, left); ax += ux * step; ay += uy * step; rem -= step; left -= step;
+      if (inDash) cur.push([ax, ay]);
+      if (left <= 1e-9) {
+        if (inDash) { if (cur.length > 1 && plen(cur, false) >= 0.3) out.push([cur, false]); cur = []; inDash = false; left = off; }
+        else { inDash = true; left = on; cur = [[ax, ay]]; }
+      }
+    }
+  }
+  if (inDash && cur.length > 1 && plen(cur, false) >= 0.3) out.push([cur, false]);
+}
+
+// ---------------- stroke lettering (upper case, digits, a little punctuation) ----------------
+const GLYPH_SRC = {
+  "0": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "1": "1,1 2,0 2,6|1,6 3,6", "2": "0,1 1,0 3,0 4,1 4,2.5 0,6 4,6",
+  "3": "0,0 4,0 2,2.5 3,2.5 4,3.5 4,5 3,6 1,6 0,5", "4": "3,6 3,0 0,4 4,4", "5": "4,0 0,0 0,2.8 3,2.8 4,3.8 4,5 3,6 1,6 0,5",
+  "6": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.8 3,2.8 0,2.8", "7": "0,0 4,0 1.5,6", "8": "1,0 3,0 4,1 4,2 3,3 1,3 0,2 0,1 1,0|1,3 0,4 0,5 1,6 3,6 4,5 4,4 3,3",
+  "9": "0,5 1,6 3,6 4,5 4,1 3,0 1,0 0,1 0,2.2 1,3.2 4,3.2",
+  "A": "0,6 0,2 2,0 4,2 4,6|0,3.5 4,3.5", "B": "0,6 0,0 3,0 4,1 4,2 3,3 0,3|3,3 4,4 4,5 3,6 0,6", "C": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5",
+  "D": "0,0 0,6 2.5,6 4,4.5 4,1.5 2.5,0 0,0", "E": "4,0 0,0 0,6 4,6|0,3 3,3", "F": "4,0 0,0 0,6|0,3 3,3", "G": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.5 2,3.5",
+  "H": "0,0 0,6|4,0 4,6|0,3 4,3", "I": "1,0 3,0|2,0 2,6|1,6 3,6", "J": "4,0 4,5 3,6 1,6 0,5", "K": "0,0 0,6|4,0 0,3.5|1.3,2.6 4,6", "L": "0,0 0,6 4,6",
+  "M": "0,6 0,0 2,3 4,0 4,6", "N": "0,6 0,0 4,6 4,0", "O": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "P": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5",
+  "Q": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1|2.5,4.5 4,6.4", "R": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5|2,3.5 4,6",
+  "S": "4,1 3,0 1,0 0,1 0,2 1,3 3,3 4,4 4,5 3,6 1,6 0,5", "T": "0,0 4,0|2,0 2,6", "U": "0,0 0,5 1,6 3,6 4,5 4,0", "V": "0,0 2,6 4,0",
+  "W": "0,0 1,6 2,3 3,6 4,0", "X": "0,0 4,6|4,0 0,6", "Y": "0,0 2,3|4,0 2,3|2,3 2,6", "Z": "0,0 4,0 0,6 4,6",
+  ".": "1.4,5 2.6,5 2.6,6 1.4,6 1.4,5", "-": "0.5,3 3.5,3", ":": "1.5,1.4 2.5,1.4 2.5,2.4 1.5,2.4 1.5,1.4|1.5,4.2 2.5,4.2 2.5,5.2 1.5,5.2 1.5,4.2",
+  "/": "0,6 4,0", ",": "2.4,5.2 1.6,6.8", "(": "3,0 1.5,1.5 1.5,4.5 3,6", ")": "1,0 2.5,1.5 2.5,4.5 1,6", "+": "0.5,3 3.5,3|2,1.5 2,4.5", "=": "0.5,2 3.5,2|0.5,4 3.5,4",
+  "'": "2,0 2,1.6", "%": "0,0 4,6|0.3,0.3 1.3,0.3 1.3,1.3 0.3,1.3 0.3,0.3|2.7,4.7 3.7,4.7 3.7,5.7 2.7,5.7 2.7,4.7", "#": "1,0 1,6|3,0 3,6|0,2 4,2|0,4 4,4", "?": "0,1 1,0 3,0 4,1 4,2 2,3.5 2,4.5|1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", " ": "",
+};
+const GLYPH = {}; for (const [k, v] of Object.entries(GLYPH_SRC)) GLYPH[k] = v ? v.split("|").map(s => s.trim().split(/\s+/).map(p => p.split(",").map(Number))) : [];
+// txt: draws s with its centre-line at y; returns the text box as a polygon. o.a = l | c | r, o.ang = rotation (radians)
+function txtW(s, h) { const u = h / 6; return Math.max(0, String(s).length * 5.6 * u - 1.6 * u); }
+function txt(s, x, y, h, out, o = {}) {
+  s = String(s).toUpperCase(); const u = h / 6, adv = 5.6 * u, w = txtW(s, h), ox = o.a === "c" ? -w / 2 : o.a === "r" ? -w : 0, ang = o.ang || 0, c = Math.cos(ang), sn = Math.sin(ang);
+  const T = (px, py) => [x + px * c - py * sn, y + px * sn + py * c];
+  for (let k = 0; k < s.length; k++) for (const pl of GLYPH[s[k]] || []) out.push([pl.map(([gx, gy]) => T(ox + k * adv + gx * u, gy * u - h / 2)), false]);
+  return [T(ox, -h / 2), T(ox + w, -h / 2), T(ox + w, h / 2), T(ox, h / 2)];
+}
+
+// ---------------- the finds library: outlines with the detail lines an illustrator would add ----------------
+// mkFind returns {poly, det, hat} in local coordinates, length L along +x, centred on the origin.
+function clipIn(P, path, out, step = 0.25, minLen = 0.3) { const d = densify(path, false, step); runs(d, false, d.map(([x, y]) => inPoly(P, x, y)), minLen, out); }
+function leafPoly(L, w, rnd, e0, n = 9, rough = 0.08) {
+  const top = [], bot = [];
+  for (let i = 0; i <= n; i++) { const t = i / n, pr = Math.sin(Math.PI * Math.pow(t, e0)); top.push([L * t, -w / 2 * pr * (1 + (rnd() * 2 - 1) * rough * (i > 0 && i < n))]); if (i > 0 && i < n) bot.push([L * t, w / 2 * pr * (1 + (rnd() * 2 - 1) * rough)]); }
+  return [...top, ...bot.reverse()].map(([x, y]) => [x - L / 2, y]);
+}
+function angPoly(L, n, rnd, lo, el) { const a0 = rnd() * TAU, p = []; for (let i = 0; i < n; i++) { const a = a0 + TAU * i / n + (rnd() - 0.5) * (TAU / n) * 0.6, r = L / 2 * (lo + (1 - lo) * rnd()); p.push([r * Math.cos(a) * el, r * Math.sin(a)]); } return p; }
+function mkFind(kind, L, rnd, pitch) {
+  let poly, det = [], hat = [];
+  const arcAcross = (xc, hh, bulge, nseg = 8) => { const p = []; for (let k = 0; k <= nseg; k++) { const a = -1 + 2 * k / nseg; p.push([xc + bulge * (1 - a * a), a * hh]); } return p; };
+  if (kind === "flake") {
+    const w = L * (0.6 + 0.15 * rnd()), x0 = -L * 0.36;
+    poly = blob(0, 0, L / 2, w / 2, 0, rnd, 16, 0.16).map(([x, y]) => [Math.max(x, x0), y]).filter((p, i, a) => i === 0 || Math.hypot(p[0] - a[i - 1][0], p[1] - a[i - 1][1]) > 0.05);
+    const inner = shrink(poly, 0.9);
+    for (let k = 0; k < 4; k++) { const r = L * (0.13 + 0.17 * k), span = 1.0 - 0.1 * k, p = []; for (let a = -span; a <= span + 1e-6; a += span / 6) p.push([x0 + r * Math.cos(a), r * Math.sin(a) * 0.95]); clipIn(inner, p, det); }
+    for (const s of [-1, 1]) clipIn(inner, [[x0 + 0.3 * L, s * 0.08 * w], [x0 + 0.72 * L, s * 0.3 * w]], det);
+  } else if (kind === "blade") {
+    const w = L * 0.22, j = () => 1 + (rnd() - 0.5) * 0.12;
+    poly = [[0, -w / 2 * j()], [0.3 * L, -w / 2 * 1.05 * j()], [0.75 * L, -w / 2 * 0.9 * j()], [L, (rnd() - 0.5) * 0.1 * w], [0.72 * L, w / 2 * 0.95 * j()], [0.28 * L, w / 2 * 1.05 * j()], [0, w / 2 * j()]].map(([x, y]) => [x - L / 2, y]);
+    const inner = shrink(poly, 0.9), x0 = -L / 2;
+    clipIn(inner, arcAcross(x0 + 0.09 * L, 0.3 * w, 0.03 * L, 6), det);
+    for (const s of [-1, 1]) clipIn(inner, [[x0 + 0.15 * L, s * 0.2 * w], [x0 + 0.9 * L, s * 0.04 * w]], det);
+  } else if (kind === "scraper") {
+    const n = 18, w = L * 0.82; poly = []; for (let i = 0; i < n; i++) { const a = TAU * i / n, k = 1 + (rnd() - 0.5) * 0.1, fl = Math.cos(a) < -0.2 ? 0.8 : 1; poly.push([L / 2 * Math.cos(a) * k * fl, w / 2 * Math.sin(a) * k]); }
+    const inner = shrink(poly, 0.9), raw = []; raw.push(arcAcross(-L * 0.28, 0.22 * w, 0.05 * L));
+    for (let a = -1.15; a <= 1.16; a += 0.23) { const c = Math.cos(a), s = Math.sin(a); raw.push([[L / 2 * 0.98 * c, w / 2 * 0.98 * s], [L / 2 * 0.78 * c, w / 2 * 0.78 * s]]); }
+    raw.push([[-L * 0.3, 0], [L * 0.28, 0.03 * w]]);
+    for (const r of raw) clipIn(inner, r, det);
+  } else if (kind === "arrow") {
+    const w = L * 0.44; poly = leafPoly(L, w, rnd, 0.95, 10, 0.02); const inner = shrink(poly, 0.9);
+    for (let k = 0; k < 8; k++) { const x = -L / 2 + L * (0.14 + 0.09 * k); const hw = w / 2 * 0.8 * Math.sin(Math.PI * (x / L + 0.5)); clipIn(inner, [[x - 0.05 * L, -hw], [x + 0.06 * L, -0.03 * w]], det); clipIn(inner, [[x - 0.05 * L, hw], [x + 0.06 * L, 0.03 * w]], det); }
+  } else if (kind === "sherd") {
+    poly = angPoly(L, 6 + Math.floor(rnd() * 3), rnd, 0.6, 1 + rnd() * 0.35); const inner = shrink(poly, 0.88);
+    if (rnd() < 0.4) { let bi = 0, bl = 0; for (let i = 0; i < poly.length; i++) { const a = poly[i], b = poly[(i + 1) % poly.length], l = Math.hypot(b[0] - a[0], b[1] - a[1]); if (l > bl) { bl = l; bi = i; } }
+      const a = poly[bi], b = poly[(bi + 1) % poly.length], [cx, cy] = centroid(poly), nx = -(b[1] - a[1]) / bl, ny = (b[0] - a[0]) / bl, sg = (cx - a[0]) * nx + (cy - a[1]) * ny > 0 ? 1 : -1, d = 0.16 * L;
+      clipIn(inner, [[a[0] + sg * nx * d - (b[0] - a[0]) * 0.1, a[1] + sg * ny * d - (b[1] - a[1]) * 0.1], [b[0] + sg * nx * d + (b[0] - a[0]) * 0.1, b[1] + sg * ny * d + (b[1] - a[1]) * 0.1]], det); }
+    else { const R = L * (0.8 + 0.5 * rnd()), ph = rnd() * TAU, cxr = Math.cos(ph) * R * 0.9, cyr = Math.sin(ph) * R * 0.9, arcp = []; for (let a = 0; a < TAU; a += 0.08) arcp.push([cxr + R * Math.cos(a), cyr + R * Math.sin(a)]);
+      clipIn(inner, arcp, det); }
+    const nk = Math.floor(L * L * 0.05 / Math.max(0.5, pitch * 0.7)); for (let k = 0; k < nk; k++) { const x = (rnd() - 0.5) * L * 1.1, y = (rnd() - 0.5) * L * 0.8; if (inPoly(inner, x, y)) det.push([[[x - 0.18, y], [x + 0.18, y + 0.06]], false]); }
+  } else if (kind === "bone") {
+    const sw = L * 0.15, e = L / 2, kn = 0.15 * L;
+    poly = [[-e + 0.12 * L, -sw / 2], [e - 0.12 * L, -sw / 2], [e - 0.07 * L, -kn], [e, -kn * 0.85], [e, -kn * 0.15], [e - 0.03 * L, 0], [e, kn * 0.15], [e, kn * 0.85], [e - 0.07 * L, kn], [e - 0.12 * L, sw / 2],
+      [-e + 0.12 * L, sw / 2], [-e + 0.07 * L, kn], [-e, kn * 0.85], [-e, kn * 0.15], [-e + 0.03 * L, 0], [-e, -kn * 0.15], [-e, -kn * 0.85], [-e + 0.07 * L, -kn]];
+    clipIn(shrink(poly, 0.9), [[-e * 0.55, 0], [e * 0.55, 0]], det);
+  } else if (kind === "charcoal") {
+    poly = angPoly(L, 6 + Math.floor(rnd() * 3), rnd, 0.55, 1.25); const inner = shrink(poly, 0.95), p = Math.max(0.9, pitch * 1.3);
+    hatchPoly(inner, 0.7, p, hat, 0.5); hatchPoly(inner, 0.7 + Math.PI / 2, p, hat, 0.5);
+  } else if (kind === "snail") {
+    poly = []; for (let i = 0; i < 18; i++) { const a = TAU * i / 18; poly.push([L / 2 * (1 + (rnd() - 0.5) * 0.06) * Math.cos(a), L / 2 * (1 + (rnd() - 0.5) * 0.06) * Math.sin(a)]); }
+    const sp = []; for (let a = 0; ; a += 0.22) { const r = L / 2 * 0.86 * Math.exp(-0.16 * a); if (r < L * 0.05 || a > 20) break; sp.push([r * Math.cos(a), r * Math.sin(a)]); }
+    if (sp.length > 2) det.push([sp, false]);
+    det.push([[[L * 0.3, -L * 0.16], [L * 0.37, 0], [L * 0.3, L * 0.16]], false]);
+  } else if (kind === "pebble") {
+    poly = blob(0, 0, L / 2, L / 2 * (0.62 + 0.28 * rnd()), 0, rnd, 14, 0.1);
+    for (let k = 0; k < 2 + Math.floor(L / 4); k++) { const x = (rnd() - 0.5) * L * 0.6, y = (rnd() - 0.5) * L * 0.3; if (inPoly(shrink(poly, 0.8), x, y)) det.push([[[x - 0.2, y], [x + 0.2, y]], false]); }
+  } else if (kind === "coin") {
+    poly = ring(0, 0, L / 2, 30).map(([x, y]) => [x * (1 + (rnd() - 0.5) * 0.03), y * (1 + (rnd() - 0.5) * 0.03)]);
+    det.push([ring(0, 0, L / 2 * 0.8, 30), true], [[[-L * 0.2, 0], [L * 0.2, 0]], false], [[[0, -L * 0.2], [0, L * 0.2]], false]);
+    for (let k = 0; k < 4; k++) { const a = Math.PI / 4 + k * Math.PI / 2, x = Math.cos(a) * L * 0.29, y = Math.sin(a) * L * 0.29; det.push([[[x - 0.25, y], [x + 0.25, y]], false]); }
+  } else if (kind === "shell") {
+    const R = L * 0.6; poly = [[-0.1 * L, -0.13 * L]]; for (let k = 0; k <= 12; k++) { const a = -1.1 + 2.2 * k / 12, r = R * (1 + (k % 2 ? 0.035 : -0.035)); poly.push([-0.1 * L + r * Math.cos(a), r * Math.sin(a)]); } poly.push([-0.1 * L, 0.13 * L]);
+    const inner = shrink(poly, 0.9); for (let a = -0.85; a <= 0.86; a += 0.34) clipIn(inner, [[-0.1 * L + R * 0.15 * Math.cos(a), R * 0.15 * Math.sin(a)], [-0.1 * L + R * 0.92 * Math.cos(a), R * 0.92 * Math.sin(a)]], det);
+  }
+  det = det.filter(Boolean);
+  return { poly: poly.map(([x, y]) => [x, y]), det, hat };
+}
+function putFind(f, x, y, ang) { const T = P => place(P, x, y, ang); return { poly: T(f.poly), det: f.det.map(([p, c]) => [T(p), c]), hat: f.hat.map(([p, c]) => [T(p), c]) }; }
+function emitFind(f, key, shade) { key.push([f.poly, true]); for (const d of f.det) shade.push(d); for (const h of f.hat) shade.push(h); }
+
+// ================= mode 1: trench section =================
+// A region is the ground between two lines: a deposit between two boundaries, or one lens of a cut's fill.
+function coreIn(reg, x, y) {
+  if (x < reg.x0 || x > reg.x1) return false;
+  if (y <= reg.top(x) || y >= reg.bot(x)) return false;
+  for (const c of reg.younger) { const b = c.bb; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && inPoly(c.poly, x, y)) return false; }
+  for (const P of reg.ex) if (inPoly(P, x, y)) return false;
+  return true;
+}
+const inside = (reg, x, y, m) => coreIn(reg, x, y) && coreIn(reg, x + m, y) && coreIn(reg, x - m, y) && coreIn(reg, x, y + m) && coreIn(reg, x, y - m);
+function mkReg(x0, x1, top, bot, younger, ex, extra) {
+  const r = { x0, x1, top, bot, younger, ex: ex || [], ...extra }; let a = 1e9, b = -1e9, ar = 0;
+  for (let x = x0; x <= x1; x += 1) { const t = top(x), bt = bot(x); if (t < a) a = t; if (bt > b) b = bt; if (bt > t) ar += bt - t; }
+  r.ymin = a; r.ymax = b; r.area = ar; return r;
+}
+function mkCtx(rnd, pitch) {
+  const c = { rnd, pitch, shade: [], clash: mkClash(10), mask: mkGrid(10) };
+  c.hit = (x, y) => c.mask.test(x, y);
+  c.reserve = (P, g = 0.5) => { c.clash.add(P); c.mask.add(growPoly(P, g)); };
+  c.put = (reg, poly, clr, mg) => {
+    for (const [x, y] of poly) if (!inside(reg, x, y, mg)) return false;
+    const cc = centroid(poly); if (!inside(reg, cc[0], cc[1], mg)) return false;
+    if (!c.clash.ok(poly, clr)) return false; c.reserve(poly, Math.max(0.35, mg * 0.7)); return true;
+  };
+  return c;
+}
+function clipSeg(A, B, x0, y0, x1, y1) {   // Liang-Barsky: parameter range of A->B inside the box, or null
+  let t0 = 0, t1 = 1; const dx = B[0] - A[0], dy = B[1] - A[1];
+  for (const [p, q] of [[-dx, A[0] - x0], [dx, x1 - A[0]], [-dy, A[1] - y0], [dy, y1 - A[1]]]) {
+    if (Math.abs(p) < 1e-12) { if (q < 0) return null; } else { const t = q / p; if (p < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+  }
+  return [t0, t1];
+}
+function texture(c, reg, type, k = 1) {
+  const { rnd, pitch } = c, out = c.shade, ok = (x, y) => inside(reg, x, y, 0.5) && !c.hit(x, y);
+  const stip = (dist, l) => {
+    const n = Math.ceil((reg.x1 - reg.x0) * (reg.ymax - reg.ymin) / (dist * dist) * 2.2);
+    for (const [x, y] of poisson(reg.x0, reg.ymin, reg.x1, reg.ymax, dist, ok, rnd, n)) { const a = rnd() * Math.PI, dx = Math.cos(a) * l / 2, dy = Math.sin(a) * l / 2; out.push([[[x - dx, y - dy], [x + dx, y + dy]], false]); }
+  };
+  const dashRows = (sp, l0, l1, g0, g1) => {
+    const nrow = Math.floor((reg.ymax - reg.ymin) / sp) + 1;
+    for (let r = 1; r <= nrow; r++) { let x = reg.x0 + rnd() * g1;
+      while (x < reg.x1) {
+        const l = l0 + rnd() * (l1 - l0), yj = (rnd() - 0.5) * 0.3, P = [0, 0.5, 1].map(t => { const xx = x + l * t; return [xx, reg.top(xx) + r * sp + yj]; });
+        if (P.every(([px, py]) => ok(px, py))) out.push([P, false]); x += l + g0 + rnd() * (g1 - g0);
+      } }
+  };
+  const hatch = (sp, angs) => {
+    for (const a of angs) {
+      const dx = Math.cos(a), dy = Math.sin(a), cx = (reg.x0 + reg.x1) / 2, cy = (reg.ymin + reg.ymax) / 2, R = Math.hypot(reg.x1 - reg.x0, reg.ymax - reg.ymin) / 2 + 1;
+      for (let t = -R; t < R; t += sp) {
+        const A = [cx - dy * t - dx * R, cy + dx * t - dy * R], Bp = [cx - dy * t + dx * R, cy + dx * t + dy * R], tt = clipSeg(A, Bp, reg.x0, reg.ymin, reg.x1, reg.ymax); if (!tt) continue;
+        const d = densify([[A[0] + (Bp[0] - A[0]) * tt[0], A[1] + (Bp[1] - A[1]) * tt[0]], [A[0] + (Bp[0] - A[0]) * tt[1], A[1] + (Bp[1] - A[1]) * tt[1]]], false, 0.35);
+        runs(d, false, d.map(([x, y]) => ok(x, y)), 0.8, out);
+      }
+    }
+  };
+  const stones = (dist, r0, r1, n0, n1, angular) => {
+    for (const [x, y] of poisson(reg.x0, reg.ymin, reg.x1, reg.ymax, dist * k, (px, py) => coreIn(reg, px, py), rnd)) {
+      const r = (r0 + rnd() * (r1 - r0)) * k, nv = n0 + Math.floor(rnd() * (n1 - n0 + 1)), base = angular ? angPoly(2 * r, nv, rnd, 0.7, 1.1) : blob(0, 0, r, r * (0.7 + 0.25 * rnd()), 0, rnd, nv, 0.1), P = place(base, x, y, rnd() * TAU);
+      if (c.put(reg, P, 0.5 * k, 0.35 * k)) out.push([P, true]);
+    }
+  };
+  switch (type) {
+    case "topsoil": stip(Math.max(pitch * 1.6, 1.25), 0.45); break;
+    case "sand": stip(Math.max(pitch * 2.6, 2.0), 0.4); break;
+    case "loam": stip(Math.max(pitch * 3.4, 2.7), 0.4); dashRows(Math.max(pitch * 4.2, 3.4), 1.2, 2.0, 4, 9); break;
+    case "clay": dashRows(Math.max(pitch * 2.7, 2.1), 2.4, 4.2, 1.6, 3.6); break;
+    case "silt": dashRows(Math.max(pitch * 2.3, 1.9), 5, 11, 2, 5); break;
+    case "gravel": stones(Math.max(3.2, pitch * 3.6), 0.8, 1.4, 8, 10, false); break;
+    case "rubble": stones(Math.max(4.4, pitch * 4.8), 1.3, 2.4, 4, 6, true); break;
+    case "charcoal": hatch(Math.max(pitch * 1.7, 1.4), [Math.PI / 4, -Math.PI / 4]); break;
+  }
+}
+const TEXNAME = { topsoil: "TOPSOIL, DARK LOAM", sand: "SAND, FINE, PALE", clay: "CLAY, STIFF", gravel: "GRAVEL, PEBBLY", charcoal: "BURNT, CHARCOAL", rubble: "RUBBLE, ANGULAR", silt: "SILT, LAMINATED", loam: "LOAM, MID BROWN" };
+const CUTPARAM = {
+  midden: { hw: [20, 32], d: [16, 24], s: [2, 2], name: "MIDDEN", tex: ["charcoal", "sand", "silt"] },
+  pit: { hw: [8, 13], d: [8, 14], s: [1, 3], name: "PIT", tex: ["clay", "loam"] },
+  posthole: { hw: [3.2, 4.8], d: [9, 16], s: [1, 3], name: "POSTHOLE", tex: [] },
+  ditch: { hw: [12, 19], d: [12, 20], s: [1, 2], name: "DITCH", tex: ["gravel", "silt", "loam"] },
+  wall: { hw: [10, 14], d: [12, 17], s: [1, 2], name: "WALL TRENCH", tex: [] },
+};
+const SHAPE = {
+  pit: u => Math.pow(1 - Math.pow(Math.abs(u), 2.3), 0.62), midden: u => Math.pow(1 - Math.pow(Math.abs(u), 2.0), 0.55),
+  posthole: u => Math.pow(1 - Math.pow(Math.abs(u), 7), 0.5), ditch: u => Math.min(1, (1 - Math.abs(u)) * 2.4),
+  wall: u => Math.abs(u) < 0.94 ? 1 : (1 - Math.abs(u)) / 0.06,
+};
+const CUTMIX = {
+  midden: ["midden", "pit", "posthole", "pit", "posthole", "pit", "posthole", "pit", "posthole"],
+  mixed: ["midden", "posthole", "ditch", "wall", "posthole", "pit", "posthole", "pit", "posthole"],
+  postholes: ["ditch", "posthole", "posthole", "posthole", "posthole", "posthole", "posthole", "posthole", "posthole"],
+  wall: ["wall", "ditch", "pit", "posthole", "pit", "posthole", "posthole", "pit", "posthole"],
+};
+const FINDSIZE = { shell: [3.6, 5.2], bone: [4, 6.2], sherd: [2.6, 4.4], flake: [2.6, 3.8], charcoal: [1.8, 2.8] };
+const pillPoly = (x, y, w, h) => { const r = h / 2, p = []; for (let k = 0; k <= 6; k++) { const a = -Math.PI / 2 + Math.PI * k / 6; p.push([x + w / 2 - r + r * Math.cos(a), y + r * Math.sin(a)]); } for (let k = 0; k <= 6; k++) { const a = Math.PI / 2 + Math.PI * k / 6; p.push([x - w / 2 + r + r * Math.cos(a), y + r * Math.sin(a)]); } return p; };
+
+function buildSection(o, W, H, rnd) {
+  const m = o.margin, N = o.layers, key = [], shade = [], colr = [], lab = o.labels === "on";
+  const nzA = mkNoise(o.seed * 17 + 3);
+  const legCols = W - 2 * m > 200 ? 3 : 2, rows = lab ? Math.ceil((N + o.ncut) / legCols) : 0, legH = lab ? rows * 6.4 + 5 : 0;
+  const xL = m + 18, xR = W - m, gB = m + 30, yb = H - m - legH - 4;
+  const DX = 0.5, nx = Math.ceil((xR - xL) / DX), xs = i => xL + i * DX;
+  const at = (arr, x) => { const f = (x - xL) / DX; let i = Math.floor(f); if (i < 0) i = 0; if (i > nx - 1) i = nx - 1; const t = Math.min(1, Math.max(0, f - i)); return arr[i] + (arr[i + 1] - arr[i]) * t; };
+  // ---- the deposits: boundaries B[0] (ground) to B[N] (floor of the trench)
+  const B = [], surf = new Float64Array(nx + 1);
+  for (let i = 0; i <= nx; i++) surf[i] = gB + o.wander * (2.6 * fbm1(nzA, xs(i) * 0.045) + 1.0 * nzA(xs(i) * 0.21 + 40));
+  B.push(surf);
+  const D = yb - gB, wts = []; let sw = 0;
+  for (let i = 0; i < N - 1; i++) { const w = i === 0 ? 0.55 : 0.6 + rnd() * 0.9; wts.push(w); sw += w; }
+  for (let k = 1; k < N; k++) { const arr = new Float64Array(nx + 1), t = D * 0.86 * wts[k - 1] / sw; for (let i = 0; i <= nx; i++) arr[i] = B[k - 1][i] + Math.max(2.4, t * (1 + o.wander * 0.55 * fbm1(nzA, xs(i) * 0.03 + k * 13.1, 2))); B.push(arr); }
+  B.push(new Float64Array(nx + 1).fill(yb));
+  for (let k = N - 1; k >= 1; k--) for (let i = 0; i <= nx; i++) B[k][i] = Math.min(B[k][i], B[k + 1][i] - 2.6);
+  for (let k = 1; k < N; k++) for (let i = 0; i <= nx; i++) B[k][i] = Math.max(B[k][i], B[k - 1][i] + 2.0);
+  const pool = ["sand", "clay", "gravel", "charcoal", "rubble", "silt", "loam"]; for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const types = ["topsoil"]; for (let i = 1; i < N; i++) types.push(pool[(i - 1) % pool.length]);
+  // ---- the cuts
+  const cuts = [], want = CUTMIX[o.cutmix].slice(0, o.ncut);
+  for (const type of want) {
+    const P = CUTPARAM[type];
+    for (let tr = 0; tr < 90; tr++) {
+      const hw = P.hw[0] + rnd() * (P.hw[1] - P.hw[0]); if (hw * 2 + 8 > xR - xL) continue;
+      let s = P.s[0] + Math.floor(rnd() * (P.s[1] - P.s[0] + 1)); s = Math.max(1, Math.min(N - 2, s));
+      let cx = xL + hw + 3 + rnd() * (xR - xL - 2 * hw - 6), nestD = 0;
+      if (type === "posthole" && rnd() < 0.45) { const host = cuts.find(c => (c.type === "midden" || c.type === "pit") && c.s >= 2); if (host && host.hw > hw + 3) { s = host.s - 1; cx = host.cx + (rnd() * 2 - 1) * (host.hw - hw - 2); nestD = at(B[host.s], cx) - at(B[s], cx) + 4 + rnd() * 6; } }
+      let good = true; for (const c of cuts) if (Math.abs(cx - c.cx) < hw + c.hw + 2.2 && s === c.s) good = false;
+      if (!good) continue;
+      const top0 = at(B[s], cx), d = Math.min(nestD || P.d[0] + rnd() * (P.d[1] - P.d[0]), yb - 5 - top0); if (d < 5) continue;
+      cuts.push(makeCut(type, cx, hw, s, d)); break;
+    }
+  }
+  function makeCut(type, cx, hw, s, d) {
+    const sh = SHAPE[type], top0 = at(B[s], cx), phase = rnd() * 50, topE = x => at(B[s], x) + 0.06, jitA = type === "pit" || type === "midden" || type === "ditch" ? 0.4 : 0;
+    const bowl = x => { const u = (x - cx) / hw; if (Math.abs(u) >= 1) return topE(x); return Math.max(topE(x), top0 + d * sh(u) + jitA * nzA(x * 0.5 + phase)); };
+    const pts = [], n = Math.max(8, Math.ceil(2 * hw / 0.4));
+    for (let i = 0; i <= n; i++) { const x = cx - hw + 2 * hw * i / n; pts.push([x, bowl(x)]); }
+    const poly = [...pts.map(([x]) => [x, topE(x)]), ...pts.slice().reverse()];
+    return { type, cx, hw, s, d, top0, topE, bowl, pts, poly, bb: bbox(poly), sh, phase, pieces: [], lines: [] };
+  }
+  cuts.forEach((c, i) => { c.id = N + 1 + 2 * i; c.fillId = c.id + 1; });
+  // regions
+  const layers = [];
+  for (let i = 0; i < N; i++) layers.push(mkReg(xL, xR, x => at(B[i], x), x => at(B[i + 1], x), cuts.filter(c => c.s <= i), [], { kind: "layer", i, type: types[i], id: i + 1, rich: false }));
+  for (const c of cuts) {
+    const younger = cuts.filter(q => q.s < c.s), P = CUTPARAM[c.type], x0 = c.cx - c.hw, x1 = c.cx + c.hw;
+    if (c.type === "posthole") {
+      const pw = Math.max(1.0, c.hw - 1.5), pd = c.d - 1.3, pipeBot = x => Math.max(c.topE(x), c.top0 + pd * c.sh((x - c.cx) / pw)), pp = [];
+      for (let i = 0; i <= 12; i++) { const x = c.cx - pw + 2 * pw * i / 12; pp.push([x, i === 0 || i === 12 ? c.topE(x) : pipeBot(x)]); }
+      const pipePoly = [...pp, [c.cx + pw, c.topE(c.cx + pw)], [c.cx - pw, c.topE(c.cx - pw)]]; c.pipe = pp; c.pw = pw;
+      c.pieces.push(mkReg(c.cx - pw, c.cx + pw, c.topE, pipeBot, younger, [], { kind: "pipe", cut: c }));
+      c.pieces.push(mkReg(x0, x1, c.topE, c.bowl, younger, [pipePoly], { kind: "fill", cut: c, tex: null, main: true }));
+    } else {
+      const K = c.type === "midden" || c.type === "ditch" ? 2 : c.type === "pit" ? 1 : 0, hk = c.type === "midden" ? [0.3, 0.62] : c.type === "ditch" ? [0.32, 0.66] : [0.4];
+      const f = k => k === 0 ? c.bowl : x => Math.max(c.topE(x), c.bowl(x) - c.d * hk[k - 1] * Math.pow(Math.max(0, c.sh((x - c.cx) / c.hw)), 0.7) * (1 + 0.12 * nzA(x * 0.3 + c.phase + k * 7)));
+      c.f = f; c.K = K;
+      for (let j = 0; j <= K; j++) c.pieces.push(mkReg(x0, x1, j === K ? c.topE : f(j + 1), f(j), younger, [], { kind: "fill", cut: c, tex: P.tex[j] || null, rich: c.type === "midden" && j === 1, main: j === Math.min(1, K) }));
+    }
+    c.tex = (c.pieces.find(p => p.main) || c.pieces[0]).tex || null;
+  }
+  const byAge = cuts.slice().sort((a, b) => a.s - b.s);
+  function ctxAt(x, y) {
+    for (const c of byAge) { const b = c.bb; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && inPoly(c.poly, x, y)) { for (const p of c.pieces) if (x >= p.x0 && x <= p.x1 && y > p.top(x) && y <= p.bot(x) && !p.ex.some(P => inPoly(P, x, y))) return p; return c.pieces.at(-1); } }
+    for (let i = 0; i < N; i++) if (y > at(B[i], x) && y <= at(B[i + 1], x)) return layers[i];
+    return null;
+  }
+  const cutHit = (x, y) => { for (const c of cuts) { const b = c.bb; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && inPoly(c.poly, x, y)) return true; } return false; };
+  const youngerHit = c => (x, y) => { for (const q of cuts) if (q.s < c.s) { const b = q.bb; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && inPoly(q.poly, x, y)) return true; } return false; };
+  const C = mkCtx(rnd, o.pitch), arte = [];
+  // ---- context numbers
+  function numLabel(reg, s, isBox) {
+    const w = txtW(s, 2.6) + 2.6, h = 4.4, cand = [];
+    for (let t = 0; t < 40; t++) { const x = reg.x0 + rnd() * (reg.x1 - reg.x0), th = reg.bot(x) - reg.top(x); if (th > h + 1.6) cand.push([x, (reg.top(x) + reg.bot(x)) / 2, th + rnd() * 6]); }
+    cand.sort((a, b) => b[2] - a[2]);
+    for (const [x, y] of cand) { const P = isBox ? rectPoly(x - w / 2, y - h / 2, x + w / 2, y + h / 2) : pillPoly(x, y, w, h); if (C.put(reg, P, 1.4, 0.7)) { key.push([P, true]); txt(s, x, y, 2.6, key, { a: "c" }); return true; } }
+    return false;
+  }
+  if (lab) {
+    layers.forEach(L => numLabel(L, String(L.id), false));
+    for (const c of cuts) { const main = c.pieces.find(p => p.main); if (main) numLabel(main, String(c.fillId), false);
+      // the cut number in a box just below the cut, in the deposit under it
+      const yy = c.top0 + c.d + 4.5, reg = ctxAt(c.cx, yy); if (reg && reg.kind === "layer") { const w = txtW(String(c.id), 2.6) + 2.6, P = rectPoly(c.cx - w / 2, yy - 2.2, c.cx + w / 2, yy + 2.2); if (C.put(reg, P, 1.2, 0.6)) { key.push([P, true]); txt(String(c.id), c.cx, yy, 2.6, key, { a: "c" }); } } }
+  }
+  // ---- built things inside cuts: coursed wall stones, post packing
+  for (const c of cuts) {
+    const reg = c.pieces[0];
+    if (c.type === "wall") {
+      const xa = c.cx - c.hw + 1.0, xb = c.cx + c.hw - 1.0; let yBase = c.top0 + c.d - 0.4, row = 0;
+      while (true) {
+        const h = 2.5 + rnd() * 0.8; if (yBase - h < c.topE(c.cx) + 0.9) break;
+        let x = xa - (row % 2 ? 1.6 : 0);
+        while (x < xb - 0.5) { const l = 3.4 + rnd() * 3.1, x0 = Math.max(xa, x), x1 = Math.min(xb, x + l - 0.3); x += l;
+          if (x1 - x0 < 1.2) continue; const e = 0.35, y0 = yBase - h, y1 = yBase - 0.3;
+          const P = [[x0 + e, y0], [x1 - e, y0], [x1, y0 + e], [x1, y1 - e], [x1 - e, y1], [x0 + e, y1], [x0, y1 - e], [x0, y0 + e]];
+          if (C.put(reg, P, 0.2, 0.4)) key.push([P, true]); }
+        yBase -= h + 0.3; row++;
+      }
+    } else if (c.type === "posthole") {
+      const reg2 = c.pieces[1];
+      for (let t = 0, n = 0; t < 40 && n < 6; t++) { const x = c.cx - c.hw + rnd() * 2 * c.hw, y = c.top0 + rnd() * c.d, P = place(blob(0, 0, 0.5 + rnd() * 0.35, 0.4 + rnd() * 0.3, 0, rnd, 7, 0.1), x, y, rnd() * TAU); if (C.put(reg2, P, 0.25, 0.25)) { C.shade.push([P, true]); n++; } }
+    }
+  }
+  // ---- artefacts
+  function scatter(reg, n, rich) {
+    const pick = () => { const r = rnd(); if (rich) return r < 0.45 ? "shell" : r < 0.7 ? "bone" : r < 0.9 ? "sherd" : r < 0.97 ? "flake" : "charcoal"; return r < 0.38 ? "sherd" : r < 0.68 ? "flake" : r < 0.88 ? "bone" : "charcoal"; };
+    let placed = 0;
+    for (let t = 0; t < n * 30 && placed < n; t++) {
+      const x = reg.x0 + rnd() * (reg.x1 - reg.x0), y = reg.ymin + rnd() * (reg.ymax - reg.ymin); if (!coreIn(reg, x, y)) continue;
+      const kind = pick(), L = FINDSIZE[kind][0] + rnd() * (FINDSIZE[kind][1] - FINDSIZE[kind][0]), ang = kind === "shell" || kind === "bone" || kind === "sherd" ? (rnd() - 0.5) * 0.9 : rnd() * TAU;
+      const f = putFind(mkFind(kind, L, rnd, o.pitch), x, y, ang);
+      if (C.put(reg, f.poly, 1.0, 0.6)) { arte.push({ f, kind, reg }); emitFind(f, key, C.shade); placed++; }
+    }
+  }
+  const regsAll = [...layers, ...cuts.flatMap(c => c.pieces)];
+  for (const reg of regsAll) {
+    if (reg.kind === "pipe") continue;
+    const dens = reg.kind === "layer" ? (reg.i === 0 ? 0.0025 : 0.0045) : reg.rich ? 0.065 : reg.cut.type === "posthole" || reg.cut.type === "wall" ? 0 : 0.014;
+    const n = Math.round(reg.area * dens * o.finds * (0.7 + rnd() * 0.6)); if (n > 0) scatter(reg, n, !!reg.rich);
+  }
+  // ---- lines: ground, frame, boundaries, cuts
+  const surfPts = []; for (let i = 0; i <= nx; i++) surfPts.push([xs(i), surf[i]]);
+  key.push([simplify(surfPts, 0.03), false]);
+  key.push([[[xL, surf[0]], [xL, yb], [xR, yb], [xR, surf[nx]]], false]);
+  for (let x = xL + 1 + rnd() * 2; x < xR - 1; x += 2.6 + rnd() * 3) { const y = at(surf, x), h = 0.9 + rnd() * 0.8, a = (rnd() - 0.5) * 0.9; C.shade.push([[[x, y - 0.15], [x + Math.sin(a) * h, y - Math.cos(a) * h]], false]); }
+  for (let k = 1; k < N; k++) { const p = []; for (let i = 0; i <= nx; i++) p.push([xs(i), B[k][i]]); clipHit(p, false, cutHit, 0.4, key, 0.4); }
+  for (const c of cuts) {
+    clipHit(c.pts, false, youngerHit(c), 0.4, colr, 0.3);
+    const yh = youngerHit(c);
+    for (let k = 1; k <= (c.K || 0); k++) {
+      const fk = c.f(k), p = [], okf = []; for (let x = c.cx - c.hw; x <= c.cx + c.hw + 1e-6; x += 0.5) { const y = fk(x); p.push([x, y]); okf.push(y < c.bowl(x) - 0.45 && y > c.topE(x) + 0.45 && !yh(x, y) && !C.hit(x, y)); }
+      runs(p, false, okf, 0.8, C.shade);
+    }
+    if (c.pipe) { const p = c.pipe.map(([x, y]) => [x, y]); clipHit(p, false, (x, y) => yh(x, y) || C.hit(x, y), 0.5, C.shade, 0.3); }
+  }
+  // ---- textures
+  layers.forEach(L => texture(C, L, L.type));
+  for (const c of cuts) for (const p of c.pieces) if (p.tex) texture(C, p, p.tex);
+  // ---- ruler, datum, title, scale bar
+  const yD = gB - 9, DH = 12.4 + Math.round(rnd() * 40) / 10;
+  key.push([[[xL - 4, yD], [xL - 4, yb]], false]);
+  for (let k = 0; yD + k * 5 <= yb + 0.01; k++) { const y = yD + k * 5, major = k % 5 === 0; key.push([[[xL - 4 - (major ? 3.2 : 1.6), y], [xL - 4, y]], false]); if (major && lab) txt((DH - k * 0.1).toFixed(2), xL - 8, y, 2.3, key, { a: "r" }); }
+  dashify([[xL - 4, yD], [xR, yD]], 7, 1.6, C.shade);
+  key.push([[[xR - 3, yD], [xR - 6, yD - 3.2], [xR, yD - 3.2]], true]);
+  if (lab) txt(`DATUM ${DH.toFixed(2)} M OD`, xR - 8, yD - 1.8, 2.3, key, { a: "r" });
+  txt("S.1 NORTH-FACING SECTION", m, m + 3, 3.4, key);
+  if (lab) txt(`TRENCH ${1 + o.seed % 4}, SITE A, 1:20`, m, m + 10, 2.6, key);
+  { const bx = xR - 52, by = m + 2;
+    key.push([rectPoly(bx, by, bx + 50, by + 2.4), true]);
+    for (let k = 0; k < 5; k++) { const x0 = bx + k * 10; if (k % 2 === 0) hatchPoly(rectPoly(x0 + 0.3, by + 0.3, x0 + 9.7, by + 2.1), Math.PI / 2, Math.max(0.6, o.pitch * 0.8), C.shade, 0.5); if (k) key.push([[[x0, by], [x0, by + 2.4]], false]); }
+    txt("0", bx, by + 5.6, 2.3, key, { a: "c" }); txt("0.5", bx + 25, by + 5.6, 2.3, key, { a: "c" }); txt("1 M", bx + 50, by + 5.6, 2.3, key, { a: "r" }); }
+  // ---- legend of contexts
+  if (lab) {
+    const cw = (W - 2 * m) / legCols, ly = yb + 9, entries = [];
+    layers.forEach(L => entries.push({ num: String(L.id), box: false, tex: L.type, text: TEXNAME[L.type] }));
+    cuts.forEach(c => entries.push({ num: String(c.id), box: true, tex: c.tex, sym: c.type, text: `FILL ${c.fillId} ${CUTPARAM[c.type].name}` }));
+    entries.forEach((e, i) => {
+      const col = Math.floor(i / rows), row = i % rows, x0 = m + col * cw, y = ly + row * 6.4, w = txtW(e.num, 2.3) + 2.2;
+      key.push([e.box ? rectPoly(x0 + 5 - w / 2, y - 2, x0 + 5 + w / 2, y + 2) : pillPoly(x0 + 5, y, w, 4), true]); txt(e.num, x0 + 5, y, 2.3, key, { a: "c" });
+      const sx = x0 + 11, sw2 = 16, sy = y - 2.3;
+      key.push([rectPoly(sx, sy, sx + sw2, sy + 4.6), true]);
+      if (e.tex) { const c2 = mkCtx(mulberry32(o.seed * 5 + i), o.pitch), reg = mkReg(sx, sx + sw2, () => sy, () => sy + 4.6, [], [], {}); texture(c2, reg, e.tex, 0.5); for (const p of c2.shade) shade.push(p); }
+      if (!e.tex && e.sym === "posthole") { colr.push([[[sx + 5, sy + 0.3], [sx + 5, sy + 3], [sx + 6, sy + 4.1], [sx + 10, sy + 4.1], [sx + 11, sy + 3], [sx + 11, sy + 0.3]], false]); shade.push([[[sx + 6.6, sy + 0.3], [sx + 6.6, sy + 2.9], [sx + 7.2, sy + 3.5], [sx + 9.8, sy + 3.5], [sx + 9.4, sy + 0.3]].slice(0, 4), false]); }
+      if (!e.tex && e.sym === "wall") for (let r = 0; r < 2; r++) for (let q = 0; q < 3; q++) { const x1 = sx + 1.2 + q * 4.7 - (r ? 2.3 : 0), x2 = x1 + 4.3, y1 = sy + 0.5 + r * 2, y2 = y1 + 1.7; if (x1 >= sx + 0.6 && x2 <= sx + sw2 - 0.6) key.push([rectPoly(x1, y1, x2, y2), true]); }
+      txt(e.text, x0 + 29, y, 2.3, key);
+    });
+  }
+  for (const p of C.shade) shade.push(p);
+  // ---- gates
+  let trunc = 0, viol = 0, nest = 0;
+  for (const c of cuts) {
+    const seen = new Set(), b = c.bb;
+    for (let x = b[0] + 0.3; x < b[2]; x += 1) for (let y = b[1]; y < b[3]; y += 1) { if (!inPoly(c.poly, x, y)) continue; let k = 0; while (k < N - 1 && y > at(B[k + 1], x)) k++; seen.add(k); if (k < c.s) viol++; }
+    trunc += seen.size;
+  }
+  for (let i = 0; i < cuts.length; i++) for (let j = i + 1; j < cuts.length; j++) {
+    const a = cuts[i], b = cuts[j]; if (a.bb[0] > b.bb[2] || b.bb[0] > a.bb[2]) continue;
+    let ov = false; for (let x = a.bb[0]; x < a.bb[2] && !ov; x += 1) for (let y = a.bb[1]; y < a.bb[3]; y += 1) if (inPoly(a.poly, x, y) && inPoly(b.poly, x, y)) { ov = true; break; }
+    if (ov) { nest++; if (a.s === b.s) viol++; }
+  }
+  let minGap = 99, cross = 0;
+  for (let i = 0; i < arte.length; i++) {
+    const A = arte[i].f.poly, bA = bbox(A);
+    for (let j = i + 1; j < arte.length; j++) { const bB = bbox(arte[j].f.poly); if (bA[0] > bB[2] + 3 || bB[0] > bA[2] + 3 || bA[1] > bB[3] + 3 || bB[1] > bA[3] + 3) continue; minGap = Math.min(minGap, polyDist(A, arte[j].f.poly)); }
+    for (const [x, y] of A) for (let q = 0; q < 8; q++) { const a = q * Math.PI / 4; if (ctxAt(x + 0.35 * Math.cos(a), y + 0.35 * Math.sin(a)) !== arte[i].reg) { cross++; break; } }
+  }
+  const gates = [
+    ["every cut truncates only deposits older than itself (Harris order)", viol === 0, `${cuts.length} cuts, ${trunc} deposits truncated, ${nest} nested pairs, ${viol} violations`],
+    ["no artefact overlaps another or a context boundary", minGap >= 0.5 && cross === 0, `${arte.length} finds, closest ${minGap === 99 ? "n/a" : minGap.toFixed(2) + " mm"}, ${cross} crossings`],
+  ];
+  return { key, shade, colour: colr, gates, info: `${N} deposits, ${cuts.length} cuts, ${arte.length} finds` };
+}
+
+// ================= mode 2: site plan =================
+function contourChains(f, nx, ny, g, x0, y0, iv) {
+  const pts = new Map(), adj = new Map(), F = (i, j) => f[j * (nx + 1) + i], W1 = nx + 1;
+  const link = (ka, pa, kb, pb) => { if (!pts.has(ka)) pts.set(ka, pa); if (!pts.has(kb)) pts.set(kb, pb); let l = adj.get(ka); if (!l) adj.set(ka, l = []); l.push(kb); l = adj.get(kb); if (!l) adj.set(kb, l = []); l.push(ka); };
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const a = F(i, j), b = F(i + 1, j), c = F(i + 1, j + 1), d = F(i, j + 1), mn = Math.min(a, b, c, d), mx = Math.max(a, b, c, d);
+    for (let k = Math.ceil(mn / iv); k <= Math.floor(mx / iv); k++) {
+      const L = k * iv + 1e-6; if (L <= mn || L > mx) continue;
+      const hA = a >= L, hB = b >= L, hC = c >= L, hD = d >= L, cr = [];
+      const E = [null, null, null, null];
+      if (hA !== hB) { const t = (L - a) / (b - a); E[0] = [(2 * (j * W1 + i)) * 512 + k, [x0 + (i + t) * g, y0 + j * g]]; }
+      if (hB !== hC) { const t = (L - b) / (c - b); E[1] = [(2 * (j * W1 + i + 1) + 1) * 512 + k, [x0 + (i + 1) * g, y0 + (j + t) * g]]; }
+      if (hD !== hC) { const t = (L - d) / (c - d); E[2] = [(2 * ((j + 1) * W1 + i)) * 512 + k, [x0 + (i + t) * g, y0 + (j + 1) * g]]; }
+      if (hA !== hD) { const t = (L - a) / (d - a); E[3] = [(2 * (j * W1 + i) + 1) * 512 + k, [x0 + i * g, y0 + (j + t) * g]]; }
+      for (let q = 0; q < 4; q++) if (E[q]) cr.push(q);
+      const seg = (p, q) => link(E[p][0], E[p][1], E[q][0], E[q][1]);
+      if (cr.length === 2) seg(cr[0], cr[1]);
+      else if (cr.length === 4) { const cen = (a + b + c + d) / 4; if (hA === (cen >= L)) { seg(0, 1); seg(2, 3); } else { seg(0, 3); seg(1, 2); } }
+    }
+  }
+  const seen = new Set(), out = [];
+  const walk = (start, closedOk) => {
+    const path = [start]; seen.add(start); let prev = start, cur = adj.get(start)[0], closed = false;
+    while (cur !== undefined) {
+      if (cur === start) { closed = closedOk; break; } if (seen.has(cur)) break;
+      path.push(cur); seen.add(cur); const nb = adj.get(cur), nxt = nb.length > 1 ? (nb[0] === prev ? nb[1] : nb[0]) : undefined; prev = cur; cur = nxt;
+    }
+    out.push({ k: start % 512, pts: path.map(q => pts.get(q)), closed });
+  };
+  for (const [key, nb] of adj) if (nb.length === 1 && !seen.has(key)) walk(key, false);
+  for (const [key, nb] of adj) if (!seen.has(key)) walk(key, true);
+  return out;
+}
+const symPoly = (cls, x, y) => cls === "flint" ? [[x, y - 1.6], [x + 1.45, y + 1.15], [x - 1.45, y + 1.15]]
+  : cls === "pottery" ? ring(x, y, 1.15, 12) : cls === "metal" ? rectPoly(x - 1.1, y - 1.1, x + 1.1, y + 1.1)
+  : Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 0.75 : 1.75; return [x + r * Math.cos(a), y + r * Math.sin(a)]; });
+const CLASSNAME = { flint: "FLINT", pottery: "POTTERY", metal: "METAL", coin: "COIN" };
+
+function buildPlan(o, W, H, rnd) {
+  const m = o.margin, key = [], shade = [], col = [], lab = o.labels === "on", SC = 0.25;
+  // ---- what the legend will hold decides how tall the strip under the plan is
+  const ent = ["contour", "index"]; if (o.houses > 0) ent.push("wall", "robbed"); if (o.posts > 0 || o.fences > 0) ent.push("post", "postx");
+  if (o.ditch === "on") ent.push("ditch"); if (o.trenches > 0) ent.push("trench"); if (o.spots > 0) ent.push("flint", "pottery", "metal", "coin");
+  const lcols = Math.max(2, Math.floor((W - 2 * m) / 54)), lrows = Math.ceil(ent.length / lcols), legH = lrows * 5.6 + 4, strip = 13 + legH;
+  const yS = H - m - strip, px0 = m + 7, py0 = m + 7, px1 = W - m - 7, py1 = yS - 7, pw = px1 - px0, ph = py1 - py0;
+  const inPlan = (x, y, g = 0) => x >= px0 + g && x <= px1 - g && y >= py0 + g && y <= py1 - g;
+  const PC = mkClash(12), WB = mkClash(8), LC = mkClash(8), PM = mkGrid(8);   // features, wall-like blockers, labels and symbols, contour mask
+  const walls = [], spotPolys = [], houses = [], structs = [], trenchRects = [];
+  const addWall = P => { WB.add(P); walls.push(P); };
+  const emit = (arr, paths) => { for (const p of paths) arr.push(p); };
+  // ---- terrain
+  const nzT = mkNoise2(o.seed * 13 + 1), amp = 2 + o.relief * 9, tang = rnd() * TAU, tilt = o.relief * 7;
+  const terrain = (x, y) => 40 + tilt * (((x - px0) - pw / 2) * Math.cos(tang) + ((y - py0) - ph / 2) * Math.sin(tang)) / (pw / 2) + amp * fbm2(nzT, (x - px0) / 60, (y - py0) / 60, 2);
+  // ---- ditch
+  const quad = (a, b, hw) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l * hw, ny = dx / l * hw; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
+  if (o.ditch === "on") {
+    const y0 = py0 + (0.2 + 0.6 * rnd()) * ph, y1 = py0 + (0.2 + 0.6 * rnd()) * ph, phs = rnd() * TAU, nzD = mkNoise(o.seed * 3 + 9), cl = [];
+    for (let x = px0; x <= px1 + 0.01; x += 2) { const t = (x - px0) / pw; cl.push([Math.min(x, px1), y0 + (y1 - y0) * t + 5 * Math.sin(t * 5 + phs) + 3 * nzD(x * 0.05)]); }
+    const side = s => cl.map((p, i) => { const a = cl[Math.max(0, i - 1)], b = cl[Math.min(cl.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [p[0] - dy / l * 1.7 * s, p[1] + dx / l * 1.7 * s]; });
+    for (const s of [-1, 1]) dashify(side(s), 5, 2.2, key, false, s > 0 ? 0.7 : 0);
+    for (let i = 0; i + 1 < cl.length; i++) { const q = quad(cl[i], cl[i + 1], 3.4); PC.add(q); addWall(q); PM.add(quad(cl[i], cl[i + 1], 2.4)); }
+  }
+  // ---- ruined stone houses
+  function wallLines(h, ax, po, pi, ro, ri, door, robbed, out) {
+    const P = (a, p) => { const [x, y] = ax === "x" ? [a, p] : [p, a], [qx, qy] = rot2(x, y, h.ang); return [h.cx + qx, h.cy + qy]; }, dw = 2.2;
+    const kind = a => door !== null && Math.abs(a - door) < dw ? "gap" : robbed && a >= robbed[0] && a <= robbed[1] ? "rob" : "sol";
+    for (const [p, r] of [[po, ro], [pi, ri]]) {
+      const br = [r[0], r[1]]; if (door !== null) br.push(door - dw, door + dw); if (robbed) br.push(robbed[0], robbed[1]);
+      const cuts = [...new Set(br.filter(v => v >= r[0] - 1e-9 && v <= r[1] + 1e-9))].sort((a, b) => a - b);
+      for (let i = 0; i + 1 < cuts.length; i++) { const a = cuts[i], b = cuts[i + 1]; if (b - a < 0.05) continue; const kd = kind((a + b) / 2), seg = [P(a, p), P(b, p)]; if (kd === "sol") out.solid.push([seg, false]); else if (kd === "rob") dashify(seg, 1.7, 1.1, out.solid); }
+    }
+    const lo = Math.max(ro[0], ri[0]) + 0.8, hi = Math.min(ro[1], ri[1]) - 0.8;
+    for (let a = lo + 0.8; a < hi; a += 2.8 + rnd() * 1.2) if (kind(a) === "sol") out.joints.push([[P(a, po), P(a, pi)], false]);
+    if (door !== null) for (const s of [-1, 1]) out.solid.push([[P(door + s * dw, po), P(door + s * dw, pi)], false]);
+    const a0 = Math.min(ro[0], ri[0]), a1 = Math.max(ro[1], ri[1]); addWall([P(a0, po), P(a1, po), P(a1, pi), P(a0, pi)]);
+  }
+  const rectAt = (cx, cy, L, Wd, ang, g = 0) => [[-L / 2 - g, -Wd / 2 - g], [L / 2 + g, -Wd / 2 - g], [L / 2 + g, Wd / 2 + g], [-L / 2 - g, Wd / 2 + g]].map(([x, y]) => { const [qx, qy] = rot2(x, y, ang); return [cx + qx, cy + qy]; });
+  for (let n = 0; n < o.houses; n++) {
+    for (let tr = 0; tr < 300; tr++) {
+      const L = 26 + rnd() * 18, Wd = 14 + rnd() * 8, ang = (rnd() - 0.5) * 1.1 + (rnd() < 0.5 ? 0 : Math.PI / 2 * 0), cx = px0 + 14 + rnd() * (pw - 28), cy = py0 + 14 + rnd() * (ph - 28);
+      const foot = rectAt(cx, cy, L, Wd, ang, 5), core = rectAt(cx, cy, L, Wd, ang, 0);
+      if (!foot.every(([x, y]) => inPlan(x, y, 2))) continue; if (!PC.ok(foot, 1.5)) continue;
+      PC.add(foot); const h = { cx, cy, L, Wd, ang, t: 2.2, core, foot, id: n + 1, solid: [], joints: [], lbl: null }; houses.push(h);
+      const t = h.t, hl = L / 2, hw = Wd / 2, rr = (lo, len) => { if (rnd() > 0.4) return null; const a = lo + (0.15 + 0.3 * rnd()) * len; return [a, a + (0.25 + 0.2 * rnd()) * len]; };
+      const dLong = (rnd() - 0.5) * hl * 0.9, dLong2 = rnd() < 0.5 ? (rnd() - 0.5) * hl * 0.9 : null;
+      wallLines(h, "x", -hw, -hw + t, [-hl, hl], [-hl + t, hl - t], dLong, rr(-hl, L), h);
+      wallLines(h, "x", hw, hw - t, [-hl, hl], [-hl + t, hl - t], dLong2, rr(-hl, L), h);
+      wallLines(h, "y", -hl, -hl + t, [-hw, hw], [-hw + t, hw - t], null, rr(-hw, Wd), h);
+      wallLines(h, "y", hl, hl - t, [-hw, hw], [-hw + t, hw - t], rnd() < 0.5 ? (rnd() - 0.5) * hw * 0.8 : null, rr(-hw, Wd), h);
+      if (rnd() < 0.6) { const px = hl * (rnd() * 0.5 - 0.15); wallLines(h, "y", px, px + t, [-hw + t, hw - t], [-hw + t, hw - t], (rnd() - 0.5) * hw * 0.8, null, h); h.part = px; }
+      // a hearth
+      const hx = h.part !== undefined ? (h.part > 0 ? -hl * 0.45 : hl * 0.45) : (rnd() - 0.5) * hl * 0.5, hy = (rnd() - 0.5) * hw * 0.3, hp = rectAt(0, 0, 5.6, 3.6, 0).map(([x, y]) => { const [qx, qy] = rot2(x + hx, y + hy, ang); return [cx + qx, cy + qy]; });
+      h.hearth = hp; h.solid.push([hp, true]); hatchPoly(shrink(hp, 0.85), 0.8, Math.max(0.6, o.pitch * 0.8), shade, 0.6); addWall(growPoly(hp, 0.3));
+      key.push(...h.solid); shade.push(...h.joints); PM.add(growPoly(core, 0.6)); break;
+    }
+  }
+  // ---- posthole buildings and fences
+  function post(x, y, r, kind) {
+    const c = ring(x, y, r, 14); key.push([c, true]);
+    if (kind === 0) { const pt = Math.max(0.55, o.pitch * 0.85), tmp = []; hatchPoly(ring(x, y, r * 0.86, 14), 0.8, pt, tmp, 0.5); for (const q of tmp) shade.push(q); }
+    else if (kind === 1) shade.push([ring(x, y, r * 0.42, 8), true]);
+    const wp = ring(x, y, r + 0.45, 10); PC.add(wp); addWall(wp); PM.add(ring(x, y, r + 1.0, 8));
+  }
+  const pkind = () => { const r = rnd(); return r < 0.55 ? 0 : r < 0.8 ? 1 : 2; };
+  const TYPES = ["aisled", "round", "granary", "aisled"];
+  for (let n = 0; n < o.posts; n++) {
+    const type = TYPES[n % 4];
+    for (let tr = 0; tr < 300; tr++) {
+      const cx = px0 + 16 + rnd() * (pw - 32), cy = py0 + 16 + rnd() * (ph - 32), ang = (rnd() - 0.5) * 1.2; let core, list = [];
+      if (type === "aisled") {
+        const L = 42 + rnd() * 16, Wd = 17 + rnd() * 6, sp = 5.2 + rnd() * 1.0, nseg = Math.max(4, Math.round(L / sp)), dsp = L / nseg;
+        core = rectAt(cx, cy, L, Wd, ang, 0);
+        for (let i = 0; i <= nseg; i++) { const x = -L / 2 + i * dsp; for (const s of [-1, 1]) { if (Math.abs(x - (s > 0 ? -L * 0.12 : L * 0.16)) < 3.4) continue; list.push([x, s * Wd / 2]); if (i % 2 === 0 && i > 0 && i < nseg) list.push([x, s * Wd * 0.17]); } }
+        for (let j = 1; j < 3; j++) for (const s of [-1, 1]) list.push([s * L / 2, -Wd / 2 + j * Wd / 3]);
+      } else if (type === "round") {
+        const R = 13 + rnd() * 4, nr = Math.round(TAU * R / 5.0); core = ring(cx, cy, R + 1.5, 20);
+        for (let i = 0; i < nr; i++) { const a = TAU * i / nr; if (i === 0) continue; list.push([R * Math.cos(a), R * Math.sin(a)]); }
+        for (let i = 0; i < Math.round(nr / 2); i++) { const a = TAU * (i + 0.5) / Math.round(nr / 2); list.push([R * 0.52 * Math.cos(a), R * 0.52 * Math.sin(a)]); }
+        for (const s of [-1, 1]) list.push([R + 3.5, s * 2.2]);
+      } else {
+        const sx = 6 + rnd() * 1.5, sy = 6.5 + rnd(); core = rectAt(cx, cy, 2 * sx, sy, ang, 0);
+        for (let i = -1; i <= 1; i++) for (const s of [-1, 1]) list.push([i * sx, s * sy / 2]);
+      }
+      const pos = type === "round" ? list.map(([x, y]) => [cx + x, cy + y]) : list.map(([x, y]) => { const [qx, qy] = rot2(x, y, ang); return [cx + qx, cy + qy]; });
+      const bb = bbox(core), foot = rectPoly(bb[0] - 5, bb[1] - 5, bb[2] + 5, bb[3] + 5);
+      if (!foot.every(([x, y]) => inPlan(x, y, 2))) continue; if (!PC.ok(foot, 1.5)) continue;
+      PC.add(foot); structs.push({ type, core, foot }); const pr = type === "granary" ? 1.25 : type === "round" ? 1.1 : 1.05;
+      for (const [x, y] of pos) post(x, y, pr + 0.3 * rnd(), pkind());
+      PM.add(growPoly(core, 1.6)); break;
+    }
+  }
+  for (let n = 0; n < o.fences; n++) {
+    for (let tr = 0; tr < 80; tr++) {
+      let x = px0 + 8 + rnd() * (pw - 16), y = py0 + 8 + rnd() * (ph - 16), a = rnd() * TAU; const sp = 4.6 + rnd() * 1.0, want = 8 + Math.floor(rnd() * 8), got = [];
+      for (let i = 0; i < want; i++) { const P = ring(x, y, 1.0, 10); if (!inPlan(x, y, 4) || !PC.ok(P, 3.2)) break; got.push([x, y]); x += Math.cos(a) * sp; y += Math.sin(a) * sp; a += (rnd() - 0.5) * 0.28; }
+      if (got.length < 5) continue; for (const [gx, gy] of got) post(gx, gy, 0.8 + 0.15 * rnd(), rnd() < 0.5 ? 0 : 2); break;
+    }
+  }
+  // ---- trenches
+  const feats = [...houses.map(h => h.core), ...structs.map(s => s.core)];
+  const strips = R4 => { for (let i = 0; i < 4; i++) addWall(quad(R4[i], R4[(i + 1) % 4], 0.5)); };
+  for (let i = 0; i < o.trenches; i++) {
+    let R4 = null;
+    if (i < feats.length) {
+      const bb = bbox(feats[i]); let x0 = bb[0] - 3.5, y0 = bb[1] - 3.5, x1 = bb[2] + 3.5, y1 = bb[3] + 3.5; x0 = Math.max(x0, px0 + 1.5); y0 = Math.max(y0, py0 + 1.5); x1 = Math.min(x1, px1 - 1.5); y1 = Math.min(y1, py1 - 1.5);
+      const cand = rectPoly(x0, y0, x1, y1); let ok = true; feats.forEach((f, j) => { if (j !== i && !polysApart(cand, f, 1.2)) ok = false; }); for (const t of trenchRects) if (!polysApart(cand, t, 1.5)) ok = false; if (ok) R4 = cand;
+    } else {
+      for (let tr = 0; tr < 200 && !R4; tr++) { const w = 26 + rnd() * 14, h2 = 16 + rnd() * 8, x0 = px0 + 3 + rnd() * (pw - w - 6), y0 = py0 + 3 + rnd() * (ph - h2 - 6), cand = rectPoly(x0, y0, x0 + w, y0 + h2); if (PC.ok(cand, 2.5) && trenchRects.every(t => polysApart(cand, t, 2.5))) { R4 = cand; PC.add(cand); } }
+    }
+    if (!R4) continue; trenchRects.push(R4); key.push([R4, true]); strips(R4); PM.add(R4);
+    if (lab) { const bb = bbox(R4), s = "T" + trenchRects.length, w = txtW(s, 2.6) + 1.6, cands = [[bb[0] + w / 2 + 1, bb[1] - 3.7], [bb[2] - w / 2 - 1, bb[1] - 3.7], [bb[0] + w / 2 + 1, bb[3] + 3.7], [bb[2] - w / 2 - 1, bb[3] + 3.7]];
+      for (const [x, y] of cands) { const P = rectPoly(x - w / 2, y - 1.9, x + w / 2, y + 1.9); if (inPlan(x - w / 2, y - 1.9, 0.6) && inPlan(x + w / 2, y + 1.9, 0.6) && LC.ok(P, 0.8) && WB.ok(P, 0.6)) { LC.add(P); PM.add(growPoly(P, 0.7)); txt(s, x, y, 2.6, key, { a: "c" }); break; } } }
+  }
+  // ---- house names
+  if (lab) for (const h of houses) {
+    const s = "HOUSE " + h.id, w = txtW(s, 2.4) + 1.4;
+    for (let tr = 0; tr < 80; tr++) { const out = tr >= 50, lx = (rnd() - 0.5) * (out ? h.L : h.L - 8), ly = out ? (rnd() < 0.5 ? -1 : 1) * (h.Wd / 2 + 6 + 3 * rnd()) : (rnd() - 0.5) * (h.Wd - 9), [qx, qy] = rot2(lx, ly, h.ang), x = h.cx + qx, y = h.cy + qy, P = rectPoly(x - w / 2, y - 1.8, x + w / 2, y + 1.8);
+      if ((out || P.every(([px, py]) => inPoly(h.core, px, py))) && inPlan(x - w / 2, y - 1.8, 1) && inPlan(x + w / 2, y + 1.8, 1) && WB.ok(P, 1.0) && LC.ok(P, 0.8) && (out ? PC.ok(P, 0) || true : true)) { LC.add(P); PM.add(growPoly(P, 0.7)); txt(s, x, y, 2.4, key, { a: "c" }); break; } }
+  }
+  // ---- contours (labels first so that the findspots keep away from them)
+  const g = 1.2, nxg = Math.ceil(pw / g), nyg = Math.ceil(ph / g), fld = new Float32Array((nxg + 1) * (nyg + 1));
+  for (let j = 0; j <= nyg; j++) for (let i = 0; i <= nxg; i++) fld[j * (nxg + 1) + i] = terrain(px0 + i * g, py0 + j * g);
+  let chains = contourChains(fld, nxg, nyg, g, px0, py0, o.interval).filter(c => c.pts.length > 4).map(c => ({ ...c, pts: chaikin(c.pts, 1, c.closed) }));
+  chains = chains.filter(c => c.pts.length > 5 && plen(c.pts, c.closed) > 6);
+  if (lab) for (const c of chains) {
+    if (c.k % 5 !== 0 || plen(c.pts, c.closed) < 45) continue;
+    const s = String(Math.round(c.k * o.interval * 10) / 10), w = txtW(s, 2.2) + 1.6;
+    for (let tr = 0; tr < 10; tr++) { const q = c.pts[Math.floor(c.pts.length * (0.25 + 0.5 * rnd()))], P = rectPoly(q[0] - w / 2, q[1] - 1.7, q[0] + w / 2, q[1] + 1.7);
+      if (inPlan(q[0] - w / 2, q[1] - 1.7, 1) && inPlan(q[0] + w / 2, q[1] + 1.7, 1) && LC.ok(P, 1) && WB.ok(P, 0.8) && !PM.test(q[0], q[1])) { LC.add(P); PM.add(growPoly(P, 0.4)); txt(s, q[0], q[1], 2.2, key, { a: "c" }); break; } }
+  }
+  // ---- findspots
+  const classes = ["flint", "pottery", "metal", "coin"], used = new Set();
+  for (let n = 0; n < o.spots; n++) {
+    const r = rnd(), cls = r < 0.36 ? "flint" : r < 0.72 ? "pottery" : r < 0.9 ? "metal" : "coin", s = String(n + 1), lw = txtW(s, 2.2) + 0.8;
+    for (let tr = 0; tr < 80; tr++) {
+      let x, y; if (trenchRects.length && rnd() < 0.65) { const R4 = trenchRects[Math.floor(rnd() * trenchRects.length)], bb = bbox(R4); x = bb[0] + rnd() * (bb[2] - bb[0]); y = bb[1] + rnd() * (bb[3] - bb[1]); } else { x = px0 + 4 + rnd() * (pw - 8); y = py0 + 4 + rnd() * (ph - 8); }
+      const P = symPoly(cls, x, y); if (!inPlan(x, y, 4) || !LC.ok(P, 1.0) || !WB.ok(P, 0.8)) continue;
+      let lp = null, lx = 0, ly = 0;
+      if (lab) for (const [dx, dy] of [[2.6 + lw / 2, 0], [-2.6 - lw / 2, 0], [0, -3.6], [0, 3.6]]) { const Q = rectPoly(x + dx - lw / 2, y + dy - 1.6, x + dx + lw / 2, y + dy + 1.6); if (inPlan(Q[0][0], Q[0][1], 1) && inPlan(Q[2][0], Q[2][1], 1) && LC.ok(Q, 0.8) && WB.ok(Q, 0.6) && polysApart(P, Q, 0.5)) { lp = Q; lx = x + dx; ly = y + dy; break; } }
+      if (lab && !lp) continue;
+      LC.add(P); PM.add(growPoly(P, 0.8)); col.push([P, true]); spotPolys.push({ P, cls }); used.add(cls);
+      if (lp) { LC.add(lp); PM.add(growPoly(lp, 0.5)); txt(s, lx, ly, 2.2, key, { a: "c" }); spotPolys.push({ P: lp, cls: "label" }); }
+      break;
+    }
+  }
+  // ---- contour lines, hidden inside excavated areas, buildings and under symbols
+  for (const c of chains) clipHit(c.pts, c.closed, (x, y) => PM.test(x, y), 0.8, c.k % 5 === 0 ? key : shade, 0.35);
+  // ---- grid crosses, border, ticks, coordinates
+  key.push([rectPoly(m, m, W - m, yS), true], [rectPoly(px0, py0, px1, py1), true]);
+  const E0 = 1000 + 5 * Math.floor(rnd() * 400), N0 = 2000 + 5 * Math.floor(rnd() * 400), gstep = 20;
+  for (let i = 0; px0 + i * gstep <= px1 + 0.01; i++) {
+    const x = px0 + i * gstep; for (const [ya, yb] of [[py0, py0 - 1.8], [py1, py1 + 1.8]]) key.push([[[x, ya], [x, yb]], false]);
+    if (i > 0 && x < px1 - 0.5) for (let j = 1; py1 - j * gstep > py0 + 0.5; j++) { const y = py1 - j * gstep; for (const seg of [[[x - 1.2, y], [x + 1.2, y]], [[x, y - 1.2], [x, y + 1.2]]]) clipHit(seg, false, (a, b) => PM.test(a, b), 0.3, shade, 0.3); }
+    txt("E " + (E0 + i * 5), x, m + 3.2, 2.3, key, { a: "c" });
+  }
+  for (let j = 0; py1 - j * gstep >= py0 - 0.01; j++) {
+    const y = py1 - j * gstep; for (const [xa, xb] of [[px0, px0 - 1.8], [px1, px1 + 1.8]]) key.push([[[xa, y], [xb, y]], false]);
+    if (y > py0 + 8) txt("N " + (N0 + j * 5), m + 3.2, j === 0 ? y + 0.6 : y, 2.3, key, { a: j === 0 ? "l" : "c", ang: -Math.PI / 2 });
+  }
+  // ---- title strip: title, scale bar, north arrow, legend
+  txt("SITE PLAN, AREA A", m, yS + 4.5, 3.4, key); txt("SCALE 1:250", m, yS + 10, 2.3, key);
+  { const bx = m + 72, by = yS + 4, u = 5 / SC;
+    key.push([rectPoly(bx, by, bx + 2 * u, by + 2), true]); key.push([[[bx + u, by], [bx + u, by + 2]], false]); hatchPoly(rectPoly(bx + 0.3, by + 0.3, bx + u - 0.3, by + 1.7), Math.PI / 2, Math.max(0.6, o.pitch * 0.8), shade, 0.5);
+    txt("0", bx, by + 5.2, 2.3, key, { a: "c" }); txt("5", bx + u, by + 5.2, 2.3, key, { a: "c" }); txt("10 M", bx + 2 * u, by + 5.2, 2.3, key, { a: "c" }); }
+  { const nx0 = W - m - 9, ny0 = yS + 5.4; key.push([[[nx0, ny0], [nx0 + 2.4, ny0 + 6.2], [nx0, ny0 + 4.8], [nx0 - 2.4, ny0 + 6.2]], true]); hatchPoly([[nx0, ny0], [nx0, ny0 + 4.8], [nx0 - 2.4, ny0 + 6.2]], Math.PI / 4, Math.max(0.6, o.pitch * 0.8), shade, 0.4); txt("N", nx0, ny0 - 2.6, 2.6, key, { a: "c" }); }
+  key.push([rectPoly(m, H - m - legH, W - m, H - m), true]);
+  const cw = (W - 2 * m) / lcols;
+  ent.forEach((k, i) => {
+    const x0 = m + (i % lcols) * cw + 3, y = H - m - legH + 3.6 + Math.floor(i / lcols) * 5.6, sx = x0 + 6, txtS = { contour: `CONTOUR, ${o.interval} M`, index: "INDEX CONTOUR", wall: "WALL", robbed: "ROBBED WALL", post: "POSTHOLE", postx: "DUG POSTHOLE", ditch: "DITCH", trench: "TRENCH", flint: "FLINT", pottery: "POTTERY", metal: "METAL", coin: "COIN" }[k];
+    if (k === "contour") shade.push([[[x0, y], [x0 + 12, y]], false]); else if (k === "index") key.push([[[x0, y], [x0 + 12, y]], false]);
+    else if (k === "wall") { key.push([[[x0, y - 1.1], [x0 + 12, y - 1.1]], false], [[[x0, y + 1.1], [x0 + 12, y + 1.1]], false]); for (let a = 2; a < 12; a += 2.8) shade.push([[[x0 + a, y - 1.1], [x0 + a, y + 1.1]], false]); }
+    else if (k === "robbed") for (const dy of [-1.1, 1.1]) dashify([[x0, y + dy], [x0 + 12, y + dy]], 1.7, 1.1, key);
+    else if (k === "post") key.push([ring(sx, y, 1.1, 14), true]);
+    else if (k === "postx") { key.push([ring(sx, y, 1.1, 14), true]); hatchPoly(ring(sx, y, 0.95, 14), 0.8, Math.max(0.55, o.pitch * 0.85), shade, 0.5); }
+    else if (k === "ditch") for (const dy of [-1.3, 1.3]) dashify([[x0, y + dy], [x0 + 12, y + dy]], 3.5, 1.6, key);
+    else if (k === "trench") key.push([rectPoly(x0 + 1, y - 1.6, x0 + 11, y + 1.6), true]);
+    else col.push([symPoly(k, sx, y), true]);
+    txt(txtS, x0 + 14, y, 2.3, key);
+  });
+  // ---- gates
+  let minGap = 99, hitWall = 0;
+  for (let i = 0; i < spotPolys.length; i++) {
+    const A = spotPolys[i].P, bA = bbox(A);
+    for (let j = i + 1; j < spotPolys.length; j++) { const bB = bbox(spotPolys[j].P); if (bA[0] > bB[2] + 3 || bB[0] > bA[2] + 3 || bA[1] > bB[3] + 3 || bB[1] > bA[3] + 3) continue; minGap = Math.min(minGap, polyDist(A, spotPolys[j].P)); }
+    for (const Wp of walls) { const bW = bbox(Wp); if (bA[0] > bW[2] + 1 || bW[0] > bA[2] + 1 || bA[1] > bW[3] + 1 || bW[1] > bA[3] + 1) continue; if (polyDist(A, Wp) < 0.3) hitWall++; }
+  }
+  const gates = [["no findspot symbol or label overlaps another or a wall", minGap >= 0.5 && hitWall === 0, `${spotPolys.filter(s => s.cls !== "label").length} findspots, closest ${minGap === 99 ? "n/a" : minGap.toFixed(2) + " mm"}, ${hitWall} touching a wall`]];
+  return { key, shade, colour: col, gates, info: `${houses.length} houses, ${structs.length} posthole buildings, ${trenchRects.length} trenches, ${spotPolys.filter(s => s.cls !== "label").length} findspots, ${chains.length} contour lines` };
+}
+
+// ================= mode 3: sieve tray =================
+const MIXES = {
+  flint: [["flake", 0.4], ["blade", 0.12], ["scraper", 0.1], ["arrow", 0.03], ["pebble", 0.15], ["sherd", 0.07], ["bone", 0.05], ["charcoal", 0.05], ["snail", 0.03]],
+  mixed: [["sherd", 0.26], ["flake", 0.16], ["blade", 0.04], ["scraper", 0.05], ["bone", 0.14], ["charcoal", 0.1], ["snail", 0.08], ["pebble", 0.12], ["arrow", 0.02]],
+  pottery: [["sherd", 0.62], ["flake", 0.08], ["bone", 0.07], ["charcoal", 0.06], ["pebble", 0.1], ["snail", 0.04], ["scraper", 0.03]],
+};
+const SIEVESIZE = { flake: [10, 20], blade: [18, 30], scraper: [11, 17], arrow: [22, 30], sherd: [10, 24], bone: [12, 26], charcoal: [5, 10], snail: [6, 10], pebble: [5, 13], coin: [14, 16] };
+const CLASSOF = { flake: "FLINT", blade: "FLINT", scraper: "FLINT", arrow: "FLINT", sherd: "POTTERY", bone: "BONE", charcoal: "CHARCOAL", snail: "SNAIL", pebble: "PEBBLE", coin: "COIN" };
+
+function buildSieve(o, W, H, rnd) {
+  const m = o.margin, key = [], shade = [], col = [], lab = o.labels === "on";
+  const S = Math.min(W - 2 * m, H - 2 * m - 16), fx0 = (W - S) / 2, fy0 = m, fx1 = fx0 + S, fy1 = fy0 + S, T = 8, ix0 = fx0 + T, iy0 = fy0 + T, ix1 = fx1 - T, iy1 = fy1 - T;
+  // ---- the finds: decide the list, then place the biggest first
+  const mix = MIXES[o.mixture], sizeK = Math.min(1.5, Math.max(0.9, 0.6 + o.meshp / 8)), list = [];
+  for (let i = 0; i < o.pieces; i++) { let r = rnd(), kind = mix[0][0]; for (const [k, p] of mix) { if (r < p) { kind = k; break; } r -= p; } list.push(kind); }
+  if (o.mixture !== "flint" || rnd() < 0.5) { if (list.length > 6) list[list.length - 1] = "coin"; }
+  const items = list.map(kind => { const [a, b] = SIEVESIZE[kind]; return { kind, L: Math.max(a + rnd() * (b - a), 1.6 * o.meshp) * (kind === "coin" ? 1 : sizeK) }; }).sort((p, q) => q.L - p.L);
+  const clash = mkClash(20), mask = mkGrid(10), placed = [], counts = {};
+  const IN = 1.6;
+  for (const it of items) {
+    const f0 = mkFind(it.kind, it.L, rnd, o.pitch);
+    for (let tr = 0; tr < 200; tr++) {
+      const x = ix0 + IN + rnd() * (ix1 - ix0 - 2 * IN), y = iy0 + IN + rnd() * (iy1 - iy0 - 2 * IN), ang = rnd() * TAU, P = place(f0.poly, x, y, ang);
+      if (!P.every(([px, py]) => px > ix0 + IN && px < ix1 - IN && py > iy0 + IN && py < iy1 - IN)) continue;
+      if (!clash.ok(P, 1.2)) continue;
+      const f = putFind(f0, x, y, ang); clash.add(f.poly); mask.add(growPoly(f.poly, 0.7)); placed.push({ f, kind: it.kind }); emitFind(f, key, shade); counts[CLASSOF[it.kind]] = (counts[CLASSOF[it.kind]] || 0) + 1; break;
+    }
+  }
+  // ---- the wire mesh, hidden wherever a find lies on it
+  const meshPaths = [], hit = (x, y) => mask.test(x, y), p = o.meshp, nX = Math.floor((ix1 - ix0) / p), nY = Math.floor((iy1 - iy0) / p), sx = ix0 + ((ix1 - ix0) - nX * p) / 2, sy = iy0 + ((iy1 - iy0) - nY * p) / 2;
+  for (let k = 0; k <= nX; k++) { const x = sx + k * p; if (x < ix0 + 0.5 || x > ix1 - 0.5) continue; clipHit([[x, iy0], [x, iy1]], false, hit, 0.5, meshPaths, 0.3); }
+  for (let k = 0; k <= nY; k++) { const y = sy + k * p; if (y < iy0 + 0.5 || y > iy1 - 0.5) continue; clipHit([[ix0, y], [ix1, y]], false, hit, 0.5, meshPaths, 0.3); }
+  for (const q of meshPaths) shade.push(q);
+  // ---- the frame: two edges, mitred corners, wood grain, screws
+  key.push([rectPoly(fx0, fy0, fx1, fy1), true], [rectPoly(ix0, iy0, ix1, iy1), true]);
+  const nzG = mkNoise(o.seed * 11 + 5);
+  for (const [a, b] of [[[fx0, fy0], [ix0, iy0]], [[fx1, fy0], [ix1, iy0]], [[fx1, fy1], [ix1, iy1]], [[fx0, fy1], [ix0, iy1]]]) col.push([[a, b], false]);
+  for (let side = 0; side < 4; side++) for (const f of [0.3, 0.66]) {
+    const pts = [];
+    for (let t = T * f + 0.9; t <= S - T * f - 0.9; t += 1) { const off = T * f + 0.35 * nzG(t * 0.07 + side * 9 + f * 30), q = side === 0 ? [fx0 + t, fy0 + off] : side === 1 ? [fx1 - off, fy0 + t] : side === 2 ? [fx1 - t, fy1 - off] : [fx0 + off, fy1 - t]; pts.push(q); }
+    dashify(pts, 20 + rnd() * 30, 3 + rnd() * 5, col, false, rnd());
+  }
+  for (const [x, y] of [[fx0 + T / 2, fy0 + T / 2], [fx1 - T / 2, fy0 + T / 2], [fx1 - T / 2, fy1 - T / 2], [fx0 + T / 2, fy1 - T / 2]]) { col.push([ring(x, y, 1.15, 12), true]); const a = rnd() * Math.PI; col.push([[[x - 0.8 * Math.cos(a), y - 0.8 * Math.sin(a)], [x + 0.8 * Math.cos(a), y + 0.8 * Math.sin(a)]], false]); }
+  // ---- caption
+  const cy0 = fy1 + 6;
+  if (lab) { txt(`FINDS TRAY, ${o.meshp} MM MESH, 1:1`, fx0, cy0, 3, key);
+    const parts = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join("   "); txt(parts, fx0, cy0 + 7, 2.3, key); }
+  { const bx = fx1 - 60, by = cy0 - 1.1; key.push([rectPoly(bx, by, bx + 50, by + 2.2), true]);
+    for (let k = 0; k < 5; k++) { const x0 = bx + k * 10; if (k % 2 === 0) hatchPoly(rectPoly(x0 + 0.3, by + 0.3, x0 + 9.7, by + 1.9), Math.PI / 2, Math.max(0.6, o.pitch * 0.8), shade, 0.5); if (k) key.push([[[x0, by], [x0, by + 2.2]], false]); }
+    txt("0", bx - 1.5, cy0, 2.3, key, { a: "r" }); txt("5 CM", bx + 52, cy0, 2.3, key); }
+  // ---- gates
+  let minGap = 99; const chk = mkGrid(10);
+  for (let i = 0; i < placed.length; i++) {
+    const A = placed[i].f.poly, bA = bbox(A); chk.add(A);
+    for (let j = i + 1; j < placed.length; j++) { const Bq = placed[j].f.poly, bB = bbox(Bq); if (bA[0] > bB[2] + 3 || bB[0] > bA[2] + 3 || bA[1] > bB[3] + 3 || bB[1] > bA[3] + 3) continue; minGap = Math.min(minGap, polyDist(A, Bq)); }
+  }
+  let under = 0, ms = 0; for (const [q] of meshPaths) for (const [x, y] of densify(q, false, 0.25)) { ms++; if (chk.test(x, y)) under++; }
+  const gates = [["no find overlaps another; mesh hidden under every find", minGap >= 1.0 && under === 0, `${placed.length} finds, closest ${minGap === 99 ? "n/a" : minGap.toFixed(2) + " mm"}, ${under} of ${ms} mesh samples inside a find`]];
+  return { key, shade, colour: col, gates, info: `${placed.length} of ${o.pieces} finds placed on a ${o.meshp} mm mesh` };
+}
+
+// ================= mode 4: pottery refit =================
+const VESSELS = {
+  jar: { aspect: 1.05, name: "JAR", pts: [[0, 0.86], [0.05, 0.80], [0.13, 0.70], [0.22, 0.83], [0.42, 1.0], [0.62, 0.96], [0.85, 0.66], [1, 0.55]] },
+  bowl: { aspect: 0.55, name: "BOWL", pts: [[0, 0.98], [0.15, 1.0], [0.45, 0.92], [0.75, 0.68], [1, 0.42]] },
+  beaker: { aspect: 1.35, name: "BEAKER", pts: [[0, 0.82], [0.06, 0.80], [0.2, 0.72], [0.4, 0.85], [0.6, 1.0], [0.8, 0.88], [1, 0.62]] },
+  amphora: { aspect: 1.9, name: "AMPHORA", pts: [[0, 0.55], [0.03, 0.5], [0.12, 0.3], [0.2, 0.32], [0.35, 0.7], [0.55, 1.0], [0.78, 0.85], [0.92, 0.42], [1, 0.18]] },
+};
+const BANDS = [[0.035, 0.115], [0.3, 0.41], [0.56, 0.65], [0.76, 0.82]];
+const crom = (p0, p1, p2, p3, t) => 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+
+const simplifyRing = (p, tol) => { let f = 0, bd = -1; for (let i = 1; i < p.length; i++) { const d = (p[i][0] - p[0][0]) ** 2 + (p[i][1] - p[0][1]) ** 2; if (d > bd) { bd = d; f = i; } } const A = simplify(p.slice(0, f + 1), tol), B = simplify([...p.slice(f), p[0]], tol), q = [...A, ...B.slice(1, -1)]; return q.length >= 3 ? q : p; };
+function buildRefit(o, W, H, rnd) {
+  const m = o.margin, key = [], shade = [], col = [], lab = o.labels === "on", V = VESSELS[o.vessel];
+  const cp = V.pts.map(([y, r], i) => [y, r * (i === 0 || i === V.pts.length - 1 ? 1 : 1 + (rnd() - 0.5) * 0.08)]);
+  const rAtF = yf => { yf = Math.min(1, Math.max(0, yf)); let i = 0; while (i < cp.length - 2 && yf > cp[i + 1][0]) i++; const a = cp[i], b = cp[i + 1], t = b[0] > a[0] ? (yf - a[0]) / (b[0] - a[0]) : 0; return crom(cp[Math.max(0, i - 1)][1], a[1], b[1], cp[Math.min(cp.length - 1, i + 2)][1], t); };
+  const laid = o.laid === "beside", availW = W - 2 * m - (laid ? 62 : 0), availH = H - 2 * m - 32;
+  const Hv = Math.min(availH, V.aspect * availW), Rmax = Hv / (2 * V.aspect), yTop = m + 16 + (availH - Hv) / 2, yBot = yTop + Hv, cx = laid ? m + Rmax + 2 : W / 2;
+  const K = Math.min(1600, Math.max(30, Math.round(Hv / 0.15))), dyk = Hv / K, rTab = new Float64Array(K + 1); for (let k = 0; k <= K; k++) rTab[k] = Rmax * rAtF(k / K);
+  const rLoc = y => { const f = Math.min(K, Math.max(0, y / dyk)), i = Math.min(K - 1, Math.floor(f)); return rTab[i] + (rTab[i + 1] - rTab[i]) * (f - i); };
+  const tw = Math.min(4.5, Math.max(2.4, Rmax * 0.085)), tb = tw * 1.2;
+  // ---- right half: the wall in section, hatched
+  const secPoly = []; for (let k = 0; k <= K; k++) secPoly.push([cx + rTab[k], yTop + k * dyk]);
+  secPoly.push([cx, yBot], [cx, yBot - tb]); for (let k = Math.floor((Hv - tb) / dyk); k >= 0; k--) secPoly.push([cx + Math.max(0.35, rTab[k] - tw), yTop + k * dyk]);
+  key.push([simplify(secPoly, 0.03), true]); hatchPoly(secPoly, Math.PI / 4, Math.max(0.5, o.pitch), shade, 0.5);
+  // centre line, chain pattern
+  for (let y = yTop - 5; y < yBot + 5;) { const l = Math.min(7, yBot + 5 - y); shade.push([[[cx, y], [cx, y + l]], false]); y += l + 1.4; if (y < yBot + 5) { shade.push([[[cx, y], [cx, y + 0.6]], false]); y += 2; } }
+  // ---- left half: Voronoi-style fracture cells tiling the exterior view
+  const ax2 = 1, ay2 = Math.pow(0.72 + 0.4 * rnd(), 2), reg = [[0, 0]]; for (let k = 0; k <= K; k++) reg.push([-rTab[k], k * dyk]); reg.push([0, Hv]); const regArea = Math.abs(area2(reg)) / 2;
+  const inReg = (x, y) => y > 0.3 && y < Hv - 0.3 && x < -0.3 && x > -rLoc(y) + 0.3, seeds = [];
+  for (let i = 0; i < o.sherds; i++) {
+    let best = null, bd = -1;
+    for (let c = 0; c < 28; c++) { let x, y, t = 0; do { x = -rnd() * Rmax; y = rnd() * Hv; t++; } while (!inReg(x, y) && t < 200); if (!inReg(x, y)) continue; let d = 1e9; for (const s of seeds) d = Math.min(d, (s[0] - x) ** 2 + (s[1] - y) ** 2); if (d > bd) { bd = d; best = [x, y]; } }
+    if (best) seeds.push(best);
+  }
+  const N = seeds.length, nzW1 = mkNoise2(o.seed * 5 + 1), nzW2 = mkNoise2(o.seed * 5 + 2);
+  const wp = (x, y) => { const d = Math.min(x + rLoc(y), -x, y, Hv - y), w = Math.max(0, Math.min(1, d / 2.2)); return [cx + x + 0.7 * w * nzW1(x * 0.28 + 3, y * 0.28), yTop + y + 0.7 * w * nzW2(x * 0.28 + 9, y * 0.28)]; };
+  const cellAt = (x, y) => { let b = -1, bd = 1e18; for (let j = 0; j < N; j++) { const d = ax2 * (x - seeds[j][0]) ** 2 + ay2 * (y - seeds[j][1]) ** 2; if (d < bd) { bd = d; b = j; } } return b; };
+  const cells = seeds.map(() => ({ rows: [], runs: [], polys: [], area: 0 }));
+  for (let i = 0; i < N; i++) {
+    const [xi, yi] = seeds[i];
+    for (let k = 0; k <= K; k++) {
+      const y = k * dyk; let lo = -rTab[k], hi = 0, lj = -1, rj = -2, ok = true;
+      for (let j = 0; j < N; j++) {
+        if (j === i) continue; const [xj, yj] = seeds[j], n0 = ax2 * (xj - xi), n1 = ay2 * (yj - yi), c = (ax2 * (xj * xj - xi * xi) + ay2 * (yj * yj - yi * yi)) / 2, rhs = c - n1 * y;
+        if (Math.abs(n0) < 1e-9) { if (rhs < 0) { ok = false; break; } } else { const b = rhs / n0; if (n0 > 0) { if (b < hi) { hi = b; rj = j; } } else if (b > lo) { lo = b; lj = j; } }
+        if (hi - lo <= 0.02) { ok = false; break; }
+      }
+      cells[i].rows.push(ok && hi - lo > 0.02 ? { lo, hi, lj, rj } : null);
+    }
+    const c = cells[i]; let k = 0;
+    while (k <= K) { if (!c.rows[k]) { k++; continue; } let k1 = k; while (k1 + 1 <= K && c.rows[k1 + 1]) k1++; c.runs.push({ k0: k, k1 }); k = k1 + 1; }
+    for (const r of c.runs) {
+      const pts = []; for (let k2 = r.k0; k2 <= r.k1; k2++) pts.push(wp(c.rows[k2].lo, k2 * dyk)); for (let k2 = r.k1; k2 >= r.k0; k2--) pts.push(wp(c.rows[k2].hi, k2 * dyk));
+      const sp = simplifyRing(pts, 0.008), a = Math.abs(area2(sp)) / 2; c.polys.push({ pts: sp, area: a, bb: bbox(sp) }); c.area += a;
+    }
+  }
+  // which sherds are missing
+  const nMiss = Math.min(o.missing, Math.max(0, N - 1)), order = seeds.map((_, i) => i).sort((a, b) => cells[b].area - cells[a].area).filter(i => cells[i].area >= 18); const pool = order.slice(); for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const miss = new Set(pool.slice(0, nMiss)); for (let i = 0; miss.size < nMiss && i < N; i++) miss.add(i);
+  // ---- draw the fracture lines and outline
+  const cell = (x, y) => cells;
+  const solid = pts => { if (pts.length > 1) key.push([simplify(pts, 0.03), false]); }, dashed = pts => { if (pts.length > 1) dashify(simplify(pts, 0.03), 2.4, 1.3, col); };
+  const drawEdge = (pts, missing) => missing ? dashed(pts) : solid(pts);
+  for (let i = 0; i < N; i++) {
+    const c = cells[i];
+    for (const r of c.runs) {
+      for (const side of ["lj", "rj"]) {
+        let g = null; const flush = () => { if (g && g.j !== -2 && (g.j === -1 || g.j > i)) drawEdge(g.pts, miss.has(i) || (g.j >= 0 && miss.has(g.j))); };
+        for (let k = r.k0; k <= r.k1; k++) { const rw = c.rows[k], p = wp(side === "lj" ? rw.lo : rw.hi, k * dyk), j = rw[side]; if (g && g.j === j) g.pts.push(p); else { if (g) g.pts.push(p); flush(); g = { j, pts: [p] }; } }
+        flush();
+      }
+      const top = c.rows[r.k0], bot = c.rows[r.k1];
+      if (r.k0 === 0) drawEdge([wp(top.lo, 0), wp(top.hi, 0)], miss.has(i));
+      if (r.k1 === K) drawEdge([wp(bot.lo, Hv), wp(bot.hi, Hv)], miss.has(i));
+      else if (bot.hi - bot.lo > 0.4) { const nb = cellAt((bot.lo + bot.hi) / 2, r.k1 * dyk + 0.5); drawEdge([wp(bot.lo, r.k1 * dyk), wp(bot.hi, r.k1 * dyk)], miss.has(i) || miss.has(nb)); }
+    }
+  }
+  // ---- labels first (they hide decoration), then decoration, clipped to the sherds that are present
+  const LM = mkGrid(10), MM = mkGrid(10), bigPoly = i => cells[i].polys.slice().sort((a, b) => b.area - a.area)[0];
+  for (const i of miss) for (const P of cells[i].polys) MM.add(P.pts);
+  const labelTexts = [];
+  if (lab) {
+    let ni = 0, li = 0;
+    for (let i = 0; i < N; i++) {
+      const s = miss.has(i) ? String.fromCharCode(65 + (li++ % 26)) : String(++ni), w = txtW(s, 2.4) + 1.4, bp = bigPoly(i); if (!bp) continue; cells[i].tag = s;
+      const c = cells[i], run = c.runs.slice().sort((a, b) => (b.k1 - b.k0) - (a.k1 - a.k0))[0]; if (!run) continue;
+      const mid = (run.k0 + run.k1) / 2, order2 = []; for (let d = 0; d <= (run.k1 - run.k0) / 2; d += 2) { order2.push(Math.round(mid + d), Math.round(mid - d)); }
+      for (const k of order2) { const rw = c.rows[k]; if (!rw) continue; const [x, y] = wp((rw.lo + rw.hi) / 2, k * dyk), P = rectPoly(x - w / 2, y - 1.5, x + w / 2, y + 1.5), G = growPoly(P, 0.7);
+        if (G.every(([px, py]) => inPoly(bp.pts, px, py))) { LM.add(G); labelTexts.push([s, x, y]); break; } }
+    }
+  }
+  const deco = [];
+  const rowsY = (y1, y2, sp) => { const n = Math.max(1, Math.floor((y2 - y1) / sp)); return Array.from({ length: n }, (_, i) => y1 + (i + 0.5) * (y2 - y1) / n); };
+  const nb = o.decor === "plain" ? 0 : Hv > 80 ? (o.vessel === "amphora" ? 4 : 3) : 2, KINDS = ["incised", "cord", "stamped"];
+  for (let b = 0; b < nb; b++) {
+    const kind = o.decor === "mixed" ? KINDS[(b + Math.floor(rnd() * 3)) % 3] : o.decor, y1 = Math.max(0.6, BANDS[b][0] * Hv), y2 = Math.min(Hv - 0.6, BANDS[b][1] * Hv); if (y2 - y1 < 1.8) continue;
+    const yc = (y1 + y2) / 2, hh = Math.min(y2 - y1, 12) / 2, ya = yc - hh, yb2 = yc + hh;
+    if (kind === "incised") {
+      for (const y of [ya, yb2]) { const r = rLoc(y); deco.push([[[cx - r + 0.6, yTop + y], [cx - 0.6, yTop + y]], false]); }
+      const zh = Math.min(3.4, yb2 - ya - 1.6), r0 = rLoc(yc), st = 2.4 / r0, pts = []; let up = false;
+      for (let ph = 0.14; ph <= 1.42; ph += st) { const y = up ? yc + zh / 2 : yc - zh / 2; pts.push([cx - rLoc(y) * Math.sin(ph), yTop + y]); up = !up; }
+      if (pts.length > 2 && zh > 1) deco.push([pts, false]);
+    } else if (kind === "cord") {
+      for (const y of rowsY(ya, yb2, Math.max(1.8, (yb2 - ya) / 4))) { const r = rLoc(y), st = 1.5 / r; for (let ph = 0.16; ph < 1.4; ph += st) { const x = cx - r * Math.sin(ph), c = Math.cos(ph); deco.push([[[x - 0.5 * c, yTop + y - 0.8], [x + 0.5 * c, yTop + y + 0.8]], false]); } }
+    } else {
+      for (const y of rowsY(ya, yb2, Math.max(2.2, (yb2 - ya) / 3))) { const r = rLoc(y), st = 2.3 / r; for (let ph = 0.16; ph < 1.4; ph += st) { const x = cx - r * Math.sin(ph), rx = 0.55 * Math.cos(ph) + 0.15; if (rx < 0.28) continue; deco.push([ring(0, 0, 1, 8).map(([px, py]) => [x + px * rx, yTop + y + py * 0.6]), true]); } }
+    }
+  }
+  for (const [p, cl] of deco) clipHit(p, cl, (x, y) => MM.test(x, y) || LM.test(x, y), 0.3, shade, 0.3);
+  for (const [s, x, y] of labelTexts) txt(s, x, y, 2.4, key, { a: "c" });
+  // ---- missing sherds laid out beside the pot
+  let laidN = 0;
+  if (laid && miss.size) {
+    const zx0 = cx + Rmax + 10, zx1 = W - m - 2, zy0 = yTop, zy1 = yBot, zc = mkClash(20);
+    if (lab) txt("MISSING SHERDS", zx0, yTop - 4, 2.3, key);
+    for (const i of [...miss].sort((a, b) => cells[b].area - cells[a].area)) {
+      const bp = bigPoly(i); if (!bp) continue; const c0 = centroid(bp.pts), local = simplifyRing(bp.pts, 0.05).map(([x, y]) => [x - c0[0], y - c0[1]]), coarse = simplifyRing(bp.pts, 0.3).map(([x, y]) => [x - c0[0], y - c0[1]]); let done = false;
+      for (const clr of [3, 1.8]) { for (let tr = 0; tr < 150 && !done; tr++) {
+        const ang = rnd() * TAU, X = zx0 + rnd() * (zx1 - zx0), Y = zy0 + rnd() * (zy1 - zy0), Pc = place(coarse, X, Y, ang);
+        if (!Pc.every(([px, py]) => px > zx0 - 1 && px < zx1 && py > zy0 && py < zy1) || !zc.ok(Pc, clr)) continue;
+        const P = place(local, X, Y, ang); zc.add(Pc); done = true; laidN++; key.push([simplify(P, 0.03), true]);
+        let R = null; if (lab && cells[i].tag) { const w = txtW(cells[i].tag, 2.4) + 1.4, R0 = rectPoly(X - w / 2, Y - 1.5, X + w / 2, Y + 1.5); if (R0.every(([px, py]) => inPoly(P, px, py))) R = R0; }
+        const Rw = R ? R.map(([px, py]) => { const [qx, qy] = rot2(px - X, py - Y, -ang); return [qx + c0[0], qy + c0[1]]; }) : null, Rg = Rw ? growPoly(Rw, 0.7) : null;
+        const tmp = []; for (const [p, cl] of deco) { const b = bbox(p); if (b[0] > bp.bb[2] || b[2] < bp.bb[0] || b[1] > bp.bb[3] || b[3] < bp.bb[1]) continue; clipIn(bp.pts, cl ? [...p, p[0]] : p, tmp); }
+        for (const [p, cl] of tmp) { const q = []; clipHit(p, false, (x, y) => Rg && inPoly(Rg, x, y), 0.3, q, 0.3); for (const [pp, cc] of q) shade.push([place(pp.map(([x, y]) => [x - c0[0], y - c0[1]]), X, Y, ang), cc]); }
+        if (R) txt(cells[i].tag, X, Y, 2.4, key, { a: "c" });
+      } if (done) break; }
+    }
+  }
+  // ---- titles, scale, notes
+  txt(`POT 1, ${V.name}`, m, m + 3, 3.4, key);
+  if (lab) txt(`RIM DIAMETER ${Math.round(4 * rTab[0])} MM, HEIGHT ${Math.round(2 * Hv)} MM, 1:2`, m, m + 9.5, 2.3, key);
+  if (lab) { txt("EXTERIOR", cx - Rmax / 2, yBot + 9, 2.3, key, { a: "c" }); txt("SECTION", cx + Rmax / 2, yBot + 9, 2.3, key, { a: "c" }); }
+  { const bx = W - m - 27, by = H - m - 8; key.push([rectPoly(bx, by, bx + 25, by + 2), true]); for (let k = 0; k < 5; k++) { const x0 = bx + k * 5; if (k % 2 === 0) hatchPoly(rectPoly(x0 + 0.3, by + 0.3, x0 + 4.7, by + 1.7), Math.PI / 2, Math.max(0.5, o.pitch * 0.7), shade, 0.4); if (k) key.push([[[x0, by], [x0, by + 2]], false]); }
+    txt("0", bx, by + 5, 2.3, key, { a: "c" }); txt("5 CM", bx + 25, by + 5, 2.3, key, { a: "c" }); }
+  // ---- gates: area and point sampling for the tiling, count of dashed sherds
+  let sumA = 0; for (const c of cells) sumA += c.area; const err = Math.abs(sumA - regArea) / regArea;
+  let bad = 0, tot = 0; const rs = mulberry32(o.seed * 3 + 7);
+  for (let t = 0; t < 1500; t++) {
+    const x = -rs() * Rmax, y = rs() * Hv; if (!inPoly(reg, x, y)) continue; tot++;
+    const X = cx + x, Y = yTop + y; let hits = 0; for (const c of cells) for (const P of c.polys) { const b = P.bb; if (X >= b[0] && X <= b[2] && Y >= b[1] && Y <= b[3] && inPoly(P.pts, X, Y)) hits++; }
+    if (hits !== 1) bad++;
+  }
+  const gates = [
+    ["sherds tile the vessel surface with no gaps or overlaps", err < 0.005 && bad <= Math.ceil(tot * 0.005), `${N} sherds, area error ${(err * 100).toFixed(2)}%, ${bad} of ${tot} sample points not in exactly one sherd`],
+    ["missing count matches the slider", miss.size === Math.min(o.missing, Math.max(0, N - 1)), `${miss.size} dashed of ${N} (slider ${o.missing})${laid ? ", " + laidN + " laid out" : ""}`],
+  ];
+  return { key, shade, colour: col, gates, info: `${V.name.toLowerCase()}, ${N} sherds, ${miss.size} missing` };
+}
+
+// ================= build, draw, export =================
+const IDS = ["mode", "seed", "labels", "colour", "pitch", "layers", "ncut", "cutmix", "wander", "finds", "houses", "posts", "fences", "ditch", "trenches", "spots", "interval", "relief",
+  "pieces", "mixture", "meshp", "vessel", "decor", "sherds", "missing", "laid", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+const PENCOL = { section: "b23a2a", plan: "b23a2a", sieve: "8a5a2b", refit: "2a5fa8" };
+const MODENAME = { section: "trench section", plan: "site plan", sieve: "sieve tray", refit: "pottery refit" };
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), rnd = mulberry32(o.seed * 7919 + 101 + ["section", "plan", "sieve", "refit"].indexOf(o.mode) * 977);
+  const R = o.mode === "plan" ? buildPlan(o, W, H, rnd) : o.mode === "sieve" ? buildSieve(o, W, H, rnd) : o.mode === "refit" ? buildRefit(o, W, H, rnd) : buildSection(o, W, H, rnd);
+  let key = R.key, shade = R.shade, colour = R.colour;
+  if (o.colour === "off") { key = key.concat(colour); colour = []; }
+  const clean = a => orderPaths(a.filter(([p, c]) => p.length > 1 && plen(p, c) >= 0.3));
+  key = clean(key); shade = clean(shade); colour = clean(colour);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000, pts = [...key, ...shade, ...colour].reduce((a, [p]) => a + p.length, 0), total = len(key) + len(shade) + len(colour), ms = performance.now() - t0;
+  const gates = [...R.gates,
+    ["build time under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`],
+    ["total pen length under 150 m (about 45 minutes of plotting, assumed)", total < 150, `${total.toFixed(1)} m`],
+    ["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]];
+  return { W, H, o, ms, key, shade, colour, gates, info: R.info };
+}
+
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.colour, "#" + PENCOL[r.o.mode], 0.4); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `${MODENAME[r.o.mode]}: ${r.info} · ${r.ms.toFixed(0)} ms<br>`
+    + `key 0.4 pen: <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · shade 0.3 pen: <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour pen: <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: PENCOL[r.o.mode], w: 0.4, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG archaeology studio, ${MODENAME[r.o.mode]}${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() {
+  for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
+  const mode = $("mode").value;
+  document.querySelectorAll("[data-for]").forEach(e => { e.style.display = e.getAttribute("data-for").split(" ").includes(mode) ? "" : "none"; });
+}
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { mode: "section", labels: "on", colour: "on", pitch: 0.8, layers: 6, ncut: 3, cutmix: "midden", wander: 0.6, finds: 0.7, houses: 1, posts: 1, fences: 1, ditch: "on", trenches: 2, spots: 20, interval: 1, relief: 0.5,
+  pieces: 60, mixture: "flint", meshp: 4, vessel: "jar", decor: "incised", sherds: 22, missing: 3, laid: "beside", page: "190x250", margin: 10, seed: 14 };
+const PRESETS = {
+  midden: { ...BASE, layers: 6, ncut: 3, cutmix: "midden" },
+  posthole: { ...BASE, seed: 31, layers: 5, ncut: 8, cutmix: "postholes", wander: 0.5, finds: 0.5, page: "250x190" },
+  wall: { ...BASE, seed: 8, layers: 6, ncut: 4, cutmix: "wall", wander: 0.5, finds: 0.6, page: "250x190" },
+  farmstead: { ...BASE, mode: "plan", seed: 22, houses: 1, posts: 1, fences: 1, ditch: "on", trenches: 2, spots: 22, interval: 1, relief: 0.45, page: "250x190" },
+  survey: { ...BASE, mode: "plan", seed: 5, houses: 0, posts: 0, fences: 0, ditch: "off", trenches: 1, spots: 34, interval: 0.5, relief: 0.9 },
+  sieve: { ...BASE, mode: "sieve", seed: 3, pieces: 70, mixture: "flint", meshp: 4 },
+  sieveMixed: { ...BASE, mode: "sieve", seed: 19, pieces: 85, mixture: "mixed", meshp: 5, page: "280x280" },
+  refit: { ...BASE, mode: "refit", seed: 12, vessel: "jar", decor: "incised", sherds: 22, missing: 3, laid: "beside" },
+  beaker: { ...BASE, mode: "refit", seed: 27, vessel: "beaker", decor: "cord", sherds: 26, missing: 5, laid: "beside" },
+  bowl: { ...BASE, mode: "refit", seed: 9, vessel: "bowl", decor: "stamped", sherds: 16, missing: 2, laid: "none" },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `archaeology-${r.o.mode}-s${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>

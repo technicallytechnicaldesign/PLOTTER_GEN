@@ -72,7 +72,12 @@ label.key input { display: block; width: 100%; margin-top: 4px; font: inherit; f
 .how { color: var(--ink-2); font-size: 0.9rem; margin: 8px 0 0; }
 .foot { color: var(--muted); font-size: 0.8rem; margin-top: 22px; }
 .foot a { color: var(--accent); }
-canvas.hidden { display: none; }
+canvas.hidden, [hidden] { display: none !important; }
+.free-file { display: block; margin-top: 12px; }
+summary { cursor: pointer; }
+#tap-tools button[aria-pressed="true"] { outline: 2px solid var(--accent); }
+#view { touch-action: manipulation; }
+#tap-progress { height: 6em; overflow: auto; margin: 10px 0 0; }
 </style>
 </head>
 <body>
@@ -83,7 +88,7 @@ canvas.hidden { display: none; }
     <button class="primary wide" id="scan">Scan with camera</button>
     <label class="file">Use a photo<input type="file" id="file" accept="image/*"></label>
     <button id="stop" disabled>Stop camera</button>
-    <label class="file wide">Front with no marks: pick photo, then tap its four corners<input type="file" id="nomarks" accept="image/*"></label>
+    <label class="file wide">Have a settings label? Pick the unmarked front, then tap page corners<input type="file" id="nomarks" accept="image/*"></label>
     <select class="wide" id="sample">
       <option value="">Try a sample plot (no printing needed)</option>
       <option value="arcs">Truchet arcs, scattered</option>
@@ -97,6 +102,19 @@ canvas.hidden { display: none; }
       <option value="flags">Signal flags on a hoist</option>
       <option value="semaphore">Semaphore</option>
     </select>
+  </div>
+  <details class="card" id="experimental">
+    <summary><strong>No marks or label? Try the experimental reader</strong></summary>
+    <p class="how">Less accurate and reliable than marked or labelled decoding. Tested on stitch charts and Truchet arcs; suggested text may be wrong, especially with blur, shadows or inaccurate corners.</p>
+    <p class="how">Pick the pattern, load a photo, then tap the four outer corners of the <strong>drawing grid, not the paper</strong>: top-left, top-right, bottom-right, bottom-left. Include the grid border; leave out captions. Keep the drawing upright.</p>
+    <label class="key">Pattern<select id="free-look"><option value="stitches">Stitch chart (knit / purl)</option><option value="truchet">Truchet arcs</option></select></label>
+    <label class="file free-file">Choose an unmarked photo<input type="file" id="free-photo" accept="image/*"></label>
+    <p class="how">Automatic scattered-seed search covers 0–4000. Other patterns and layouts may not read.</p>
+  </details>
+  <div id="tap-tools" class="card" hidden>
+    <p class="how">To correct one corner, choose its button and tap its new position on the photo.</p>
+    <div class="actions"><button id="tap-0">Top-left</button><button id="tap-1">Top-right</button><button id="tap-2">Bottom-right</button><button id="tap-3">Bottom-left</button><button id="tap-reset">Start corners over</button><button id="tap-read" disabled>Read again</button><button id="tap-cancel" disabled>Cancel reading</button></div>
+    <p id="tap-progress" role="status" aria-live="polite"></p>
   </div>
   <div class="stage" id="stage"><video id="video" playsinline muted></video><canvas id="view"></canvas><div class="status" id="status">starting the camera</div></div>
   <div class="card" id="result" hidden>
