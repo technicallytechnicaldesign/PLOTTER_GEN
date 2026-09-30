@@ -244,6 +244,35 @@ export function fit(I, quad0, C, R, look, { searchSize = true, snapToInk = true,
   return best;
 }
 
+// With the cell counts known, a bad corner tap can be put right by the grid itself: walk each corner (coarse steps, then fine)
+// to where a C x R grid separates its two kinds of cell best. Used by readMarkless only when both counts are given.
+export function fitKnownSize(I, quad0, C, R, look, { span = 2, res = 1 } = {}) {
+  const score = q => { try { const m = measure(I, q, C, R, look); return m.score * (1 - m.weak / m.f.length); } catch { return -1; } };
+  let cur = quad0.map(p => [...p]), cs = score(cur);
+  const cell0 = Math.hypot(cur[1][0] - cur[0][0], cur[1][1] - cur[0][1]) / C;
+  const home = quad0.map(p => [...p]), reach = span * cell0;
+  for (let step = cell0 * 0.5; step > cell0 * 0.03; step /= 2) {
+    for (let pass = 0; pass < 8; pass++) {
+      let moved = false;
+      for (let i = 0; i < 4; i++) for (const [dx, dy] of [[step, 0], [-step, 0], [0, step], [0, -step]]) {
+        const p = [cur[i][0] + dx, cur[i][1] + dy];
+        if (Math.hypot(p[0] - home[i][0], p[1] - home[i][1]) > reach) continue;
+        const tq = cur.map((q, k) => (k === i ? p : q)), sc = score(tq);
+        if (sc > cs) { cur = tq; cs = sc; moved = true; }
+      }
+      if (!moved) break;
+    }
+  }
+  return cur;
+}
+
+// The snap can run a corner two cells along an edge (it lands on a stray bit of ink). With the size known, a tap is trusted to
+// within about a cell: a snapped corner that moved further than that is pulled back onto that radius, along the line to its tap.
+export function clampSnap(snapped, taps, C, lim = 1) {
+  const cell = Math.hypot(taps[1][0] - taps[0][0], taps[1][1] - taps[0][1]) / C, r = lim * cell;
+  return snapped.map((p, i) => { const dx = p[0] - taps[i][0], dy = p[1] - taps[i][1], d = Math.hypot(dx, dy); return d <= r ? p : [taps[i][0] + dx / d * r, taps[i][1] + dy / d * r]; });
+}
+
 // ---------------- reading the bits as UTP would have laid them ----------------
 const EC = { none: { code: "plain", separator: false, checksum: false }, parity: DEFAULT_OPTIONS, hamming: { code: "hamming", separator: true, checksum: true } };
 const clean = t => t.replace(/[^A-Z0-9 .?]/g, "").length;
@@ -287,7 +316,7 @@ export function readings(grid, { seed = null } = {}) {
     const m = morse.decodeUnits(g.bits); add("Morse", m.text, worth(m.text, m.issues.length));
     for (const v of ["modern26", "historical24"]) { const d = bacon.decode(g.bits, v); add(`Bacon ${v === "modern26" ? 26 : 24}`, d.text, worth(d.text, d.invalidGroups.length) - 5); }
     // scattered: the sync cells at the start of the route say whether the seed is right, and the stream length is unknown so each is tried
-    const seeds = seed != null ? [seed] : findSeeds(up, b);
+    let seeds = [seed]; if (seed == null) { try { seeds = findSeeds(up, b); } catch { seeds = []; } }   // a wrong (tiny) size can leave too few cells for the route
     for (const sd of seeds) for (const [name, ec] of Object.entries(EC)) {
       let bestS = null;
       for (let len = 16 + 20; len <= (C - 2 * b) * (R - 2 * b); len++) {
@@ -333,12 +362,16 @@ export function readMarkless(I, taps, look, { C = null, R = null, slack = 1, see
   // The snap can be fooled (a caption or a ruler right beside the drawing looks like more drawing), and the taps can be good
   // already, so both quads are carried and the readings themselves decide which fits.
   const quads = [{ tag: "snapped", q: snapped }, { tag: "taps", q: taps }];
+  if (C && R) {   // known size: more starting points (the snap held back to a cell from its tap, corners walked to where that grid fits best)
+    const held = clampSnap(snapped, taps, C);
+    quads.push({ tag: "held", q: held }, { tag: "fitted", q: fitKnownSize(I, held, C, R, look) }, { tag: "tapfit", q: fitKnownSize(I, taps, C, R, look) });
+  }
   const near = (list, k) => [...new Set(list.flatMap(c => range(c - k, c + k)))].filter(c => c >= 3);
   // every candidate size is tried first on a small straightened picture (cheap), the best few are then read at full detail
-  const quality = m => m.score * (1 - m.weak / m.f.length), pre = [];
+  const exact = 1.25, quality = m => m.score * (1 - m.weak / m.f.length), pre = [];
   const g = C && R ? null : guessCounts(I, snapped);
   const cs = C ? range(C - slack, C + slack) : near(g.cols, 1), rs = R ? range(R - slack, R + slack) : near(g.rows, 1);
-  for (const Q of quads) for (const c of cs) for (const r of rs) pre.push({ C: c, R: r, Q, s: quality(measureAligned(I, Q.q, c, r, look, { res: 10, iters: 4 })) });   // separation, less the share of cells that sit between the two kinds
+  for (const Q of quads) for (const c of cs) for (const r of rs) pre.push({ C: c, R: r, Q, s: (C && R && c === C && r === R ? exact : 1) * quality(measureAligned(I, Q.q, c, r, look, { res: 10, iters: 4 })) });   // separation, less the share of cells that sit between the two kinds
   pre.sort((x, y) => y.s - x.s); log?.(`candidates ${pre.length}: ` + pre.slice(0, 6).map(t => `${t.Q.tag} ${t.C}x${t.R}=${t.s.toFixed(2)}`).join(" "));
   const tried = [];
   for (const p of pre.slice(0, keep)) {
@@ -351,8 +384,11 @@ export function readMarkless(I, taps, look, { C = null, R = null, slack = 1, see
   for (const t of tried) {
     const grid = []; for (let r = 0; r < t.R; r++) grid.push(t.m.f.slice(r * t.C, (r + 1) * t.C).map(v => (v > 0 ? 1 : 0)));
     t.grid = grid; t.readings = readings(grid, { seed });
-    if (t.readings.length && (!best || t.readings[0].worth > best.readings[0].worth)) best = t;
   }
+  // A size the caller gave is trusted over the off-by-one sizes tried for slack: a wrong size can still produce letters that
+  // look plausible, so the exact size takes the reading whenever it produced one at all.
+  const given = t => (!C || t.C === C) && (!R || t.R === R), pool = (C || R) && tried.some(t => given(t) && t.readings.length) ? tried.filter(given) : tried;
+  for (const t of pool) if (t.readings.length && (!best || t.readings[0].worth > best.readings[0].worth)) best = t;
   best = best || tried[0];
   if (!best) throw new Error("No repeating grid found; check the pattern and drawing corners.");
   return { quad: best.quad, paper, C: best.C, R: best.R, grid: best.grid, score: best.m.score, weak: best.m.weak, offsets: best.m.off, aligned: best.m, from: best.from, readings: best.readings || [], tried: tried.map(t => ({ from: t.from, C: t.C, R: t.R, score: +t.m.score.toFixed(2), weak: t.m.weak, worth: t.readings?.[0] ? Math.round(t.readings[0].worth) : null })) };

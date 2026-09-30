@@ -68,6 +68,9 @@ video, #view { display: block; width: 100%; height: auto; }
 .chip.warn { border-color: var(--accent-2); color: var(--accent-2); }
 .fail { color: var(--crit); font-weight: 650; }
 label.key { display: block; margin-top: 10px; font-size: 0.9rem; color: var(--ink-2); }
+.free-size { display: flex; gap: 12px; flex-wrap: wrap; }
+.free-size label.key { flex: 1 1 130px; }
+.free-size label.key input { text-transform: none; }
 label.key input { display: block; width: 100%; margin-top: 4px; font: inherit; font-family: var(--font-mono); text-transform: uppercase; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--grid); background: var(--page); color: var(--ink); }
 .how { color: var(--ink-2); font-size: 0.9rem; margin: 8px 0 0; }
 .foot { color: var(--muted); font-size: 0.8rem; margin-top: 22px; }
@@ -108,6 +111,8 @@ summary { cursor: pointer; }
     <p class="how">Less accurate and reliable than marked or labelled decoding. Tested on stitch charts and Truchet arcs; suggested text may be wrong, especially with blur, shadows or inaccurate corners.</p>
     <p class="how">Pick the pattern, load a photo, then tap the four outer corners of the <strong>drawing grid, not the paper</strong>: top-left, top-right, bottom-right, bottom-left. Include the grid border; leave out captions. Keep the drawing upright.</p>
     <label class="key">Pattern<select id="free-look"><option value="stitches">Stitch chart (knit / purl)</option><option value="truchet">Truchet arcs</option></select></label>
+    <div class="free-size"><label class="key">Cells across (optional)<input type="number" id="free-cols" min="3" max="80" step="1" inputmode="numeric" placeholder="guess"></label><label class="key">Cells down (optional)<input type="number" id="free-rows" min="3" max="80" step="1" inputmode="numeric" placeholder="guess"></label></div>
+    <p class="how">Count the stitches or tiles if you can; it makes a bad tap far more forgiving.</p>
     <label class="file free-file">Choose an unmarked photo<input type="file" id="free-photo" accept="image/*"></label>
     <p class="how">Automatic scattered-seed search covers 0–4000. Other patterns and layouts may not read.</p>
   </details>
