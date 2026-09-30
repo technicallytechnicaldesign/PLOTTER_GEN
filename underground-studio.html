@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Underground studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Underground studio</h1>
+  <p class="sub">A cut-away slice of the earth, like a plate from an old natural history book: grass, flowers, mushrooms and a tree above the ground line, and below it soil layers, stones, roots that bend around them, a web of mycelium, burrows, worms, a fossil and a lost key. Export a millimetre SVG with two or three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="meadow">Meadow</button><button data-preset="oak">Old oak</button><button data-preset="ring">Mushroom ring</button><button data-preset="mole">Mole's house</button><button data-preset="fossil">Fossil bed</button><button data-preset="monolith">Monolith block</button><button data-preset="cores">Core samples</button><button data-preset="antfarm">Ant nest</button></div>
+  </fieldset>
+  <fieldset><legend>The slice</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="21"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Cut <select id="cut"><option value="straight">straight slice</option><option value="monolith">monolith block</option><option value="core">core samples</option></select></label>
+    <label>Cores (core samples only) <output id="o-cores"></output><input type="range" id="cores" min="2" max="5" step="1" value="4"></label>
+    <label>Ground line, share of page from the top <output id="o-ground"></output><input type="range" id="ground" min="0.22" max="0.38" step="0.01" value="0.3"></label>
+    <label>Soil layers <output id="o-layers"></output><input type="range" id="layers" min="3" max="6" step="1" value="4"></label>
+    <label>Pinched layers <output id="o-pinch"></output><input type="range" id="pinch" min="0" max="1" step="0.05" value="0.5"></label>
+  </fieldset>
+  <fieldset><legend>Above the ground</legend>
+    <label>Tree <select id="tree"><option value="none">none</option><option value="oak">spreading tree</option><option value="post">fence post</option></select></label>
+    <label>Tree size <output id="o-treesize"></output><input type="range" id="treesize" min="0.6" max="1.2" step="0.05" value="0.9"></label>
+    <label>Leaves <output id="o-foliage"></output><input type="range" id="foliage" min="0" max="1" step="0.05" value="0.6"></label>
+    <label>Grass tufts <output id="o-grass"></output><input type="range" id="grass" min="0" max="40" step="1" value="24"></label>
+    <label>Wildflowers <output id="o-flowers"></output><input type="range" id="flowers" min="0" max="24" step="1" value="9"></label>
+    <label>Mushrooms <output id="o-mush"></output><input type="range" id="mush" min="0" max="14" step="1" value="3"></label>
+    <label>Mushroom spread (mm) <output id="o-mushspread"></output><input type="range" id="mushspread" min="4" max="30" step="1" value="12"></label>
+  </fieldset>
+  <fieldset><legend>Below the ground</legend>
+    <label>Stones <output id="o-stones"></output><input type="range" id="stones" min="0" max="30" step="1" value="10"></label>
+    <label>Biggest stone radius (mm) <output id="o-stonesize"></output><input type="range" id="stonesize" min="3" max="12" step="0.5" value="6.5"></label>
+    <label>Root growth <output id="o-roots"></output><input type="range" id="roots" min="0" max="1" step="0.05" value="0.6"></label>
+    <label>Mycelium <output id="o-myc"></output><input type="range" id="myc" min="0" max="1" step="0.05" value="0.35"></label>
+    <label>Colour pen draws <select id="colourpen"><option value="mycelium">the mycelium</option><option value="water">the water table</option></select></label>
+  </fieldset>
+  <fieldset><legend>Life and treasure</legend>
+    <label>Earthworms <output id="o-worms"></output><input type="range" id="worms" min="0" max="8" step="1" value="3"></label>
+    <label>Burrow with a sleeping mole <select id="burrow"><option value="off">off</option><option value="on">on</option></select></label>
+    <label>Ant nest <select id="ants"><option value="off">off</option><option value="on">on</option></select></label>
+    <label>Buried fossil <select id="fossil"><option value="off">none</option><option value="ammonite">ammonite</option><option value="fish">fish skeleton</option></select></label>
+    <label>Lost object <select id="treasure"><option value="off">none</option><option value="key">a key</option><option value="coin">a coin</option></select></label>
+    <label>Water table <select id="water"><option value="off">off</option><option value="on">on</option></select></label>
+  </fieldset>
+  <fieldset><legend>Shade pen</legend>
+    <label>Texture and hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="6" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (key line, shade, colour), numbered in plotting order. Every file carries the same four corner ticks so Design Space sizes them identically: place each file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">The ground line is a fractal noise curve, and the soil below it is cut into three to six layers whose boundaries wander and sometimes pinch out to nothing. Each layer has its own texture on the shade pen: dots, short dashes, wavy laminations, crosshatched clay, packed pebbles, and blocky bedrock. Stones are drawn on top of everything: nothing is drawn inside a stone or a burrow. Roots are grown by space colonisation, a set of food points scattered in the soil that pull the nearest root tip toward them, denser near the surface and much wider under a tree. Growth steps that would enter a stone are turned aside, so roots wrap around rocks. Thick roots are two tapering outlines on the key pen with fine hairs at the tips. The mycelium is a random walk with persistence and branching that starts at the mushrooms and at the roots and ends on a root tip when it finds one. In monolith mode the slice becomes a block seen from above and to the right, with a hatched side face. In core mode several cylinders are drawn at their true depths, each showing the strata wrapped round it. In Design Space: every layer to Pen, black 0.4 for the key line, black or grey 0.3 for the shade, any colour 0.3 for the colour layer, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = Math.PI * 2;
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const gauss = r => { let u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * r()); };
+function mkNoise(seed) { const r = mulberry32(seed), v = new Float32Array(512); for (let i = 0; i < 512; i++) v[i] = r() * 2 - 1; return x => { const i = Math.floor(x), f = x - i, s = f * f * (3 - 2 * f); return v[i & 511] * (1 - s) + v[(i + 1) & 511] * s; }; }
+const fbm = (nz, x, oct = 3) => { let s = 0, a = 1, f = 1, t = 0; for (let k = 0; k < oct; k++) { s += a * nz(x * f + k * 17.3); t += a; a *= 0.5; f *= 2.1; } return s / t; };
+
+// ---------------- path helpers ----------------
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+function orderPaths(paths) {   // greedy nearest neighbour on a spatial hash, flipping open paths when the far end is closer
+  const n = paths.length; if (n < 3) return paths;
+  const C = 6, m = new Map(), used = new Uint8Array(n), K = (i, j) => i * 2048 + j;
+  const add = (x, y, k) => { const q = K(Math.floor(x / C), Math.floor(y / C)); let l = m.get(q); if (!l) m.set(q, l = []); l.push(k); };
+  paths.forEach(([p, c], k) => { add(p[0][0], p[0][1], k); if (!c) add(p.at(-1)[0], p.at(-1)[1], k); });
+  const out = [paths[0]]; used[0] = 1;
+  let [cx, cy] = paths[0][1] ? paths[0][0][0] : paths[0][0].at(-1);
+  for (let done = 1; done < n; done++) {
+    let best = 1e18, bk = -1; const ci = Math.floor(cx / C), cj = Math.floor(cy / C);
+    for (let r = 0; r < 260; r++) {
+      if (bk >= 0 && r > Math.sqrt(best) / C + 1.5) break;
+      for (let i = ci - r; i <= ci + r; i++) {
+        const edge = Math.abs(i - ci) === r;
+        for (let j = cj - r; j <= cj + r; j += (edge || r === 0) ? 1 : 2 * r) {
+          const l = m.get(K(i, j)); if (!l) continue;
+          for (let a = l.length - 1; a >= 0; a--) {
+            const k = l[a]; if (used[k]) { l[a] = l[l.length - 1]; l.pop(); continue; }
+            const [p, c] = paths[k], d0 = (p[0][0] - cx) ** 2 + (p[0][1] - cy) ** 2; if (d0 < best) { best = d0; bk = k; }
+            if (!c) { const e = p.at(-1), d1 = (e[0] - cx) ** 2 + (e[1] - cy) ** 2; if (d1 < best) { best = d1; bk = k; } }
+          }
+        }
+      }
+    }
+    if (bk < 0) break;
+    used[bk] = 1; let [p, c] = paths[bk];
+    if (!c && (p.at(-1)[0] - cx) ** 2 + (p.at(-1)[1] - cy) ** 2 < (p[0][0] - cx) ** 2 + (p[0][1] - cy) ** 2) p = p.slice().reverse();
+    out.push([p, c]); [cx, cy] = c ? p[0] : p.at(-1);
+  }
+  return out;
+}
+
+// ---------------- geometry ----------------
+const inPoly = (P, x, y) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const xi = P[i][0], yi = P[i][1], xj = P[j][0], yj = P[j][1]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+const bbox = P => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of P) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+function growPoly(P, d) {
+  const n = P.length; let a2 = 0;
+  for (let i = 0; i < n; i++) { const [x0, y0] = P[i], [x1, y1] = P[(i + 1) % n]; a2 += x0 * y1 - x1 * y0; }
+  const s = a2 > 0 ? 1 : -1, nrm = (A, B) => { const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy) || 1; return [s * dy / l, -s * dx / l]; };
+  return P.map((p, i) => {
+    const n1 = nrm(P[(i + n - 1) % n], p), n2 = nrm(p, P[(i + 1) % n]); let mx = n1[0] + n2[0], my = n1[1] + n2[1]; const l = Math.hypot(mx, my);
+    if (l < 1e-6) { mx = n1[0]; my = n1[1]; } else { mx /= l; my /= l; }
+    const c = Math.max(0.5, mx * n1[0] + my * n1[1]); return [p[0] + mx * d / c, p[1] + my * d / c];
+  });
+}
+const rot2 = (x, y, a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+const place = (pts, x, y, a = 0, s = 1) => pts.map(([px, py]) => { const [qx, qy] = rot2(px * s, py * s, a); return [x + qx, y + qy]; });
+const ring = (cx, cy, r, n = 10, a0 = 0) => { const p = []; for (let i = 0; i < n; i++) { const a = a0 + TAU * i / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; };
+function blob(cx, cy, rx, ry, rot, rnd, n = 20, rough = 0.12) {
+  const ph = [rnd() * TAU, rnd() * TAU, rnd() * TAU], am = [rough * (0.6 + 0.8 * rnd()), rough * 0.6 * rnd(), rough * 0.4 * rnd()], p = [];
+  for (let i = 0; i < n; i++) { const a = TAU * i / n, k = 1 + am[0] * Math.sin(2 * a + ph[0]) + am[1] * Math.sin(3 * a + ph[1]) + am[2] * Math.sin(5 * a + ph[2]); const [qx, qy] = rot2(rx * k * Math.cos(a), ry * k * Math.sin(a), rot); p.push([cx + qx, cy + qy]); }
+  return p;
+}
+const chaikin = (p, it = 1, closed = false) => {
+  for (let k = 0; k < it; k++) {
+    const q = [], n = p.length, dim = p[0].length; if (!closed) q.push(p[0]);
+    for (let i = 0; i < (closed ? n : n - 1); i++) { const a = p[i], b = p[(i + 1) % n]; q.push(a.map((v, d) => v * 0.75 + b[d] * 0.25), a.map((v, d) => v * 0.25 + b[d] * 0.75)); }
+    if (!closed) q.push(p[n - 1]); p = q;
+  }
+  return p;
+};
+const bez = (a, b, c, d, n) => { const p = []; for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t, w0 = u * u * u, w1 = 3 * u * u * t, w2 = 3 * u * t * t, w3 = t * t * t; p.push([w0 * a[0] + w1 * b[0] + w2 * c[0] + w3 * d[0], w0 * a[1] + w1 * b[1] + w2 * c[1] + w3 * d[1]]); } return p; };
+function tubeSides(c, w) {
+  const L = [], R = [], n = c.length;
+  for (let i = 0; i < n; i++) {
+    const a = c[Math.max(0, i - 1)], b = c[Math.min(n - 1, i + 1)]; let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    const hw = typeof w === "number" ? w : w[i]; L.push([c[i][0] - ty * hw, c[i][1] + tx * hw]); R.push([c[i][0] + ty * hw, c[i][1] - tx * hw]);
+  }
+  return [L, R];
+}
+function capPts(c, tx, ty, w, end) {   // semicircle around a tube end
+  const p = []; for (let k = 1; k < 6; k++) { const th = Math.PI * k / 6, cs = Math.cos(th), sn = Math.sin(th); p.push(end ? [c[0] + w * (cs * -ty + sn * tx), c[1] + w * (cs * tx + sn * ty)] : [c[0] + w * (cs * ty - sn * tx), c[1] + w * (cs * -tx - sn * ty)]); } return p;
+}
+function tubePoly(c, w, caps = true) {
+  const [L, R] = tubeSides(c, w), n = c.length; let poly = [...L];
+  if (caps) { const a = c[n - 2], b = c[n - 1]; let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l; poly.push(...capPts(b, tx, ty, typeof w === "number" ? w : w[n - 1], true)); }
+  poly.push(...R.slice().reverse());
+  if (caps) { const a = c[0], b = c[1]; let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l; poly.push(...capPts(a, tx, ty, typeof w === "number" ? w : w[0], false)); }
+  return poly;
+}
+const lens = (bx, by, ang, len, wd, n = 6) => {
+  const L = [], R = [], c = Math.cos(ang), s = Math.sin(ang);
+  for (let j = 0; j <= n; j++) { const t = j / n, u = len * t, v = wd * Math.sin(Math.PI * t) * (1 - 0.25 * t); L.push([bx + c * u - s * v, by + s * u + c * v]); R.push([bx + c * u + s * v, by + s * u - c * v]); }
+  return [...L, ...R.reverse().slice(1, -1)];
+};
+function mkGrid(cell) {
+  const m = new Map();
+  return {
+    add(P) { const bb = bbox(P), o = { P, bb }; for (let i = Math.floor(bb[0] / cell); i <= Math.floor(bb[2] / cell); i++) for (let j = Math.floor(bb[1] / cell); j <= Math.floor(bb[3] / cell); j++) { const k = i * 4096 + j; let l = m.get(k); if (!l) m.set(k, l = []); l.push(o); } },
+    test(x, y) { const l = m.get(Math.floor(x / cell) * 4096 + Math.floor(y / cell)); if (!l) return false; for (const o of l) { const b = o.bb; if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && inPoly(o.P, x, y)) return true; } return false; },
+  };
+}
+function poisson(x0, y0, x1, y1, r, ok, rnd, tries) {
+  const cs = r / Math.SQRT2, gw = Math.ceil((x1 - x0) / cs) + 1, gh = Math.ceil((y1 - y0) / cs) + 1, g = new Int32Array(gw * gh).fill(-1), pts = [];
+  const n = tries || Math.ceil((x1 - x0) * (y1 - y0) / (r * r) * 2.6);
+  for (let t = 0; t < n; t++) {
+    const x = x0 + rnd() * (x1 - x0), y = y0 + rnd() * (y1 - y0); if (!ok(x, y)) continue;
+    const gi = Math.floor((x - x0) / cs), gj = Math.floor((y - y0) / cs); let bad = false;
+    for (let i = Math.max(0, gi - 2); i <= Math.min(gw - 1, gi + 2) && !bad; i++) for (let j = Math.max(0, gj - 2); j <= Math.min(gh - 1, gj + 2); j++) { const q = g[j * gw + i]; if (q >= 0 && (pts[q][0] - x) ** 2 + (pts[q][1] - y) ** 2 < r * r) { bad = true; break; } }
+    if (bad) continue; g[gj * gw + gi] = pts.length; pts.push([x, y]);
+  }
+  return pts;
+}
+const polysClash = (A, B) => A.some(([x, y]) => inPoly(B, x, y)) || B.some(([x, y]) => inPoly(A, x, y));
+
+// ---------------- build ----------------
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "cut", "cores", "ground", "layers", "pinch", "tree", "treesize", "foliage", "grass", "flowers", "mush", "mushspread", "stones", "stonesize", "roots", "myc", "colourpen", "worms", "burrow", "ants", "fossil", "treasure", "water", "pitch", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number);
+  const sc = Math.min(W, H) / 190, M = Math.max(o.margin, 6), pitch = Math.max(0.5, o.pitch), mono = o.cut === "monolith", core = o.cut === "core";
+  const rndS = k => mulberry32(o.seed * 1009 + k * 7919 + 13);
+  let SXa = M, SXb = W - M; const SY0 = M, SY1 = H - M; let DXm = 0, DYm = 0;
+  if (mono) { DXm = (SXb - SXa) * 0.13; DYm = (SY1 - SY0) * 0.07; SXb -= DXm; }
+  const gy0 = SY0 + o.ground * (SY1 - SY0) + (mono ? DYm : 0);
+
+  // ----- ground, bottom, strata boundaries (sampled every XI mm) -----
+  const NS = Math.ceil((SXb - SXa) / 0.5) + 1, XI = (SXb - SXa) / (NS - 1);
+  const at = (arr, x) => { const t = (x - SXa) / XI; if (t <= 0) return arr[0]; if (t >= NS - 1) return arr[NS - 1]; const i = Math.floor(t), f = t - i; return arr[i] * (1 - f) + arr[i + 1] * f; };
+  const nzG = mkNoise(o.seed * 17 + 1), amp = mono ? 0 : 3 * sc;
+  const gArr = new Float32Array(NS), botArr = new Float32Array(NS), wh = o.water === "on" ? 14 * sc : 0, nzW = mkNoise(o.seed * 19 + 2);
+  for (let i = 0; i < NS; i++) { gArr[i] = gy0 + amp * fbm(nzG, i * XI * 0.035, 3) * 1.3; botArr[i] = wh ? SY1 - wh + 1.2 * sc * fbm(nzW, i * XI * 0.05, 2) : SY1; }
+  const gY = x => at(gArr, x), botY = x => at(botArr, x);
+  const nL = Math.max(3, Math.min(6, Math.round(o.layers)));
+  const rW = rndS(1), w = []; for (let k = 0; k < nL; k++) w.push(k === 0 ? 0.5 + 0.3 * rW() : k === nL - 1 ? 1.1 + 0.5 * rW() : 0.8 + 0.8 * rW());
+  const S = w.reduce((a, b) => a + b, 0), cum = [0]; for (let k = 0; k < nL; k++) cum.push(cum[k] + w[k] / S);
+  const F = []; F[0] = new Float32Array(NS); F[nL] = new Float32Array(NS).fill(1);
+  for (let k = 1; k < nL; k++) {
+    const nz = mkNoise(o.seed * 29 + k * 7), a = 0.34 * Math.min(w[k - 1], w[k]) / S, arr = new Float32Array(NS);
+    for (let i = 0; i < NS; i++) arr[i] = Math.min(0.95, Math.max(F[k - 1][i] + 0.025, cum[k] + a * fbm(nz, i * XI * 0.02 + k * 3.7, 3) * 1.5));
+    F[k] = arr;
+  }
+  const rP = rndS(2), npin = o.pinch > 0 ? Math.round(o.pinch * 2 * (0.5 + rP())) : 0;
+  for (let q = 0; q < npin; q++) {
+    const j = 1 + Math.floor(rP() * (nL - 2)), xp = SXa + (0.15 + 0.7 * rP()) * (SXb - SXa), sg = (0.07 + 0.08 * rP()) * (SXb - SXa), amt = Math.min(1, 0.75 + 0.3 * rP());
+    for (let i = 0; i < NS; i++) { const g = Math.exp(-(((SXa + i * XI) - xp) / sg) * (((SXa + i * XI) - xp) / sg)); F[j + 1][i] = F[j][i] + (F[j + 1][i] - F[j][i]) * (1 - amt * g); }
+  }
+  const bArr = F.map((f, k) => { const a = new Float32Array(NS); for (let i = 0; i < NS; i++) a[i] = k === 0 ? gArr[i] : gArr[i] + f[i] * (botArr[i] - gArr[i]); return a; });
+  const inLayer = (k, x, y, mg) => x >= SXa + 0.7 && x <= SXb - 0.7 && y >= at(bArr[k], x) + mg && y <= at(bArr[k + 1], x) - mg;
+  const rT = rndS(3), texK = new Array(nL).fill(null); texK[nL - 1] = "bedrock";
+  if (nL >= 4) texK[2 + Math.floor(rT() * (nL - 3))] = "gravel"; texK[0] = rT() < 0.5 ? "stipple" : "dashes";
+  for (let k = 1; k < nL - 1; k++) if (!texK[k]) { const pool = ["stipple", "dashes", "lamination", "crosshatch"].filter(t => t !== texK[k - 1] && t !== texK[k + 1]); texK[k] = pool[Math.floor(rT() * pool.length)]; }
+
+  // ----- cores, focus ranges -----
+  const cores = [], ncore = Math.round(o.cores);
+  if (core) {
+    const CX0 = SXa + 10 * sc, colW = (SXb - CX0) / ncore, cw = Math.min(colW * 0.82, 60 * sc), ry = cw * 0.13, ya0 = Math.max(SY0 + ry + 3, gy0 - 42 * sc), Hc = 0.5 * (SY1 - ya0), step = (SY1 - ry - 2 - Hc - ya0) / (ncore - 1);
+    for (let k = 0; k < ncore; k++) cores.push({ cx: CX0 + colW * (k + 0.5), cw, ry, ya: ya0 + k * step, yb: ya0 + k * step + Hc });
+  }
+  const RX0 = core ? cores[0].cx - cores[0].cw / 2 + 7 : SXa + 9 * sc, RX1 = core ? cores[0].cx + cores[0].cw / 2 - 7 : SXb - 9 * sc;
+  const DX0 = core ? cores.at(-1).cx - cores.at(-1).cw / 2 + 12 : RX0, DX1 = core ? cores.at(-1).cx + cores.at(-1).cw / 2 - 12 : RX1;
+  const PX0 = core ? cores[0].cx - cores[0].cw / 2 + 3 : SXa + 4, PX1 = core ? cores[0].cx + cores[0].cw / 2 - 3 : SXb - 4;
+
+  // ----- hollows (burrow, ants, worms, fossil, object, post) and stones -----
+  const hollows = [], stones = [];
+  const addHollow = (kind, poly, outline, life) => { const h = { kind, poly, ip: growPoly(poly, 0.55), outline: outline || [], life: life || [] }; hollows.push(h); return h; };
+  const clash = P => { const gp = growPoly(P, 1.2); return hollows.some(h => polysClash(gp, h.ip)) || stones.some(s => polysClash(gp, s.ip)); };
+  const okBox = (P, x0, x1) => P.every(([x, y]) => x >= x0 && x <= x1 && y > gY(x) - 3 && y < botY(x) - 3);
+  const bg = (k, x) => at(bArr[Math.min(k, nL)], x);
+  const key = [], shade = [], colour = [], notes = [];
+  const myceOut = o.colourpen === "mycelium" ? colour : shade, waterOut = o.colourpen === "water" ? colour : shade;
+  const lifeOut = { key, shade };
+
+  if (o.burrow === "on") {
+    const rb = rndS(4);
+    for (let att = 0; att < 60; att++) {
+      const side = rb() < 0.5 ? -1 : 1, xb = RX0 + (RX1 - RX0) * (0.25 + 0.5 * rb()), g = gY(xb), T = botY(xb) - g, yc = g + T * (0.15 + 0.1 * rb());
+      const rx = (8.5 + 2 * rb()) * sc, ry = (5.2 + 1.4 * rb()) * sc, xc = Math.min(RX1 - rx, Math.max(RX0 + rx, xb + side * (11 + 14 * rb()) * sc));
+      const cen = bez([xb, g - 2.2], [xb - side * 5 * sc, g + (yc - g) * 0.45], [xc + side * 3 * sc, yc - (yc - g) * 0.35], [xc, yc - ry * 0.2], 40);
+      const hw = 3.1 * sc, tub = tubePoly(cen, cen.map((_, i) => hw * (1 - 0.25 * i / 39)), false), [TL, TR] = tubeSides(cen, cen.map((_, i) => hw * (1 - 0.25 * i / 39)));
+      const cham = blob(xc, yc, rx, ry, (rb() - 0.5) * 0.3, rb, 24, 0.07);
+      if (!okBox(cham, SXa + 2, SXb - 2) || !okBox(tub.filter(([, y]) => y > g + 1), SXa + 2, SXb - 2) || clash(cham) || clash(tub)) continue;
+      const mole = chaikin([[-8.6, 1.4], [-7.6, -0.2], [-6.2, -1.4], [-4.5, -2.0], [-2, -3.0], [1.5, -3.2], [4.3, -2.4], [6.1, -0.6], [6.4, 1.3], [5, 3.2], [2, 3.9], [-2, 4.0], [-4.5, 3.4], [-6.5, 2.8], [-8, 2.3]], 2, true);
+      const ms = 0.98 * sc, mx = xc + 0.6 * sc * (rb() < 0.5 ? -1 : 1) * 0.6, my = yc + 0.8 * sc, mp = place(mole, mx, my, 0, ms);
+      if (!mp.every(([x, y]) => inPoly(cham, x, y))) continue;
+      const fur = [], body = growPoly(mp, -0.5), a = 0.7, dx = Math.cos(a), dy = Math.sin(a), sp = Math.max(pitch * 1.5, 0.8);
+      for (let t = -8 * sc; t < 8 * sc; t += sp) { const cx0 = mx + 2 * sc, seg = []; for (let s = -7 * sc; s <= 7 * sc; s += 0.3) { const x = cx0 - dy * t + dx * s, y = my + dx * t + dy * s; seg.push([x, y]); } const ok = seg.map(([x, y]) => inPoly(body, x, y) && x > mx - 3.2 * sc); runs(seg, false, ok, 0.8, fur); }
+      const life = [{ p: mp, c: true, pen: "key" }, { p: place(chaikin([[-1.3, 3.6], [-1.3, 4.6], [-3.3, 4.7], [-3.6, 3.9]], 1, false), mx, my, 0, ms), c: false, pen: "key" }, { p: place([[-6.9, 0.3], [-6.4, 0.6], [-5.9, 0.3]], mx, my, 0, ms), c: false, pen: "key" }, ...fur.map(([p]) => ({ p, c: false, pen: "shade" }))];
+      addHollow("burrow", cham, [{ p: cham, c: true, pen: "key" }], life);
+      addHollow("tunnel", tub, [{ p: TL, c: false, pen: "key" }, { p: TR, c: false, pen: "key" }], []);
+      break;
+    }
+  }
+  if (o.burrow === "on" && !hollows.some(h => h.kind === "burrow")) notes.push("burrow could not be placed");
+  if (o.ants === "on") {
+    const ra = rndS(5);
+    for (let att = 0; att < 60; att++) {
+      const xa = RX0 + (RX1 - RX0) * (0.2 + 0.6 * ra()), g = gY(xa), ch = [{ x: xa + (ra() - 0.5) * 4 * sc, y: g + (8 + 3 * ra()) * sc, rx: (3.2 + ra()) * sc, ry: (2 + 0.6 * ra()) * sc }], gal = [];
+      const nch = 5 + Math.floor(ra() * 4);
+      for (let t = 0; t < 200 && ch.length < nch; t++) {
+        const par = ch[Math.floor(ra() * ch.length)], a = (0.12 + 0.76 * ra()) * Math.PI * (ra() < 0.5 ? 1 : 1), d = (10 + 8 * ra()) * sc, x = par.x + Math.cos(a) * d * (ra() < 0.5 ? -1 : 1), y = par.y + Math.sin(a) * d * 0.9;
+        const c = { x, y, rx: (2.3 + 1.6 * ra()) * sc, ry: (1.5 + 0.9 * ra()) * sc };
+        if (x < RX0 + c.rx || x > RX1 - c.rx || y > botY(x) - 6 * sc || y < g + 6 * sc) continue;
+        if (ch.some(q => Math.hypot(q.x - c.x, (q.y - c.y) * 1.2) < q.rx + c.rx + 3.5 * sc)) continue;
+        ch.push(c); gal.push([par, c]);
+      }
+      if (ch.length < 3) continue;
+      const parts = [];
+      const line = (a, b, wig) => { const mx = (a.x + b.x) / 2 + (ra() - 0.5) * wig, my = (a.y + b.y) / 2 + (ra() - 0.5) * wig; return chaikin([[a.x, a.y], [mx, my], [b.x, b.y]], 2, false); };
+      const hwA = 0.8 * sc;
+      parts.push(...ch.map(c => blob(c.x, c.y, c.rx, c.ry, (ra() - 0.5) * 0.6, ra, 16, 0.1)));
+      for (const [a, b] of gal) parts.push(tubePoly(line(a, b, 4 * sc), hwA));
+      parts.push(tubePoly(line({ x: xa, y: g - 1.5 }, ch[0], 3 * sc), hwA * 1.2, false));
+      if (parts.some(P => !okBox(P.filter(([, y]) => y > g + 1.5), SXa + 2, SXb - 2) || clash(P))) continue;
+      for (const P of parts) addHollow("ant", P, [{ p: P, c: true, pen: "shade" }], []);
+      const mound = (s) => { const p = []; for (let j = 0; j <= 6; j++) { const t = j / 6, x = xa + s * (1.5 + 4.5 * (1 - t)) * sc, y = gY(x) - 3.2 * sc * Math.sin(t * Math.PI / 2) ** 1.2; p.push([x, y]); } return p; };
+      lifeOut.key.push([mound(-1), false], [mound(1), false]);
+      break;
+    }
+  }
+  if (o.ants === "on" && !hollows.some(h => h.kind === "ant")) notes.push("ant nest could not be placed");
+  if (o.fossil !== "off") {
+    const rf = rndS(6);
+    for (let att = 0; att < 80; att++) {
+      const R = (o.fossil === "ammonite" ? 11 + 4 * rf() : 19 + 2 * rf()) * sc * (core ? 0.85 : 1), fx = DX0 + R + (DX1 - DX0 - 2 * R) * rf();
+      const k1 = Math.max(1, nL - 2), mid = (bg(k1, fx) + bg(k1 + 1, fx)) / 2, fy = Math.min(botY(fx) - (o.fossil === "fish" ? 10.5 : R) * sc - 5, Math.max(gY(fx) + 0.3 * (botY(fx) - gY(fx)), mid + (rf() - 0.5) * 6));
+      const rr = o.fossil === "fish" ? 10.5 * sc : R, rot = rf() * TAU, poly = o.fossil === "fish" ? blob(fx, fy, 19 * sc, rr, (rf() - 0.5) * 0.5, rf, 28, 0.02) : ring(fx, fy, R * 1.03, 40);
+      if (fx - R < SXa + 3 || fx + R > SXb - 3 || fy - rr < gY(fx) + 6 || fy + rr > botY(fx) - 3 || clash(poly)) continue;
+      const life = [];
+      if (o.fossil === "ammonite") {
+        const b = Math.log(2.05) / TAU, Th = 3.3 * TAU, r0 = R / Math.exp(b * Th), sp = [];
+        for (let th = 0; th < Th; th += Math.min(0.3, 0.45 / (r0 * Math.exp(b * th)))) sp.push(th); sp.push(Th);
+        const pt = (th, r) => [fx + r * Math.cos(th + rot), fy + r * Math.sin(th + rot)];
+        life.push({ p: sp.map(th => pt(th, r0 * Math.exp(b * th))), c: false, pen: "key" });
+        life.push({ p: [pt(Th, R), pt(Th + 0.1, R * 0.75), pt(Th, R / 2.05)], c: false, pen: "key" });
+        life.push({ p: ring(fx, fy, 0.5 * sc, 6), c: true, pen: "shade" });
+        const spc = Math.max(pitch * 2.6, 1.9);
+        for (let th = TAU + 0.2; th < Th - 0.15;) { const rin = r0 * Math.exp(b * (th - TAU)), rout = r0 * Math.exp(b * th), rib = []; for (let s = 0; s <= 5; s++) { const u = s / 5; rib.push(pt(th - 0.32 * Math.sin(Math.PI * u) - 0.12 * u, (rin + (rout - rin) * u) * (0.985))); } life.push({ p: rib, c: false, pen: "shade" }); th += spc / rout; }
+      } else {
+        const T = (pts, c, pen) => life.push({ p: place(pts, fx, fy, 0, sc), c, pen });
+        T(chaikin([[-15.5, 0], [-13.2, -3.4], [-9, -3.6], [-6.2, -1.6], [-6.2, 1.6], [-9, 3.4], [-13.2, 3.1]], 2, true), true, "key");
+        T(ring(-12.2, -0.9, 0.7, 7), true, "key");
+        T(bez([-6.2, 0], [-2, -0.4], [6, 0.9], [10.5, 0.3], 14), false, "key");
+        T([[10.5, 0.3], [13.5, -2.4], [16, -4.6]], false, "key"); T([[10.5, 0.3], [13.5, 2.6], [16, 5.4]], false, "key");
+        for (let i = 0; i < 4; i++) T([[10.9, 0.3], [13 + i * 0.7, -2.2 + i * 2.2], [15.4 + i * 0.1, -3.6 + i * 3.1]], false, "shade");
+        for (let i = 0; i < 9; i++) { const x = -5.2 + i * 1.6, s = 3.3 - 0.16 * i; T(chaikin([[x, 0.1], [x + 0.7, -s * 0.6], [x + 1.6, -s]], 1, false), false, "shade"); T(chaikin([[x, 0.3], [x + 0.7, s * 0.6], [x + 1.6, s]], 1, false), false, "shade"); }
+        for (let i = 0; i < 6; i++) { const x = -3 + i * 1.7; T([[x, -0.4 - 0.3 * i * 0.1], [x + 0.6, -3.3 - i * 0.1]], false, "shade"); T([[x + 3, 0.7], [x + 3.5, 3.6]], false, "shade"); }
+      }
+      addHollow("fossil", poly, [], life); break;
+    }
+  }
+  if (o.fossil !== "off" && !hollows.some(h => h.kind === "fossil")) notes.push("fossil could not be placed");
+  if (o.treasure !== "off") {
+    const rt = rndS(7);
+    for (let att = 0; att < 80; att++) {
+      const s = (o.treasure === "key" ? 0.9 : 1) * sc, x = RX0 + 8 * sc + (RX1 - RX0 - 16 * sc) * rt(), g = gY(x), y = g + (7 + 8 * rt()) * sc, a = (rt() - 0.5) * 1.4 + (rt() < 0.5 ? 0 : Math.PI);
+      const life = [], polys = [];
+      if (o.treasure === "key") {
+        const T = (pts, c, pen) => life.push({ p: place(pts, x, y, a, s), c, pen });
+        T(ring(0, 0, 2.7, 14), true, "key"); T(ring(0, 0, 1.35, 10), true, "key");
+        T([[2.55, -0.7], [13.5, -0.7], [13.5, 2.6], [12, 2.6], [12, 1.4], [10.8, 1.4], [10.8, 2.6], [9.6, 2.6], [9.6, 0.7], [2.55, 0.7]], false, "key");
+        polys.push(place(ring(0, 0, 3.2, 14), x, y, a, s), place([[2, -1.8], [14.4, -1.8], [14.4, 3.4], [2, 3.4]], x, y, a, s));
+      } else {
+        life.push({ p: ring(x, y, 3.5 * s, 18), c: true, pen: "key" }, { p: ring(x, y, 2.7 * s, 14), c: true, pen: "shade" });
+        life.push({ p: [[x - 1.2 * s, y], [x + 1.2 * s, y]], c: false, pen: "shade" }, { p: [[x, y - 1.2 * s], [x, y + 1.2 * s]], c: false, pen: "shade" });
+        polys.push(ring(x, y, 4.1 * s, 18));
+      }
+      if (polys.some(P => !okBox(P, SXa + 3, SXb - 3) || clash(P))) continue;
+      polys.forEach((P, i) => addHollow("object", P, [], i === 0 ? life : [])); break;
+    }
+  }
+  if (o.treasure !== "off" && !hollows.some(h => h.kind === "object")) notes.push("lost object could not be placed");
+  if (core && o.tree !== "none") notes.push("tree not drawn in core mode");
+  let post = null; const rTr = rndS(8), crownHW = 0.3 * (SXb - SXa) * o.treesize, treeX = o.tree === "oak" && !core ? SXa + crownHW * 0.75 + (SXb - SXa - crownHW * 1.5) * (0.15 + 0.7 * rTr()) : PX0 + (PX1 - PX0) * (0.22 + 0.56 * rTr());
+  if (o.tree === "post" && !core) {
+    const hw = 3 * sc, dp = 18 * sc, ha = 26 * sc, yb = gY(treeX);
+    const rect = [[treeX - hw, yb - ha], [treeX + hw, yb - ha + 2 * sc], [treeX + hw, yb + dp], [treeX - hw, yb + dp]];
+    post = { x: treeX, yb, hw, ha, dp, rect };
+    addHollow("post", rect, [], []);
+  }
+  // stones, placed clear of the hollows and of each other
+  {
+    const rs = rndS(9); const win = core ? cores : [{ cx: (SXa + SXb) / 2, cw: SXb - SXa, ya: gy0, yb: SY1 }];
+    for (let i = 0, att = 0; i < Math.round(o.stones) && att < 60 * o.stones + 60; att++) {
+      const r = o.stonesize * (0.4 + 0.6 * Math.pow(rs(), 1.6)) * (core ? 0.8 : 1), ar = rs() * 0.5, rx = r * (1 + ar), ry = r * (1 - 0.25 * ar), rot = (rs() - 0.5) * 0.9;
+      const wk = win[Math.floor(rs() * win.length)], x = wk.cx - wk.cw / 2 + rx + 2 + (wk.cw - 2 * rx - 4) * rs(), y = wk.ya + ry + 3 + (wk.yb - wk.ya - 2 * ry - 6) * rs();
+      const g = gY(x); if (y < g + ry + 4 || y > botY(x) - ry - 3) continue;
+      const P = blob(x, y, rx, ry, rot, rs, 22, 0.13);
+      if (!okBox(P, SXa + 2, SXb - 2) || P.some(([px, py]) => py < gY(px) + 2.5)) continue;
+      if (stones.some(s => Math.hypot(s.x - x, s.y - y) < s.rr + Math.max(rx, ry) + 2.2) || hollows.some(h => polysClash(growPoly(P, 1.0), h.ip))) continue;
+      stones.push({ x, y, rr: Math.max(rx, ry), P, ip: growPoly(P, 0.55), rot, r }); i++;
+    }
+  }
+  if (stones.length < Math.round(o.stones)) notes.push(`${stones.length} of ${Math.round(o.stones)} stones placed`);
+  // earthworms
+  {
+    const rw = rndS(10);
+    for (let i = 0, att = 0; i < Math.round(o.worms) && att < 40 * o.worms + 20; att++) {
+      const x0 = RX0 + (RX1 - RX0) * rw(), g = gY(x0), y0 = g + 4.5 * sc + rw() * Math.max(0.1, bg(2, x0) - g - 9 * sc), base = (rw() < 0.5 ? 0 : Math.PI) + (rw() - 0.5) * 0.5, lam = (14 + 8 * rw()) * sc, amp = 0.6 + 0.4 * rw(), ph = rw() * TAU;
+      const n = Math.round((28 + 16 * rw()) * sc / 0.9), c = [[x0, y0]]; let x = x0, y = y0;
+      for (let j = 1; j < n; j++) { const a = base + amp * Math.sin(TAU * j * 0.9 / lam + ph); x += Math.cos(a) * 0.9; y += Math.sin(a) * 0.9; c.push([x, y]); }
+      const hwm = 1.0 * sc, hw = c.map((_, j) => { const t = j / (n - 1); return hwm * Math.min(1, 0.55 + 0.45 * Math.sqrt(t / 0.08)) * (t > 0.8 ? 1 - (t - 0.8) / 0.2 * 0.6 : 1); });
+      const poly = tubePoly(c, hw);
+      if (!okBox(poly, RX0 - 6, RX1 + 6) || poly.some(([px, py]) => py < gY(px) + 2.2 || py > bg(3, px) - 1) || clash(poly)) continue;
+      const [L, R] = tubeSides(c, hw), rings = [];
+      for (let j = 3; j < n * 0.86; j += 2) { const t = c[Math.min(n - 1, j + 1)], q = c[j - 1], tl = Math.hypot(t[0] - q[0], t[1] - q[1]) || 1, tx = (t[0] - q[0]) / tl, ty = (t[1] - q[1]) / tl; rings.push({ p: [L[j], [c[j][0] + tx * 0.35 * hw[j], c[j][1] + ty * 0.35 * hw[j]], R[j]], c: false, pen: "shade" }); }
+      addHollow("worm", poly, [{ p: poly, c: true, pen: "key" }], rings); i++;
+    }
+  }
+  { const nw = hollows.filter(h => h.kind === "worm").length; if (nw < Math.round(o.worms)) notes.push(`${nw} of ${Math.round(o.worms)} worms placed`); }
+  const blockG = mkGrid(8), actG = mkGrid(8);
+  for (const s of stones) { blockG.add(s.ip); actG.add(s.P); }
+  for (const h of hollows) { blockG.add(h.ip); actG.add(h.poly); }
+  const soilKeep = (x, y) => x >= SXa + 0.7 && x <= SXb - 0.7 && y >= gY(x) + 0.05 && y <= botY(x) - 0.7 && !blockG.test(x, y);
+  const catTex = [], catRoot = [], catMyc = [];
+  const emit = (paths, out, keep, minLen = 0.3, cat = null) => {
+    const tmp = [];
+    for (const [p, c, h] of paths) { const d = densify(p, c, 0.4); runs(d, c, d.map(([x, y]) => keep(x, y) && !(h && h.some(P => inPoly(P, x, y)))), minLen, tmp); }
+    for (const q of tmp) { out.push(q); if (cat) cat.push(q); }
+  };
+
+  // ----- plants (above the ground) -----
+  const items = []; let zc = 0; const bases = [], mushSeeds = [];
+  const addItem = (z, paths, solids) => items.push({ z: z + (zc++) * 1e-4, paths, solids: solids || [] });
+  const plantY = x => mono ? gy0 : gY(x);
+  const rPl = rndS(11);
+  const tuft = (x, yb, rnd, s) => {
+    const P = [], n = 5 + Math.floor(rnd() * 5);
+    for (let i = 0; i < n; i++) {
+      const f = i / (n - 1) - 0.5, bx = x + f * 8 * s + (rnd() - 0.5) * 1.6 * s, h = (7 + 15 * rnd()) * s, a0 = f * 1.5 + (rnd() - 0.5) * 0.4, bend = (rnd() - 0.5) * 1.2 + a0 * 0.5, m = 8;
+      const sp = [[bx, yb]]; let cx = bx, cy = yb;
+      for (let j = 1; j <= m; j++) { const a = a0 + bend * (j / m) ** 2; cx += Math.sin(a) * h / m; cy -= Math.cos(a) * h / m; sp.push([cx, cy]); }
+      P.push({ p: sp, c: false, pen: "shade" });
+    }
+    return P;
+  };
+  const flower = (x, yb, rnd, s) => {
+    const h = (16 + 18 * rnd()) * s, sway = (rnd() - 0.5) * 9 * s, st = [], P = [], solids = [];
+    for (let j = 0; j <= 10; j++) { const t = j / 10; st.push([x + sway * t * t, yb - h * t]); }
+    P.push({ p: st, c: false, pen: "key" });
+    for (let k = 0; k < 2; k++) { const t = 0.2 + 0.25 * k + 0.08 * rnd(), [bx, by] = st[Math.round(t * 10)], side = (k + (rnd() < 0.5 ? 0 : 1)) % 2 ? 1 : -1; P.push({ p: lens(bx, by, -Math.PI / 2 + side * (0.9 + 0.3 * rnd()), (5 + 3 * rnd()) * s, 1.5 * s), c: true, pen: "key" }); }
+    const [hx, hy] = st[10], rp = (3 + 2 * rnd()) * s, kind = Math.floor(rnd() * 4);
+    if (kind === 0) {
+      const n = 8 + Math.floor(rnd() * 4); for (let i = 0; i < n; i++) P.push({ p: lens(hx + 1.2 * s * Math.cos(TAU * i / n), hy + 1.2 * s * Math.sin(TAU * i / n), TAU * i / n, rp, 0.95 * s), c: true, pen: "key" });
+      P.push({ p: ring(hx, hy, 1.1 * s, 8), c: true, pen: "key" }); solids.push(ring(hx, hy, rp + 1.4 * s, 12));
+    } else if (kind === 1) {
+      const bell = [[0, 0], [-0.8, 0.2], [-1.3, 1.6], [-1.9, 3.4], [-1.4, 3.9], [-0.7, 3.5], [0, 3.9], [0.7, 3.5], [1.4, 3.9], [1.9, 3.4], [1.3, 1.6], [0.8, 0.2]], a = (rnd() - 0.5) * 0.5;
+      const bp = place(bell, hx, hy, a, rp * 0.55); P.push({ p: bp, c: true, pen: "key" }); solids.push(bp);
+    } else if (kind === 2) {
+      P.push({ p: lens(hx, hy, -Math.PI / 2, 1.9 * rp, 0.75 * rp), c: true, pen: "key" }, { p: lens(hx, hy, -Math.PI / 2 - 0.55, 1.6 * rp, 0.6 * rp), c: true, pen: "key" }, { p: lens(hx, hy, -Math.PI / 2 + 0.55, 1.6 * rp, 0.6 * rp), c: true, pen: "key" });
+      solids.push(ring(hx, hy - rp * 0.8, rp * 1.05, 10));
+    } else {
+      const n = 5 + Math.floor(rnd() * 3); for (let i = 0; i < n; i++) { const a = -Math.PI / 2 - 1.15 + 2.3 * i / (n - 1), ex = hx + Math.cos(a) * 3.6 * s, ey = hy + Math.sin(a) * 3.6 * s; P.push({ p: [[hx, hy], [ex, ey]], c: false, pen: "shade" }, { p: ring(ex, ey, 1.05 * s, 7), c: true, pen: "key" }); }
+      solids.push(ring(hx, hy - 2 * s, 4.4 * s, 10));
+    }
+    return { P, solids };
+  };
+  const mushroom = (x, yb, rnd, s) => {
+    const a = s * (1.2 + 0.6 * rnd()), b = s * (0.8 + 0.4 * rnd()), hs = s * (1.4 + 1.0 * rnd()), ws = s * (0.32 + 0.13 * rnd()), lean = (rnd() - 0.5) * 0.5, T = pts => place(pts, x, yb, lean, 1);
+    const cap = []; for (let i = 0; i <= 14; i++) { const th = Math.PI - Math.PI * i / 14; cap.push([a * Math.cos(th), -hs - b * Math.sin(th)]); }
+    for (let i = 1; i < 12; i++) { const t = 1 - 2 * i / 12; cap.push([a * t, -hs + 0.22 * b * (1 - t * t)]); }
+    const stem = [[-ws * 0.85, -hs + 0.1 * b], [-ws, -hs * 0.5], [-ws * 1.6, -0.15 * s], [-ws * 1.9, 0], [ws * 1.9, 0], [ws * 1.6, -0.15 * s], [ws, -hs * 0.5], [ws * 0.85, -hs + 0.1 * b]];
+    const capT = T(cap), P = [{ p: capT, c: true, pen: "key" }, { p: T(chaikin(stem, 1, false)), c: false, pen: "key", hide: [capT] }];
+    const ng = 5 + Math.floor(rnd() * 3); for (let i = 0; i < ng; i++) { const t = -0.85 + 1.7 * i / (ng - 1); P.push({ p: T([[t * a * 0.22, -hs + 0.04 * b], [t * a * 0.92, -hs + 0.19 * b * (1 - t * t * 0.85)]]), c: false, pen: "shade" }); }
+    const nsp = Math.floor(rnd() * 4); for (let i = 0; i < nsp; i++) { const th = 0.35 + 2.4 * rnd(), rr = 0.35 + 0.4 * rnd(); P.push({ p: T(ring(a * 0.6 * Math.cos(th), -hs - b * 0.6 * Math.sin(th), 0.28 * s, 6)), c: true, pen: "shade" }); }
+    return { P, solids: [capT, T(stem)] };
+  };
+  const makeTree = (x, yb, rnd, tz) => {
+    const skyH = (yb - SY0) - (mono ? DYm : 0), Tr = 0.2 * skyH * Math.max(0.8, o.treesize), wb = 6 * sc * o.treesize, P = [], solids = [];
+    const cen = []; for (let j = 0; j <= 10; j++) { const t = j / 10; cen.push([x + Math.sin(t * 2.6 + rnd()) * 1.6 * sc * t, yb - Tr * t]); }
+    const hw = cen.map((_, j) => { const t = j / 10; return wb * (1 - 0.3 * t) + wb * 0.7 * Math.pow(Math.max(0, 1 - t / 0.2), 2); });
+    const [TL, TR] = tubeSides(cen, hw), trunk = [...TL, ...TR.slice().reverse()];
+    P.push({ p: TL, c: false, pen: "key" }, { p: TR, c: false, pen: "key" }); solids.push(trunk);
+    for (let k = 0; k < 9; k++) {
+      const u = -0.78 + 1.56 * (k + 0.5) / 9 + (rnd() - 0.5) * 0.12; let t0 = 0.02 + rnd() * 0.15;
+      for (let g = 0; g < 4 && t0 < 0.92; g++) { const t1 = Math.min(0.97, t0 + 0.15 + 0.3 * rnd()), p = []; for (let j = 0; j <= 14; j++) { const t = t0 + (t1 - t0) * j / 14, i = Math.min(9, Math.floor(t * 10)), fr = t * 10 - i, cx = cen[i][0] * (1 - fr) + cen[i + 1][0] * fr, cy = cen[i][1] * (1 - fr) + cen[i + 1][1] * fr, hh = hw[i] * (1 - fr) + hw[i + 1] * fr; p.push([cx + u * hh + Math.sin(t * 23 + k * 2) * 0.45 * sc, cy]); } P.push({ p, c: false, pen: "shade" }); t0 = t1 + 0.04 + 0.1 * rnd(); }
+    }
+    const top = cen.at(-1), tips = [], HH = 0.6 * crownHW;
+    const limb = (px, py, ang, len, wd, depth, par) => {
+      const n = Math.max(4, Math.round(len / 2.5)), pts = [[px, py]]; let a = ang, cx = px, cy = py;
+      for (let i = 0; i < n; i++) { a += (rnd() - 0.5) * 0.7 - a * 0.04; cx += Math.sin(a) * len / n; cy -= Math.cos(a) * len / n; pts.push([cx, cy]); }
+      const poly = tubePoly(pts, pts.map((_, i) => wd * (1 - 0.6 * i / n))); P.push({ p: poly, c: true, pen: "key", hide: [par] }); tips.push([cx, cy]);
+      if (depth < 1) { const q = pts[Math.floor(n * 0.55)]; limb(q[0], q[1], a + (rnd() < 0.5 ? -0.75 : 0.75), len * 0.6, wd * 0.55, depth + 1, poly); }
+    };
+    [-1.25, -0.45, 0.45, 1.25].forEach(a0 => limb(top[0] + a0 * 1.5 * sc, top[1] + 1, a0 + (rnd() - 0.5) * 0.3, crownHW * (0.55 + 0.3 * rnd()), hw.at(-1) * 0.75, 0, trunk));
+    addItem(tz, P, solids);
+    const ccx = x, ccy = top[1] - HH * 0.95, Rc = (8 + 3 * rnd()) * sc, dist = Rc * (1.5 - 0.6 * o.foliage), cl = tips.map(([px, py]) => [px, py - Rc * 0.5]);
+    const inCrown = (px, py) => ((px - ccx) / crownHW) ** 2 + ((py - ccy) / HH) ** 2 < 1;
+    for (const q of poisson(ccx - crownHW, ccy - HH, ccx + crownHW, ccy + HH, dist, inCrown, rnd)) if (!cl.some(c => Math.hypot(c[0] - q[0], c[1] - q[1]) < dist * 0.7)) cl.push(q);
+    for (let i = cl.length - 1; i >= 0; i--) if (cl[i][1] > top[1] - Rc * 0.9) cl.splice(i, 1);
+    cl.sort((a, b) => a[1] - b[1]);
+    cl.forEach(([px, py], i) => {
+      const R = Rc * (0.85 + 0.4 * rnd()), k = 9 + Math.floor(rnd() * 3), ph = rnd() * TAU, poly = [];
+      for (let j = 0; j < 96; j++) { const th = TAU * j / 96; poly.push([px + R * 1.15 * Math.cos(th) * (0.86 + 0.16 * Math.abs(Math.sin(k * th / 2))) * (1 + 0.05 * Math.sin(3 * th + ph)), py + R * Math.sin(th) * (0.86 + 0.16 * Math.abs(Math.sin(k * th / 2))) * (1 + 0.05 * Math.sin(3 * th + ph))]); }
+      const inset = growPoly(poly, -0.6), sp = Math.max(pitch * 1.7, 1.1), hp = [], a = 1.0, dx = Math.cos(a), dy = Math.sin(a);
+      for (let t = -R * 1.4; t <= R * 1.4; t += sp) { const seg = []; for (let u = -R * 1.6; u <= R * 1.6; u += 0.4) seg.push([px - dy * t + dx * u, py + dx * t + dy * u]); runs(seg, false, seg.map(([sx, sy]) => inPoly(inset, sx, sy) && sy > py + 0.1 * R), 0.8, hp); }
+      addItem(tz + 1 + i * 0.5, [{ p: poly, c: true, pen: "key" }, ...hp.map(([hpp]) => ({ p: hpp, c: false, pen: "shade" }))], [poly]);
+    });
+  };
+  const PXr = () => PX0 + (PX1 - PX0) * rPl(), cf = core ? Math.min(1, 2.2 * (PX1 - PX0) / (SXb - SXa)) : 1;
+  const clumps = Array.from({ length: 5 }, () => PXr());
+  for (let i = 0; i < Math.round(o.grass * cf); i++) {
+    const x = Math.min(PX1 - 3, Math.max(PX0 + 3, rPl() < 0.55 ? clumps[Math.floor(rPl() * 5)] + gauss(rPl) * 12 * sc : PXr())), yb = plantY(x);
+    addItem(mono ? 1000 + rPl() * 5 : rPl() * 100, tuft(x, yb, rPl, sc)); bases.push({ x, y: gY(x), rT: 0.28 * sc, kind: "grass" });
+  }
+  for (let i = 0; i < Math.round(o.flowers * cf); i++) {
+    const x = PXr(), yb = plantY(x), f = flower(x, yb, rPl, sc); addItem(mono ? 1000 + rPl() * 5 : rPl() * 100, f.P, f.solids); bases.push({ x, y: gY(x), rT: (0.42 + 0.25 * rPl()) * sc, kind: "flower" });
+  }
+  if (o.mush * cf >= 0.5) {
+    const ncl = 1 + (o.mush > 5 ? 1 : 0) + (o.mush > 9 ? 1 : 0), cc = Array.from({ length: ncl }, () => PXr());
+    for (let i = 0; i < Math.round(o.mush * cf); i++) {
+      const x = Math.min(PX1 - 10 * sc, Math.max(PX0 + 10 * sc, cc[i % ncl] + gauss(rPl) * o.mushspread * sc)), yb = plantY(x), m = mushroom(x, yb, rPl, (3.4 + 4.2 * rPl()) * sc);
+      addItem(mono ? 1000 + rPl() * 5 : rPl() * 100, m.P, m.solids); mushSeeds.push({ x, y: gY(x) + 1.4 });
+    }
+  }
+  if (mono) {
+    const nb = Math.round(o.grass * 0.5), nf = Math.round(o.flowers * 0.4);
+    for (let i = 0; i < nb + nf; i++) {
+      const s = 0.12 + 0.8 * rPl(), x = SXa + 4 + rPl() * (SXb - SXa - 8) + s * DXm, yb = gy0 - s * DYm, z = 500 + (1 - s) * 100 + rPl();
+      if (i < nb) addItem(z, tuft(x, yb, rPl, 0.85 * sc)); else { const f = flower(x, yb, rPl, 0.8 * sc); addItem(z, f.P, f.solids); }
+    }
+  }
+  if (o.tree === "oak" && !core) {
+    makeTree(treeX, plantY(treeX), rPl, rPl() * 100);
+    for (const dxx of [-0.8, 0, 0.8]) bases.push({ x: treeX + dxx * 5 * sc * o.treesize, y: gY(treeX + dxx * 5 * sc * o.treesize), rT: 2.6 * sc * o.treesize, kind: "tree" });
+  }
+  if (post) {
+    const { x, yb, hw, ha, dp, rect } = post, P = [{ p: rect, c: true, pen: "key" }];
+    for (let k = 0; k < 3; k++) { const u = -0.55 + 0.55 * k + (rPl() - 0.5) * 0.2; let t0 = 0; while (t0 < 1) { const t1 = Math.min(1, t0 + 0.2 + 0.4 * rPl()), p = []; for (let j = 0; j <= 10; j++) { const t = t0 + (t1 - t0) * j / 10, y = yb - ha + 3 * sc + t * (ha + dp - 6 * sc); p.push([x + u * hw + Math.sin(y * 0.4 + k) * 0.3 * sc, y]); } P.push({ p, c: false, pen: "shade" }); t0 = t1 + 0.06 + 0.12 * rPl(); } }
+    P.push({ p: ring(x + 0.3 * hw, yb - ha * 0.55, 0.5 * sc, 6), c: true, pen: "key" });
+    for (const [fr, drop] of [[0.35, 3], [0.72, 3.4]]) for (const sd of [-1, 1]) { const y0 = yb - ha * fr, L = 30 * sc, p = []; for (let j = 0; j <= 16; j++) { const t = j / 16; p.push([x + sd * (hw + L * t), y0 + drop * sc * 4 * t * (1 - t) + 0.4 * sc * t]); } P.push({ p, c: false, pen: "shade" }); }
+    addItem(1200, P, [[[x - hw, yb - ha], [x + hw, yb - ha + 2 * sc], [x + hw, yb], [x - hw, yb]]]);
+  }
+  // the ground line (behind every plant), cut where it crosses a burrow mouth or a post
+  {
+    const gp = []; for (let x = SXa; x <= SXb + 1e-6; x += 0.5) gp.push([Math.min(x, SXb), gY(Math.min(x, SXb))]);
+    addItem(-2, [{ p: gp, c: false, pen: "key", hide: hollows.filter(h => h.kind === "tunnel" || h.kind === "post").map(h => h.poly), minLen: 0.3 }]);
+  }
+  // top face of the block
+  if (mono) {
+    const tp = [[SXa, gy0], [SXa + DXm, gy0 - DYm], [SXb + DXm, gy0 - DYm], [SXb, gy0]], P = [{ p: tp, c: false, pen: "key" }];
+    const inTop = (x, y) => { const s = (gy0 - y) / DYm; return s > 0.06 && s < 0.94 && x > SXa + s * DXm + 1 && x < SXb + s * DXm - 1; };
+    for (const [x, y] of poisson(SXa, gy0 - DYm, SXb + DXm, gy0, Math.max(pitch * 3.2, 2), inTop, rndS(12))) P.push({ p: ring(x, y, 0.27, 8), c: true, pen: "shade", minLen: 0.3 });
+    addItem(-1, P);
+  }
+  const solids = []; for (const it of items) for (const P of it.solids) solids.push({ P, bb: bbox(P), z: it.z });
+  const solidHit = (z, x, y) => { for (const s of solids) if (s.z > z && x >= s.bb[0] && x <= s.bb[2] && y >= s.bb[1] && y <= s.bb[3] && inPoly(s.P, x, y)) return true; return false; };
+  const inFrame = (x, y) => x >= M + 0.8 && x <= W - M - 0.8 && y >= M + 0.8 && y <= SY1;
+  for (const it of items) for (const pa of it.paths) {
+    const d = densify(pa.p, pa.c, 0.4);
+    runs(d, pa.c, d.map(([x, y]) => inFrame(x, y) && !(pa.hide && pa.hide.some(P => inPoly(P, x, y))) && !solidHit(it.z, x, y)), pa.minLen || 0.3, pa.pen === "key" ? key : shade);
+  }
+
+  // ----- strata boundaries and textures -----
+  for (let k = 1; k < nL; k++) {
+    const pts = [], okm = []; for (let i = 0; i < NS; i++) { const x = SXa + i * XI; pts.push([x, bArr[k][i]]); okm.push(bArr[k][i] - bArr[k - 1][i] >= 0.5 && x >= SXa + 0.7 && x <= SXb - 0.7 && !blockG.test(x, bArr[k][i])); }
+    const tmp = []; runs(pts, false, okm, 0.5, tmp); for (const q of tmp) { shade.push(q); catTex.push(q); }
+  }
+  const dot = (x, y) => [ring(x, y, 0.27, 8), true];
+  for (let k = 0; k < nL; k++) {
+    const kind = texK[k], r = rndS(20 + k), keep = (x, y) => inLayer(k, x, y, 0.6) && !blockG.test(x, y);
+    let y0 = 1e9, y1 = -1e9; for (let i = 0; i < NS; i += 4) { y0 = Math.min(y0, bArr[k][i]); y1 = Math.max(y1, bArr[k + 1][i]); }
+    const x0 = SXa + 0.7, x1 = SXb - 0.7, out = [];
+    if (kind === "stipple") {
+      const rad = Math.max(pitch * 2.6, 1.3) * (1 + 0.12 * k);
+      for (const [x, y] of poisson(x0, y0, x1, y1, rad, keep, r)) out.push(dot(x, y));
+      for (const q of out) { shade.push(q); catTex.push(q); }
+    } else if (kind === "dashes") {
+      const s = Math.max(pitch * 3.6, 2.2);
+      for (let cy = y0; cy < y1; cy += s) for (let cx = x0; cx < x1; cx += s) {
+        if (r() < 0.15) continue; const x = cx + r() * s, y = cy + r() * s, L = 1.4 + 1.8 * r(), a = (r() - 0.5) * 0.7;
+        out.push([[[x - Math.cos(a) * L / 2, y - Math.sin(a) * L / 2], [x, y + 0.1 * (r() - 0.5)], [x + Math.cos(a) * L / 2, y + Math.sin(a) * L / 2]], false]);
+      }
+      emit(out, shade, keep, 0.5, catTex);
+    } else if (kind === "lamination") {
+      let tmax = 0; for (let i = 0; i < NS; i += 4) tmax = Math.max(tmax, bArr[k + 1][i] - bArr[k][i]);
+      const sl = Math.max(pitch * 3.0, 2.0), nl = Math.max(1, Math.floor(tmax / sl)), nzl = mkNoise(o.seed * 41 + k), nzg = mkNoise(o.seed * 43 + k);
+      for (let j = 0; j < nl; j++) {
+        const f = (j + 0.5) / nl, pts = [], ok = [];
+        for (let x = x0; x <= x1; x += 0.8) { const b0 = at(bArr[k], x), b1 = at(bArr[k + 1], x), y = b0 + f * (b1 - b0) + 0.35 * fbm(nzl, x * 0.09 + j * 7, 2); pts.push([x, y]); ok.push((b1 - b0) / nl >= pitch * 1.3 && nzg(x * 0.07 + j * 9.1) > -0.3 && keep(x, y)); }
+        const tmp = []; runs(pts, false, ok, 1.2, tmp); for (const q of tmp) { out.push(q); shade.push(q); catTex.push(q); }
+      }
+    } else if (kind === "crosshatch") {
+      const sp = Math.max(pitch * 2.4, 1.6), base = 0.6 + (r() - 0.5) * 0.3;
+      for (const a of [base, -base]) {
+        const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, D = Math.hypot(x1 - x0, y1 - y0);
+        const ext = Math.abs(nx) * (x1 - x0) / 2 + Math.abs(ny) * (y1 - y0) / 2;
+        for (let t = -ext; t <= ext; t += sp) out.push([[[cx + nx * t - dx * D / 2, cy + ny * t - dy * D / 2], [cx + nx * t + dx * D / 2, cy + ny * t + dy * D / 2]], false]);
+      }
+      emit(out, shade, keep, 0.8, catTex);
+    } else if (kind === "gravel") {
+      const cells = new Map(), peb = [], gap = Math.max(pitch * 0.9, 0.5), K = (i, j) => i * 4096 + j, CS = 6;
+      for (let t = 0; t < 7000; t++) {
+        const rad = 1.0 + 1.6 * r() * r(), x = x0 + rad + 1 + r() * (x1 - x0 - 2 * rad - 2), y = y0 + rad + r() * (y1 - y0 - 2 * rad);
+        const P = blob(x, y, rad * 1.15, rad * 0.85, r() * TAU, r, 9, 0.16), edge = densify(P, true, 0.5);
+        if (!edge.every(([px, py]) => keep(px, py))) continue;
+        let bad = false; const ci = Math.floor(x / CS), cj = Math.floor(y / CS);
+        for (let i = ci - 1; i <= ci + 1 && !bad; i++) for (let j = cj - 1; j <= cj + 1; j++) { for (const q of cells.get(K(i, j)) || []) if (Math.hypot(q.x - x, q.y - y) < q.r + rad * 1.2 + gap) { bad = true; break; } if (bad) break; }
+        if (bad) continue;
+        const pb = { x, y, r: rad * 1.2, P }; peb.push(pb); const kk = K(ci, cj); if (!cells.has(kk)) cells.set(kk, []); cells.get(kk).push(pb);
+      }
+      for (const pb of peb) {
+        const P = pb.P; shade.push([P, true]); catTex.push([P, true]);
+        if (r() < 0.28 && pb.r > 1.7) {
+          const inset = growPoly(P, -0.35), a = r() * Math.PI, dx = Math.cos(a), dy = Math.sin(a), sp = Math.max(pitch * 1.6, 0.9), tmp = [];
+          for (let t = -pb.r; t <= pb.r; t += sp) { const seg = []; for (let s = -pb.r * 1.3; s <= pb.r * 1.3; s += 0.3) seg.push([pb.x - dy * t + dx * s, pb.y + dx * t + dy * s]); runs(seg, false, seg.map(([x, y]) => inPoly(inset, x, y)), 0.6, tmp); }
+          for (const q of tmp) { shade.push(q); catTex.push(q); }
+        }
+      }
+    } else {   // bedrock: courses of blocks, staggered joints, a few cracks
+      const nzr = mkNoise(o.seed * 47 + k), tilt = (r() - 0.5) * 0.08, rows = []; let yr = y0 - 1;
+      while (yr < y1 + 2) { rows.push(yr); yr += (5.5 + 4 * r()) * sc; }
+      const yRow = (i, x) => rows[i] + tilt * (x - (x0 + x1) / 2) + 0.6 * sc * fbm(nzr, x * 0.03 + i * 9, 2);
+      for (let i = 0; i < rows.length; i++) { const p = []; for (let x = x0; x <= x1 + 0.5; x += 1.2) p.push([Math.min(x, x1), yRow(i, Math.min(x, x1))]); out.push([p, false]); }
+      for (let i = 0; i + 1 < rows.length; i++) for (let x = x0 - r() * 14 * sc; x < x1; x += (9 + 11 * r()) * sc) { if (x < x0) continue; const jx = x + (r() - 0.5) * 2 * sc; out.push([[[x, yRow(i, x)], [(x + jx) / 2 + (r() - 0.5) * sc, (yRow(i, x) + yRow(i + 1, jx)) / 2], [jx, yRow(i + 1, jx)]], false]); }
+      for (let c = 0, nc = 3 + Math.floor(r() * 4); c < nc; c++) { let x = x0 + r() * (x1 - x0), y = y0, a = 1.2 + 0.7 * r(); const p = [[x, y]]; for (let s = 0, ns = 5 + Math.floor(r() * 6); s < ns; s++) { a = 1.2 + 0.7 * r() + (s % 2 ? 0.4 : -0.4) * (r() - 0.2); const L = (2.5 + 2.5 * r()) * sc; x += Math.cos(a) * L; y += Math.sin(a) * L; p.push([x, y]); } out.push([p, false]); }
+      emit(out, shade, keep, 0.8, catTex);
+    }
+  }
+
+  // ----- stones -----
+  for (const s of stones) {
+    key.push([s.P, true]);
+    const inset = growPoly(s.P, -0.45), a = -0.8 + (s.x * 0.013 % 0.4), dx = Math.cos(a), dy = Math.sin(a), nxx = 0.6, nyy = 0.8, sp = pitch * 1.9, tmp = [];
+    for (let t = -s.rr; t <= s.rr; t += sp) { const seg = []; for (let q = -s.rr * 1.4; q <= s.rr * 1.4; q += 0.3) seg.push([s.x - dy * t + dx * q, s.y + dx * t + dy * q]); runs(seg, false, seg.map(([x, y]) => inPoly(inset, x, y) && (x - s.x) * nxx + (y - s.y) * nyy > -0.15 * s.r), 0.8, tmp); }
+    for (const q of tmp) shade.push(q);
+    if ((s.x * 7.13 + s.y) % 1 < 0.35) { const ang = (s.x * 3.1) % TAU, p = [[s.x + Math.cos(ang) * s.r * 0.3, s.y + Math.sin(ang) * s.r * 0.3]]; for (let j = 1; j < 4; j++) p.push([p[0][0] + Math.cos(ang) * j * s.r * 0.18 + Math.sin(j * 2.1) * 0.6, p[0][1] + Math.sin(ang) * j * s.r * 0.18 + Math.cos(j * 1.7) * 0.6]); const tp = []; runs(densify(p, false, 0.4), false, densify(p, false, 0.4).map(([x, y]) => inPoly(inset, x, y)), 0.6, tp); for (const q of tp) shade.push(q); }
+  }
+  // ----- hollows: outlines cut by neighbouring hollows, then the life inside them -----
+  for (const h of hollows) {
+    const others = hollows.filter(g => g !== h);
+    for (const ol of h.outline) { const d = densify(ol.p, ol.c, 0.4), tmp = []; runs(d, ol.c, d.map(([x, y]) => y >= gY(x) - 0.02 && !others.some(g => inPoly(g.poly, x, y))), 0.3, tmp); for (const q of tmp) (ol.pen === "key" ? key : shade).push(q); }
+    for (const l of h.life) (l.pen === "key" ? key : shade).push([l.p, l.c]);
+  }
+
+  // ----- roots: space colonisation -----
+  {
+    const rR = rndS(13), nodes = [], CELL = 13 * sc, grid = new Map(), gk = (i, j) => i * 4096 + j;
+    const addNode = (x, y, par, base) => { const id = nodes.length; nodes.push({ x, y, par, base, kids: [] }); if (par >= 0) nodes[par].kids.push(id); const q = gk(Math.floor(x / CELL), Math.floor(y / CELL)); let l = grid.get(q); if (!l) grid.set(q, l = []); l.push(id); return id; };
+    bases.forEach((b, i) => { b.node = addNode(b.x, b.y, -1, i); });
+    const A = [], depthMax = x => botY(x) - gY(x), okA = (x, y) => x > SXa + 2 && x < SXb - 2 && y > gY(x) + 1.5 && y < botY(x) - 3 && !blockG.test(x, y);
+    const NA = Math.round((300 + 1500 * o.roots) * ((SXb - SXa) * (SY1 - SY0)) / (170 * 238));
+    if (bases.length && o.roots > 0) {
+      for (let a = 0; a < NA; a++) { const x = SXa + 2 + (SXb - SXa - 4) * rR(), y = gY(x) + 1.5 + depthMax(x) * 0.55 * Math.pow(rR(), 1.6); if (okA(x, y)) A.push({ x, y }); }
+      for (const b of bases) if (b.kind !== "tree") for (let a = 0; a < 12; a++) { const x = b.x + (rR() - 0.5) * 44 * sc, y = gY(x) + 2 + Math.pow(rR(), 1.3) * 28 * sc; if (okA(x, y)) A.push({ x, y }); }
+      if (bases.some(b => b.kind === "tree")) for (let a = 0, N = Math.round(320 + 520 * o.roots); a < N; a++) { const x = treeX + gauss(rR) * 0.5 * crownHW, y = gY(x) + 3 + depthMax(x) * 0.7 * Math.pow(rR(), 1.05); if (okA(x, y)) A.push({ x, y }); }
+    }
+    const dI = 12 * sc, dK = 2.3 * sc, step = 1.6 * sc, NCAP = Math.round(500 + 3300 * o.roots), dead = new Uint8Array(A.length);
+    const rootOK = (x, y) => x > SXa + 1.5 && x < SXb - 1.5 && y >= gY(x) + 0.4 && y <= gY(x) + depthMax(x) * 0.75 && !blockG.test(x, y);
+    for (let it = 0; it < 420 && nodes.length < NCAP && A.length; it++) {
+      const acc = new Map();
+      for (let ai = 0; ai < A.length; ai++) {
+        if (dead[ai]) continue; const a = A[ai]; let bd = dI * dI, bn = -1; const ci = Math.floor(a.x / CELL), cj = Math.floor(a.y / CELL);
+        for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) { const l = grid.get(gk(i, j)); if (!l) continue; for (const id of l) { const nd = nodes[id], d = (nd.x - a.x) ** 2 + (nd.y - a.y) ** 2; if (d < bd) { bd = d; bn = id; } } }
+        if (bn < 0) continue; if (bd < dK * dK) { dead[ai] = 1; continue; }
+        const d = Math.sqrt(bd), v = acc.get(bn) || [0, 0, 0]; v[0] += (a.x - nodes[bn].x) / d; v[1] += (a.y - nodes[bn].y) / d; v[2]++; acc.set(bn, v);
+      }
+      if (!acc.size) break;
+      for (const [id, v] of acc) {
+        const nd = nodes[id]; let dx = v[0] / v[2], dy = v[1] / v[2] + 0.12; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+        for (const da of [0, 0.5, -0.5, 1.0, -1.0]) {
+          const c = Math.cos(da), s = Math.sin(da), ux = dx * c - dy * s, uy = dx * s + dy * c, nx = nd.x + ux * step + (rR() - 0.5) * 0.4 * step, ny = nd.y + uy * step;
+          if (!rootOK(nx, ny) || !rootOK((nx + nd.x) / 2, (ny + nd.y) / 2)) continue;
+          let near = false; const ci = Math.floor(nx / CELL), cj = Math.floor(ny / CELL);
+          for (let i = ci - 1; i <= ci + 1 && !near; i++) for (let j = cj - 1; j <= cj + 1; j++) { for (const q of grid.get(gk(i, j)) || []) if ((nodes[q].x - nx) ** 2 + (nodes[q].y - ny) ** 2 < (0.55 * step) ** 2) { near = true; break; } if (near) break; }
+          if (near) continue; addNode(nx, ny, id, nd.base); break;
+        }
+      }
+    }
+    const N = nodes.length, rad = new Float32Array(N);
+    for (let i = N - 1; i >= 0; i--) { const nd = nodes[i]; if (!nd.kids.length) rad[i] = 1; else { let s = 0; for (const k of nd.kids) s += rad[k] ** 2; rad[i] = Math.sqrt(s); } }
+    const heavy = i => { let b = -1, br = -1; for (const k of nodes[i].kids) if (rad[k] > br) { br = rad[k]; b = k; } return b; };
+    const dist = new Float32Array(N); for (let i = 0; i < N; i++) if (nodes[i].par >= 0) dist[i] = dist[nodes[i].par] + step;
+    const chains = [], owner = new Int32Array(N).fill(-1);
+    for (let i = 0; i < N; i++) {
+      const nd = nodes[i], hv = heavy(i);
+      for (const k of nd.kids) {
+        if (k === hv && nd.par >= 0) continue;
+        const ids = [i]; let cur = k; while (cur >= 0) { ids.push(cur); owner[cur] = chains.length; cur = heavy(cur); }
+        chains.push({ ids, kb: bases[nd.base].rT / rad[bases[nd.base].node], par: owner[i] });
+      }
+    }
+    const rootTips = [], rootKey = [], rootShade = [];
+    for (const ch of chains) {
+      let pts = ch.ids.map((id, j) => [nodes[id].x, nodes[id].y, Math.max(0.04, rad[ch.ids[Math.max(1, j)]] * ch.kb * (bases[nodes[id].base].kind === "tree" ? 0.5 + 0.5 * Math.exp(-dist[ch.ids[Math.max(1, j)]] / (10 * sc)) : 1))]);
+      if (pts.length < 2) continue;
+      pts = chaikin(pts, 1, false);
+      const c2 = pts.map(p => [p[0], p[1]]), rr = pts.map(p => p[2]), hide = ch.par >= 0 && chains[ch.par].poly ? [chains[ch.par].poly] : undefined;
+      if (rr[1] >= 0.42) {
+        let cut = rr.findIndex(r => r < 0.2); if (cut < 2) cut = cut < 0 ? rr.length - 1 : 2;
+        const [L, R] = tubeSides(c2.slice(0, cut + 1), rr.slice(0, cut + 1));
+        ch.poly = [...L, ...R.slice().reverse()];
+        rootKey.push([[...L, ...R.slice().reverse()], false, hide]);
+        if (cut < c2.length - 1) rootShade.push([c2.slice(cut), false, hide]);
+      } else rootShade.push([c2, false, hide]);
+      const tip = c2.at(-1), prev = c2.at(-2), ang = Math.atan2(tip[1] - prev[1], tip[0] - prev[0]); rootTips.push({ x: tip[0], y: tip[1] });
+      if (rR() < 0.6) for (let h = 0, nh = 2 + Math.floor(rR() * 3); h < nh; h++) { const a = ang + (rR() - 0.5) * 1.8, L = (1.4 + 1.8 * rR()) * sc, b = (rR() - 0.5) * 0.7; rootShade.push([[[tip[0], tip[1]], [tip[0] + Math.cos(a) * L * 0.5, tip[1] + Math.sin(a) * L * 0.5], [tip[0] + Math.cos(a + b) * L, tip[1] + Math.sin(a + b) * L]], false]); }
+    }
+    emit(rootKey, key, soilKeep, 0.4, catRoot); emit(rootShade, shade, soilKeep, 0.3, catRoot);
+    // ----- mycelium: persistent random walks with branching, seeded at mushrooms and along roots, ending on root nodes -----
+    if (o.myc > 0.01) {
+      const rM = rndS(14), zLim = x => bg(2, x) - 1.0, st = 0.75 * sc, budget = Math.round(o.myc * 9000 * (core ? Math.min(1, 2.2 * (PX1 - PX0) / (SXb - SXa)) : 1) * (SXb - SXa) / 170), q = [], out = [];
+      const topNodes = nodes.filter(n => n.y < zLim(n.x) - 1), tipSet = topNodes.filter(n => !n.kids.length), rg = new Map(), K = (i, j) => i * 4096 + j, RC = 8 * sc;
+      for (const n of topNodes) { const k = K(Math.floor(n.x / RC), Math.floor(n.y / RC)); let l = rg.get(k); if (!l) rg.set(k, l = []); l.push(n); }
+      const tg = new Map(); for (const n of tipSet) { const k = K(Math.floor(n.x / RC), Math.floor(n.y / RC)); let l = tg.get(k); if (!l) tg.set(k, l = []); l.push(n); }
+      const nearTip = (x, y, R) => { let bd = R * R, bn = null; const ci = Math.floor(x / RC), cj = Math.floor(y / RC); for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) for (const n of tg.get(K(i, j)) || []) { const d = (n.x - x) ** 2 + (n.y - y) ** 2; if (d < bd) { bd = d; bn = n; } } return bn; };
+      const nearRoot = (x, y, R) => { let bd = R * R, bn = null; const ci = Math.floor(x / RC), cj = Math.floor(y / RC); for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) for (const n of rg.get(K(i, j)) || []) { const d = (n.x - x) ** 2 + (n.y - y) ** 2; if (d < bd) { bd = d; bn = n; } } return bn; };
+      const wrap = a => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
+      for (const m of mushSeeds) for (let i = 0, n = Math.round((4 + 14 * o.myc) * (core ? 0.5 : 1)); i < n; i++) q.push({ x: m.x, y: m.y, a: 0.2 + rM() * (Math.PI - 0.4), left: 50 + 100 * rM(), gen: 0 });
+      if (topNodes.length) for (let i = 0, n = Math.round(o.myc * 70 * (mushSeeds.length ? 1 : 0.6) * (core ? 0.4 : 1)); i < n; i++) { const nd = topNodes[Math.floor(rM() * topNodes.length)]; q.push({ x: nd.x, y: nd.y, a: rM() * TAU, left: 25 + 40 * rM(), gen: 1 }); }
+      let steps = 0;
+      while (q.length && steps < budget) {
+        const w = q.pop(); let { x, y, a } = w, av = 0; const pts = [[x, y]];
+        for (let s = 0; s < w.left && steps < budget; s++) {
+          av = Math.max(-0.1, Math.min(0.1, av * 0.85 + gauss(rM) * 0.035)); a += av;
+          const nr = nearTip(x, y, 9 * sc); if (nr) { const dA = wrap(Math.atan2(nr.y - y, nr.x - x) - a); if (Math.abs(dA) < 1.0) a += dA * 0.07; }
+          if (y > zLim(x) - 0.8) a += wrap(-Math.PI / 2 - a) * 0.35;
+          if (y < gY(x) + 1.2) a += wrap(Math.PI / 2 - a) * 0.35;
+          let nx = x + Math.cos(a) * st, ny = y + Math.sin(a) * st, moved = false;
+          for (const da of [0, 1.2, -1.2, 2.4]) { const tx = x + Math.cos(a + da) * st, ty = y + Math.sin(a + da) * st; if (!blockG.test(tx, ty) && ty > gY(tx) + 0.6 && tx > SXa + 1 && tx < SXb - 1) { a += da; nx = tx; ny = ty; moved = true; break; } }
+          if (!moved) break; x = nx; y = ny; pts.push([x, y]); steps++;
+          if (rM() < 0.045 && w.gen < 3 && q.length < 4000) q.push({ x, y, a: a + (rM() < 0.5 ? -1 : 1) * (0.5 + 0.7 * rM()), left: (w.left - s) * 0.6, gen: w.gen + 1 });
+          const hit = nearTip(x, y, 2.2 * sc); if (hit && s > 3) { pts.push([hit.x, hit.y]); break; }
+        }
+        if (pts.length > 2) out.push([pts, false]);
+      }
+      emit(out, myceOut, soilKeep, 0.6, catMyc);
+    }
+  }
+
+  // ----- water table -----
+  if (wh) {
+    const rw = rndS(15), rowSp = Math.max(pitch * 2.8, 1.9); let j = 0;
+    const seg = (fn, x0, x1) => { for (let x = x0; x < x1;) { const L = 5 + 21 * rw(), xe = Math.min(x1, x + L), p = []; for (let t = x; t <= xe + 1e-6; t += 0.8) p.push([Math.min(t, xe), fn(Math.min(t, xe))]); if (p.length > 1) waterOut.push([p, false]); x = xe + 1.5 + 3.5 * rw(); } };
+    for (const off of [0.9, 1.8]) seg(x => botY(x) + off + 0.2 * Math.sin(x * 0.4), SXa + 1.2 + rw() * 4, SXb - 1.2);
+    for (let y = SY1 - wh + 3.4 * sc; y < SY1 - 1.2; y += rowSp, j++) { const ph = rw() * TAU; seg(x => y + 0.35 * Math.sin(x * 0.35 + ph), SXa + 1.2 + rw() * 8, SXb - 1.2); }
+    for (let i = 0, n = 10 + Math.floor(rw() * 8); i < n; i++) { const x = SXa + 4 + rw() * (SXb - SXa - 8), y = SY1 - wh + 3.5 * sc + rw() * (wh - 6.5 * sc), r = (0.6 + 0.9 * rw()); waterOut.push([ring(x, y, r, 10), true]); if (rw() < 0.4) waterOut.push([ring(x + 1.6 * r, y - 2.3 * r - 1, r * 0.55, 8), true]); }
+  }
+  // ----- frame, block faces, cores -----
+  if (core) {
+    const remap = list => { const out = []; for (const [p, c] of list) { const d = densify(p, c, 0.5); for (const cr of cores) { const ok = d.map(([x, y]) => Math.abs(x - cr.cx) < cr.cw / 2 - 0.5 && y > cr.ya + 0.4 && y < cr.yb - 0.4), tmp = []; if (!ok.some(Boolean)) continue; runs(d, c, ok, 0.3, tmp); for (const [q, cl] of tmp) out.push([q.map(([x, y]) => { const u = (x - cr.cx) / (cr.cw / 2); return [x, y + cr.ry * Math.sqrt(Math.max(0, 1 - u * u))]; }), cl]); } } return out; };
+    const k2 = remap(key), s2 = remap(shade), c2 = remap(colour);
+    key.length = shade.length = colour.length = 0; key.push(...k2); shade.push(...s2); colour.push(...c2);
+    const rc = rndS(16), axX = SXa + 9.5 * sc, DG = { 0: [[[0, 0], [2, 0], [2, 4], [0, 4], [0, 0]]], 1: [[[1, 0], [1, 4]]], 2: [[[0, 0], [2, 0], [2, 2], [0, 2], [0, 4], [2, 4]]], 3: [[[0, 0], [2, 0], [2, 4], [0, 4]], [[0, 2], [2, 2]]], 4: [[[0, 0], [0, 2], [2, 2]], [[2, 0], [2, 4]]], 5: [[[2, 0], [0, 0], [0, 2], [2, 2], [2, 4], [0, 4]]], 6: [[[2, 0], [0, 0], [0, 4], [2, 4], [2, 2], [0, 2]]], 7: [[[0, 0], [2, 0], [2, 4]]], 8: [[[0, 0], [2, 0], [2, 4], [0, 4], [0, 0]], [[0, 2], [2, 2]]], 9: [[[2, 2], [0, 2], [0, 0], [2, 0], [2, 4]]] };
+    const yEnd = cores.at(-1).yb + cores.at(-1).ry; let lastD = 0;
+    for (let d = 0; gy0 + d <= yEnd; d += 5) {
+      const y = gy0 + d, major = d % 10 === 0; lastD = d; shade.push([[[axX, y], [axX - (major ? 2.4 : 1.3), y]], false]);
+      if (major) { const str = String(d), wtxt = str.length * 1.8 - 0.6; for (let i = 0; i < str.length; i++) for (const st of DG[str[i]]) shade.push([st.map(([px, py]) => [axX - 3.2 - wtxt + i * 1.8 + px * 0.6, y - 1.2 + py * 0.6]), false]); }
+    }
+    shade.push([[[axX, gy0], [axX, gy0 + lastD]], false]);
+    for (const cr of cores) {
+      const rx = cr.cw / 2;
+      key.push([[[cr.cx - rx, cr.ya], [cr.cx - rx, cr.yb]], false], [[[cr.cx + rx, cr.ya], [cr.cx + rx, cr.yb]], false], [ellipse(cr.cx, cr.ya, rx, cr.ry, 48), true]);
+      const bot = []; for (let i = 0; i <= 40; i++) { const a = Math.PI * i / 40; bot.push([cr.cx - rx * Math.cos(a), cr.yb + cr.ry * Math.sin(a)]); }
+      key.push([bot, false]);
+      const cap = ellipse(cr.cx, cr.ya, rx * 0.86, cr.ry * 0.86, 48);
+      for (const [x, y] of poisson(cr.cx - rx, cr.ya - cr.ry, cr.cx + rx, cr.ya + cr.ry, Math.max(pitch * 2.6, 1.6), (x, y) => inPoly(cap, x, y), rc)) shade.push([ring(x, y, 0.27, 8), true]);
+    }
+  } else if (mono) {
+    const fr = [[SXa, gy0], [SXa, SY1], [SXb, SY1], [SXb, gy0]];
+    key.push([fr, false], [[[SXb, SY1], [SXb + DXm, SY1 - DYm], [SXb + DXm, gy0 - DYm]], false]);
+    // side face: vertical hatching, broken at the strata lines that run on across it
+    const hs = Math.max(pitch * 1.2, 0.7), bY = [];
+    for (let k = 1; k <= nL; k++) bY.push(at(bArr[k], SXb));
+    for (let k = 1; k < nL; k++) if (bArr[k][NS - 1] - bArr[k - 1][NS - 1] >= 0.5) shade.push([[[SXb, bArr[k][NS - 1]], [SXb + DXm, bArr[k][NS - 1] - DYm]], false]);
+    if (wh) shade.push([[[SXb, botY(SXb)], [SXb + DXm, botY(SXb) - DYm]], false]);
+    for (let i = 0, u = hs; u < DXm - 0.6; u += hs, i++) {
+      const sh = u / DXm * DYm, tops = [gy0 + 0.7, ...bY.slice(0, nL - 1).map(v => v + 0.5)], bots = [...bY.slice(0, nL - 1).map(v => v - 0.5), SY1 - 0.7];
+      for (let k = 0; k < nL; k++) { if ((i % (1 + (k % 2))) !== 0) continue; const y0 = tops[k] - sh, y1 = Math.min(bots[k], k === nL - 1 && wh ? botY(SXb) - 0.5 : 1e9) - sh; if (y1 - y0 > 0.5) shade.push([[[SXb + u, y0], [SXb + u, y1]], false]); }
+    }
+  } else {
+    key.push([[[SXa, SY0], [SXb, SY0], [SXb, SY1], [SXa, SY1]], true]);
+    shade.push([[[SXa - 1.8, SY0 - 1.8], [SXb + 1.8, SY0 - 1.8], [SXb + 1.8, SY1 + 1.8], [SXa - 1.8, SY1 + 1.8]], true]);
+  }
+
+  // ----- gates -----
+  const sampleIn = list => { let n = 0, bad = 0; for (const [p, c] of list) for (let i = 0; i < p.length - (c ? 0 : 1); i++) { const a = p[i], b = p[(i + 1) % p.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), k = Math.max(1, Math.ceil(L / 0.5)); for (let j = 0; j <= k; j++) { n++; if (actG.test(a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k)) bad++; } } return [n, bad]; };
+  let nS = 0, nBad = 0; for (const l of [catTex, catRoot, catMyc]) { const [n, b] = sampleIn(l); nS += n; nBad += b; }
+  let minMargin = 99, nRoot = 0;
+  for (const [p, c] of catRoot) for (let i = 0; i < p.length - 1; i++) { const a = p[i], b = p[i + 1], k = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.5)); for (let j = 0; j <= k; j++) { const x = a[0] + (b[0] - a[0]) * j / k, y = a[1] + (b[1] - a[1]) * j / k; nRoot++; minMargin = Math.min(minMargin, y - gY(x)); } }
+  const order = l => orderPaths(l);
+  const R = { W, H, o, key: order(key), shade: order(shade), colour: order(colour), stones, hollows: hollows.length, notes };
+  const len = L => L.reduce((a, [p, c]) => a + plen(p, c), 0) / 1000, total = len(R.key) + len(R.shade) + len(R.colour);
+  let npts = 0; for (const L of [R.key, R.shade, R.colour]) for (const [p] of L) npts += p.length;
+  R.ms = performance.now() - t0; R.total = total; R.nRoot = nRoot; R.nStones = stones.length; R.texK = texK;
+  const kb = Math.round(npts * 16 / 1024);
+  R.gates = [
+    ["build under 4000 ms", R.ms < 4000, R.ms.toFixed(0) + " ms"],
+    ["total pen length under 150 m", total < 150, total.toFixed(1) + " m"],
+    ["SVG under 3 MB (estimate)", kb < 3072, kb + " KB"],
+    ["no texture, root or thread inside a stone or a burrow", nBad === 0, `${nBad} of ${nS} samples inside ${stones.length} stones and ${hollows.length} hollows`],
+    ["roots stay below the ground line", minMargin >= -0.001, nRoot ? `lowest margin ${minMargin.toFixed(2)} mm over ${nRoot} samples` : "no roots drawn"],
+  ];
+  return R;
+}
+function ellipse(cx, cy, rx, ry, n) { const p = []; for (let i = 0; i < n; i++) { const a = TAU * i / n; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return p; }
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  const colr = r.o.colourpen === "water" ? "#2a6fb0" : "#a0522d";
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.colour, colr, 0.3); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `key 0.4 pen: <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · shade 0.3 pen: <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour pen: <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths · ${r.nStones} stones, ${r.hollows} hollows · ${r.ms.toFixed(0)} ms<br>`
+    + (r.notes.length ? `<span class="note">note: ${r.notes.join("; ")}</span><br>` : "") + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: r.o.colourpen === "water" ? "2a6fb0" : "a0522d", w: 0.3, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG Underground studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { cut: "straight", cores: 4, ground: 0.3, layers: 4, pinch: 0.5, tree: "none", treesize: 0.9, foliage: 0.6, grass: 24, flowers: 9, mush: 3, mushspread: 12, stones: 10, stonesize: 6.5, roots: 0.6, myc: 0.35, colourpen: "mycelium", worms: 3, burrow: "off", ants: "off", fossil: "off", treasure: "off", water: "off", pitch: 0.8 };
+const PRESETS = {
+  meadow: { ...BASE, seed: 21 },
+  oak: { ...BASE, seed: 7, tree: "oak", treesize: 0.95, layers: 5, grass: 12, flowers: 4, mush: 2, stones: 12, roots: 0.9, myc: 0.3, worms: 2, ground: 0.34 },
+  ring: { ...BASE, seed: 33, mush: 12, mushspread: 26, myc: 1, grass: 10, flowers: 3, layers: 4, stones: 6, roots: 0.45, worms: 1 },
+  mole: { ...BASE, seed: 5, burrow: "on", layers: 4, grass: 18, flowers: 7, mush: 1, stones: 8, roots: 0.5, myc: 0.15, worms: 3, treasure: "key" },
+  fossil: { ...BASE, seed: 44, layers: 6, pinch: 0.7, grass: 5, flowers: 1, mush: 0, stones: 14, stonesize: 7.5, roots: 0.3, myc: 0, fossil: "ammonite", water: "on", colourpen: "water", worms: 0, ground: 0.24 },
+  monolith: { ...BASE, seed: 12, cut: "monolith", layers: 5, grass: 20, flowers: 6, mush: 2, stones: 9, roots: 0.55, myc: 0.3, burrow: "on", tree: "post", fossil: "fish", worms: 2, ground: 0.22 },
+  cores: { ...BASE, seed: 9, cut: "core", cores: 4, layers: 6, grass: 14, flowers: 5, mush: 3, stones: 16, stonesize: 5, roots: 0.7, myc: 0.5, fossil: "ammonite", water: "on", colourpen: "water", worms: 2, treasure: "coin", ground: 0.28 },
+  antfarm: { ...BASE, seed: 3, layers: 5, ants: "on", treasure: "coin", worms: 2, grass: 16, flowers: 5, mush: 2, stones: 9, roots: 0.5, myc: 0.25 },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `underground-s${r.o.seed}-${r.o.cut}-l${r.o.layers}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>

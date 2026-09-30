@@ -1,4 +1,4 @@
-import {createDrawing,drawProgress} from './plot-animation.js';
+import {createDrawing,drawProgress} from './plot-animation.js?v=254b2f705023';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let catalogue=[], all=[], expanded=null, selected=null, filter='all', heroId=null, userPaused=false, inView=true, drawing=null, frame=0, lastTime=0;
@@ -83,7 +83,7 @@ $('minimize').onclick=()=>{hero.hidden=true;document.querySelector('.hero-minimi
 $('restore').onclick=()=>{hero.hidden=false;document.querySelector('.hero-minimized').hidden=true;inView=true;syncAnimation();$('minimize').focus()};
 reduced.addEventListener('change',()=>{if(reduced.matches)setProgress(1);syncAnimation()});
 
-try{const response=await fetch('site/catalogue.json');if(!response.ok)throw Error('Catalogue unavailable');catalogue=await response.json();all=catalogue.flatMap(c=>c.samples.map(s=>({...s,collection:c})));render();
+try{const response=await fetch('site/catalogue.json',{cache:'no-cache'});if(!response.ok)throw Error('Catalogue unavailable');catalogue=await response.json();all=catalogue.flatMap(c=>c.samples.map(s=>({...s,collection:c})));render();
  $('studio-links').innerHTML=catalogue.map(c=>`<a class="studio-link" href="${esc(c.page)}">${esc(c.name)}<span>${esc(c.family)} ↗</span></a>`).join('');
  showHero(all.find(s=>s.id==='weave-sunflower')||all[0]);
  const requested=location.hash.match(/^#specimen=(.+)$/);if(requested)openSpecimen(specimenById(decodeURIComponent(requested[1])),false);

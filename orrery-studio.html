@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orrery studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Orrery studio</h1>
+  <p class="sub">Every seed grows a new star system: a star with its own corona, three to ten planets on orbits spaced like the Titius-Bode rule, rings, moons, an asteroid belt, sometimes a comet or a second star. Draw it from above, tilted, as a textbook plate, as a brass orrery on a stack of gears, or as a close-up portrait of one ringed giant. Export a millimetre SVG with pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="home">Home-like plan</button><button data-preset="closeup">Ringed giant close-up</button><button data-preset="tilted">Tilted system</button><button data-preset="plate">Textbook plate</button><button data-preset="brass">Brass orrery</button><button data-preset="binary">Binary and comet</button><button data-preset="dwarf">Red dwarf, low angle</button></div>
+  </fieldset>
+  <fieldset><legend>The system</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="14"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Planets <output id="o-nplan"></output><input type="range" id="nplan" min="3" max="10" step="1" value="8"></label>
+    <label>Star <select id="star"><option value="auto">chosen by the seed</option><option value="yellow">yellow dwarf</option><option value="red">red dwarf</option><option value="blue">blue giant</option><option value="giant">red giant</option><option value="white">white star</option></select></label>
+    <label>Corona <select id="corona"><option value="auto">the star's own</option><option value="rays">radial rays</option><option value="rings">wavy rings</option><option value="cells">granulation cells</option></select></label>
+    <label>Asteroid belt <select id="belt"><option value="on">yes</option><option value="auto">by the seed</option><option value="off">no</option></select></label>
+    <label>Asteroids <output id="o-nbelt"></output><input type="range" id="nbelt" min="40" max="500" step="10" value="140"></label>
+    <label>Comet <select id="comet"><option value="off">no</option><option value="auto">by the seed</option><option value="on">yes</option></select></label>
+    <label>Second star <select id="binary"><option value="off">no</option><option value="auto">by the seed</option><option value="on">yes</option></select></label>
+    <label>Most moons per giant <output id="o-moons"></output><input type="range" id="moons" min="0" max="6" step="1" value="4"></label>
+    <label>Rings <select id="rings"><option value="auto">by the seed</option><option value="many">generous</option><option value="none">none</option></select></label>
+  </fieldset>
+  <fieldset><legend>The view</legend>
+    <label>View <select id="view"><option value="plan">plan (from above)</option><option value="portrait">close-up portrait</option><option value="tilted">tilted</option><option value="plate">textbook plate</option><option value="brass">brass orrery</option></select></label>
+    <label>Tilt above the orbit plane, degrees <output id="o-tilt"></output><input type="range" id="tilt" min="15" max="85" step="1" value="50"></label>
+    <label>Lens <select id="lens"><option value="persp">perspective</option><option value="ortho">orthographic</option></select></label>
+    <label>Planet viewing angle (plan, plate, portrait) <output id="o-look"></output><input type="range" id="look" min="12" max="80" step="1" value="32"></label>
+    <label>Orbits <select id="orbits"><option value="dashed">dashed</option><option value="solid">solid</option><option value="none">hidden</option></select></label>
+    <label>Orbits in the colour pen <select id="orbitcol"><option value="off">no</option><option value="on">yes</option></select></label>
+    <label>Planet shadows <select id="shadows"><option value="on">cast outward from the star</option><option value="off">none</option></select></label>
+  </fieldset>
+  <fieldset><legend>Sky and shading</legend>
+    <label>Star field <select id="field"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Stars in the field <output id="o-fdens"></output><input type="range" id="fdens" min="0" max="600" step="10" value="170"></label>
+    <label>Constellation <select id="constel"><option value="on">a faint one</option><option value="off">none</option></select></label>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (key, shade, colour), numbered in plotting order. Every file carries the same four corner ticks so Design Space sizes them identically: place each file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">The generator lays out planets with gaps that grow outward, in the spirit of the Titius-Bode rule, then gives each one a kind from its distance: rocky inside the frost line, gas and ice giants outside it. Every planet is a shaded sphere. The night side is hatched at the pitch you set, rocky planets carry craters that squash toward the limb, gas giants carry wavy latitude bands and a storm, and ice giants lie on their sides. Rings are drawn as tilted ellipses with the back half hidden by the planet and the front half hiding the planet, plus the ring's shadow on the disc. All hidden lines are removed by depth, so planets hide orbit lines and each other, and the star hides the far side of orbits. The brass view reuses the involute teeth of <code>gear-weave-studio.html</code> for a stack of meshing gears at the base. In Design Space: every layer to Pen, black 0.4 for the key layer, black 0.3 for the shade layer, and any colour pen for the colour layer (rings, comet tails, and orbits if you turn that on), Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// ---------------- tooth outline (same involute as gear-weave-studio, used by the brass view) ----------------
+const PA = 20 * Math.PI / 180, DED = 1.25, INV = 8, TIP = 4, FN = 96, BACKLASH = 0.15;
+function toothOutline(z, m) {
+  const pr = z * m / 2, br = pr * Math.cos(PA), orr = pr + m, rr = Math.max(0.01, pr - DED * m);
+  const invT = r => Math.sqrt(Math.max(0, (r / br) ** 2 - 1)), sweep = t => t - Math.atan(t);
+  const rot = Math.PI / (2 * z) - (BACKLASH / pr) / 2 + sweep(invT(pr));
+  const fa = r => rot - sweep(invT(r)), r0 = Math.max(rr, br), pol = (r, a) => [r * Math.cos(a), r * Math.sin(a)];
+  const right = []; for (let i = 0; i <= INV; i++) { const r = r0 + (orr - r0) * i / INV; right.push(pol(r, fa(r))); }
+  const left = right.map(([x, y]) => [x, -y]), ta = fa(orr), tip = [];
+  for (let i = 0; i <= TIP; i++) tip.push(pol(orr, -ta + 2 * ta * i / TIP));
+  const sa = fa(r0), tooth = [pol(rr, -sa), ...left, ...tip, ...right.slice().reverse(), pol(rr, sa)];
+  const out = [], step = 2 * Math.PI / z;
+  for (let i = 0; i < z; i++) {
+    const c = Math.cos(i * step), s = Math.sin(i * step);
+    for (const [x, y] of tooth) out.push([x * c - y * s, x * s + y * c]);
+    const a0 = i * step + sa, a1 = (i + 1) * step - sa, n = Math.max(1, Math.ceil((a1 - a0) / (2 * Math.PI / FN)));
+    for (let k = 1; k < n; k++) out.push(pol(rr, a0 + (a1 - a0) * k / n));
+  }
+  return out;
+}
+
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ---------------- small maths ----------------
+const TAU = Math.PI * 2, clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const norm3 = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+
+// Camera. World: X right, Y toward the viewer's side of the page (down), Z up. e = elevation above the orbit plane (90 = from above).
+// proj gives [screenX, screenY, depth toward the viewer, perspective factor]. dir maps a direction vector into the screen frame (x right, y down, z toward the viewer).
+const makeCam = (eDeg, persp, s, ox, oy, D) => {
+  const e = eDeg * Math.PI / 180, se = Math.sin(e), ce = Math.cos(e);
+  return { se, ce, s, ox, oy, persp, D,
+    proj(X, Y, Z) { const dep = Y * ce + Z * se, f = persp ? D / (D - dep) : 1; return [ox + X * s * f, oy + (Y * se - Z * ce) * s * f, dep, f]; },
+    dir(a, b, c) { return [a, b * se - c * ce, b * ce + c * se]; } };
+};
+
+// ---------------- path helpers ----------------
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+// Keep the runs of a sampled path where ok[i] holds. d (a depth number or array) is sliced along.
+function split(p, closed, ok, minLen, d) {
+  const out = [], n = p.length, arrD = Array.isArray(d);
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push({ p, d, closed }); return out; }
+  const start = closed ? ok.indexOf(false) : 0; let cp = [], cd = [];
+  const flush = () => { if (cp.length > 1 && plen(cp, false) >= minLen) out.push({ p: cp, d: arrD ? cd : d, closed: false }); cp = []; cd = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) { cp.push(p[i]); if (arrD) cd.push(d[i]); } else flush(); }
+  flush();
+  return out;
+}
+const pip = (poly, x, y) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+const circ = (cx, cy, r, step = 0.35) => { const n = Math.max(16, Math.ceil(TAU * r / step)), p = []; for (let k = 0; k < n; k++) { const a = TAU * k / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; };
+function lineS(a, b, step = 0.4) { const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / step)), p = []; for (let k = 0; k <= n; k++) p.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); return p; }
+function densC(p, step) { const out = []; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } return out; }
+function dashRun(pts, on, off) {
+  const out = []; let drawing = true, rem = on, cur = [pts[0]];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]); let pos = 0;
+    while (L - pos > 1e-9) {
+      const st = Math.min(rem, L - pos); pos += st; rem -= st;
+      const q = [a[0] + (b[0] - a[0]) * pos / L, a[1] + (b[1] - a[1]) * pos / L];
+      if (drawing) cur.push(q);
+      if (rem <= 1e-9) { if (drawing) { out.push(cur); cur = null; } else cur = [q]; drawing = !drawing; rem = drawing ? on : off; }
+    }
+  }
+  if (drawing && cur && cur.length > 1) out.push(cur);
+  return out.filter(c => plen(c, false) >= 0.3);
+}
+// Parallel hatch lines across a disc, kept where pred holds.
+function hatchRuns(cx, cy, R, ang, pitch, pred, out, step = 0.3, minLen = 0.6, off = 0) {
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  for (let t = -R + pitch * 0.5 + off; t < R; t += pitch) {
+    const h = Math.sqrt(Math.max(0, R * R - t * t)); if (h < 0.3) continue;
+    const n = Math.max(2, Math.ceil(2 * h / step)), p = [], ok = [];
+    for (let k = 0; k <= n; k++) { const u = -h + 2 * h * k / n, x = cx - dy * t + dx * u, y = cy + dx * t + dy * u; p.push([x, y]); ok.push(pred(x, y)); }
+    for (const r of split(p, false, ok, minLen)) out.push(r.p);
+  }
+}
+
+// ---------------- the hidden-line scene ----------------
+// items: paths with a depth (number or per-sample array), a layer, and the occluders they must not be seen through.
+// occluders: shapes with a depth. A sample is hidden when it lies inside an occluder that is nearer to the viewer.
+const newScene = () => ({ items: [], occs: [], rings: [] });
+function put(S, layer, p, closed, o) {
+  if (p.length < 2) return; o = o || {};
+  S.items.push({ p, closed: !!closed, layer, d: o.d === undefined ? 0 : o.d, wy: o.wy, ex: o.ex ? new Set(o.ex) : null, force: o.force ? new Set(o.force) : null, tag: o.tag || "", atomic: !!o.atomic, dash: o.dash || 0 });
+}
+function occDisc(S, id, cx, cy, R, dep, o) { S.occs.push(Object.assign({ id, bb: [cx - R, cy - R, cx + R, cy + R], test: (x, y) => (x - cx) * (x - cx) + (y - cy) * (y - cy) <= R * R, dep }, o || {})); }
+function occPoly(S, id, poly, o) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const [x, y] of poly) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  S.occs.push(Object.assign({ id, bb: [x0, y0, x1, y1], test: (x, y) => pip(poly, x, y) }, o));
+}
+function hull(pts) {
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const q of p) { while (lo.length > 1 && cr(lo.at(-2), lo.at(-1), q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length > 1 && cr(up.at(-2), up.at(-1), q) <= 0) up.pop(); up.push(q); }
+  lo.pop(); up.pop(); return lo.concat(up);
+}
+function resolve(S, box) {
+  const [bx0, by0, bx1, by1] = box, inBox = (x, y) => x >= bx0 && x <= bx1 && y >= by0 && y <= by1;
+  for (const it of S.items) {
+    const p = it.p; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const [x, y] of p) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < bx0 || x0 > bx1 || y1 < by0 || y0 > by1) { it.out = []; continue; }
+    const cands = S.occs.filter(o => (!it.ex || !it.ex.has(o.id)) && (!o.tagOnly || o.tagOnly === it.tag) && !(o.bb[2] < x0 || o.bb[0] > x1 || o.bb[3] < y0 || o.bb[1] > y1));
+    const dA = Array.isArray(it.d), wA = Array.isArray(it.wy);
+    const hid = i => {
+      const x = p[i][0], y = p[i][1], dep = dA ? it.d[i] : it.d;
+      for (const o of cands) {
+        if (x < o.bb[0] || x > o.bb[2] || y < o.bb[1] || y > o.bb[3] || !o.test(x, y)) continue;
+        if (o.byY) { const w = wA ? it.wy[i] : it.wy; if (w !== undefined && w < -0.02) return true; continue; }
+        if (it.force && it.force.has(o.id)) return true;
+        const od = o.depAt ? o.depAt(x, y) : o.dep;
+        if (od >= dep - 1e-6) return true;
+      }
+      return false;
+    };
+    if (it.atomic) {
+      let ok = true;
+      for (let i = 0; i < p.length; i++) if (!inBox(p[i][0], p[i][1]) || hid(i)) { ok = false; break; }
+      it.out = ok ? [{ p, closed: it.closed }] : []; continue;
+    }
+    const ok = p.map((q, i) => inBox(q[0], q[1]) && !hid(i));
+    it.out = split(p, it.closed, ok, 0.3, it.d).map(r => ({ p: simplify(r.p, 0.02), closed: r.closed }));
+  }
+}
+// Nearest-neighbour pen order: flip open paths when their far end is closer.
+function order(paths) {
+  const n = paths.length; if (n < 3) return paths;
+  const used = new Uint8Array(n), out = []; let cur = 0; used[0] = 1; out.push(paths[0]);
+  let end = paths[0][1] ? paths[0][0][0] : paths[0][0].at(-1);
+  for (let step = 1; step < n; step++) {
+    let best = -1, bd = 1e18, flip = false;
+    for (let i = 0; i < n; i++) {
+      if (used[i]) continue; const [p, cl] = paths[i], a = p[0], dx = a[0] - end[0], dy = a[1] - end[1], d1 = dx * dx + dy * dy;
+      if (d1 < bd) { bd = d1; best = i; flip = false; }
+      if (!cl) { const b = p.at(-1), ex = b[0] - end[0], ey = b[1] - end[1], d2 = ex * ex + ey * ey; if (d2 < bd) { bd = d2; best = i; flip = true; } }
+    }
+    used[best] = 1; const [p, cl] = paths[best], q = flip ? p.slice().reverse() : p;
+    out.push([q, cl]); end = cl ? q[0] : q.at(-1);
+  }
+  return out;
+}
+
+// ---------------- digit font (single stroke, unit height, 0.6 wide) ----------------
+const DIG = {
+  0: [[.1, 0], [.5, 0], [.6, .15], [.6, .85], [.5, 1], [.1, 1], [0, .85], [0, .15], [.1, 0]],
+  1: [[.1, .2], [.3, 0], [.3, 1]],
+  2: [[0, .15], [.15, 0], [.45, 0], [.6, .15], [.6, .35], [0, 1], [.6, 1]],
+  3: [[0, .05], [.6, .05], [.3, .45], [.5, .5], [.6, .65], [.6, .85], [.45, 1], [.1, 1], [0, .9]],
+  4: [[.45, 1], [.45, 0], [0, .65], [.6, .65]],
+  5: [[.6, 0], [.05, 0], [0, .45], [.4, .4], [.6, .55], [.6, .85], [.45, 1], [.1, 1], [0, .9]],
+  6: [[.55, .05], [.3, 0], [.1, .15], [0, .5], [0, .85], [.15, 1], [.45, 1], [.6, .85], [.6, .6], [.45, .45], [.15, .45], [0, .6]],
+  7: [[0, 0], [.6, 0], [.25, 1]],
+  8: [[.3, .5], [.05, .4], [.05, .1], [.2, 0], [.4, 0], [.55, .1], [.55, .4], [.3, .5], [.05, .6], [.05, .9], [.2, 1], [.4, 1], [.55, .9], [.55, .6], [.3, .5]],
+  9: [[.05, .95], [.3, 1], [.5, .85], [.6, .5], [.6, .15], [.45, 0], [.15, 0], [0, .15], [0, .4], [.15, .55], [.45, .55], [.6, .4]],
+};
+function digitText(S, str, cx, cy, h, layer) {   // centred string of digits, atomic strokes (never cut)
+  const adv = 0.9 * h, x0 = cx - (str.length * adv - 0.3 * h) / 2;
+  for (let i = 0; i < str.length; i++) {
+    const g = DIG[str[i]]; if (!g) continue;
+    put(S, layer, g.map(([u, v]) => [x0 + i * adv + u * h, cy - h / 2 + v * h]), false, { atomic: true, d: -0.5 });
+  }
+}
+
+// ---------------- star, planet and moon drawing (screen space) ----------------
+const STAR_T = { yellow: { size: 1, corona: "rays" }, red: { size: 0.85, corona: "rings" }, blue: { size: 1.5, corona: "rays" }, giant: { size: 1.9, corona: "cells" }, white: { size: 0.9, corona: "rings" } };
+
+function drawStar(S, c, R, cor, seed, pitch, d, wy, opt) {
+  opt = opt || {}; const rnd = mulberry32(seed), id = opt.id || "star", cu = Math.min(R, opt.cu || 1e9), o0 = { d, wy, ex: [id], tag: "star" }, vis = opt.vis || (() => true), [cx, cy] = c;
+  if (!opt.bare) { put(S, "key", circ(cx, cy, R, 0.35), true, o0); occDisc(S, id, cx, cy, R, d); }
+  if (cor === "rays") {
+    const spacing = Math.max(pitch * 1.3, 0.9); let nR = Math.floor(TAU * R * 1.07 / spacing); nR = opt.vis ? Math.min(nR, 4000) : clamp(nR, 14, 260);
+    for (let i = 0; i < nR; i++) {
+      const a = TAU * i / nR + (rnd() - 0.5) * 0.4 * TAU / nR, long = i % 3 === 0, len = Math.max(1, cu * (0.2 + (long ? 0.85 : 0.4) * rnd())), r0 = R + 0.07 * cu;
+      const ca = Math.cos(a), sa = Math.sin(a), A = [cx + ca * r0, cy + sa * r0], B = [cx + ca * (r0 + len), cy + sa * (r0 + len)];
+      if (vis(A[0], A[1]) || vis(B[0], B[1])) put(S, "shade", lineS(A, B, 0.4), false, o0);
+    }
+  } else if (cor === "rings") {
+    const sp = Math.max(pitch * 1.7, cu * 0.09), nRg = clamp(Math.floor((cu * 0.7) / sp), 1, 6), amp = sp * 0.16, m1 = 5 + Math.floor(rnd() * 5), m2 = 9 + Math.floor(rnd() * 6), ph1 = rnd() * TAU, ph2 = rnd() * TAU;
+    for (let j = 0; j < nRg; j++) {
+      const r = R + cu * 0.12 + j * sp, n = Math.max(60, Math.ceil(TAU * r / 0.35)), p = [];
+      for (let k = 0; k < n; k++) { const a = TAU * k / n, rr = r + amp * (0.65 * Math.sin(m1 * a + ph1 + j * 0.7) + 0.35 * Math.sin(m2 * a + ph2)); p.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]); }
+      put(S, "shade", p, true, o0);
+    }
+  } else {
+    const cs = Math.max(pitch * 2.4, Math.min(cu * 0.2, opt.cellMax || 4)), dy = cs * 0.866, band = opt.band || 1e9, rg = opt.region || [cx - R, cy - R, cx + R, cy + R];
+    let row = 0;
+    for (let y = rg[1]; y <= rg[3]; y += dy, row++) for (let x = rg[0] + (row % 2 ? cs / 2 : 0); x <= rg[2]; x += cs) {
+      const jx = (rnd() - 0.5) * 0.2 * cs, jy = (rnd() - 0.5) * 0.2 * cs, px = x + jx, py = y + jy, d0 = Math.hypot(px - cx, py - cy), rr = [];
+      const seeds = []; for (let k = 0; k < 6; k++) seeds.push(0.85 + 0.3 * rnd());
+      if (d0 > R - cs * 0.5 || d0 < R - band || !vis(px, py)) continue;
+      const f = Math.max(0.35, Math.sqrt(Math.max(0, 1 - (d0 / R) ** 2))), ux = (px - cx) / (d0 || 1), uy = (py - cy) / (d0 || 1);
+      for (let k = 0; k < 6; k++) {
+        const a = TAU * k / 6 + 0.3, vx = Math.cos(a) * cs * 0.36 * seeds[k], vy = Math.sin(a) * cs * 0.36 * seeds[k], rad = vx * ux + vy * uy;
+        rr.push([px + vx - rad * ux * (1 - f), py + vy - rad * uy * (1 - f)]);
+      }
+      put(S, "shade", densC(rr, 0.4), true, o0);
+    }
+  }
+}
+
+function moonAt(S, mid, x, y, Rm, dep, l, pitch, wy) {
+  const own = "md" + mid, o0 = { d: dep, wy, ex: [own], tag: "moon" };
+  put(S, "key", circ(x, y, Rm, 0.3), true, o0); occDisc(S, own, x, y, Math.max(0.01, Rm - 0.02), dep);
+  const lxy = Math.hypot(l[0], l[1]), hl = lxy > 0.05 ? Math.atan2(l[0], -l[1]) : 0.8;
+  const lit = (px, py) => { const nx = (px - x) / Rm, ny = (py - y) / Rm, nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny)); return nx * l[0] + ny * l[1] + nz * l[2]; };
+  if (Rm >= pitch * 1.9) {
+    const out = []; hatchRuns(x, y, Rm, hl, pitch, (px, py) => (px - x) ** 2 + (py - y) ** 2 < (Rm - 0.12) ** 2 && lit(px, py) < 0.02, out);
+    for (const p of out) put(S, "shade", p, false, o0);
+  } else if (Rm >= 0.9 && lxy > 0.05) {
+    const na = Math.atan2(-l[1], -l[0]), p = []; for (let k = 0; k <= 10; k++) { const a = na - 1.1 + 2.2 * k / 10; p.push([x + Rm * 0.55 * Math.cos(a), y + Rm * 0.55 * Math.sin(a)]); }
+    put(S, "shade", p, false, o0);
+  }
+  if (Rm >= 2.6) put(S, "shade", circ(x + 0.32 * Rm * l[0], y + 0.32 * Rm * l[1], Rm * 0.2, 0.3), true, o0);
+}
+
+// The planet's spin axis in the screen frame plus two equatorial axes; the axis is kept from lying exactly along the view direction of the rings.
+function frameOf(P, cam) {
+  let A = [Math.sin(P.tau) * Math.cos(P.chi), Math.sin(P.tau) * Math.sin(P.chi), Math.cos(P.tau)];
+  for (let k = 0; k < 8; k++) {
+    const da = cam.dir(A[0], A[1], A[2]); if (Math.abs(da[2]) >= 0.2) break;
+    const sg = da[2] < 0 ? -1 : 1; A = norm3([A[0], A[1] + sg * 0.2 * cam.ce, A[2] + sg * 0.2 * cam.se]);
+  }
+  const ref = Math.abs(A[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0], u1 = norm3(cross3(A, ref)), u2 = cross3(A, u1);
+  return { da: cam.dir(A[0], A[1], A[2]), d1: cam.dir(u1[0], u1[1], u1[2]), d2: cam.dir(u2[0], u2[1], u2[2]) };
+}
+
+// F: { c:[x,y], R (mm), dep, Rw (world radius, for depth), l (unit vector toward the light, screen frame), id, cam, wy, moons?, moonOrbits? }
+function drawPlanet(S, P, F, pitch) {
+  const [cx, cy] = F.c, R = F.R, dep = F.dep, Rw = F.Rw, l = F.l, id = F.id, tag = "body:" + id, own = "pd" + id, body = { d: dep, wy: F.wy, ex: [own], tag };
+  const rnd = mulberry32(P.seed);
+  put(S, "key", circ(cx, cy, R, 0.3), true, body);
+  occDisc(S, own, cx, cy, Math.max(0.01, R - 0.02), dep);
+  const { d1, d2, da } = frameOf(P, F.cam);
+  const nAt = (x, y) => { const nx = (x - cx) / R, ny = (y - cy) / R; return [nx, ny, Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny))]; };
+  const lit = (x, y) => dot3(nAt(x, y), l), inD = (x, y, m) => (x - cx) ** 2 + (y - cy) ** 2 <= (R - m) ** 2;
+  const sph = (phi, lam) => { const cp = Math.cos(phi), sp = Math.sin(phi), cl = Math.cos(lam), sl = Math.sin(lam); return [cp * (cl * d1[0] + sl * d2[0]) + sp * da[0], cp * (cl * d1[1] + sl * d2[1]) + sp * da[1], cp * (cl * d1[2] + sl * d2[2]) + sp * da[2]]; };
+  const sphLine = (pt, n, closed, keep, layer) => {
+    const p = [], ok = [];
+    for (let k = 0; k < n; k++) { const v = pt(closed ? k / n : k / (n - 1)), q = [cx + R * v[0], cy + R * v[1]]; p.push(q); ok.push(v[2] > 0.03 && keep(v)); }
+    for (const r of split(p, closed, ok, 0.5)) put(S, layer, r.p, r.closed, body);
+  };
+  const litV = v => dot3(v, l), lxy = Math.hypot(l[0], l[1]), hl = lxy > 0.05 ? Math.atan2(l[0], -l[1]) : 0.8;
+  if (R >= 0.9) {
+    if (P.kind === "rocky" && R >= 2.2) {
+      const cr = [], nC = clamp(Math.round(R * 1.4), 3, 24);
+      for (let t = 0; t < nC * 12 && cr.length < nC; t++) {
+        const phi = Math.asin(2 * rnd() - 1), lam = rnd() * TAU, ac = 0.05 + 0.17 * Math.pow(rnd(), 1.6);
+        if (R * Math.sin(ac) < 0.55) continue;
+        if (cr.some(c => Math.acos(clamp(Math.sin(phi) * Math.sin(c.phi) + Math.cos(phi) * Math.cos(c.phi) * Math.cos(lam - c.lam), -1, 1)) < ac + c.ac + 0.04)) continue;
+        cr.push({ phi, lam, ac });
+      }
+      for (const c of cr) {
+        const v0 = sph(c.phi, c.lam); if (v0[2] < -0.2) continue;
+        let e1 = cross3(v0, [0, 0, 1]); if (Math.hypot(...e1) < 1e-3) e1 = [1, 0, 0]; e1 = norm3(e1); const e2 = cross3(v0, e1);
+        const ring = a => t => { const ca = Math.cos(a), sa = Math.sin(a), ct = Math.cos(t * TAU), st = Math.sin(t * TAU); return [0, 1, 2].map(i => v0[i] * ca + sa * (ct * e1[i] + st * e2[i])); };
+        sphLine(ring(c.ac), clamp(Math.ceil(TAU * R * Math.sin(c.ac) / 0.35), 12, 90), true, v => litV(v) > -0.12, "shade");
+        if (c.ac > 0.11 && R * Math.sin(0.35 * c.ac) > 0.45) sphLine(ring(0.35 * c.ac), 24, true, v => litV(v) > -0.12, "shade");
+      }
+    } else if (P.kind === "gas" || P.kind === "ice") {
+      const gas = P.kind === "gas", gap = gas ? Math.max(0.09, pitch * 1.7 / R) : 0.5, bands = []; let lat = -1.2 + rnd() * 0.15;
+      while (lat < 1.2) { bands.push(lat); lat += gap * (1 + rnd() * (gas ? 1.6 : 0.8)); }
+      const amp = Math.min(0.05, gap * 0.16) * (gas ? 1 : 0.3); let storm = null;
+      if (gas && R >= 4) {
+        const sl = (rnd() < 0.5 ? -1 : 1) * (0.25 + 0.3 * rnd()), sn = rnd() * TAU, ra = 0.2 + 0.08 * rnd(), rb = ra * 0.55, v0 = sph(sl, sn), e1 = norm3(cross3(da, v0)), e2 = cross3(v0, e1);
+        storm = { v0, e1, e2, ra, rb };
+      }
+      const inStorm = v => { if (!storm || dot3(v, storm.v0) <= 0) return false; const a = dot3(v, storm.e1) / (storm.ra * 1.15), b = dot3(v, storm.e2) / (storm.rb * 1.15); return a * a + b * b < 1; };
+      for (const b of bands) {
+        const k1 = 2 + Math.floor(rnd() * 4), k2 = 7 + Math.floor(rnd() * 5), p1 = rnd() * TAU, p2 = rnd() * TAU, n = clamp(Math.ceil(TAU * R / 0.35), 90, 900);
+        sphLine(t => { const lam = t * TAU; return sph(b + amp * (0.7 * Math.sin(k1 * lam + p1) + 0.3 * Math.sin(k2 * lam + p2)), lam); }, n, true, v => litV(v) > -0.1 && !inStorm(v), "shade");
+      }
+      if (storm) {
+        const oval = k => t => { const a = k * storm.ra * Math.cos(t * TAU), b = k * storm.rb * Math.sin(t * TAU), c = Math.sqrt(Math.max(0, 1 - a * a - b * b)); return norm3([0, 1, 2].map(i => storm.v0[i] * c + a * storm.e1[i] + b * storm.e2[i])); };
+        sphLine(oval(1), 80, true, v => litV(v) > -0.1, "shade");
+        if (R * storm.rb * 0.5 >= pitch * 0.9) sphLine(oval(0.5), 50, true, v => litV(v) > -0.1, "shade");
+      }
+    }
+  }
+  if (R >= pitch * 1.6) {                                        // night side: hatch parallel to the terminator, crosshatch in the deepest dark
+    const out = [];
+    const lv = R < 8 ? [0, -0.4] : [0, -0.3, -0.62], sp = pitch * lv.length;   // interleaved sets: the spacing narrows toward the deepest shadow and never drops below the pitch
+    lv.forEach((th, i) => hatchRuns(cx, cy, R, hl, sp, (x, y) => inD(x, y, 0.15) && lit(x, y) < th, out, 0.3, 0.6, i * pitch));
+    for (const p of out) put(S, "shade", p, false, body);
+  }
+  if (P.ring) {
+    const r1 = P.ring.r1, r2 = P.ring.r2, dz = Math.max(Math.abs(da[2]), 0.12), M = d1[0] * d2[1] - d2[0] * d1[1];
+    const band = (x, y) => { const qx = (x - cx) / R, qy = (y - cy) / R, al = (qx * d2[1] - qy * d2[0]) / M, be = (d1[0] * qy - d1[1] * qx) / M; return [Math.hypot(al, be), al * d1[2] + be * d2[2]]; };
+    const m = clamp(Math.floor((r2 - r1) * R * dz / (pitch * 1.15)), 1, 10);
+    for (let k = 0; k <= m; k++) {
+      const rr = r1 + (r2 - r1) * k / m, n = clamp(Math.ceil(TAU * rr * R / 0.35), 60, 1600), p = [], dd = [], okF = [], okB = [];
+      for (let j = 0; j < n; j++) {
+        const th = TAU * j / n, ct = Math.cos(th), st = Math.sin(th), wz = rr * (ct * d1[2] + st * d2[2]);
+        p.push([cx + R * rr * (ct * d1[0] + st * d2[0]), cy + R * rr * (ct * d1[1] + st * d2[1])]); dd.push(dep + Rw * wz); okF.push(wz >= 0); okB.push(wz < 0);
+      }
+      for (const r of split(p, true, okF, 0.3, dd)) put(S, "col", r.p, r.closed, { d: r.d, wy: F.wy, tag: "ringf:" + id });
+      for (const r of split(p, true, okB, 0.3, dd)) put(S, "col", r.p, r.closed, { d: r.d, wy: F.wy, tag: "ringb:" + id });
+    }
+    S.occs.push({ id: "rf" + id, tagOnly: tag, dep: Infinity, bb: [cx - R * r2, cy - R * r2, cx + R * r2, cy + R * r2], test: (x, y) => { const [rho, z] = band(x, y); return z > 0 && rho >= r1 && rho <= r2; } });
+    S.rings.push({ i: id, cx, cy, R, r1, r2, band });
+    if (R >= 2 && R >= pitch * 1.6) {                            // the ring's shadow on the lit disc, traced by sending each surface point's ray toward the light through the ring plane
+      const ld = dot3(l, da), shadowed = (x, y) => {
+        if (Math.abs(ld) < 0.02) return false; const n = nAt(x, y), t = -dot3(n, da) / ld; if (t <= 0) return false;
+        const rho = Math.hypot(n[0] + t * l[0], n[1] + t * l[1], n[2] + t * l[2]); return rho >= r1 && rho <= r2;
+      };
+      const out = []; hatchRuns(cx, cy, R, Math.atan2(da[0], -da[1]), pitch, (x, y) => inD(x, y, 0.15) && lit(x, y) > 0.05 && shadowed(x, y), out);
+      for (const p of out) put(S, "shade", p, false, body);
+    }
+  }
+  (F.moons || P.moons).forEach((mm, j) => {
+    const th = mm.th, ro = R * mm.mo, ct = Math.cos(th), st = Math.sin(th), w = [ct * d1[0] + st * d2[0], ct * d1[1] + st * d2[1], ct * d1[2] + st * d2[2]];
+    const Rm = Math.max(0.7, R * mm.mr), mid = id + "_" + j;
+    moonAt(S, mid, cx + ro * w[0], cy + ro * w[1], Rm, dep + Rw * mm.mo * w[2], l, pitch, F.wy);
+    if (F.moonOrbits) {
+      const n = clamp(Math.ceil(TAU * ro / 0.5), 60, 900), p = [], dd = [];
+      for (let k = 0; k < n; k++) { const a = TAU * k / n, c2 = Math.cos(a), s2 = Math.sin(a); p.push([cx + ro * (c2 * d1[0] + s2 * d2[0]), cy + ro * (c2 * d1[1] + s2 * d2[1])]); dd.push(dep + Rw * mm.mo * (c2 * d1[2] + s2 * d2[2])); }
+      put(S, "shade", p, true, { d: dd, wy: F.wy, force: ["md" + mid], dash: 1.3, tag: "morb" });
+    }
+  });
+}
+
+// ---------------- the system (world units: outermost orbit about 100, the planet plane is Z = 0) ----------------
+function orbitPts(a, ecc, om, inc, Z0, n) {
+  const pts = [], co = Math.cos(om), so = Math.sin(om), ci = Math.cos(inc), si = Math.sin(inc);
+  for (let k = 0; k < n; k++) {
+    const nu = TAU * k / n, r = a * (1 - ecc * ecc) / (1 + ecc * Math.cos(nu)), xo = r * Math.cos(nu), yo = r * Math.sin(nu) * ci, zo = r * Math.sin(nu) * si;
+    pts.push([xo * co - yo * so, xo * so + yo * co, Z0 + zo]);
+  }
+  return pts;
+}
+const posOn = (a, ecc, om, inc, nu) => { const r = a * (1 - ecc * ecc) / (1 + ecc * Math.cos(nu)), xo = r * Math.cos(nu), yo = r * Math.sin(nu) * Math.cos(inc), zo = r * Math.sin(nu) * Math.sin(inc), co = Math.cos(om), so = Math.sin(om); return [xo * co - yo * so, xo * so + yo * co, zo]; };
+
+function makeSystem(o, W, H) {
+  const r0 = mulberry32(o.seed * 7919 + 13), R = () => r0();
+  const sk = Object.keys(STAR_T), pick = sk[Math.floor(R() * sk.length)], stype = o.star === "auto" ? pick : o.star, ST = STAR_T[stype];
+  const cor = o.corona === "auto" ? ST.corona : o.corona, Rs = 9 * ST.size, Rx = Rs * (cor === "cells" ? 1.1 : 2.05);
+  const n = o.nplan, gr = 1 + R() * 0.2;
+  const frost = clamp(Math.round(n * (0.32 + 0.25 * R())), 1, n - 1);
+  const beltOn = n >= 3 && (o.belt === "on" || (o.belt === "auto" && R() < 0.7));
+  let kb = frost; if (R() < 0.3) kb = 1 + Math.floor(R() * (n - 1));
+  const kinds = []; let giants = 0;
+  for (let k = 0; k < n; k++) {
+    if (k < frost) { kinds.push("rocky"); R(); R(); continue; }
+    const g = giants < 1 + Math.round(R() * 1.5) ? "gas" : "ice"; if (g === "gas") giants++;
+    kinds.push(R() < 0.22 ? (g === "gas" ? "ice" : "gas") : g);
+  }
+  // Artistic scale: planets are drawn large, and each orbit is spaced from the last by the room the planets need (extent = radius x rings and moons).
+  const planets = [], ecc = [];
+  for (let k = 0; k < n; k++) {
+    const kind = kinds[k];
+    const pr = kind === "rocky" ? 2.4 + 1.0 * R() : kind === "gas" ? 6 + 2.4 * R() : 4.5 + 1.5 * R();
+    const raw = kind === "rocky" ? 0.9 + 1.5 * R() : kind === "gas" ? 4.6 + 2.6 * R() : 3 + 1.6 * R();
+    const ringP = o.rings === "none" ? 0 : o.rings === "many" ? (kind === "gas" ? 1 : kind === "ice" ? 0.8 : 0.35) : (kind === "gas" ? 0.7 : kind === "ice" ? 0.3 : 0.03);
+    const rr1 = R(), rr2 = R(), ringRoll = R();
+    const ring = ringRoll < ringP ? { r1: 1.35 + 0.35 * rr1, r2: 1.35 + 0.35 * rr1 + 0.35 + 0.4 * rr2 } : null;
+    const maxM = kind === "gas" ? 6 : kind === "ice" ? 4 : 2, mRoll = R(), nm = clamp(Math.min(o.moons, Math.round(mRoll * maxM + (kind === "gas" ? 0.8 : 0))), 0, 6);
+    const first = ring ? ring.r2 + 0.3 : 1.55, moons = [];
+    for (let j = 0; j < nm; j++) moons.push({ mo: first + 0.34 * j, mr: kind === "rocky" ? 0.14 + 0.08 * R() : 0.12 + 0.16 * R(), th: R() * TAU });
+    const E = Math.max(1, ring ? ring.r2 : 1, moons.length ? moons.at(-1).mo + moons.at(-1).mr : 1);
+    const tau = kind === "ice" ? 1.05 + R() * 0.6 : kind === "gas" ? R() * 0.5 : R() * 0.45;
+    ecc.push(R() * 0.03);
+    planets.push({ i: k, kind, raw, pr, E, ring, moons, tau, chi: R() * TAU, seed: Math.floor(R() * 1e9), ecc: ecc[k], om: R() * TAU, target: k * 2.4 + 0.6 * R() });
+  }
+  const wb = 3.2; let belt = null;
+  planets.forEach((P, k) => {
+    const ext = P.pr * 1.15, e = P.ecc, prev = planets[k - 1], pext = prev ? prev.pr * 1.15 : 0;
+    if (k === 0) P.a = (Rx + ext * 1.08 + 2.5) / (1 - e);
+    else if (beltOn && k === kb) { const inner = prev.a * (1 + prev.ecc) + pext * 1.08 + 1.5; belt = { rb: inner + wb, wb, kb }; P.a = (inner + 2 * wb + ext * 1.08 + 1.5) / (1 - e); }
+    else P.a = (prev.a * (1 + prev.ecc) + Math.max(pext, ext) * 1.08 + 1.5 * Math.pow(gr, k) + 1.2) / (1 - e);
+    P.nu = (((P.target - P.om) % TAU) + TAU) % TAU;
+  });
+  const last = planets.at(-1), rOut = last.a * (1 + last.ecc) + last.pr * last.E * 0.8;
+  let subject = planets.findIndex(p => p.kind === "gas"); if (subject < 0) subject = planets.reduce((b, p, i) => p.raw > planets[b].raw ? i : b, 0);
+  const cometOn = o.comet === "on" || (o.comet === "auto" && R() < 0.35);
+  let ac = rOut * (0.55 + 0.25 * R()), ec = 0.62 + 0.2 * R(); const qmin = Rx * 1.4 + 6;
+  if (ac * (1 - ec) < qmin) ec = 1 - qmin / ac; if (ac * (1 + ec) > 1.05 * rOut) ac = 1.05 * rOut / (1 + ec);
+  const comet = cometOn ? { a: ac, ecc: ec, om: R() * TAU, inc: (R() - 0.5) * 0.9, nu0: R() * TAU } : null;
+  const binOn = o.binary === "on" || (o.binary === "auto" && R() < 0.2), ctype = sk[Math.floor(R() * sk.length)], CT = STAR_T[ctype];
+  const Rc = Math.max(4, Rs * (0.4 + 0.35 * R())), jit = (R() - 0.5) * 0.3;
+  const ang = H > W * 1.1 ? (R() < 0.5 ? -1 : 1) * Math.PI / 2 + jit : W > H * 1.1 ? (R() < 0.5 ? 0 : Math.PI) + jit * 0.5 : Math.PI / 4 + Math.floor(R() * 4) * Math.PI / 2 + jit * 0.3;
+  const comp = binOn ? { Rc, cor: CT.corona, ang, dist: rOut + 8 + Rc * 1.85, seed: Math.floor(R() * 1e9) } : null;
+  return { stype, cor, Rs, Rx, planets, belt, comet, comp, subject, rOut, seed: Math.floor(R() * 1e9) };
+}
+
+// ---------------- asteroids ----------------
+function asteroid(S, x, y, ra, dep, rnd, pitch, wy) {
+  const nv = 5 + Math.floor(rnd() * 4), ph = rnd() * TAU, poly = [];
+  for (let k = 0; k < nv; k++) { const a = ph + TAU * (k + (rnd() - 0.5) * 0.5) / nv, rr = ra * (0.65 + 0.7 * rnd()); poly.push([x + rr * Math.cos(a), y + rr * Math.sin(a)]); }
+  put(S, "shade", poly, true, { atomic: true, d: dep, wy, tag: "rock" });
+  if (ra >= 0.95) {
+    const out = []; hatchRuns(x, y, ra * 1.4, rnd() * Math.PI, Math.max(pitch, 0.6), (px, py) => pip(poly, px, py) && Math.hypot(px - x, py - y) < ra * 0.7, out, 0.3, 0.4);
+    for (const p of out) put(S, "shade", p, false, { atomic: true, d: dep, wy, tag: "rock" });
+  }
+}
+function scatterRocks(S, N, rnd, sample, pitch, avoid) {   // sample() returns [x, y, dep, wy] or null; density thins by the caller's rule
+  const grid = new Map(), key = (i, j) => i + "," + j; let placed = 0;
+  for (let t = 0; t < N * 10 && placed < N; t++) {
+    const q = sample(); if (!q) continue;
+    const big = rnd() < 0.16, ra = big ? 1.0 + 1.0 * rnd() : 0.5 + 0.4 * rnd(), gi = Math.floor(q[0] / 4), gj = Math.floor(q[1] / 4);
+    let bad = avoid ? avoid(q[0], q[1], ra) : false;
+    for (let i = -1; i <= 1 && !bad; i++) for (let j = -1; j <= 1 && !bad; j++) for (const b of grid.get(key(gi + i, gj + j)) || []) if (Math.hypot(b[0] - q[0], b[1] - q[1]) < ra + b[2] + 0.25) { bad = true; break; }
+    if (bad) continue;
+    const kk = key(gi, gj); if (!grid.has(kk)) grid.set(kk, []); grid.get(kk).push([q[0], q[1], ra]);
+    asteroid(S, q[0], q[1], ra, q[2], rnd, pitch, q[3]); placed++;
+  }
+  return placed;
+}
+
+// ---------------- views ----------------
+function add3(S, cam, layer, pts3, closed, o) {
+  const p = [], d = [], wy = [];
+  for (const [X, Y, Z] of pts3) { const q = cam.proj(X, Y, Z); p.push([q[0], q[1]]); d.push(q[2]); wy.push(Y); }
+  put(S, layer, p, closed, Object.assign({ d, wy }, o || {}));
+}
+const dense3 = (pts, closed, step) => { const out = [], n = pts.length, segs = closed ? n : n - 1; for (let i = 0; i < segs; i++) { const a = pts[i], b = pts[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / step)); for (let j = 0; j < k; j++) out.push([a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k, a[2] + (b[2] - a[2]) * j / k]); } if (!closed) out.push(pts.at(-1)); return out; };
+
+function fitCam(pointsFn, e, persp, W, H, mg, D) {
+  const cam1 = makeCam(e, persp, 1, 0, 0, D); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  pointsFn((X, Y, Z, pad) => { const q = cam1.proj(X, Y, Z), pd = (pad || 0) * q[3]; x0 = Math.min(x0, q[0] - pd); x1 = Math.max(x1, q[0] + pd); y0 = Math.min(y0, q[1] - pd); y1 = Math.max(y1, q[1] + pd); });
+  const s = Math.min((W - 2 * mg) / (x1 - x0), (H - 2 * mg) / (y1 - y0));
+  return makeCam(e, persp, s, W / 2 - s * (x0 + x1) / 2, H / 2 - s * (y0 + y1) / 2, D);
+}
+
+function skyView(S, o, sys, W, H, mg, info) {
+  const plan = o.view === "plan", e = plan ? 90 : o.tilt, persp = !plan && o.lens === "persp", D = 320, pitch = o.pitch, rnd = mulberry32(o.seed * 131 + 9);
+  const posP = P => posOn(P.a, P.ecc, P.om, 0, P.nu);
+  const cam = fitCam(f => {
+    f(0, 0, 0, sys.Rx);
+    for (const P of sys.planets) { for (const [X, Y, Z] of orbitPts(P.a, P.ecc, P.om, 0, 0, 72)) f(X, Y, Z, 0); const [X, Y, Z] = posP(P); f(X, Y, Z, P.pr * Math.min(P.E, 2.2)); }
+    if (sys.belt) { for (let k = 0; k < 48; k++) { const a = TAU * k / 48; f((sys.belt.rb + sys.belt.wb) * Math.cos(a), (sys.belt.rb + sys.belt.wb) * Math.sin(a), 0, 1); } }
+    if (sys.comet) for (const [X, Y, Z] of orbitPts(sys.comet.a, sys.comet.ecc, sys.comet.om, sys.comet.inc, 0, 48)) f(X, Y, Z, 0);
+    if (sys.comp) f(sys.comp.dist * Math.cos(sys.comp.ang), sys.comp.dist * Math.sin(sys.comp.ang), 0, sys.comp.Rc * 1.7);
+  }, e, persp, W, H, mg, D);
+  const s = cam.s, cs = cam.proj(0, 0, 0);
+  drawStar(S, [cs[0], cs[1]], sys.Rs * s, sys.cor, sys.seed, pitch, cs[2], 0, {});
+  info.starR = sys.Rs * s;
+  if (sys.comp) {
+    const X = sys.comp.dist * Math.cos(sys.comp.ang), Y = sys.comp.dist * Math.sin(sys.comp.ang), q = cam.proj(X, Y, 0);
+    drawStar(S, [q[0], q[1]], sys.comp.Rc * s * q[3], sys.comp.cor, sys.comp.seed, pitch, q[2], Y, { id: "star2" });
+  }
+  const orbLayer = o.orbitcol === "on" ? "col" : "key", dash = o.orbits === "dashed" ? 2.4 : 0;
+  if (o.orbits !== "none") sys.planets.forEach(P => {
+    const n = clamp(Math.ceil(TAU * P.a * s * 1.05 / 0.4), 90, 2400);
+    add3(S, cam, orbLayer, orbitPts(P.a, P.ecc, P.om, 0, 0, n), true, { force: ["pd" + P.i], dash, tag: "orbit" });
+  });
+  if (sys.belt) {
+    const B = sys.belt;
+    scatterRocks(S, o.nbelt, rnd, () => {
+      const u = rnd() * 2 - 1, a = rnd() * TAU; if (rnd() > 1 - u * u * 0.85) return null;
+      const r = B.rb + u * B.wb, X = r * Math.cos(a), Y = r * Math.sin(a), Z = (rnd() - 0.5) * B.wb * 0.3, q = cam.proj(X, Y, Z); return [q[0], q[1], q[2], Y];
+    }, pitch, null);
+  }
+  const pcam = plan ? makeCam(o.look, false, 1, 0, 0, D) : cam;
+  sys.planets.forEach(P => {
+    const [X, Y] = posP(P), q = cam.proj(X, Y, 0), R = P.pr * s * q[3];
+    let l; if (plan) { const dx = cs[0] - q[0], dy = cs[1] - q[1], L = Math.hypot(dx, dy) || 1; l = [dx / L, dy / L, 0]; } else l = norm3(cam.dir(-X, -Y, 0));
+    P.scr = { x: q[0], y: q[1], R, dep: q[2], ext: P.pr * P.E * s * q[3] };
+    drawPlanet(S, P, { c: [q[0], q[1]], R, dep: q[2], Rw: P.pr, l, id: P.i, cam: pcam, wy: Y, moonOrbits: true }, pitch);
+    if (o.shadows === "on") {                                     // a small wedge of hatching cast outward from the star
+      const r = Math.hypot(X, Y) || 1, dx = X / r, dy = Y / r, nx = -dy, ny = dx, pr = P.pr, Ls = pr * 1.2 + 1.5;
+      const at = (d, hw, side) => cam.proj(X + dx * d + nx * hw * side, Y + dy * d + ny * hw * side, 0);
+      const a0 = cam.proj(X + dx * pr, Y + dy * pr, 0), a1 = cam.proj(X + dx * (pr + Ls), Y + dy * (pr + Ls), 0), La = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]), nl = Math.floor(La / pitch);
+      for (let k = 0; nl >= 2 && k < nl; k++) {
+        const d = pr + Ls * (k + 0.5) / nl, hw = pr * (1 - 0.5 * (d - pr) / Ls), A = at(d, hw, 1), B = at(d, hw, -1);
+        put(S, "shade", lineS([A[0], A[1]], [B[0], B[1]], 0.4), false, { d: (A[2] + B[2]) / 2 - 0.001, wy: Y + dy * d, tag: "shadow" });
+      }
+    }
+  });
+  if (sys.comet) drawComet(S, cam, sys, o, s, cs, rnd, pitch, mg, W, H);
+  info.cam = cam;
+}
+
+function drawComet(S, cam, sys, o, s, cs, rnd, pitch, mg, W, H) {
+  const C = sys.comet, bx0 = mg, by0 = mg, bx1 = W - mg, by1 = H - mg; let best = null;
+  for (let k = 0; k < 36; k++) {
+    const nu = TAU * k / 36 + C.nu0, [X, Y, Z] = posOn(C.a, C.ecc, C.om, C.inc, nu), q = cam.proj(X, Y, Z), dw = Math.hypot(X, Y, Z);
+    let dx = q[0] - cs[0], dy = q[1] - cs[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+    const tx = dx > 0 ? (bx1 - q[0]) / dx : dx < 0 ? (bx0 - q[0]) / dx : 1e9, ty = dy > 0 ? (by1 - q[1]) / dy : dy < 0 ? (by0 - q[1]) / dy : 1e9, Lbox = Math.min(tx, ty);
+    if (q[0] < bx0 + 6 || q[0] > bx1 - 6 || q[1] < by0 + 6 || q[1] > by1 - 6) continue;
+    const Lt = clamp(70 * Math.sqrt(50 / dw), 42, 80);
+    let near = 0; for (const P of sys.planets) if (P.scr && Math.hypot(P.scr.x - q[0], P.scr.y - q[1]) < P.scr.ext + 8) near = 1;
+    const score = Math.min(Lbox - 2, Lt) - near * 100 + rnd() * 4; if (!best || score > best.score) best = { score, nu, q, X, Y, Z, dx, dy, Lt, Lbox, dw };
+  }
+  if (!best) return;
+  const { q, dx, dy } = best, L = Math.max(6, Math.min(best.Lt, best.Lbox - 2)), Rn = 1.25, dep = q[2], wy = best.Y, nrm = [-dy, dx];
+  const o0 = { d: dep, wy, tag: "comet" };
+  put(S, "key", circ(q[0], q[1], Rn, 0.3), true, o0);
+  const tail = (x, y) => [q[0] + dx * x + nrm[0] * y, q[1] + dy * x + nrm[1] * y];
+  const toStar = Math.atan2(-dy, -dx); const arc = []; for (let k = 0; k <= 14; k++) { const a = toStar - 1.2 + 2.4 * k / 14; arc.push([q[0] + 2.5 * Math.cos(a), q[1] + 2.5 * Math.sin(a)]); }
+  put(S, "shade", arc, false, o0);
+  const nD = Math.max(3, Math.min(7, Math.floor(1 + 6.7 / pitch))), delta = ((nD - 1) * pitch * 1.15 / 2) / 3.2;
+  const nb = best.nu, [Xa, Ya, Za] = posOn(C.a, C.ecc, C.om, C.inc, nb + 0.02), qa = cam.proj(Xa, Ya, Za), vx = qa[0] - q[0], vy = qa[1] - q[1];
+  const sgn = (dx * vy - dy * vx) > 0 ? -1 : 1;                 // dust bends toward the side the comet has come from
+  for (let j = 0; j < nD; j++) {
+    const u = nD === 1 ? 0 : (2 * j / (nD - 1) - 1), beta = u * delta, x0 = 3.2 * Math.cos(beta), y0 = 3.2 * Math.sin(beta), Lj = L * (0.55 + 0.45 * rnd()), n = Math.max(8, Math.ceil(Lj / 0.5)), pts = [];
+    for (let k = 0; k <= n; k++) { const t = Lj * k / n; pts.push(tail(x0 + t, y0 + t * 0.25 * u + sgn * 0.2 * L * (t / L) * (t / L))); }
+    put(S, "col", pts, false, o0);
+  }
+  const Li = Math.min(L * 1.12, best.Lbox - 2);
+  for (const yy of [-1, 1]) put(S, "col", lineS(tail(3.6, yy * pitch * 0.65), tail(Li, yy * pitch * 0.65), 0.4), false, o0);
+}
+
+function brassView(S, o, sys, W, H, mg, info) {
+  const e = clamp(o.tilt, 25, 80), pitch = o.pitch, rnd = mulberry32(o.seed * 271 + 5), n = sys.planets.length;
+  const dz = 9, Zi = i => 40 + i * dz, hpBase = 14, rc = 4.5, tk = 3;
+  const prb = sys.planets.map(P => P.pr * 1.05), Rb = Math.min(sys.Rs * 1.1, 13), rod = 4, posP = P => posOn(P.a, P.ecc, P.om, 0, P.nu);
+  const Zgear1 = hpBase + tk, Zgear2 = Zgear1 + tk + 0.4, ZcolTop = Zi(n - 1) + 10, Zs = ZcolTop + Rb * 0.85;
+  const steps = [[50, 0, 5], [42, 5, 10], [34, 10, hpBase]];
+  const cam = fitCam(f => {
+    f(0, 0, Zs, Rb * 1.9);
+    for (const [Rr, z0, z1] of steps) for (let k = 0; k < 48; k++) { const a = TAU * k / 48; f(Rr * Math.cos(a), Rr * Math.sin(a), z0, 0); f(Rr * Math.cos(a), Rr * Math.sin(a), z1, 0); }
+    sys.planets.forEach((P, i) => { for (const [X, Y] of orbitPts(P.a, P.ecc, P.om, 0, 0, 72)) f(X, Y, Zi(i), 0); const [X, Y] = posP(P); f(X, Y, Zi(i) - rod - prb[i], prb[i] * (P.ring ? P.ring.r2 : 1.1)); });
+  }, e, false, W, H, mg, 320);
+  const s = cam.s, se = cam.se, ce = cam.ce, step = 0.4 / s;
+  const planeDep = Z => (x, y) => ((y - cam.oy) / s) * ce / se + Z / se;
+  const prj = (X, Y, Z) => { const q = cam.proj(X, Y, Z); return [q[0], q[1]]; };
+  const bbOf = poly => { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of poly) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } return [x0, y0, x1, y1]; };
+  // stepped base
+  const baseBg = [];
+  for (const [Rr, z0, z1] of steps) {
+    const top = circ(0, 0, Rr, 0.4);
+    add3(S, cam, "key", dense3(top.map(([x, y]) => [x, y, z1]), true, step), true, { tag: "plinth" });
+    const front = []; for (let k = 0; k <= 60; k++) { const a = Math.PI * k / 60; front.push([Rr * Math.cos(a), Rr * Math.sin(a), z0]); }
+    add3(S, cam, "key", dense3(front, false, step), false, { tag: "plinth" });
+    for (const sx of [-1, 1]) add3(S, cam, "key", dense3([[sx * Rr, 0, z0], [sx * Rr, 0, z1]], false, step), false, { tag: "plinth" });
+    for (let k = 0; k < 48; k++) { const a = TAU * k / 48; baseBg.push(prj(Rr * Math.cos(a), Rr * Math.sin(a), z0), prj(Rr * Math.cos(a), Rr * Math.sin(a), z1)); }
+  }
+  occPoly(S, "drum", hull(baseBg), { dep: -1e8 });
+  // gear train: four meshing involute gears on two levels
+  const mw = 1.25 / s, zz = R => Math.max(10, Math.round(2 * R / mw)), R1 = 21, R2 = 11, R3 = 13, R4 = 8;
+  const z1 = zz(R1), z2 = zz(R2), z3 = zz(R3), z4 = zz(R4), phi12 = rnd() * TAU, phi34 = phi12 + Math.PI * (0.65 + 0.3 * rnd());
+  const mesh = (za, zb, phi, ra) => { const ph = ((phi - ra) / (TAU / za)) % 1; return phi + Math.PI - (TAU / zb) * (0.5 - ph); };
+  const gears = [
+    { id: "g1", z: z1, cx: 0, cy: 0, rot: 0, Z: Zgear1, ex: ["g2t"] },
+    { id: "g2", z: z2, cx: (z1 + z2) * mw / 2 * Math.cos(phi12), cy: (z1 + z2) * mw / 2 * Math.sin(phi12), rot: mesh(z1, z2, phi12, 0), Z: Zgear1, ex: ["g1t"] },
+    { id: "g3", z: z3, cx: 0, cy: 0, rot: 0.3, Z: Zgear2, ex: ["g4t"] },
+    { id: "g4", z: z4, cx: (z3 + z4) * mw / 2 * Math.cos(phi34), cy: (z3 + z4) * mw / 2 * Math.sin(phi34), rot: mesh(z3, z4, phi34, 0.3), Z: Zgear2, ex: ["g3t"] },
+  ];
+  info.gears = gears.map(g => g.z);
+  for (const g of gears) {
+    const base = toothOutline(g.z, mw), c = Math.cos(g.rot), sn = Math.sin(g.rot), out3 = base.map(([x, y]) => [x * c - y * sn + g.cx, x * sn + y * c + g.cy]), ownT = g.id + "t", ownB = g.id + "b";
+    const topPoly = out3.map(([x, y]) => prj(x, y, g.Z)), botPoly = out3.map(([x, y]) => prj(x, y, g.Z - tk));
+    S.occs.push({ id: ownT, bb: bbOf(topPoly), test: (x, y) => pip(topPoly, x, y), depAt: planeDep(g.Z) });
+    S.occs.push({ id: ownB, bb: bbOf(botPoly), test: (x, y) => pip(botPoly, x, y), depAt: planeDep(g.Z - tk) });
+    add3(S, cam, "key", dense3(out3.map(([x, y]) => [x, y, g.Z]), true, step), true, { ex: [ownT].concat(g.ex), tag: "gear" });
+    add3(S, cam, "key", dense3(out3.map(([x, y]) => [x, y, g.Z - tk]), true, step), true, { ex: [ownB], tag: "gear" });
+    const rMax = Math.max(...out3.map(([x, y]) => Math.hypot(x - g.cx, y - g.cy))), tips = [], N = out3.length, rr = i => Math.hypot(out3[(i + N) % N][0] - g.cx, out3[(i + N) % N][1] - g.cy);
+    out3.forEach(([x, y], i) => { if (rr(i) > rMax * 0.995 && (rr(i - 1) < rMax * 0.995 || rr(i + 1) < rMax * 0.995) && y >= g.cy - 0.1) tips.push([x, y]); });
+    const ext = [out3.reduce((b, p) => p[0] < b[0] ? p : b, out3[0]), out3.reduce((b, p) => p[0] > b[0] ? p : b, out3[0])];
+    for (const [x, y] of tips.concat(ext)) add3(S, cam, "key", dense3([[x, y, g.Z - 0.06], [x, y, g.Z - tk]], false, step), false, { ex: [ownB], tag: "gear" });
+    const Rr = g.z * mw / 2, hubs = [[0, 0, 0.16 * Rr]]; if (Rr * s > 5.5) for (let k = 0; k < 5; k++) { const a = TAU * k / 5 + g.rot; hubs.push([0.58 * Rr * Math.cos(a), 0.58 * Rr * Math.sin(a), 0.14 * Rr]); }
+    for (const [hx, hy, hr] of hubs) if (hr * s > 0.7) add3(S, cam, "key", dense3(circ(0, 0, hr, 0.4).map(([x, y]) => [g.cx + hx + x, g.cy + hy + y, g.Z]), true, step), true, { ex: [ownT].concat(g.ex), tag: "gear" });
+  }
+  // thick central column
+  const Zcol0 = Zgear2, colHull = []; for (let k = 0; k < 36; k++) { const a = TAU * k / 36; colHull.push(prj(rc * Math.cos(a), rc * Math.sin(a), Zcol0), prj(rc * Math.cos(a), rc * Math.sin(a), ZcolTop)); }
+  occPoly(S, "colbg", hull(colHull), { dep: -1e8 });
+  occPoly(S, "col", hull(colHull), { byY: true });
+  for (const sx of [-1, 1]) add3(S, cam, "key", dense3([[sx * rc, 0, Zcol0], [sx * rc, 0, ZcolTop]], false, step), false, { ex: ["col"], tag: "column" });
+  const half = (r, Z, a0, a1) => { const p = []; for (let k = 0; k <= 40; k++) { const a = a0 + (a1 - a0) * k / 40; p.push([r * Math.cos(a), r * Math.sin(a), Z]); } return dense3(p, false, step); };
+  add3(S, cam, "key", half(rc, Zcol0, 0, Math.PI), false, { ex: ["col"], tag: "column" });
+  for (const f of [0.08, 0.3, 0.6]) add3(S, cam, "key", half(rc * 1.4, Zcol0 + (ZcolTop - Zcol0) * f, 0, Math.PI), false, { ex: ["col"], tag: "column" });
+  // star: a big shaded sphere on the column
+  const sq = cam.proj(0, 0, Zs), lS = norm3([-0.7, -0.55, 0.45]);
+  drawStar(S, [sq[0], sq[1]], Rb * s, sys.cor === "cells" ? "rays" : sys.cor, sys.seed, pitch, sq[2], 0, { bare: true, id: "pdsun" });
+  drawPlanet(S, { kind: "sun", seed: sys.seed % 100000, tau: 0.3, chi: 0, ring: null, moons: [] }, { c: [sq[0], sq[1]], R: Rb * s, dep: sq[2], Rw: Rb, l: lS, id: "sun", cam, wy: 0 }, pitch);
+  // arms at their own heights, each with a short drop rod and a shaded ball
+  const orbLayer = o.orbitcol === "on" ? "col" : "key", dash = o.orbits === "dashed" ? 2.4 : 0;
+  sys.planets.forEach((P, i) => {
+    const [X, Y] = posP(P), Z = Zi(i), r = Math.hypot(X, Y) || 1, nx = -Y / r, ny = X / r, hw = 1.15;
+    if (o.orbits !== "none") add3(S, cam, orbLayer, dense3(orbitPts(P.a, P.ecc, P.om, 0, Z, 120), true, step * 2), true, { dash, tag: "orbit", ex: ["col"] });
+    const A0 = [0, 0, Z], A1 = [X, Y, Z], q0 = cam.proj(...A0), q1 = cam.proj(...A1), axx = q1[0] - q0[0], axy = q1[1] - q0[1], len2 = axx * axx + axy * axy || 1, armId = "arm" + i;
+    const corners = [[A0, 1], [A1, 1], [A1, -1], [A0, -1]].map(([A, sd]) => prj(A[0] + nx * hw * sd, A[1] + ny * hw * sd, A[2]));
+    occPoly(S, armId, corners, { depAt: (x, y) => { const t = clamp(((x - q0[0]) * axx + (y - q0[1]) * axy) / len2, 0, 1); return q0[2] + (q1[2] - q0[2]) * t; } });
+    for (const sd of [-1, 1]) add3(S, cam, "key", dense3([[A0[0] + nx * hw * sd, A0[1] + ny * hw * sd, Z], [A1[0] + nx * hw * sd, A1[1] + ny * hw * sd, Z]], false, step), false, { ex: [armId, "col"], tag: "arm" });
+    const hub = (cx, cy, cz, hr) => add3(S, cam, "key", dense3(circ(0, 0, hr, 0.4).map(([x, y]) => [cx + x, cy + y, cz]), true, step), true, { ex: [armId, "col"], tag: "arm" });
+    hub(0, 0, Z, rc * 1.5); hub(X, Y, Z, 2.2);
+    const Zc = Z - rod - prb[i], q = cam.proj(X, Y, Zc), Rp = prb[i] * s;
+    const lsc = norm3(cam.dir(-X, -Y, Zs - Zc));
+    const Pb = Object.assign({}, P, { moons: P.moons.slice(0, 2), ring: P.ring && Rp > 3 ? P.ring : null });
+    P.scr = { x: q[0], y: q[1], R: Rp, dep: q[2], ext: Rp };
+    for (const dx of [-0.5, 0.5]) add3(S, cam, "key", dense3([[X + dx, Y, Z], [X + dx, Y, Zc + prb[i]]], false, step), false, { ex: ["pd" + i, armId], tag: "arm" });
+    drawPlanet(S, Pb, { c: [q[0], q[1]], R: Rp, dep: q[2], Rw: prb[i], l: lsc, id: i, cam, wy: Y, moonOrbits: false }, pitch);
+  });
+  info.cam = cam;
+}
+
+function plateView(S, o, sys, W, H, mg, info) {
+  const n = sys.planets.length, pitch = o.pitch, rnd = mulberry32(o.seed * 17 + 3), pc = makeCam(o.look, false, 1, 0, 0, 320), P0 = sys.planets, yc = H * 0.44, gam = 0.62;
+  const rN = P0[n - 1].a, r0 = P0[0].a, Fg = r => Math.pow(r / rN, gam), xEdge = mg + 0.1 * W;
+  const rho = P => P.ring ? P.ring.r2 : 1;
+  let kp = 33 / Math.max(...P0.map(P => P.raw)), xs = null, ext = null;
+  for (let it = 0; it < 120; it++) {
+    ext = P0.map(P => Math.max(1.5, kp * P.raw) * rho(P) + 0.6);
+    const xStart = xEdge + ext[0] + 7, xEnd = W - mg - ext[n - 1], f0 = Fg(r0);
+    xs = P0.map(P => xStart + (xEnd - xStart) * (Fg(P.a) - f0) / (1 - f0));
+    let ok = xEnd > xStart; for (let i = 0; i + 1 < n && ok; i++) if (xs[i + 1] - xs[i] < ext[i] + ext[i + 1] + 2) ok = false;
+    if (ok) break; kp *= 0.96;
+  }
+  const xOf = r => { const xStart = xs[0], xEnd = xs[n - 1], f0 = Fg(r0); return xStart + (xEnd - xStart) * (Fg(r) - f0) / (1 - f0); };
+  info.kp = kp; info.xs = xs; info.ext = ext;
+  // star: a huge arc on the left
+  const Rp = 0.85 * H, sc = [xEdge - Rp, yc];
+  drawStar(S, sc, Rp, sys.cor, sys.seed, pitch, -0.5, 0, { cu: 9, vis: (x, y) => x > mg - 8 && x < W - mg + 8 && y > mg - 8 && y < H - mg + 8, band: 40, cellMax: 3.6, region: [mg, mg, xEdge + 2, H - mg] });
+  // baseline
+  put(S, "shade", lineS([xEdge + 2, yc], [W - mg, yc], 0.4), false, { d: -0.6, tag: "baseline" });
+  const l = norm3([-1, 0, 0.15]), lay = [];
+  P0.forEach((P, i) => {
+    const R = Math.max(1.5, kp * P.raw), x = xs[i];
+    const fr = frameOf(P, pc), eyv = P.ring ? R * P.ring.r2 * Math.max(Math.abs(fr.da[2]), 0.12) + R : R, moons = [];
+    P.scr = { x, y: yc, R, dep: 0, ext: ext[i] - 0.6 };
+    // moons stacked above the planet (they are drawn as separate small discs)
+    let yTop = yc - Math.max(eyv, R) - 2.4;
+    for (let j = 0; j < P.moons.length; j++) { const Rm = Math.max(0.8, R * P.moons[j].mr); if (yTop - 2 * Rm < mg) break; moonAt(S, i + "_" + j, x, yTop - Rm, Rm, 0.2, l, pitch, 0); yTop -= 2 * Rm + 1.6; }
+    drawPlanet(S, Object.assign({}, P, { moons: [] }), { c: [x, yc], R, dep: 0, Rw: R, l, id: i, cam: pc, wy: 0, moonOrbits: false }, pitch);
+    lay.push(eyv);
+  });
+  const yMax = Math.max(...lay) + yc, yNum = Math.min(yMax + 7, H - mg - 22);
+  P0.forEach((P, i) => digitText(S, String(i + 1), xs[i], yNum, 3.6, "key"));
+  // distance scale: ticks every unit, a numeral every five
+  const yT = yNum + 10, au = r => r * 0.38, a0 = Math.ceil(au(r0) - 0.5), a1 = Math.floor(au(rN) + 0.4);
+  put(S, "key", lineS([xOf(a0 / 0.38), yT], [xOf(a1 / 0.38), yT], 0.5), false, { atomic: true, d: -0.5 });
+  for (let v = a0; v <= a1; v++) {
+    const x = xOf(v / 0.38), major = v % 5 === 0;
+    put(S, "key", [[x, yT], [x, yT + (major ? 3.2 : 1.7)]], false, { atomic: true, d: -0.5 });
+    if (major) digitText(S, String(v), x, yT + 7, 2.6, "key");
+  }
+  // belt: a scatter along the baseline in its gap
+  if (sys.belt) {
+    const B = sys.belt, xb = xOf(B.rb), hw = (xOf(B.rb + B.wb) - xOf(B.rb - B.wb)) / 2;
+    scatterRocks(S, Math.round(o.nbelt * 0.5), rnd, () => { const u = rnd() * 2 - 1, v = rnd() * 2 - 1; if (rnd() > 1 - u * u * 0.85 || rnd() > 1 - v * v * 0.6) return null; return [xb + u * hw, yc + v * 0.2 * H, 0, 0]; }, pitch,
+      (x, y, ra) => P0.some((P, i) => Math.hypot(x - xs[i], y - yc) < ext[i] + ra + 1));
+  }
+}
+
+function portraitView(S, o, sys, W, H, mg, info) {
+  const rnd = mulberry32(o.seed * 41 + 2), pitch = o.pitch, P0 = sys.planets[sys.subject], pc = makeCam(o.look, false, 1, 0, 0, 320);
+  const P = Object.assign({}, P0, { kind: P0.kind === "rocky" ? "gas" : P0.kind });
+  if (!P.ring) P.ring = { r1: 1.4 + 0.3 * rnd(), r2: 0 }, P.ring.r2 = P.ring.r1 + 0.55 + 0.5 * rnd();
+  const R = 0.64 * (Math.min(W, H) - 2 * mg) / (2 * P.ring.r2), cx = W / 2, cy = H / 2 + (rnd() - 0.5) * 0.06 * H, box = [mg, mg, W - mg, H - mg];
+  const nm = clamp(Math.max(o.moons, 3), 3, 6), ang = Math.PI + (rnd() - 0.5) * 1.2 - 0.3, l = norm3([Math.cos(ang) * 0.93, Math.sin(ang) * 0.93, 0.35 * (rnd() - 0.4)]);
+  const moons = []; let mo = P.ring.r2 + 0.45; const placed = [{ x: cx, y: cy, r: R * P.ring.r2 * 0.4 }];
+  const fr = frameOf(P, pc);
+  for (let j = 0; j < nm; j++) {
+    const mr = 0.06 + 0.16 * rnd(), Rm = Math.max(0.8, R * mr); let th = rnd() * TAU, ok = false;
+    for (let t = 0; t < 60 && !ok; t++) {
+      th = rnd() * TAU; const c2 = Math.cos(th), s2 = Math.sin(th), x = cx + R * mo * (c2 * fr.d1[0] + s2 * fr.d2[0]), y = cy + R * mo * (c2 * fr.d1[1] + s2 * fr.d2[1]);
+      if (x - Rm < box[0] + 2 || x + Rm > box[2] - 2 || y - Rm < box[1] + 2 || y + Rm > box[3] - 2) continue;
+      if (Math.hypot(x - cx, y - cy) < R * 1.15 + Rm) continue;
+      if (placed.some(q => Math.hypot(q.x - x, q.y - y) < q.r + Rm + 3)) continue;
+      ok = true; placed.push({ x, y, r: Rm });
+    }
+    if (ok) moons.push({ mo, mr, th }); mo += 0.7 + 0.7 * rnd();
+  }
+  P.scr = { x: cx, y: cy, R, dep: 0, ext: R };
+  drawPlanet(S, P, { c: [cx, cy], R, dep: 0, Rw: R, l, id: 0, cam: pc, wy: 0, moons, moonOrbits: true }, pitch);
+  info.subject = P.kind;
+}
+
+// ---------------- star field ----------------
+function starField(S, out, o, W, H, mg, rnd) {
+  const N = o.fdens; if (o.field !== "on" || N <= 0) return null;
+  const S2 = { items: [], occs: S.occs, rings: [] }, cell = 2, agrid = new Map(), ak = (i, j) => i + "," + j;
+  const ins = (x, y) => { const k = ak(Math.floor(x / cell), Math.floor(y / cell)); if (!agrid.has(k)) agrid.set(k, []); agrid.get(k).push([x, y]); };
+  for (const L of ["key", "shade", "col"]) for (const [p, cl] of out[L]) for (let i = 0; i < p.length - (cl ? 0 : 1); i++) {
+    const a = p[i], b = p[(i + 1) % p.length], k = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.9));
+    for (let j = 0; j < k; j++) ins(a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k);
+  }
+  const near = (x, y, r) => { const ci = Math.floor(x / cell), cj = Math.floor(y / cell), m = Math.ceil(r / cell); for (let i = -m; i <= m; i++) for (let j = -m; j <= m; j++) for (const q of agrid.get(ak(ci + i, cj + j)) || []) if ((q[0] - x) ** 2 + (q[1] - y) ** 2 < r * r) return true; return false; };
+  const blocked = (x, y) => { for (const oc of S.occs) { if (oc.tagOnly || oc.byY) continue; if (x < oc.bb[0] || x > oc.bb[2] || y < oc.bb[1] || y > oc.bb[3]) continue; if (oc.test(x, y)) return true; } return false; };
+  const area = (W - 2 * mg) * (H - 2 * mg), dmin = 0.78 * Math.sqrt(area / N), pts = [], pg = new Map(), pk = (i, j) => i + "," + j, pc = dmin / Math.SQRT2;
+  for (let t = 0; t < N * 40 && pts.length < N; t++) {
+    const x = mg + 2 + rnd() * (W - 2 * mg - 4), y = mg + 2 + rnd() * (H - 2 * mg - 4), gi = Math.floor(x / pc), gj = Math.floor(y / pc);
+    let bad = false;
+    for (let i = -2; i <= 2 && !bad; i++) for (let j = -2; j <= 2 && !bad; j++) for (const q of pg.get(pk(gi + i, gj + j)) || []) if ((q[0] - x) ** 2 + (q[1] - y) ** 2 < dmin * dmin) { bad = true; break; }
+    if (bad || near(x, y, 1.8) || blocked(x, y) || blocked(x + 1.6, y) || blocked(x - 1.6, y) || blocked(x, y + 1.6) || blocked(x, y - 1.6)) continue;
+    const kk = pk(gi, gj); if (!pg.has(kk)) pg.set(kk, []); pg.get(kk).push([x, y]);
+    const u = rnd(), sd = { atomic: true, d: -1e9, tag: "star" };
+    if (u < 0.5) put(S2, "shade", circ(x, y, 0.28 + 0.22 * rnd(), 0.2), true, sd);
+    else if (u < 0.85) { const h = 0.7 + 1.1 * rnd(), diag = rnd() < 0.4, c = diag ? Math.SQRT1_2 * h : h; if (diag) { put(S2, "shade", [[x - c, y - c], [x + c, y + c]], false, sd); put(S2, "shade", [[x - c, y + c], [x + c, y - c]], false, sd); } else { put(S2, "shade", [[x - h, y], [x + h, y]], false, sd); put(S2, "shade", [[x, y - h], [x, y + h]], false, sd); } }
+    else { const h = 1.6 + 1.6 * rnd(), g = h * 0.42; put(S2, "shade", [[x - h, y], [x + h, y]], false, sd); put(S2, "shade", [[x, y - h], [x, y + h]], false, sd); put(S2, "shade", [[x - g, y - g], [x + g, y + g]], false, sd); put(S2, "shade", [[x - g, y + g], [x + g, y - g]], false, sd); }
+    pts.push([x, y]);
+  }
+  if (o.constel === "on" && pts.length > 8) {
+    const used = new Set(), start = Math.floor(rnd() * pts.length); let cur = start; used.add(cur); const nc = 5 + Math.floor(rnd() * 3);
+    for (let k = 1; k < nc; k++) {
+      let best = -1, bd = 1e9;
+      for (let i = 0; i < pts.length; i++) { if (used.has(i)) continue; const d = Math.hypot(pts[i][0] - pts[cur][0], pts[i][1] - pts[cur][1]); if (d > 8 && d < 38 && d + rnd() * 6 < bd) { bd = d + rnd() * 6; best = i; } }
+      if (best < 0) break;
+      const a = pts[cur], b = pts[best], L = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L, A = [a[0] + ux * 2.4, a[1] + uy * 2.4], B = [b[0] - ux * 2.4, b[1] - uy * 2.4];
+      let free = true; for (const q of lineS(A, B, 0.8)) if (near(q[0], q[1], 0.9) || blocked(q[0], q[1]) || q[0] < mg || q[0] > W - mg || q[1] < mg || q[1] > H - mg) { free = false; break; }
+      if (free) put(S2, "shade", lineS(A, B, 0.4), false, { d: -1e9, dash: 2, tag: "constellation" });
+      used.add(best); cur = best;
+    }
+  }
+  resolve(S2, [mg, mg, W - mg, H - mg]);
+  return S2;
+}
+
+// ---------------- build ----------------
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "nplan", "star", "corona", "belt", "nbelt", "comet", "binary", "moons", "rings", "view", "tilt", "lens", "look", "orbits", "orbitcol", "shadows", "field", "fdens", "constel", "pitch", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), mg = o.margin, S = newScene(), sys = makeSystem(o, W, H), info = {};
+  if (o.view === "plate") plateView(S, o, sys, W, H, mg, info);
+  else if (o.view === "portrait") portraitView(S, o, sys, W, H, mg, info);
+  else if (o.view === "brass") brassView(S, o, sys, W, H, mg, info);
+  else skyView(S, o, sys, W, H, mg, info);
+  const box = [mg, mg, W - mg, H - mg];
+  resolve(S, box);
+  const res = { key: [], shade: [], col: [] }, collect = (sc) => {
+    for (const it of sc.items) for (const q of it.out || []) {
+      if (it.dash) { const pts = q.closed ? [...q.p, q.p[0]] : q.p; for (const d of dashRun(pts, it.dash, it.dash * 0.75)) res[it.layer].push([d, false]); }
+      else if (plen(q.p, q.closed) >= 0.3 || it.atomic) res[it.layer].push([q.p, q.closed]);
+    }
+  };
+  collect(S);
+  const S2 = starField(S, res, o, W, H, mg, mulberry32(o.seed * 977 + 3)); if (S2) collect(S2);
+  const key = order(res.key), shade = order(res.shade), col = order(res.col);
+  const ms = performance.now() - t0;
+  // ---- gates ----
+  const gates = [];
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000, tot = len(key) + len(shade) + len(col);
+  const npts = [key, shade, col].reduce((a, L) => a + L.reduce((b, [p]) => b + p.length, 0), 0), kb = npts * 16 / 1024;
+  gates.push(["build under 4000 ms", ms < 4000, ms.toFixed(0) + " ms"]);
+  gates.push(["total pen length under 150 m", tot < 150, tot.toFixed(1) + " m"]);
+  gates.push(["SVG under 3 MB (about 16 bytes a point)", kb < 3072, Math.round(kb) + " KB, " + npts + " points"]);
+  let outside = 0; for (const L of [key, shade, col]) for (const [p] of L) for (const [x, y] of p) if (x < mg - 1e-6 || x > W - mg + 1e-6 || y < mg - 1e-6 || y > H - mg + 1e-6) outside++;
+  gates.push(["every line inside the margin box (at least 4 mm from the edge)", outside === 0 && mg >= 4, outside + " points outside"]);
+  // no planet overlaps its neighbour's orbit clearance (measured on the orbit curves in the orbit plane)
+  if (o.view === "portrait") gates.push(["orbit clearance around every planet", true, "n/a, one planet close-up"]);
+  else {
+    let worst = 1e9, bad = 0;
+    const orbits = sys.planets.map(P => orbitPts(P.a, P.ecc, P.om, 0, 0, 240)), belt = sys.belt;
+    sys.planets.forEach((P, i) => {
+      const [X, Y] = posOn(P.a, P.ecc, P.om, 0, P.nu), ext = P.pr * 1.15, r = Math.hypot(X, Y);
+      const clear = [r - sys.Rx];
+      for (const j of [i - 1, i + 1]) if (j >= 0 && j < sys.planets.length) clear.push(Math.min(...orbits[j].map(([x, y]) => Math.hypot(x - X, y - Y))));
+      if (belt) clear.push(Math.max(0, Math.abs(r - belt.rb) - belt.wb));
+      const c = Math.min(...clear) / ext; if (c < worst) worst = c; if (c < 0.999) bad++;
+    });
+    gates.push(["no planet disc reaches a neighbour's orbit, the belt or the star's corona", bad === 0, "tightest clearance " + worst.toFixed(2) + " x its own disc radius (rings and moons may cross an orbit line)"]);
+  }
+  if (o.view === "plan" || o.view === "plate") {
+    let overlaps = 0; const ps = sys.planets.filter(P => P.scr);
+    for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) if (Math.hypot(ps[i].scr.x - ps[j].scr.x, ps[i].scr.y - ps[j].scr.y) < ps[i].scr.R + ps[j].scr.R) overlaps++;
+    gates.push(["no two planet discs overlap on the page", overlaps === 0, overlaps + " overlaps"]);
+  }
+  // rings occlusion: the back half never inside the disc, the disc never seen under the front half
+  {
+    let bN = 0, bBad = 0, fN = 0, fBad = 0;
+    for (const rg of S.rings) for (const it of S.items) {
+      if (it.tag === "ringb:" + rg.i) for (const q of it.out || []) for (const [x, y] of q.p) { bN++; if ((x - rg.cx) ** 2 + (y - rg.cy) ** 2 < (rg.R - 0.03) ** 2) bBad++; }
+      else if (it.tag === "body:" + rg.i) for (const q of it.out || []) for (const [x, y] of q.p) { fN++; const [rho, z] = rg.band(x, y); if (z > 0 && rho >= rg.r1 + 0.03 / rg.R && rho <= rg.r2 - 0.03 / rg.R) fBad++; }
+    }
+    gates.push(["rings occlusion correct", bBad === 0 && fBad === 0, S.rings.length ? `${S.rings.length} ringed, ${bN} back-half points (${bBad} inside a disc), ${fN} disc points (${fBad} under a front ring)` : "no rings in this system"]);
+  }
+  return { W, H, o, ms, key, shade, col, sys, info, gates, rings: S.rings.length, rocks: S.items.filter(it => it.tag === "rock" && it.atomic && it.closed && it.out && it.out.length).length };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.col, "#b0402a", 0.4); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000, sy = r.sys;
+  const kinds = sy.planets.reduce((a, P) => (a[P.kind] = (a[P.kind] || 0) + 1, a), {}), moons = sy.planets.reduce((a, P) => a + P.moons.length, 0);
+  $("stats").innerHTML = `<b>${sy.planets.length}</b> planets (${Object.entries(kinds).map(([k, v]) => v + " " + k).join(", ")}) · ${r.rings} ringed · ${moons} moons · ${sy.stype} star, ${sy.cor} corona${sy.belt ? " · belt of " + r.rocks + " rocks" : ""}${sy.comet ? " · comet" : ""}${sy.comp ? " · second star" : ""} · ${r.ms.toFixed(0)} ms<br>`
+    + `key 0.4 pen: <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · shade 0.3 pen: <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour pen: <b>${len(r.col).toFixed(1)} m</b>, ${r.col.length} paths<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: "b0402a", w: 0.4, paths: r.col }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG Orrery studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const PRESETS = {
+  home: { view: "plan", nplan: 6, star: "yellow", corona: "auto", belt: "on", nbelt: 140, comet: "off", binary: "off", moons: 4, rings: "many", orbits: "dashed", orbitcol: "off", shadows: "on", field: "on", fdens: 170, constel: "on", look: 32, pitch: 0.8, page: "190x250", margin: 10 },
+  closeup: { view: "portrait", nplan: 6, star: "auto", corona: "auto", belt: "off", comet: "off", binary: "off", moons: 5, rings: "many", orbits: "dashed", orbitcol: "off", look: 24, field: "on", fdens: 140, constel: "on", pitch: 0.7, page: "190x250", margin: 10 },
+  tilted: { view: "tilted", nplan: 7, star: "yellow", corona: "rays", belt: "on", nbelt: 150, comet: "off", binary: "off", moons: 4, rings: "many", orbits: "solid", orbitcol: "off", shadows: "on", tilt: 48, lens: "persp", field: "on", fdens: 150, constel: "on", pitch: 0.8, page: "250x190", margin: 10 },
+  plate: { view: "plate", nplan: 5, star: "yellow", corona: "rays", belt: "off", nbelt: 100, comet: "off", binary: "off", moons: 4, rings: "auto", look: 30, field: "off", constel: "off", pitch: 0.8, page: "250x190", margin: 10 },
+  brass: { view: "brass", nplan: 6, star: "yellow", corona: "rays", belt: "off", comet: "off", binary: "off", moons: 2, rings: "many", orbits: "dashed", orbitcol: "on", tilt: 56, field: "on", fdens: 110, constel: "off", pitch: 0.8, page: "190x250", margin: 10 },
+  binary: { view: "plan", nplan: 6, star: "blue", corona: "rays", belt: "on", nbelt: 120, comet: "on", binary: "on", moons: 3, rings: "auto", orbits: "dashed", orbitcol: "on", shadows: "on", look: 34, field: "on", fdens: 190, constel: "on", pitch: 0.8, page: "190x250", margin: 10 },
+  dwarf: { view: "tilted", nplan: 9, star: "red", corona: "rings", belt: "auto", nbelt: 120, comet: "auto", binary: "off", moons: 3, rings: "auto", orbits: "solid", orbitcol: "off", shadows: "off", tilt: 27, lens: "persp", field: "on", fdens: 140, constel: "on", pitch: 0.8, page: "250x190", margin: 10 },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `orrery-s${r.o.seed}-${r.o.view}-n${r.o.nplan}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {   // read the settings an earlier export carried in its <desc>, and put them back on the controls
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
