@@ -25,6 +25,7 @@ export const PAGES = [
   ["island-atlas-studio.html", "Scenes", "Island atlas studio", "Islands nobody has visited, as survey sheets, antique charts, portolans and treasure maps."],
   ["underground-studio.html", "Scenes", "Underground studio", "A cut-away slice of the earth: roots, mycelium, burrows, strata and a buried fossil."],
   ["archaeology-studio.html", "Scenes", "Archaeology studio", "Trench sections, site plans with findspots, a finds sieve and a pottery refit, drawn to excavation conventions."],
+  ["flint-studio.html", "Scenes", "Flint studio", "Stones knapped into handaxes, blade cores, Levallois flakes, arrowheads and scrapers, drawn as lithic illustration plates."],
   ["gear-3d-studio.html", "Gears", "Gear 3D studio", "3D gears under a perspective lens on floors of rays, rings, ripples and Truchet ribbons."],
   ["gear-bam-studio.html", "Gears", "Gear BAM studio", "Comic 3D gears with crosshatched walls, riso halftone tops and extruded sound effects."],
   ["gear-weave-studio.html", "Gears", "Gear weave studio", "Hundreds of overlapping gears woven over and under like chainmail."],
