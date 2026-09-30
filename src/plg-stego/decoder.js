@@ -144,7 +144,8 @@ function readTapped() {
         tapStatus("Finished. Choose a corner to adjust it, or read again.");
       };
       marklessWorker.onerror = () => { cancelMarkless(); tapStatus("The experimental reader could not run. Try another photo or use marked/labelled decoding."); };
-      marklessWorker.postMessage({ image: tapImage, taps, look: $("free-look").value });
+      const count = id => { const n = Math.round(+$(id).value); return n >= 3 && n <= 80 ? n : null; };   // blank or out of range = guess
+      marklessWorker.postMessage({ image: tapImage, taps, look: $("free-look").value, C: count("free-cols"), R: count("free-rows") });
     } catch { cancelMarkless(); tapStatus("This browser could not start the experimental reader. Use marked or labelled decoding."); }
     return;
   }
