@@ -87,7 +87,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 <div class="wrap">
 <aside>
   <fieldset><legend>Starting points</legend>
-    <div class="row"><button data-preset="vc">Visual crypto</button><button data-preset="vcdots">Crypto dots</button><button data-preset="moire">Moire</button><button data-preset="wavy">Wavy moire</button><button data-preset="fleissner">Turning grille</button><button data-preset="cardano">Cardano grille</button></div>
+    <div class="row"><button data-preset="vc">Visual crypto</button><button data-preset="vcdots">Crypto dots</button><button data-preset="moire">Moire</button><button data-preset="wavy">Wavy moire</button><button data-preset="fleissner">Turning grille</button><button data-preset="dial">Dial grille</button><button data-preset="cardano">Cardano grille</button></div>
   </fieldset>
   <fieldset><legend>Message</legend>
     <label>Say <input type="text" id="msg" value="MEET AT NINE" maxlength="120"></label>
@@ -106,6 +106,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="vcrypt">visual cryptography</option>
       <option value="moire">moire reveal</option>
       <option value="fleissner">turning grille (Fleissner)</option>
+      <option value="dial">dial grille (one pin, many stops)</option>
       <option value="cardano">Cardano grille</option>
     </select></label>
     <label data-for="vcrypt moire">Letters per line <output id="o-per"></output><input type="range" id="per" min="2" max="16" step="1" value="6"></label>
@@ -121,6 +122,13 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     </select></label>
     <label data-for="moire">Camouflage jumps <output id="o-noise"></output><input type="range" id="noise" min="0" max="2" step="0.1" value="0.4"></label>
     <label data-for="fleissner cardano">Grid size <output id="o-gsize"></output><input type="range" id="gsize" min="4" max="30" step="1" value="8"></label>
+    <p class="hint" data-for="fleissner">The grid never goes smaller than the message needs, and the card gets exactly enough holes for it: a bigger grid adds decoy letters that no hole ever shows.</p>
+    <label data-for="fleissner">Centre <select id="pivot">
+      <option value="pin">pin through the centre, numbered turns</option>
+      <option value="none">loose card, no pin</option>
+    </select></label>
+    <label data-for="dial">Stops round the dial <output id="o-turns"></output><input type="range" id="turns" min="3" max="8" step="1" value="6"></label>
+    <label data-for="dial">Rings of letters (at least) <output id="o-rings"></output><input type="range" id="rings" min="2" max="8" step="1" value="3"></label>
     <label data-for="cardano">Letters round each real one <select id="density">
       <option value="4">1 in 4</option>
       <option value="3">1 in 3</option>
@@ -135,7 +143,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="base">paper sheet alone</option>
       <option value="overlay">second sheet alone</option>
     </select></label>
-    <label>Slide the second sheet (mm) <output id="o-slide"></output><input type="range" id="slide" min="-4" max="4" step="0.05" value="0"></label>
+    <label data-for="vcrypt moire cardano">Slide the second sheet (mm) <output id="o-slide"></output><input type="range" id="slide" min="-4" max="4" step="0.05" value="0"></label>
+    <label data-for="fleissner dial">Turn the grille on its pin (degrees) <output id="o-turn"></output><input type="range" id="turn" min="0" max="360" step="1" value="0"></label>
     <div class="row"><button id="animate" data-on="0">Slide the clear sheet</button></div>
     <label>Below the drawing <select id="caption">
       <option value="none">nothing</option>
@@ -160,7 +169,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="280x280">280 x 280 (12 x 12 mat)</option>
     </select></label>
     <div class="row"><button class="go" id="export">Export both sheets</button><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
-    <p class="hint">Export writes one SVG per sheet with matching corner ticks. Visual cryptography and moire: plot the second sheet on acetate or tracing paper with a pen that grips it. Grilles: send the grille file to the Cricut as a cut on card.</p>
+    <p class="hint">Export writes one SVG per sheet with matching corner ticks. Visual cryptography and moire: plot the second sheet on acetate or tracing paper with a pen that grips it. Grilles: send the grille file to the Cricut as a cut on card. Pinned grilles turn on a small split pin (brass fastener) pushed through the 2 mm pin hole and the cross on the paper.</p>
   </fieldset>
 </aside>
 <main>

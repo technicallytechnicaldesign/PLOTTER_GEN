@@ -18,6 +18,6 @@ Use the workspace's 02_WORK/plg-stego/build.mjs to rebuild the decoder and hidde
 
 The publisher also supports --homepage-only and --only=page.html for scoped releases. Run 02_WORK/site/verify.mjs and 02_WORK/site/verify-sync.mjs after a full publish to verify specimen fingerprints and desktop/public source parity. Incoming GitHub changes must be reconciled into the corresponding desktop source before regeneration.
 
-The decoder's tap-corner correction uses a previously scanned settings label. The experimental freegrid.js reader for unlabelled plots is included as source; its UI integration remains separate work. Research photos and private workspace records are not published.
+The decoder supports labelled page-corner correction and an experimental unlabelled reader for stitch charts and Truchet arcs. The experimental mode is less accurate and reliable, uses drawing-grid corners, and presents unverified candidate text. It runs locally in a cancellable worker; individual corners can be corrected without starting over. Far-off taps remain unreliable, and automatic scattered-seed search covers 0-4000. Research photos and private workspace records are not published.
 
 Classical ciphers are historical puzzles, not modern security.

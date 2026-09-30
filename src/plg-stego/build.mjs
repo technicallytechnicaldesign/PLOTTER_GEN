@@ -19,13 +19,17 @@ try {
   if (execFileSync("git", ["-C", utp, "status", "--porcelain", "src/engine"], { encoding: "utf8" }).trim()) rev += "+local";
 } catch { /* no git: keep "unknown" */ }
 
+const workerBundle = await build({
+  entryPoints: [path.join(here, "markless-worker.js")], bundle: true, format: "iife", target: "es2020", write: false,
+  alias: { "@utp": path.join(utp, "src/engine") }, logLevel: "warning",
+});
 for (const [entry, template, page] of PAGES) {
   if (!fs.existsSync(path.join(here, entry))) continue;
   const res = await build({
     entryPoints: [path.join(here, entry)],
     bundle: true, format: "iife", target: "es2020", write: false, charset: "utf8", legalComments: "none",
     alias: { "@utp": path.join(utp, "src/engine") },
-    define: { __UTP_REV__: JSON.stringify(rev) },
+    define: { __UTP_REV__: JSON.stringify(rev), __MARKLESS_WORKER__: JSON.stringify(workerBundle.outputFiles[0].text) },
     logLevel: "warning",
   });
   // The page is one inline script, so the bundle may not close or open a script tag of its own.

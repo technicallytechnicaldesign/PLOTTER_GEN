@@ -11,7 +11,7 @@ run() {   # studio page, output stem, preset, then any key=value overrides
 for p in parcel stitches cables scatter motif morse punch truchet bacon; do run stego-plot-studio.html "$R/03_OUTPUT/plg-stego/stego-$p" $p; done
 for p in arcs truchet1704 tenprint ribbons maze bold thread loops ridges pigpen stars disk automaton sierpinski knots; do run cipher-garden-studio.html "$R/03_OUTPUT/plg-stego/cipher-garden/cipher-$p" $p; done
 mkdir -p "$R/03_OUTPUT/plg-stego/overlay"
-for p in vc vcdots moire wavy fleissner cardano; do run overlay-studio.html "$R/03_OUTPUT/plg-stego/overlay/overlay-$p" $p; done
+for p in vc vcdots moire wavy fleissner dial cardano; do run overlay-studio.html "$R/03_OUTPUT/plg-stego/overlay/overlay-$p" $p; done
 mkdir -p "$R/03_OUTPUT/plg-stego/signals"
 for p in hoist flagline flagchart pens semaphore semachart ogham braille tap; do run signal-book-studio.html "$R/03_OUTPUT/plg-stego/signals/signals-$p" $p; done
 # retrofits: the same drawings laid out without marks, with the small marks to plot on afterwards

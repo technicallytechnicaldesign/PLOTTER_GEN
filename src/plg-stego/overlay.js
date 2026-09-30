@@ -2,8 +2,10 @@
 // is plotted on acetate or tracing paper (visual cryptography, moire) or cut from card on the Cricut (the grilles).
 //   vcrypt    Naor and Shamir's visual cryptography (1994): each sheet alone is random speckle; stacked, the message shows
 //   moire     a line screen whose lines jump half a pitch inside the letters; the plain overlay screen makes them dark
-//   fleissner a turning grille: one cut card, read through its holes, turned a quarter clockwise, four times
+//   fleissner a turning grille: one cut card, read through its holes, turned a quarter clockwise, four times (pinned at the centre)
+//   dial      a round grille on one pin, turned through 3 to 8 numbered stops, each stop showing the next part of the message
 //   cardano   a field of letters and the grille that finds the few that matter
+// Grilles are locked to the message: every hole at every turn shows a message letter or an end mark, never a decoy.
 // Both sheets carry the same frame and corner crosses, so they register on the mat and on each other.
 "use strict";
 import { rect, ellipse, plen, simplify, drawText, wrap, svgOf, ADV, wireSettingsLoader, applySettings } from "./core.js";
@@ -92,17 +94,90 @@ function moire(o, T, B, L) {
   return { dims: `${bm.w}X${bm.h}.${p}`, feature: q, gates: [["letter pixels span at least three lines of the screen", q >= 3 * p, `${(q / p).toFixed(1)} lines per pixel`]], read: T.text, want: T.text };
 }
 
-// Fleissner: every cell of an N x N square belongs to one ring of four (its quarter turns); the grille opens one of the four.
+// A turning grille is locked to its message: exactly ceil(letters / turns) holes, so every hole in every turn shows a message
+// letter. Spare cells hold decoys no hole ever opens, and when the letters do not divide evenly the last few holes show an
+// end mark (a small diamond), never a decoy letter.
+const END = "·";
+const endMark = (x, y, d, out) => out.push([[[x, y - d], [x + d, y], [x, y + d], [x - d, y]], true]);
+const shuffled = (a, rnd) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const rot = ([x, y], [cx, cy], a) => { const c = Math.cos(a), s = Math.sin(a), dx = x - cx, dy = y - cy; return [cx + dx * c - dy * s, cy + dx * s + dy * c]; };
+
+// Fleissner: every cell of an N x N square belongs to one ring of four (its quarter turns); a hole opens one of the four.
 function fleissner(o, T, B, L) {
-  const text = T.text.replace(/ /g, ""), N = Math.max(o.gsize % 2 ? o.gsize + 1 : o.gsize, 2 * Math.ceil(Math.sqrt(text.length) / 2), 4), rnd = rng(o.seed * 17 + 5);
-  const turn = ([r, c]) => [c, N - 1 - r], holes = [];
-  for (let r = 0; r < N / 2; r++) for (let c = 0; c < N / 2; c++) { let cell = [r, c]; const k = Math.floor(rnd() * 4); for (let t = 0; t < k; t++) cell = turn(cell); holes.push(cell); }
+  const text = T.text.replace(/ /g, ""), n = text.length, K = Math.ceil(n / 4), pin = o.pivot === "pin", rnd = rng(o.seed * 17 + 5);
+  const Nfit = Math.max(4, 2 * Math.ceil(Math.sqrt(K + (pin ? 1 : 0)))), N = Math.max(Nfit, o.gsize % 2 ? o.gsize + 1 : o.gsize);
+  const turn = ([r, c]) => [c, N - 1 - r], m = N / 2;
+  // one representative per ring of four; with a pin through the centre, the four middle cells stay shut so the pin hole has card round it
+  const reps = []; for (let r = 0; r < m; r++) for (let c = 0; c < m; c++) if (!(pin && r === m - 1 && c === m - 1)) reps.push([r, c]);
+  const holes = shuffled(reps, rnd).slice(0, K).map(cell => { const k = Math.floor(rnd() * 4); for (let t = 0; t < k; t++) cell = turn(cell); return cell; });
   const field = Array.from({ length: N * N }, () => FREQ[Math.floor(rnd() * FREQ.length)]), order = [];
   let h = holes.map(x => [...x]);
   for (let t = 0; t < 4; t++) { h.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([r, c]) => order.push(r * N + c)); h = h.map(turn); }
-  [...text].forEach((ch, i) => (field[order[i]] = ch));
-  const covered = new Set(order).size === N * N;
-  return grilleSheets(o, B, L, N, N, field, holes.map(([r, c]) => r * N + c), true, { dims: `${N}X${N}`, read: order.slice(0, text.length).map(i => field[i]).join(""), want: text, gates: [["the four quarter turns open every cell exactly once", covered, `${N} x ${N}, ${holes.length} holes`]] });
+  order.forEach((p, i) => (field[p] = i < n ? text[i] : END));
+  const shown = order.map(p => field[p]), reads = [0, 1, 2, 3].map(t => shown.slice(t * K, (t + 1) * K).join(""));
+  const clean = new Set(order).size === order.length && shown.every((ch, i) => (i < n ? ch === text[i] : ch === END));
+  const res = grilleSheets(o, B, L, N, N, field, holes.map(([r, c]) => r * N + c), "turn", {
+    dims: `${N}X${N}`, read: shown.filter(ch => ch !== END).join(""), want: text, reads, step: 90, positions: 4,
+    fit: `${N} x ${N} grid (smallest for ${n} letters: ${Nfit} x ${Nfit}), ${K} holes, ${N * N - 4 * K} decoy cells never opened`,
+    gates: [["every hole in every turn shows a message letter or an end mark, never a decoy", clean, `${K} holes x 4 turns, ${4 * K - n} end marks`]],
+  });
+  if (pin) {
+    const [cx, cy] = res.pivot, s = res.cell, clear = Math.min(...res.cut.holes.flat().map(([x, y]) => Math.hypot(x - cx, y - cy))) - 1;
+    res.cut.pin = ellipse(cx, cy, 1, 1, 0, 24); L.overlay.push([res.cut.pin, true]);
+    L.outline.push([ellipse(cx, cy, 1, 1, 0, 24), true], [[[cx - 2.2, cy], [cx + 2.2, cy]], false], [[[cx, cy - 2.2], [cx, cy + 2.2]], false]);
+    // turn numbers round the frame: the notch points at the number of the turn being read
+    const [bx0, by0] = res.box, hh = Math.min(4, Math.max(2.5, 0.35 * s)), p0 = [bx0 + 0.45 * s, by0 - 1.5 - hh / 2];
+    for (let t = 0; t < 4; t++) { const [x, y] = rot(p0, res.pivot, t * Math.PI / 2); drawText(String(t + 1), x, y - hh / 2, hh, L.outline); }
+    res.gates.push(["the pin hole has at least 1 mm of card round it", clear >= 1, `${clear.toFixed(2)} mm`]);
+  }
+  return res;
+}
+// A dial grille: a round card on one pin through its centre, turned to P marked positions; every position shows the next part.
+function dial(o, T, B, L) {
+  const text = T.text.replace(/ /g, ""), n = text.length, P = Math.round(o.turns), K = Math.ceil(n / P), rnd = rng(o.seed * 31 + 11);
+  const lab = 3.5, Rd = Math.min(B.w, B.h) / 2 - 11, cx = B.x + B.w / 2, cy = B.y + B.h / 2, Rin = Math.max(5, 0.14 * Rd);
+  let rings = Math.round(o.rings), s, ring;
+  for (;; rings++) {   // rings is a minimum: add rings until there are enough window places for the message
+    s = (Rd - 1.5 - Rin) / rings;
+    ring = Array.from({ length: rings }, (_, i) => { const r = Rin + (i + 0.5) * s; return { r, m: Math.max(1, Math.floor(2 * Math.PI * r / (P * s))) }; });
+    if (ring.reduce((a, g) => a + g.m, 0) >= K || rings > 30) break;
+  }
+  const ang = (i, idx) => -Math.PI / 2 + (idx + 0.5) * 2 * Math.PI / (P * ring[i].m), at = (i, idx) => [cx + ring[i].r * Math.cos(ang(i, idx)), cy + ring[i].r * Math.sin(ang(i, idx))];
+  const reps = []; ring.forEach((g, i) => { for (let j = 0; j < g.m; j++) reps.push([i, j]); });
+  // each window sits at a random one of its P places; the reading order is the card's own: clockwise from the pointer, outer ring first
+  const wins = shuffled(reps, rnd).slice(0, K).map(([i, j]) => [i, j + Math.floor(rnd() * P) * ring[i].m])
+    .sort((a, b) => (a[1] + 0.5) / (P * ring[a[0]].m) - (b[1] + 0.5) / (P * ring[b[0]].m) || b[0] - a[0]);
+  const field = ring.map(g => Array.from({ length: P * g.m }, () => FREQ[Math.floor(rnd() * FREQ.length)])), order = [];
+  for (let t = 0; t < P; t++) for (const [i, a] of wins) order.push([i, (a + t * ring[i].m) % (P * ring[i].m)]);
+  order.forEach(([i, idx], k) => (field[i][idx] = k < n ? text[k] : END));
+  const shown = order.map(([i, idx]) => field[i][idx]), reads = Array.from({ length: P }, (_, t) => shown.slice(t * K, (t + 1) * K).join(""));
+  const clean = new Set(order.map(q => q.join(":"))).size === order.length && shown.every((ch, k) => (k < n ? ch === text[k] : ch === END));
+  // the paper: letters upright on their rings, the pin mark, the disc's edge and a numbered tick for every position
+  const h = Math.min(0.55 * s, 9);
+  ring.forEach((g, i) => field[i].forEach((ch, idx) => { const [x, y] = at(i, idx); if (ch === END) endMark(x, y, 0.18 * s, L.outline); else drawText(ch, x, y - h / 2, h, L.outline); }));
+  L.outline.push([ellipse(cx, cy, Rd, Rd, 0, 180), true], [ellipse(cx, cy, 1, 1, 0, 24), true], [[[cx - 2.2, cy], [cx + 2.2, cy]], false], [[[cx, cy - 2.2], [cx, cy + 2.2]], false]);
+  for (let t = 0; t < P; t++) {
+    const a = -Math.PI / 2 + t * 2 * Math.PI / P, u = [Math.cos(a), Math.sin(a)];
+    L.outline.push([[[cx + u[0] * (Rd + 1), cy + u[1] * (Rd + 1)], [cx + u[0] * (Rd + 4), cy + u[1] * (Rd + 4)]], false]);
+    drawText(String(t + 1), cx + u[0] * (Rd + 7.5), cy + u[1] * (Rd + 7.5) - lab / 2, lab, L.outline);
+  }
+  // the card: a disc with a pointer tab at the top, a pin hole, and the windows
+  const beta = 2.6 / Rd, disc = [[cx, cy - Rd - 3.4]];
+  for (let k = 0; k <= 200; k++) { const a = -Math.PI / 2 + beta + k * (2 * Math.PI - 2 * beta) / 200; disc.push([cx + Rd * Math.cos(a), cy + Rd * Math.sin(a)]); }
+  const holes = wins.map(([i, a]) => {
+    const g = ring[i], th = ang(i, a), half = Math.min(0.42 * 2 * Math.PI / (P * g.m), 0.42 * s / g.r), r0 = g.r - 0.42 * s, r1 = g.r + 0.42 * s, arc = [];
+    for (let k = 0; k <= 8; k++) { const q = th - half + 2 * half * k / 8; arc.push([cx + r1 * Math.cos(q), cy + r1 * Math.sin(q)]); }
+    for (let k = 8; k >= 0; k--) { const q = th - half + 2 * half * k / 8; arc.push([cx + r0 * Math.cos(q), cy + r0 * Math.sin(q)]); }
+    return arc;
+  });
+  const pinHole = ellipse(cx, cy, 1, 1, 0, 24);
+  L.overlay.push([disc, true], [pinHole, true], ...holes.map(p => [p, true]));
+  return {
+    dims: `${P}P${rings}R`, feature: h, read: shown.filter(ch => ch !== END).join(""), want: text, reads, step: 360 / P, positions: P, pivot: [cx, cy],
+    cut: { outline: disc, holes, pin: pinHole }, fit: `${rings} rings, ${reps.length} window places, ${K} windows, ${P} positions`,
+    gates: [["every window in every position shows a message letter or an end mark, never a decoy", clean, `${K} windows x ${P} positions, ${P * K - n} end marks`],
+      ["letters at least 2.5 mm tall", h >= 2.5, `${h.toFixed(1)} mm`]],
+  };
 }
 function cardano(o, T, B, L) {
   const text = T.text.replace(/ /g, ""), cells = Math.ceil(text.length * Math.max(2, +o.density)), C = Math.max(6, o.gsize), R = Math.max(Math.ceil(cells / C), Math.round(C * 0.6));
@@ -113,27 +188,31 @@ function cardano(o, T, B, L) {
 // The letter field on the base sheet; the card with its holes on the cut sheet, same frame and crosses on both.
 function grilleSheets(o, B, L, C, R, field, holes, turning, res) {
   const s = Math.min(B.w / (C + 3), B.h / (R + 3)), x0 = B.x + (B.w - C * s) / 2, y0 = B.y + (B.h - R * s) / 2, h = 0.58 * s;
-  field.forEach((ch, p) => drawText(ch, x0 + (p % C + 0.5) * s, y0 + Math.floor(p / C) * s + (s - h) / 2, h, L.outline));
+  field.forEach((ch, p) => { const x = x0 + (p % C + 0.5) * s, y = y0 + Math.floor(p / C) * s; if (ch === END) endMark(x, y + s / 2, 0.18 * s, L.outline); else drawText(ch, x, y + (s - h) / 2, h, L.outline); });
   const box = [x0 - 0.4 * s, y0 - 0.4 * s, x0 + (C + 0.4) * s, y0 + (R + 0.4) * s];
   registration(box, [L.outline, L.overlay]);
-  for (const p of holes) L.overlay.push([rect(x0 + (p % C + 0.08) * s, y0 + (Math.floor(p / C) + 0.08) * s, 0.84 * s, 0.84 * s), true]);
+  const cut = holes.map(p => rect(x0 + (p % C + 0.08) * s, y0 + (Math.floor(p / C) + 0.08) * s, 0.84 * s, 0.84 * s));
+  for (const p of cut) L.overlay.push([p, true]);
   // turning grille: a notch marks the corner that starts at top left; turn the card a quarter clockwise after each reading
   if (turning) L.overlay.push([[[box[0] + 0.6 * s, box[1] + 0.25 * s], [box[0] + 0.25 * s, box[1] + 0.25 * s], [box[0] + 0.25 * s, box[1] + 0.6 * s]], true]);
-  return { ...res, feature: h };
+  return { ...res, feature: h, cell: s, box, pivot: [x0 + C * s / 2, y0 + R * s / 2], cut: { outline: rect(box[0], box[1], box[2] - box[0], box[3] - box[1]), holes: cut } };
 }
 
-const METHODS = { vcrypt, moire, fleissner, cardano };
+const METHODS = { vcrypt, moire, fleissner, dial, cardano };
+// How the second sheet moves in the preview: the clear sheets slide (moire lines run across, so it slides up and down), the grilles turn on their pivot.
+const MOTION = { vcrypt: "x", moire: "y", cardano: "x", fleissner: "turn", dial: "turn" };
 const HOW = {
   vcrypt: "Visual cryptography: each sheet alone is random speckle, provably without the message. Lay the clear sheet on the paper, crosses on crosses: every message pixel turns fully black, everything else stays half grey. It reads best from arm's length.",
-  moire: "A moire reveal: the base lines jump half a pitch inside the letters. Lay the clear line screen on top, crosses on crosses, and the letters go dark; slide it half a line and they go light.",
-  fleissner: "A Fleissner turning grille: put the card on the letters with the notch at top left and read the holes left to right, top to bottom. Turn it a quarter clockwise and read again, four times.",
+  moire: "A moire reveal: the base lines jump half a pitch inside the letters. Lay the clear line screen on top, crosses on crosses, and the letters go dark; slide it half a line up or down and they go light.",
+  fleissner: "A Fleissner turning grille: pin the card through the centre with the notch at top left (by the 1) and read the holes left to right, top to bottom. Turn it a quarter clockwise, so the notch points at the next number, and read again, four times. A small diamond means the message has ended.",
+  dial: "A dial grille: pin the round card through the centre of the paper with its pointer on 1, and read the windows clockwise from the pointer, outer ring first where two line up. Turn it to 2 and read on, and so on round the dial: each position shows the next part of the message. A small diamond means the message has ended.",
   cardano: "A Cardano grille: lay the card on the letters, crosses on crosses, and read the letters showing through, left to right, top to bottom.",
 };
-const SECOND = { vcrypt: "overlay", moire: "overlay", fleissner: "grille-cut", cardano: "grille-cut" };
+const SECOND = { vcrypt: "overlay", moire: "overlay", fleissner: "grille-cut", dial: "grille-cut", cardano: "grille-cut" };
 
 // ---------------- build ----------------
 const $ = id => document.getElementById(id);
-const IDS = ["msg", "cipher", "ckey", "method", "per", "cell", "mark", "pitch", "wave", "noise", "gsize", "density", "seed", "caption", "tsize", "tpen", "opcol", "page", "view", "slide"];
+const IDS = ["msg", "cipher", "ckey", "method", "per", "cell", "mark", "pitch", "wave", "noise", "gsize", "pivot", "turns", "rings", "density", "seed", "caption", "tsize", "tpen", "opcol", "page", "view", "slide", "turn"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 function build(o) {
@@ -141,7 +220,7 @@ function build(o) {
   let T, res;
   try {
     T = textOf(o); if (!T.text.trim()) throw new Error("Nothing to hide: the message has no letters or digits.");
-    const key = `PLG1-${{ vcrypt: "VC", moire: "MO", fleissner: "FL", cardano: "CG" }[o.method]}-S${o.seed}`;
+    const key = `PLG1-${{ vcrypt: "VC", moire: "MO", fleissner: "FL", dial: "DG", cardano: "CG" }[o.method]}-S${o.seed}`;
     const cap = [], add = (s, h) => wrap(s, Math.max(4, Math.floor(((W - 2 * M) / h * 6 + 1.6) / ADV))).forEach(l => cap.push({ s: l, h }));
     if (o.caption === "message") add(T.plain, o.tsize); if (o.caption === "key") add("KEY " + key, Math.max(2.5, o.tsize * 0.5));
     const capH = cap.reduce((s, c) => s + c.h * 1.55, 0) + (cap.length ? o.tsize * 0.8 : 0);
@@ -165,26 +244,37 @@ function draw(r) {
   const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0); paint(c, r);
   const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000, esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   if (r.error) { $("stats").innerHTML = `<span class="fail">These settings do not make a pair of sheets: ${esc(r.error)}</span>`; $("how").textContent = ""; return; }
+  const now = turnNow(r), reads = r.res.reads ? r.res.reads.map((s, t) => `${t === now ? "<b>" : ""}${t + 1}: ${esc(s)}${t === now ? "</b>" : ""}`).join(" · ") : "";
   $("stats").innerHTML = `${esc(r.o.method)} · ${r.res.dims} · ${r.points} points · ${r.ms.toFixed(0)} ms<br>`
+    + (r.res.fit ? `${esc(r.res.fit)}<br>through the holes at each turn: ${reads}<br>` : "")
     + `paper sheet <b>${len(r.outline).toFixed(1)} m</b> · ${SECOND[r.o.method] === "grille-cut" ? "grille to cut" : "clear sheet"} <b>${len(r.overlay).toFixed(1)} m</b> · caption <b>${len(r.text).toFixed(1)} m</b><br>`
     + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${esc(n)} ${esc(v)}`).join("<br>")
     + `<br>key <b>${esc(r.key)}</b>` + (r.notes.length ? `<br><span class="note">${r.notes.map(esc).join("<br>")}</span>` : "");
   $("how").textContent = r.how;
 }
-function paint(c, r, dx = +$("slide").value) {
+// Which turn the grille sits at (within 4 degrees of a stop), or -1 between stops.
+function turnNow(r, deg = +r.o.turn || 0) {
+  if (!r.res || !r.res.step) return -1;
+  const k = Math.round(deg / r.res.step); return Math.abs(deg - k * r.res.step) <= 4 ? ((k % r.res.positions) + r.res.positions) % r.res.positions : -1;
+}
+// The second sheet's pose: a slide (dx, dy in mm) or a turn about the pivot (degrees clockwise).
+function poseOf(r) { const m = MOTION[r.o.method], d = +$("slide").value; return m === "turn" ? { deg: +$("turn").value } : m === "y" ? { dy: d } : { dx: d }; }
+function paint(c, r, pose = poseOf(r)) {
   c.fillStyle = "#fbfaf7"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
-  const stroke = (paths, col, lw, ox = 0, oy = 0) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => (i ? c.lineTo(x + ox, y + oy) : c.moveTo(x + ox, y + oy))); if (cl) c.closePath(); } c.stroke(); };
+  const trace = (paths, cl0) => { for (const [p, cl] of paths) { p.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); if (cl || cl0) c.closePath(); } };
+  const stroke = (paths, col, lw) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); trace(paths); c.stroke(); };
   const view = r.o.view, cut = SECOND[r.o.method] === "grille-cut";
   if (view !== "overlay") { stroke(r.outline, "#111", 0.4); stroke(r.text, r.o.tpen, 0.3); }
-  if (view === "base") return;
+  if (view === "base" || r.error) return;
+  c.save(); c.translate(pose.dx || 0, pose.dy || 0);
+  if (pose.deg && r.res.pivot) { const [px, py] = r.res.pivot; c.translate(px, py); c.rotate(pose.deg * Math.PI / 180); c.translate(-px, -py); }
   if (cut) {
-    // the card, holes and all: hatch everywhere except through the holes
-    const frame = r.overlay[0][0], holes = r.overlay.filter(([p, cl]) => cl && p.length === 4).slice(1);
-    c.save(); c.beginPath(); c.rect(frame[0][0] + dx, frame[0][1], frame[2][0] - frame[0][0], frame[2][1] - frame[0][1]);
-    for (const [h] of holes) { c.moveTo(h[0][0] + dx, h[0][1]); c.lineTo(h[3][0] + dx, h[3][1]); c.lineTo(h[2][0] + dx, h[2][1]); c.lineTo(h[1][0] + dx, h[1][1]); c.closePath(); }
-    c.fillStyle = view === "overlay" ? "#e9dcc6" : "rgba(233,220,198,0.93)"; c.fill("evenodd"); c.restore();
-    stroke(r.overlay, r.o.opcol, 0.3, dx, 0);
-  } else stroke(r.overlay, view === "overlay" ? "#111" : r.o.opcol, 0.4, dx, 0);
+    // the card, holes and all: tinted everywhere except through the holes and the pin hole
+    const k = r.res.cut; c.beginPath(); trace([[k.outline], ...k.holes.map(h => [h]), ...(k.pin ? [[k.pin]] : [])], true);
+    c.fillStyle = view === "overlay" ? "#e9dcc6" : "rgba(233,220,198,0.93)"; c.fill("evenodd");
+    stroke(r.overlay, r.o.opcol, 0.3);
+  } else stroke(r.overlay, view === "overlay" ? "#111" : r.o.opcol, 0.4);
+  c.restore();
 }
 const penLayers = r => [
   { name: "base", colour: "000000", w: 0.4, paths: r.outline },
@@ -193,15 +283,26 @@ const penLayers = r => [
 ].filter(L => L.paths.length);
 const toSVG = (r, only = null, ticks = false) => svgOf(r, penLayers(r), `PLG overlay studio (UTP ${UTP_REV})`, only, ticks);
 
-function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } document.querySelectorAll("[data-for]").forEach(el => (el.hidden = !el.dataset.for.split(" ").includes($("method").value))); }
+const moveWord = () => (MOTION[$("method").value] === "turn" ? ["Turn the grille", "Stop turning"] : ["Slide the clear sheet", "Stop sliding"]);
+function sync() {
+  for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
+  document.querySelectorAll("[data-for]").forEach(el => (el.hidden = !el.dataset.for.split(" ").includes($("method").value)));
+  $("animate").textContent = moveWord()[$("animate").dataset.on === "1" ? 1 : 0];
+}
 let pending = 0, anim = 0;
 function run() { sync(); $("stats").textContent = "drawing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
-// Slide the clear sheet back and forth, the way a hand would, to show the reveal switching on and off.
+// Move the second sheet the way a hand would: slide the clear sheet to and fro (up and down for moire lines),
+// or turn the grille on its pin, resting at each stop long enough to read it.
 function animate() {
   cancelAnimationFrame(anim);
   if ($("animate").dataset.on !== "1" || !last || last.error) return;
-  const t = performance.now() / 1000, dx = Math.sin(t * 1.3) * Math.max(0.5, last.o.pitch || 1);
-  const cv = $("cv"), c = cv.getContext("2d"), k = cv.width / last.W; c.setTransform(k, 0, 0, k, 0, 0); paint(c, last, dx);
+  const t = performance.now() / 1000, m = MOTION[last.o.method], amp = Math.max(0.5, last.o.pitch || 1);
+  let pose;
+  if (m === "turn") {
+    const per = 2.2, k = Math.floor(t / per), f = t / per - k, e = f < 0.62 ? 0 : (u => u * u * (3 - 2 * u))((f - 0.62) / 0.38);
+    pose = { deg: ((k + e) * last.res.step) % 360 }; $("o-turn").textContent = Math.round(pose.deg);
+  } else pose = m === "y" ? { dy: Math.sin(t * 1.3) * amp } : { dx: Math.sin(t * 1.3) * amp };
+  const cv = $("cv"), c = cv.getContext("2d"), k = cv.width / last.W; c.setTransform(k, 0, 0, k, 0, 0); paint(c, last, pose);
   anim = requestAnimationFrame(animate);
 }
 const PRESETS = {
@@ -209,13 +310,14 @@ const PRESETS = {
   vcdots: { method: "vcrypt", msg: "YES", per: 4, cell: 2.2, mark: "dots", caption: "none", view: "stacked" },
   moire: { method: "moire", msg: "LOOK CLOSER", per: 6, pitch: 0.8, wave: "off", noise: 0.4, caption: "none", view: "stacked" },
   wavy: { method: "moire", msg: "HIDDEN", per: 6, pitch: 0.9, wave: "on", noise: 0.6, caption: "none", view: "stacked" },
-  fleissner: { method: "fleissner", msg: "TURN THE CARD A QUARTER", gsize: 6, caption: "key", view: "stacked" },
+  fleissner: { method: "fleissner", msg: "TURN THE CARD A QUARTER", gsize: 4, pivot: "pin", caption: "key", view: "stacked" },
+  dial: { method: "dial", msg: "EVERY TURN OF THE DIAL SHOWS A LITTLE MORE OF WHAT I MEANT TO SAY", turns: 6, rings: 3, caption: "key", view: "stacked" },
   cardano: { method: "cardano", msg: "MEET ME BY THE OLD MILL", gsize: 18, density: "4", caption: "none", view: "stacked" },
 };
-document.querySelectorAll("[data-preset]").forEach(b => (b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; $("slide").value = 0; run(); }));
+document.querySelectorAll("[data-preset]").forEach(b => (b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; $("slide").value = 0; $("turn").value = 0; run(); }));
 $("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
 IDS.forEach(k => $(k).addEventListener("input", run));
-$("animate").onclick = () => { const b = $("animate"); b.dataset.on = b.dataset.on === "1" ? "0" : "1"; b.textContent = b.dataset.on === "1" ? "Stop sliding" : "Slide the clear sheet"; if (b.dataset.on === "1") animate(); else if (last) draw(last); };
+$("animate").onclick = () => { const b = $("animate"); b.dataset.on = b.dataset.on === "1" ? "0" : "1"; b.textContent = moveWord()[b.dataset.on === "1" ? 1 : 0]; if (b.dataset.on === "1") animate(); else if (last) { sync(); draw(last); } };
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 const stem = o => `plg-overlay-${o.method}-s${o.seed}-${o.msg.replace(/[^A-Z0-9]/gi, "").slice(0, 20)}`;
 $("export").onclick = () => { if (last && !last.error) { const ls = penLayers(last); ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, true), `${stem(last.o)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500)); } };
