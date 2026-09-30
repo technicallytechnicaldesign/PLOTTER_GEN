@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pottery puzzle studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Pottery puzzle studio</h1>
+  <p class="sub">A decorated pot is drawn by the pen and then cut by the blade into sherds on the same mat, so the card becomes a refit puzzle that carries its own drawing. The decoration follows traditional motifs and marks (comb-stamped bands, cord impressions, meanders, ovolo, fingertip cordons), drawn flat and wrapped round the elevation of the pot. Export one SVG with pen layers and a red cut layer for Design Space, or the reassembly board that goes with it.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="beaker">Bell Beaker</button><button data-preset="trb">Funnel Beaker</button><button data-preset="corded">Corded Ware</button><button data-preset="lbk">Linear Pottery</button><button data-preset="grooved">Grooved Ware</button><button data-preset="geometric">Greek Geometric</button><button data-preset="samian">Samian</button><button data-preset="ironage">Iron Age</button><button data-preset="easy">Easy (12)</button><button data-preset="hard">Hard (50)</button><button data-preset="board">Board</button></div>
+  </fieldset>
+  <fieldset><legend>The pot</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="7"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Shape <select id="shape"><option value="beaker">beaker (S-profile)</option><option value="jar">jar</option><option value="funnel">funnel beaker</option><option value="bowl">bowl</option><option value="carinated">carinated bowl</option><option value="amphora">amphora, no handles</option><option value="tub">tub (flat-based)</option></select></label>
+    <label>Style, in the manner of <select id="tradition"><option value="bell">Bell Beaker</option><option value="trb">Funnel Beaker (TRB)</option><option value="corded">Corded Ware</option><option value="lbk">Linear Pottery (LBK)</option><option value="grooved">Grooved Ware</option><option value="geometric">Greek Geometric</option><option value="samian">Roman samian</option><option value="ironage">Iron Age</option><option value="custom">custom, zone by zone</option></select></label>
+  </fieldset>
+  <fieldset><legend>Custom zones (style: custom)</legend>
+    <label>Rim <select id="zrim"><option value="notchrim">notched rim</option><option value="plain">plain</option><option value="grooves">incised grooves</option><option value="chevron">chevrons</option><option value="zigzag">zigzag</option><option value="herring">herringbone</option><option value="pendant">hatched pendant triangles</option><option value="lattice">cross-hatched lattice</option><option value="lozenge">hatched lozenges</option><option value="cord">twisted cord</option><option value="comb">comb stamping</option><option value="nail">fingernail</option><option value="tip">fingertip</option><option value="ringdot">ring and dot</option><option value="rosette">rosettes</option><option value="crosscircle">cross in circle</option><option value="meander">meander</option><option value="spiral">spirals</option><option value="wave">running wave</option><option value="notes">line and note-head band</option><option value="ribs">ribs</option><option value="ovolo">ovolo</option><option value="roulette">rouletting</option><option value="metopes">metopes</option><option value="burnish">burnish</option><option value="stab">stab rows</option><option value="cordon">fingertip cordon</option><option value="paintband">painted bands</option></select></label>
+    <label>Neck <select id="zneck"><option value="cord">twisted cord</option><option value="plain">plain</option><option value="grooves">incised grooves</option><option value="chevron">chevrons</option><option value="zigzag">zigzag</option><option value="herring">herringbone</option><option value="pendant">hatched pendant triangles</option><option value="lattice">cross-hatched lattice</option><option value="lozenge">hatched lozenges</option><option value="comb">comb stamping</option><option value="nail">fingernail</option><option value="tip">fingertip</option><option value="ringdot">ring and dot</option><option value="rosette">rosettes</option><option value="crosscircle">cross in circle</option><option value="meander">meander</option><option value="spiral">spirals</option><option value="wave">running wave</option><option value="notes">line and note-head band</option><option value="ribs">ribs</option><option value="ovolo">ovolo</option><option value="roulette">rouletting</option><option value="metopes">metopes</option><option value="burnish">burnish</option><option value="stab">stab rows</option><option value="cordon">fingertip cordon</option><option value="paintband">painted bands</option></select></label>
+    <label>Shoulder <select id="zshoulder"><option value="pendant">hatched pendant triangles</option><option value="plain">plain</option><option value="grooves">incised grooves</option><option value="chevron">chevrons</option><option value="zigzag">zigzag</option><option value="herring">herringbone</option><option value="lattice">cross-hatched lattice</option><option value="lozenge">hatched lozenges</option><option value="cord">twisted cord</option><option value="comb">comb stamping</option><option value="nail">fingernail</option><option value="tip">fingertip</option><option value="ringdot">ring and dot</option><option value="rosette">rosettes</option><option value="crosscircle">cross in circle</option><option value="meander">meander</option><option value="spiral">spirals</option><option value="wave">running wave</option><option value="notes">line and note-head band</option><option value="ribs">ribs</option><option value="ovolo">ovolo</option><option value="roulette">rouletting</option><option value="metopes">metopes</option><option value="burnish">burnish</option><option value="stab">stab rows</option><option value="cordon">fingertip cordon</option><option value="paintband">painted bands</option></select></label>
+    <label>Belly <select id="zbelly"><option value="lattice">cross-hatched lattice</option><option value="plain">plain</option><option value="grooves">incised grooves</option><option value="chevron">chevrons</option><option value="zigzag">zigzag</option><option value="herring">herringbone</option><option value="pendant">hatched pendant triangles</option><option value="lozenge">hatched lozenges</option><option value="cord">twisted cord</option><option value="comb">comb stamping</option><option value="nail">fingernail</option><option value="tip">fingertip</option><option value="ringdot">ring and dot</option><option value="rosette">rosettes</option><option value="crosscircle">cross in circle</option><option value="meander">meander</option><option value="spiral">spirals</option><option value="wave">running wave</option><option value="notes">line and note-head band</option><option value="ribs">ribs</option><option value="ovolo">ovolo</option><option value="roulette">rouletting</option><option value="metopes">metopes</option><option value="burnish">burnish</option><option value="stab">stab rows</option><option value="cordon">fingertip cordon</option><option value="paintband">painted bands</option></select></label>
+    <label>Lower body <select id="zlower"><option value="burnish">burnish</option><option value="plain">plain</option><option value="grooves">incised grooves</option><option value="chevron">chevrons</option><option value="zigzag">zigzag</option><option value="herring">herringbone</option><option value="pendant">hatched pendant triangles</option><option value="lattice">cross-hatched lattice</option><option value="lozenge">hatched lozenges</option><option value="cord">twisted cord</option><option value="comb">comb stamping</option><option value="nail">fingernail</option><option value="tip">fingertip</option><option value="ringdot">ring and dot</option><option value="rosette">rosettes</option><option value="crosscircle">cross in circle</option><option value="meander">meander</option><option value="spiral">spirals</option><option value="wave">running wave</option><option value="notes">line and note-head band</option><option value="ribs">ribs</option><option value="ovolo">ovolo</option><option value="roulette">rouletting</option><option value="metopes">metopes</option><option value="stab">stab rows</option><option value="cordon">fingertip cordon</option><option value="paintband">painted bands</option></select></label>
+  </fieldset>
+  <fieldset><legend>Decoration</legend>
+    <label>Motif size <output id="o-mscale"></output><input type="range" id="mscale" min="0.6" max="1.8" step="0.05" value="1"></label>
+    <label>Row density <output id="o-dens"></output><input type="range" id="dens" min="0.6" max="1.6" step="0.05" value="1"></label>
+    <label>Fill pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+    <label>Foreshortening <select id="foreshorten"><option value="on">on, marks bend round the pot</option><option value="off">off, front third rolled out flat</option></select></label>
+    <label>Pens for the marks <select id="medium"><option value="trad">by tradition (painted styles use the colour pen)</option><option value="black">everything in black</option><option value="colour">everything in the colour pen</option></select></label>
+  </fieldset>
+  <fieldset><legend>Sherds (the cut)</legend>
+    <label>Pieces <output id="o-sherds"></output><input type="range" id="sherds" min="8" max="60" step="1" value="20"></label>
+    <label>Breaks along the bands <output id="o-along"></output><input type="range" id="along" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Edge wiggle <output id="o-wiggle"></output><input type="range" id="wiggle" min="0" max="1" step="0.05" value="0.6"></label>
+    <label>Lost pieces <output id="o-missing"></output><input type="range" id="missing" min="0" max="12" step="1" value="0"></label>
+    <label>Lost pieces are <select id="lost"><option value="plaster">plaster infill (cut, undecorated, stippled)</option><option value="out">left out (cut as waste, marked X)</option></select></label>
+    <label>Numbers on the card <select id="numbers"><option value="off">off</option><option value="small">small, on each piece</option><option value="board">on the board only</option></select></label>
+  </fieldset>
+  <fieldset><legend>Sheet and view</legend>
+    <label>Sheet <select id="sheet"><option value="card">card (puzzle: pens then cut)</option><option value="board">reassembly board (pens only)</option></select></label>
+    <label>Board shows <select id="board"><option value="blank">no crack lines (hard)</option><option value="dashed">faint dashed crack lines (easy)</option><option value="numbered">crack lines and numbers</option></select></label>
+    <label>Preview <select id="view"><option value="cut">as cut, on the card</option><option value="exploded">exploded</option><option value="shuffled">shuffled on the table</option></select></label>
+    <label>Explode <output id="o-explode"></output><input type="range" id="explode" min="0" max="1" step="0.05" value="0.4"></label>
+    <p class="hint">Preview only changes the picture on this page. The export is always the card as cut, or the board.</p>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per layer in job order: the pen layers, then the cut. The pen files carry four corner ticks at 1 mm and the cut file carries a trim rectangle at 1 mm, so every file has the same bounding box and lands in the same place in Design Space.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it goes together: the pot is a surface of revolution drawn in orthographic elevation, split into rim, neck, shoulder, belly and lower body at landmarks of its profile. Each zone holds one or more bands of motifs, laid out flat in angle and height and wrapped on with x = r(y) sin(theta), so marks narrow towards the sides the way they do on a real pot. The card is then broken into sherds by sequential fractures: each break is a wavy line across one piece, chosen so both halves stay big enough to cut, none has a neck thinner than the limit, and no corner is sharper than the limit; the breaks lean towards the zone boundaries and round the circumference when the bias slider is up. Decoration stops a small gap short of every cut line. In Design Space: upload the one SVG, set each pen layer to Draw with the pen you will load (black 0.4, black 0.3, and the colour pen), set the red layer to Cut with the card setting, select everything and Attach so the layers keep their places, then Make. The Explore 5 draws every pen layer first, then you pull the pen and it cuts, all on one mat load, so ink and blade stay in register; do not move the mat between the two. Every cut size here is an assumption until the cut calibration sheet has been run and measured: smallest piece 5 mm inscribed radius, no neck under 6 mm, no corner under 40 degrees, no piece longer than 2.6 times its width, edge wiggle up to 2 mm, ink gap 0.4 mm. Shared cracks are cut once from each side, which is assumed to be acceptable on card. Each tradition is drawn in the manner of, from the kinds of mark that are known on that pottery, and no piece is a copy of a real pot.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = Math.PI * 2, $ = id => document.getElementById(id);
+
+// ---------------- cut sizes: ALL ASSUMED, to be replaced by the cut calibration sheet ----------------
+const CUT_MIN_R = 5.0;         // ASSUMED: smallest inscribed circle radius of a piece, mm (a piece is at least ~10 to 12 mm across)
+const CUT_NECK_MIN = 6.0;      // ASSUMED: no neck or arm of a piece narrower than this, mm
+const CUT_MIN_ANGLE = 40;      // ASSUMED: no interior angle sharper than this, degrees (thinner spikes tear the card)
+const CUT_MAX_ASPECT = 2.6;    // ASSUMED: longest side of a piece's oriented bounding box over its shortest, so pieces stay compact sherds
+const CUT_WIGGLE_MAX = 2.0;    // ASSUMED: largest sideways swing of a fracture line, mm (a blade has to follow it)
+const CUT_WIGGLE_REL = 0.12;   // ASSUMED: sideways swing of any segment as a fraction of its length
+const CUT_SEG_MIN = 0.9;       // ASSUMED: shortest fracture segment, mm
+const INK_GAP = 0.4;           // ASSUMED: clear space between ink and any cut line, mm
+const TRIM_INSET = 1.0;        // trim rectangle, mm from every page edge (the pen corner ticks sit at the same 1 mm)
+const PLATE_MARK = 1.1;        // ink kept clear of the box round a sherd number, mm
+const MINSEP = 0.9;            // closest two marks may be drawn on paper before the pen would blot them, mm
+const PAINT = "7a3b1d";        // colour pen: painted motifs and sherd numbers
+
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ---------------- path helpers ----------------
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out, pi) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed, pi]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false, pi]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+function orderPaths(paths) {
+  const n = paths.length; if (n < 3) return paths;
+  const C = 6, m = new Map(), used = new Uint8Array(n), K = (i, j) => i * 2048 + j;
+  const add = (x, y, k) => { const q = K(Math.floor(x / C), Math.floor(y / C)); let l = m.get(q); if (!l) m.set(q, l = []); l.push(k); };
+  paths.forEach(([p, c], k) => { add(p[0][0], p[0][1], k); if (!c) add(p.at(-1)[0], p.at(-1)[1], k); });
+  const out = [paths[0]]; used[0] = 1;
+  let [cx, cy] = paths[0][1] ? paths[0][0][0] : paths[0][0].at(-1);
+  for (let done = 1; done < n; done++) {
+    let best = 1e18, bk = -1; const ci = Math.floor(cx / C), cj = Math.floor(cy / C);
+    for (let r = 0; r < 260; r++) {
+      if (bk >= 0 && r > Math.sqrt(best) / C + 1.5) break;
+      for (let i = ci - r; i <= ci + r; i++) {
+        const edge = Math.abs(i - ci) === r;
+        for (let j = cj - r; j <= cj + r; j += (edge || r === 0) ? 1 : 2 * r) {
+          const l = m.get(K(i, j)); if (!l) continue;
+          for (let a = l.length - 1; a >= 0; a--) {
+            const k = l[a]; if (used[k]) { l[a] = l[l.length - 1]; l.pop(); continue; }
+            const [p, c] = paths[k], d0 = (p[0][0] - cx) ** 2 + (p[0][1] - cy) ** 2; if (d0 < best) { best = d0; bk = k; }
+            if (!c) { const e = p.at(-1), d1 = (e[0] - cx) ** 2 + (e[1] - cy) ** 2; if (d1 < best) { best = d1; bk = k; } }
+          }
+        }
+      }
+    }
+    if (bk < 0) break;
+    used[bk] = 1; let [p, c, pi] = paths[bk];
+    if (!c && (p.at(-1)[0] - cx) ** 2 + (p.at(-1)[1] - cy) ** 2 < (p[0][0] - cx) ** 2 + (p[0][1] - cy) ** 2) p = p.slice().reverse();
+    out.push([p, c, pi]); [cx, cy] = c ? p[0] : p.at(-1);
+  }
+  return out;
+}
+
+// ---------------- polygon helpers ----------------
+const area2 = P => { let a = 0; for (let i = 0, n = P.length; i < n; i++) { const p = P[i], q = P[(i + 1) % n]; a += p[0] * q[1] - q[0] * p[1]; } return a; };
+function centroidOf(P) {
+  let a = 0, cx = 0, cy = 0;
+  for (let i = 0, n = P.length; i < n; i++) { const p = P[i], q = P[(i + 1) % n], c = p[0] * q[1] - q[0] * p[1]; a += c; cx += (p[0] + q[0]) * c; cy += (p[1] + q[1]) * c; }
+  return Math.abs(a) < 1e-9 ? P[0] : [cx / (3 * a), cy / (3 * a)];
+}
+const bboxOf = P => { let x0 = 1e18, y0 = 1e18, x1 = -1e18, y1 = -1e18; for (const [x, y] of P) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } return [x0, y0, x1, y1]; };
+function pip(P, x, y) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+function segDist2(px, py, ax, ay, bx, by) { const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy; let t = L > 0 ? ((px - ax) * dx + (py - ay) * dy) / L : 0; t = t < 0 ? 0 : t > 1 ? 1 : t; const qx = ax + t * dx - px, qy = ay + t * dy - py; return qx * qx + qy * qy; }
+function distEdges(P, x, y) { let b = 1e18; for (let i = 0, n = P.length; i < n; i++) { const a = P[i], c = P[(i + 1) % n], d = segDist2(x, y, a[0], a[1], c[0], c[1]); if (d < b) b = d; } return Math.sqrt(b); }
+function dedupe(P) { const out = []; for (const p of P) { const q = out.at(-1); if (!q || Math.abs(p[0] - q[0]) > 1e-9 || Math.abs(p[1] - q[1]) > 1e-9) out.push(p); } while (out.length > 1 && Math.abs(out[0][0] - out.at(-1)[0]) < 1e-9 && Math.abs(out[0][1] - out.at(-1)[1]) < 1e-9) out.pop(); return out; }
+function minAngle(P) {
+  let m = 9; const n = P.length;
+  for (let i = 0; i < n; i++) {
+    const a = P[(i + n - 1) % n], b = P[i], c = P[(i + 1) % n], v1x = c[0] - b[0], v1y = c[1] - b[1], v2x = a[0] - b[0], v2y = a[1] - b[1];
+    let g = Math.atan2(v1x * v2y - v1y * v2x, v1x * v2x + v1y * v2y); if (g < 0) g += TAU; if (g < m) m = g;
+  }
+  return m;
+}
+const cross3 = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+const properCross = (a, b, c, d) => { const o1 = cross3(a, b, c), o2 = cross3(a, b, d), o3 = cross3(c, d, a), o4 = cross3(c, d, b); return o1 * o2 < -1e-12 && o3 * o4 < -1e-12; };
+function selfCrosses(P) {
+  const n = P.length; let bad = 0;
+  for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) { if (i === 0 && j === n - 1) continue; if (properCross(P[i], P[(i + 1) % n], P[j], P[(j + 1) % n])) bad++; }
+  return bad;
+}
+
+// ---------------- hatch, dashes, lettering ----------------
+function hatchPoly(P, ang, pitch, out, minLen = 0.6, off = 0) {
+  const dx = Math.cos(ang), dy = Math.sin(ang), U = P.map(([x, y]) => [x * dx + y * dy, -x * dy + y * dx]);
+  let v0 = 1e9, v1 = -1e9; for (const q of U) { if (q[1] < v0) v0 = q[1]; if (q[1] > v1) v1 = q[1]; }
+  for (let v = v0 + pitch / 2 + off; v < v1; v += pitch) {
+    const us = [];
+    for (let i = 0; i < U.length; i++) { const a = U[i], b = U[(i + 1) % U.length]; if ((a[1] > v) !== (b[1] > v)) us.push(a[0] + (v - a[1]) * (b[0] - a[0]) / (b[1] - a[1])); }
+    us.sort((p, q) => p - q);
+    for (let k = 0; k + 1 < us.length; k += 2) if (us[k + 1] - us[k] >= minLen) out.push([[[us[k] * dx - v * dy, us[k] * dy + v * dx], [us[k + 1] * dx - v * dy, us[k + 1] * dy + v * dx]], false]);
+  }
+}
+function dashify(p, on, off, out, closed = false, phase = 0) {
+  const q = closed ? [...p, p[0]] : p; let cur = [], inDash = true, left = on * (0.5 + 0.5 * phase);
+  for (let i = 1; i < q.length; i++) {
+    let [ax, ay] = q[i - 1]; const [bx, by] = q[i]; let rem = Math.hypot(bx - ax, by - ay); const ux = (bx - ax) / (rem || 1), uy = (by - ay) / (rem || 1);
+    if (!cur.length && inDash) cur.push([ax, ay]);
+    while (rem > 1e-9) {
+      const step = Math.min(rem, left); ax += ux * step; ay += uy * step; rem -= step; left -= step;
+      if (inDash) cur.push([ax, ay]);
+      if (left <= 1e-9) {
+        if (inDash) { if (cur.length > 1 && plen(cur, false) >= 0.3) out.push([cur, false]); cur = []; inDash = false; left = off; }
+        else { inDash = true; left = on; cur = [[ax, ay]]; }
+      }
+    }
+  }
+  if (inDash && cur.length > 1 && plen(cur, false) >= 0.3) out.push([cur, false]);
+}
+const GLYPH_SRC = {
+  "0": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "1": "1,1 2,0 2,6|1,6 3,6", "2": "0,1 1,0 3,0 4,1 4,2.5 0,6 4,6",
+  "3": "0,0 4,0 2,2.5 3,2.5 4,3.5 4,5 3,6 1,6 0,5", "4": "3,6 3,0 0,4 4,4", "5": "4,0 0,0 0,2.8 3,2.8 4,3.8 4,5 3,6 1,6 0,5",
+  "6": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.8 3,2.8 0,2.8", "7": "0,0 4,0 1.5,6", "8": "1,0 3,0 4,1 4,2 3,3 1,3 0,2 0,1 1,0|1,3 0,4 0,5 1,6 3,6 4,5 4,4 3,3",
+  "9": "0,5 1,6 3,6 4,5 4,1 3,0 1,0 0,1 0,2.2 1,3.2 4,3.2",
+  "A": "0,6 0,2 2,0 4,2 4,6|0,3.5 4,3.5", "B": "0,6 0,0 3,0 4,1 4,2 3,3 0,3|3,3 4,4 4,5 3,6 0,6", "C": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5",
+  "D": "0,0 0,6 2.5,6 4,4.5 4,1.5 2.5,0 0,0", "E": "4,0 0,0 0,6 4,6|0,3 3,3", "F": "4,0 0,0 0,6|0,3 3,3", "G": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.5 2,3.5",
+  "H": "0,0 0,6|4,0 4,6|0,3 4,3", "I": "1,0 3,0|2,0 2,6|1,6 3,6", "J": "4,0 4,5 3,6 1,6 0,5", "K": "0,0 0,6|4,0 0,3.5|1.3,2.6 4,6", "L": "0,0 0,6 4,6",
+  "M": "0,6 0,0 2,3 4,0 4,6", "N": "0,6 0,0 4,6 4,0", "O": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "P": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5",
+  "Q": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1|2.5,4.5 4,6.4", "R": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5|2,3.5 4,6",
+  "S": "4,1 3,0 1,0 0,1 0,2 1,3 3,3 4,4 4,5 3,6 1,6 0,5", "T": "0,0 4,0|2,0 2,6", "U": "0,0 0,5 1,6 3,6 4,5 4,0", "V": "0,0 2,6 4,0",
+  "W": "0,0 1,6 2,3 3,6 4,0", "X": "0,0 4,6|4,0 0,6", "Y": "0,0 2,3|4,0 2,3|2,3 2,6", "Z": "0,0 4,0 0,6 4,6",
+  ".": "1.4,5 2.6,5 2.6,6 1.4,6 1.4,5", "-": "0.5,3 3.5,3", ":": "1.5,1.4 2.5,1.4 2.5,2.4 1.5,2.4 1.5,1.4|1.5,4.2 2.5,4.2 2.5,5.2 1.5,5.2 1.5,4.2",
+  "/": "0,6 4,0", ",": "2.4,5.2 1.6,6.8", "(": "3,0 1.5,1.5 1.5,4.5 3,6", ")": "1,0 2.5,1.5 2.5,4.5 1,6", "+": "0.5,3 3.5,3|2,1.5 2,4.5", "=": "0.5,2 3.5,2|0.5,4 3.5,4",
+  "'": "2,0 2,1.6", "%": "0,0 4,6|0.3,0.3 1.3,0.3 1.3,1.3 0.3,1.3 0.3,0.3|2.7,4.7 3.7,4.7 3.7,5.7 2.7,5.7 2.7,4.7", "#": "1,0 1,6|3,0 3,6|0,2 4,2|0,4 4,4", "?": "0,1 1,0 3,0 4,1 4,2 2,3.5 2,4.5|1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", " ": "",
+};
+const GLYPH = {}; for (const [k, v] of Object.entries(GLYPH_SRC)) GLYPH[k] = v ? v.split("|").map(s => s.trim().split(/\s+/).map(p => p.split(",").map(Number))) : [];
+function txtW(s, h) { const u = h / 6; return Math.max(0, String(s).length * 5.6 * u - 1.6 * u); }
+function txt(s, x, y, h, out, o = {}) {
+  s = String(s).toUpperCase(); const u = h / 6, adv = 5.6 * u, w = txtW(s, h), ox = o.a === "c" ? -w / 2 : o.a === "r" ? -w : 0;
+  for (let k = 0; k < s.length; k++) for (const pl of GLYPH[s[k]] || []) out.push([pl.map(([gx, gy]) => [x + ox + k * adv + gx * u, y + gy * u - h / 2]), false]);
+  return [x + ox, y - h / 2, x + ox + w, y + h / 2];
+}
+
+// ---------------- the vessel: profiles, zones ----------------
+const crom = (p0, p1, p2, p3, t) => 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+// pts: [height 0 rim .. 1 base, radius in units of the pot's height, 1 = sharp corner]. zones: heights of the rim|neck, neck|shoulder, shoulder|belly, belly|lower joins,
+// set at landmarks of each profile (the lip, the waist, the shoulder or keel, the widest belly).
+const SHAPES = {
+  beaker: { name: "BEAKER", pts: [[0, .35], [.12, .32], [.28, .30], [.42, .33], [.56, .385], [.68, .40], [.82, .35], [.94, .27], [1, .25]], zones: [.08, .30, .52, .76] },
+  jar: { name: "JAR", pts: [[0, .30], [.03, .31], [.09, .28], [.20, .36], [.36, .47], [.48, .50], [.65, .46], [.85, .34], [1, .27]], zones: [.09, .21, .38, .66] },
+  funnel: { name: "FUNNEL BEAKER", pts: [[0, .44], [.08, .37], [.17, .30], [.26, .26], [.36, .34], [.46, .42], [.58, .44], [.78, .36], [.93, .25], [1, .22]], zones: [.07, .26, .46, .70] },
+  bowl: { name: "BOWL", pts: [[0, 1.05], [.06, 1.07], [.30, 1.0], [.60, .80], [.85, .52], [1, .42]], zones: [.11, .33, .56, .78] },
+  carinated: { name: "CARINATED BOWL", pts: [[0, .80], [.05, .80], [.20, .86], [.48, 1.0, 1], [.75, .76], [1, .60]], zones: [.10, .30, .48, .72] },
+  amphora: { name: "AMPHORA", pts: [[0, .15], [.03, .17], [.06, .135], [.16, .12], [.26, .17], [.38, .27], [.50, .30], [.66, .26], [.84, .15], [.96, .08], [1, .10]], zones: [.06, .22, .42, .68] },
+  tub: { name: "TUB", pts: [[0, .55], [.03, .56], [.20, .52], [.50, .48], [.80, .44], [1, .42]], zones: [.10, .30, .52, .76] },
+};
+const ZONES = ["rim", "neck", "shoulder", "belly", "lower"];
+function profileFn(pts) {
+  const n = pts.length;
+  return yf => {
+    yf = Math.min(1, Math.max(0, yf)); let i = 0; while (i < n - 2 && yf > pts[i + 1][0]) i++;
+    const a = pts[i], b = pts[i + 1], t = b[0] > a[0] ? (yf - a[0]) / (b[0] - a[0]) : 0;
+    const p0 = (a[2] || i === 0) ? a[1] : pts[i - 1][1], p3 = (b[2] || i + 2 >= n) ? b[1] : pts[i + 2][1];
+    return crom(p0, a[1], b[1], p3, t);
+  };
+}
+const STRIP = 10;   // title strip at the top of both sheets, mm
+function makeVessel(o, W, H) {
+  const S = SHAPES[o.shape], jr = mulberry32(o.seed * 15485863 + 3), m = o.margin;
+  const pts = S.pts.map(([y, r, c], i) => [i === 0 || i === S.pts.length - 1 ? y : y + (jr() - 0.5) * 0.010, r * (1 + (jr() - 0.5) * 0.07), c]);
+  const rU = profileFn(pts), NT = 900, tab = new Float64Array(NT + 1); let rmaxU = 0;
+  for (let k = 0; k <= NT; k++) { tab[k] = rU(k / NT); if (tab[k] > rmaxU) rmaxU = tab[k]; }
+  const bx0 = m, bx1 = W - m, by0 = m + STRIP, by1 = H - m, s = Math.min((bx1 - bx0) / (2 * rmaxU), by1 - by0);
+  const Hv = s, cx = W / 2, yTop = by0 + ((by1 - by0) - Hv) / 2, yBot = yTop + Hv, rMm = y => { const f = Math.min(NT, Math.max(0, (y - yTop) / Hv * NT)), i = Math.min(NT - 1, Math.floor(f)); return s * (tab[i] + (tab[i + 1] - tab[i]) * (f - i)); };
+  const ys = new Set([0, 1]); const K = Math.ceil(Hv / 0.6); for (let k = 0; k <= K; k++) ys.add(k / K); for (const p of pts) if (p[2]) ys.add(p[0]);
+  const yl = [...ys].sort((a, b) => a - b), right = simplify(yl.map(yf => [cx + s * rU(yf), yTop + yf * Hv]), 0.04);
+  const poly = [...right, ...right.slice().reverse().map(([x, y]) => [2 * cx - x, y])];
+  const zoneY = S.zones.map(f => yTop + f * Hv), zb = [yTop, ...zoneY, yBot];
+  return { S, W, H, m, cx, yTop, yBot, Hv, s, rmaxU, rMm, poly: dedupe(poly), zoneY, zoneBounds: zb, bx0, bx1, by0, by1 };
+}
+
+// ---------------- fracture: sequential breaks ----------------
+function fractal(p, q, rnd, amp) {
+  const out = [p];
+  (function rec(a, b, am, depth) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+    if (L < CUT_SEG_MIN * 2 || depth > 7) { out.push(b); return; }
+    const d = Math.min(am, CUT_WIGGLE_REL * L) * (rnd() * 2 - 1);
+    const mid = [(a[0] + b[0]) / 2 - dy / L * d, (a[1] + b[1]) / 2 + dx / L * d];
+    rec(a, mid, am * 0.72, depth + 1); rec(mid, b, am * 0.72, depth + 1);
+  })(p, q, amp, 0);
+  return out;
+}
+// Grid raster of a piece: inside mask and a chamfer distance to the outside.
+function pieceGrid(P, g0) {
+  const bb = bboxOf(P), w = bb[2] - bb[0], h = bb[3] - bb[1], g = g0 || Math.min(1.6, Math.max(0.8, Math.max(w, h) / 45));
+  const gw = Math.ceil(w / g) + 2, gh = Math.ceil(h / g) + 2, ins = new Uint8Array(gw * gh), n = P.length, x0 = bb[0] - g * 0.5, y0 = bb[1] - g * 0.5;
+  const rows = Array.from({ length: gh }, () => []);   // x where each polygon edge crosses each scan row
+  for (let i = 0; i < n; i++) {
+    const a = P[i], b = P[(i + 1) % n], ya = a[1], yb = b[1]; if (ya === yb) continue;
+    const lo = Math.min(ya, yb), hi = Math.max(ya, yb), j0 = Math.max(0, Math.ceil((lo - 1e-7 - y0) / g) - 1), j1 = Math.min(gh - 1, Math.ceil((hi - 1e-7 - y0) / g) + 1);
+    for (let j = j0; j <= j1; j++) { const y = y0 + j * g + 1e-7; if ((ya <= y) !== (yb <= y)) rows[j].push(a[0] + (y - ya) * (b[0] - a[0]) / (yb - ya)); }
+  }
+  for (let j = 0; j < gh; j++) {
+    const xs = rows[j]; xs.sort((p, q) => p - q);
+    for (let k = 0; k + 1 < xs.length; k += 2) { const i0 = Math.max(0, Math.ceil((xs[k] - x0) / g)), i1 = Math.min(gw - 1, Math.floor((xs[k + 1] - x0) / g)); for (let i = i0; i <= i1; i++) ins[j * gw + i] = 1; }
+  }
+  const D = new Float32Array(gw * gh), d2 = g * Math.SQRT2;   // chamfer distance to the outside, two passes; a cell on the grid edge is one step from outside
+  for (let k = 0; k < D.length; k++) D[k] = ins[k] ? 1e9 : 0;
+  for (let j = 0; j < gh; j++) for (let i = 0, k = j * gw; i < gw; i++, k++) { if (!ins[k]) continue; let v = D[k];
+    if (i > 0) { const t = D[k - 1] + g; if (t < v) v = t; } else if (g < v) v = g;
+    if (j > 0) { let t = D[k - gw] + g; if (t < v) v = t; if (i > 0) { t = D[k - gw - 1] + d2; if (t < v) v = t; } if (i < gw - 1) { t = D[k - gw + 1] + d2; if (t < v) v = t; } } else if (g < v) v = g;
+    D[k] = v; }
+  for (let j = gh - 1; j >= 0; j--) for (let i = gw - 1, k = j * gw + i; i >= 0; i--, k--) { if (!ins[k]) continue; let v = D[k];
+    if (i < gw - 1) { const t = D[k + 1] + g; if (t < v) v = t; } else if (g < v) v = g;
+    if (j < gh - 1) { let t = D[k + gw] + g; if (t < v) v = t; if (i < gw - 1) { t = D[k + gw + 1] + d2; if (t < v) v = t; } if (i > 0) { t = D[k + gw - 1] + d2; if (t < v) v = t; } } else if (g < v) v = g;
+    D[k] = v; }
+  return { x0, y0, g, gw, gh, ins, D };
+}
+// Inscribed radius (exact distance at the best grid cells) and the neck test (erode by half the neck limit, one component, no long thin arms).
+function measurePiece(P, g0, slack = 0, neckHalf = CUT_NECK_MIN / 2 + 0.25) {
+  const G = pieceGrid(P, g0), { x0, y0, g, gw, gh, ins, D } = G; let Dm = 0;
+  for (let k = 0; k < D.length; k++) if (ins[k] && D[k] > Dm) Dm = D[k];
+  if (Dm <= 0) return { rin: 0, neckOK: false, spot: P[0] };
+  const cand = []; for (let k = 0; k < D.length; k++) if (ins[k] && D[k] >= Dm - 1.2 * g) cand.push(k);
+  const step = Math.max(1, Math.floor(cand.length / 40)); let rin = 0, spot = null;
+  for (let c = 0; c < cand.length; c += step) { const k = cand[c], x = x0 + (k % gw) * g, y = y0 + Math.floor(k / gw) * g, d = pip(P, x, y) ? distEdges(P, x, y) : 0; if (d > rin) { rin = d; spot = [x, y]; } }
+  const thr = neckHalf + g / 2, er = new Uint8Array(gw * gh); let nEr = 0;
+  for (let k = 0; k < D.length; k++) if (ins[k] && D[k] >= thr) { er[k] = 1; nEr++; }
+  if (!nEr) return { rin, neckOK: false, spot };
+  const lab = new Int32Array(gw * gh); let comps = 0; const st = [];
+  for (let k0 = 0; k0 < er.length && comps < 2; k0++) if (er[k0] && !lab[k0]) {
+    comps++; lab[k0] = comps; st.push(k0);
+    while (st.length) { const k = st.pop(), i = k % gw, j = (k - i) / gw; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= gw || jj >= gh) continue; const kk = jj * gw + ii; if (er[kk] && !lab[kk]) { lab[kk] = comps; st.push(kk); } } }
+  }
+  if (comps > 1) return { rin, neckOK: false, spot };
+  // distance from the core through the piece (8-neighbour chamfer, settled with a heap so curved pieces are exact, and stopped as soon as it passes the limit)
+  const tip = neckHalf / Math.sin(CUT_MIN_ANGLE * Math.PI / 360) + 2.0, lim = tip - slack, d2 = g * Math.SQRT2, F = new Float32Array(gw * gh);
+  for (let k = 0; k < F.length; k++) F[k] = er[k] ? 0 : (ins[k] ? 1e9 : -1);
+  const hk = [], hv = [];   // binary min-heap of (distance, cell)
+  const push = (d, k) => { let i = hk.length; hk.push(d); hv.push(k); while (i > 0) { const q = (i - 1) >> 1; if (hk[q] <= d) break; hk[i] = hk[q]; hv[i] = hv[q]; i = q; } hk[i] = d; hv[i] = k; };
+  const pop = () => { const d0 = hk[0], k0 = hv[0], d = hk.pop(), k = hv.pop(), n = hk.length; if (n) { let i = 0; for (;;) { let c = 2 * i + 1; if (c >= n) break; if (c + 1 < n && hk[c + 1] < hk[c]) c++; if (hk[c] >= d) break; hk[i] = hk[c]; hv[i] = hv[c]; i = c; } hk[i] = d; hv[i] = k; } return [d0, k0]; };
+  for (let k = 0; k < F.length; k++) if (er[k]) push(0, k);
+  let far = 0;
+  while (hk.length) {
+    const [d, k] = pop(); if (d > F[k]) continue; if (d > far) far = d; if (d > lim) return { rin, neckOK: false, far, spot };
+    const i = k % gw, j = (k - i) / gw;
+    for (let dj = -1; dj <= 1; dj++) { const jj = j + dj; if (jj < 0 || jj >= gh) continue; for (let di = -1; di <= 1; di++) { if (!di && !dj) continue; const ii = i + di; if (ii < 0 || ii >= gw) continue; const kk = jj * gw + ii; if (F[kk] < 0) continue; const nd = d + (di && dj ? d2 : g); if (nd < F[kk]) { F[kk] = nd; push(nd, kk); } } }
+  }
+  return { rin, neckOK: far <= lim, far, spot };
+}
+// pieceOK and violates ask the same question of the same polygon; measure once per polygon object
+const NMCACHE = new WeakMap();
+function neckMeasure(P) { let m = NMCACHE.get(P); if (!m) NMCACHE.set(P, m = measurePiece(P, 0, 0.5, CUT_NECK_MIN / 2 + 0.75)); return m; }
+const MINA = Math.PI * CUT_MIN_R * CUT_MIN_R;
+// Oriented bounding box: [aspect, angle of the long axis]
+function hull(P) {
+  const pts = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), h = [];
+  for (let pass = 0; pass < 2; pass++) { const s0 = h.length; for (const p of pass ? pts.slice().reverse() : pts) { while (h.length >= s0 + 2 && cr(h[h.length - 2], h[h.length - 1], p) <= 0) h.pop(); h.push(p); } h.pop(); }
+  return h;
+}
+function obb(P) {
+  let best = 1e18, res = [1, 0]; const Q = P.length > 12 ? hull(P) : P;   // the box of the hull is the box of the piece
+  for (let a = 0; a < 180; a += 6) {
+    const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180); let u0 = 1e18, u1 = -1e18, v0 = 1e18, v1 = -1e18;
+    for (const [x, y] of Q) { const u = x * c + y * s, v = -x * s + y * c; if (u < u0) u0 = u; if (u > u1) u1 = u; if (v < v0) v0 = v; if (v > v1) v1 = v; }
+    const w = u1 - u0, h = v1 - v0, ar = w * h; if (ar < best) { best = ar; res = w >= h ? [w / Math.max(h, 1e-6), a * Math.PI / 180] : [h / Math.max(w, 1e-6), a * Math.PI / 180 + Math.PI / 2]; }
+  }
+  return res;
+}
+let BASEY = 1e9;   // pieces centred below this y (the foot of the pot) must be chunky, not strips; set per pot in fracture()
+function pieceOK(P, minC = 0, big = false) {
+  const a = Math.abs(area2(P)) / 2; if (a < MINA) return false;
+  if (minAngle(P) < CUT_MIN_ANGLE * Math.PI / 180 - 1e-9) return false;
+  if (!big && obb(P)[0] > CUT_MAX_ASPECT) return false;
+  if (!big && P.length > 2 && centroidOf(P)[1] > BASEY && obb(P)[0] > (minC >= 0.15 ? 1.9 : 2.3)) return false;
+  const bb = bboxOf(P); if (bb[2] - bb[0] < 2 * CUT_MIN_R || bb[3] - bb[1] < 2 * CUT_MIN_R) return false;
+  const M = neckMeasure(P); return M.rin >= CUT_MIN_R && (big || M.neckOK) && Math.PI * M.rin * M.rin / a >= minC;   // minC keeps long thin strips out while the piece can still be split well
+}
+function lineHits(P, c, d) {
+  let tp = 1e18, ip = -1, tm = -1e18, im = -1;
+  for (let i = 0, n = P.length; i < n; i++) {
+    const a = P[i], b = P[(i + 1) % n], ex = b[0] - a[0], ey = b[1] - a[1], den = d[0] * ey - d[1] * ex; if (Math.abs(den) < 1e-12) continue;
+    const ax = a[0] - c[0], ay = a[1] - c[1], t = (ax * ey - ay * ex) / den, u = (ax * d[1] - ay * d[0]) / den;
+    if (u < 0 || u >= 1) continue;
+    if (t > 1e-6 && t < tp) { tp = t; ip = i; } else if (t < -1e-6 && t > tm) { tm = t; im = i; }
+  }
+  return ip < 0 || im < 0 ? null : { tp, ip, tm, im };
+}
+function chainOK(P, chain) {
+  const n = P.length, m = chain.length;
+  for (let k = 1; k < m - 1; k++) if (!pip(P, chain[k][0], chain[k][1])) return false;
+  for (let k = 0; k + 1 < m; k++) {
+    const a = chain[k], b = chain[k + 1];
+    for (let i = 0; i < n; i++) if (properCross(a, b, P[i], P[(i + 1) % n])) return false;
+    for (let j = k + 2; j + 1 < m; j++) if (properCross(a, b, chain[j], chain[j + 1])) return false;
+  }
+  return true;
+}
+function splitPoly(P, i, p, j, q, chain) {
+  const n = P.length;
+  if (i > j) { [i, j] = [j, i]; [p, q] = [q, p]; chain = chain.slice().reverse(); }
+  const A = [...chain]; for (let k = j + 1; k < n; k++) A.push(P[k]); for (let k = 0; k <= i; k++) A.push(P[k]);
+  const B = [p]; for (let k = i + 1; k <= j; k++) B.push(P[k]); B.push(q); for (let k = chain.length - 2; k >= 1; k--) B.push(chain[k]);
+  return [dedupe(A), dedupe(B)];
+}
+function tryChord(pc, rnd, o, V, along) {
+  const P = pc.P, bb = bboxOf(P), cen = centroidOf(P), n = P.length, ob = obb(P); let phi, c;
+  const yb = V.zoneY.filter(y => y > bb[1] + 5 && y < bb[3] - 5);
+  if (ob[0] > 1.7) { phi = ob[1] + Math.PI / 2 + (rnd() - 0.5) * 1.0; c = pip(P, cen[0], cen[1]) ? [cen[0] + (rnd() - 0.5) * 6, cen[1] + (rnd() - 0.5) * 6] : null; if (!c || !pip(P, c[0], c[1])) c = pip(P, cen[0], cen[1]) ? cen : null; if (!c) return null; }
+  else if (rnd() < along && yb.length) {
+    const y = yb[Math.floor(rnd() * yb.length)] + (rnd() - 0.5) * 3; phi = (rnd() - 0.5) * 0.12; c = null;
+    for (let t = 0; t < 30; t++) { const x = bb[0] + rnd() * (bb[2] - bb[0]); if (pip(P, x, y)) { c = [x, y]; break; } }
+    if (!c) return null;
+  } else {
+    const r2 = rnd(); phi = r2 < 0.2 ? Math.PI / 2 + (rnd() - 0.5) * 1.3 : r2 < 0.42 ? (rnd() - 0.5) * 0.9 : rnd() * Math.PI;
+    const sx = (bb[2] - bb[0]) * 0.22, sy = (bb[3] - bb[1]) * 0.22, nx = -Math.sin(phi), ny = Math.cos(phi), ext = Math.abs(nx) * (bb[2] - bb[0]) + Math.abs(ny) * (bb[3] - bb[1]), sh = rnd() < 0.5 ? (rnd() - 0.5) * 0.7 * ext : 0; c = null;
+    for (let t = 0; t < 20; t++) { const x = cen[0] + nx * sh * (t < 12 ? 1 : 0.3) + (rnd() + rnd() + rnd() - 1.5) * sx, y = cen[1] + ny * sh * (t < 12 ? 1 : 0.3) + (rnd() + rnd() + rnd() - 1.5) * sy; if (pip(P, x, y)) { c = [x, y]; break; } }
+    if (!c) c = pip(P, cen[0], cen[1]) ? cen : null; if (!c) return null;
+  }
+  const d = [Math.cos(phi), Math.sin(phi)], hit = lineHits(P, c, d); if (!hit) return null;
+  let i = hit.im, j = hit.ip, p = [c[0] + hit.tm * d[0], c[1] + hit.tm * d[1]], q = [c[0] + hit.tp * d[0], c[1] + hit.tp * d[1]];
+  const SNAP = 1.6, snap = (idx, pt) => { const a = P[idx], b = P[(idx + 1) % n]; if (Math.hypot(pt[0] - a[0], pt[1] - a[1]) < SNAP) return [idx, a]; if (Math.hypot(pt[0] - b[0], pt[1] - b[1]) < SNAP) return [(idx + 1) % n, b]; return [idx, pt]; };
+  [i, p] = snap(i, p); [j, q] = snap(j, q);
+  if (i === j) return null;
+  const L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L < 8) return null;
+  const wig = o.wiggle, amp = wig * CUT_WIGGLE_MAX;
+  // A long crack that would run near-vertical (or near-straight at all) must wander: two waypoints pushed to opposite sides, so it dog-legs like real breakage.
+  const ang = Math.atan2(Math.abs(q[1] - p[1]), Math.abs(q[0] - p[0])) * 180 / Math.PI, longVert = ang > 58 && L > 32 && wig > 0.2, wander = L > 30 && wig > 0.2;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const f = attempt === 0 ? 1 : attempt === 1 ? 0.7 : attempt === 2 ? 0.4 : 0;
+    if (f === 0 && (longVert || wander)) break;   // a long wandering crack is never allowed to fall back to a ruler line
+    const am = amp * f;
+    let chain;
+    if (am > 0.05 || wander) {
+      const nx = -(q[1] - p[1]) / L, ny = (q[0] - p[0]) / L, nw = wander ? Math.min(6, Math.max(2, Math.round(L / 42))) : 1, wps = [p], sgn = rnd() < 0.5 ? 1 : -1;
+      for (let k = 1; k <= nw; k++) {
+        const t = (k + (rnd() - 0.5) * 0.5) / (nw + 1);
+        let off = (rnd() * 2 - 1) * Math.min(0.15 * L, 11) * wig * f;
+        if (wander) { const mag = Math.min(longVert ? 0.2 : 0.13, 0.42 / (nw + 1) * 1.2) * L; off = sgn * (k % 2 ? 1 : -1) * Math.min(mag, 12) * (0.6 + 0.5 * rnd()) * Math.max(f, 0.5) * (0.5 + wig); }
+        wps.push([p[0] + (q[0] - p[0]) * t + nx * off, p[1] + (q[1] - p[1]) * t + ny * off]);
+      }
+      wps.push(q); chain = [p]; for (let k = 0; k + 1 < wps.length; k++) chain = chain.concat(am > 0.05 ? fractal(wps[k], wps[k + 1], rnd, am).slice(1) : [wps[k + 1]]);
+    } else chain = [p, q];
+    if (!chainOK(P, chain)) continue;
+    const kids = splitPoly(P, i, p, j, q, chain);
+    if (kids.some(k => k.length < 3 || area2(k) <= 0)) continue;
+    const minC = pc.tries > 8 ? 0.08 : pc.tries > 4 ? 0.15 : 0.22; if (kids.every(k => pieceOK(k, minC, V.early))) return kids;
+    return null;
+  }
+  return null;
+}
+// Insert vertices where another piece's corner lies on the middle of an edge, so shared cracks are identical point lists.
+function repairT(polys) {
+  const cs = 4, hash = new Map(), key = (a, b) => a * 65536 + b; let inserted = 0;
+  const segs = [];
+  polys.forEach((P, pi) => { for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], id = segs.length; segs.push({ pi, i, a, b, ins: [] });
+    const x0 = Math.floor((Math.min(a[0], b[0]) - 1e-3) / cs), x1 = Math.floor((Math.max(a[0], b[0]) + 1e-3) / cs), y0 = Math.floor((Math.min(a[1], b[1]) - 1e-3) / cs), y1 = Math.floor((Math.max(a[1], b[1]) + 1e-3) / cs);
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const k = key(x + 1000, y + 1000); let l = hash.get(k); if (!l) hash.set(k, l = []); l.push(id); } } });
+  for (const P of polys) for (const v of P) {
+    const l = hash.get(key(Math.floor(v[0] / cs) + 1000, Math.floor(v[1] / cs) + 1000)) || [];
+    for (const id of l) { const s = segs[id]; if ((s.a[0] === v[0] && s.a[1] === v[1]) || (s.b[0] === v[0] && s.b[1] === v[1])) continue;
+      if (segDist2(v[0], v[1], s.a[0], s.a[1], s.b[0], s.b[1]) < 1e-10) { const dx = s.b[0] - s.a[0], dy = s.b[1] - s.a[1], t = ((v[0] - s.a[0]) * dx + (v[1] - s.a[1]) * dy) / (dx * dx + dy * dy); if (!s.ins.some(e => e.v === v || (e.v[0] === v[0] && e.v[1] === v[1]))) { s.ins.push({ t, v }); inserted++; } } }
+  }
+  const out = polys.map(() => []);
+  for (const s of segs) { out[s.pi].push(s.a); s.ins.sort((p, q) => p.t - q.t); for (const e of s.ins) out[s.pi].push(e.v); }
+  return { polys: out, inserted };
+}
+const violates = P => obb(P)[0] > CUT_MAX_ASPECT || !neckMeasure(P).neckOK;
+function fractureOnce(V, o, rnd, N) {
+  BASEY = V.yBot - 0.17 * V.Hv; const A0 = Math.abs(area2(V.poly)) / 2; V.bigA = 2.2 * A0 / N;   // pieces above this size may still be awkward shapes, they get split again
+  const mk = P => ({ P, a: Math.abs(area2(P)) / 2, tries: 0, dead: false, viol: V.early ? violates(P) : false });   // kids made after the early phase already passed the strict tests
+  V.early = true; let pieces = [mk(V.poly)];
+  const along = o.along * 0.6; let guard = 0;
+  while (guard++ < N * 45 + 100) {
+    const viol = pieces.filter(p => p.viol && !p.dead && p.a >= 2 * MINA);
+    if ((pieces.length >= N && !viol.length) || pieces.length >= N + 10) break;
+    const cand = viol.length ? viol : pieces.filter(p => !p.dead && p.a >= 2 * MINA); if (!cand.length) break;
+    let tot = 0; for (const p of cand) { p.w = p.a ** 1.3 * (obb(p.P)[0] > 1.8 ? 2.5 : 1); tot += p.w; } let r = rnd() * tot, pc = cand[0]; for (const p of cand) { r -= p.w; if (r <= 0) { pc = p; break; } }
+    V.early = pc.viol;
+    const kids = tryChord(pc, rnd, o, V, along);
+    if (kids) { pieces.splice(pieces.indexOf(pc), 1, ...kids.map(mk)); } else { pc.tries++; if (pc.tries > (pc.viol ? 14 : 7)) { pc.dead = true; if (pc.viol) break; } }
+  }
+  const rep = repairT(pieces.map(p => p.P));
+  return { polys: rep.polys.map(dedupe), inserted: rep.inserted, asked: N, bad: pieces.filter(p => p.viol).length };
+}
+// A run can leave a piece that is too long or has a thin neck; try again with a fresh stream (up to 4 times) and keep the cleanest.
+function fracture(V, o, seed) {
+  let best = null, N = o.sherds;
+  for (let a = 0; a < 9; a++) { const r = fractureOnce(V, o, mulberry32(seed + a * 7919), N); r.asked = o.sherds; if (!best || r.bad < best.bad) best = r; if (!r.bad) break; if (a >= 1) N = Math.max(2, N - Math.ceil(o.sherds * 0.1)); }   // too small a pot for that many pieces: ask for a few fewer
+  return best;
+}
+
+// ---------------- decoration ----------------
+const MNAME = { grooves: "INCISED GROOVES", chevron: "CHEVRONS", zigzag: "ZIGZAG", herring: "HERRINGBONE", pendant: "HATCHED TRIANGLES", lattice: "CROSS-HATCHED LATTICE", lozenge: "HATCHED LOZENGES", cord: "TWISTED CORD", comb: "COMB STAMPING", nail: "FINGERNAIL", tip: "FINGERTIP", ringdot: "RING AND DOT", rosette: "ROSETTES", crosscircle: "CROSS IN CIRCLE", meander: "MEANDER", spiral: "SPIRALS", wave: "RUNNING WAVE", notes: "LINE AND NOTE-HEAD BAND", ribs: "RIBS", ovolo: "OVOLO", roulette: "ROULETTING", metopes: "METOPES", burnish: "BURNISH", notchrim: "NOTCHED RIM", stab: "STAB ROWS", cordon: "FINGERTIP CORDON", paintband: "PAINTED BANDS" };
+const MINH = { grooves: 1.2, zigzag: 3, chevron: 4, herring: 4, pendant: 5, lattice: 4, lozenge: 6, cord: 2.6, comb: 2, nail: 2.8, tip: 2.4, ringdot: 3.6, rosette: 5, crosscircle: 5, meander: 8, spiral: 7, wave: 4, notes: 7, ribs: 8, ovolo: 7, roulette: 1.6, metopes: 12, burnish: 6, notchrim: 1.5, stab: 2.2, cordon: 4, paintband: 1.2, plain: 0 };
+const CAPH = { pendant: 16, lozenge: 22, herring: 16, zigzag: 14, meander: 30, spiral: 24, notes: 24, ovolo: 16, metopes: 44, wave: 16, lattice: 30, chevron: 24, paintband: 40, grooves: 24, ribs: 60 };
+// A scheme lists, zone by zone, the bands from top to bottom: [motif, height in mm or "*" for what is left, "p" if painted].
+const SCHEMES = {
+  bell: { rim: [["comb", 7]], neck: [["grooves", 3], ["lattice", 10], ["grooves", 3], ["pendant", 10]], shoulder: [["comb", 7], ["chevron", 9], ["comb", 7], ["pendant", 12]], belly: [["lattice", 14], ["comb", 7], ["pendant", 12], ["chevron", 8]], lower: [["comb", 7], ["lattice", 11], ["grooves", 3]] },
+  trb: { rim: [["stab", "*"]], neck: [["stab", 8], ["plain", "*"], ["grooves", 4]], shoulder: [["pendant", 13], ["grooves", 4]], belly: [["ribs", "*"]], lower: [["grooves", 4], ["plain", "*"]] },
+  corded: { rim: [["plain", "*"]], neck: [["cord", "*"]], shoulder: [["grooves", 4], ["herring", 8], ["plain", "*"]], belly: [["plain", "*"]], lower: [["plain", "*"], ["cord", 9]] },
+  lbk: { rim: [["notchrim", "*"]], neck: [["notes", "*"]], shoulder: [["notes", "*"]], belly: [["plain", 4], ["notes", "*"]], lower: [["plain", "*"]] },
+  grooved: { rim: [["grooves", "*"]], neck: [["lozenge", "*"]], shoulder: [["chevron", "*"]], belly: [["spiral", "*"]], lower: [["grooves", "*"]] },
+  geometric: { rim: [["paintband", "*", "p"]], neck: [["paintband", 5, "p"], ["zigzag", "*", "p"], ["paintband", 5, "p"]], shoulder: [["chevron", "*", "p"], ["paintband", 5, "p"]], belly: [["meander", 22, "p"], ["paintband", 4, "p"], ["metopes", "*", "p"], ["paintband", 4, "p"]], lower: [["paintband", 6, "p"], ["plain", "*"], ["paintband", 6, "p"], ["plain", 8], ["paintband", 12, "p"]] },
+  samian: { rim: [["roulette", "*"]], neck: [["ovolo", "*"]], shoulder: [["wave", "*"], ["grooves", 3]], belly: [["roulette", 6], ["plain", "*"]], lower: [["grooves", 5], ["plain", "*"], ["roulette", 5]] },
+  ironage: { rim: [["tip", "*"]], neck: [["plain", "*"]], shoulder: [["plain", 5], ["cordon", 6], ["plain", "*"]], belly: [["burnish", "*"]], lower: [["burnish", "*"]] },
+};
+const TRADNAME = { bell: "BELL BEAKER", trb: "FUNNEL BEAKER (TRB)", corded: "CORDED WARE", lbk: "LINEAR POTTERY", grooved: "GROOVED WARE", geometric: "GREEK GEOMETRIC", samian: "ROMAN SAMIAN", ironage: "IRON AGE", custom: "MIXED MOTIFS" };
+function layoutBands(list, y0, y1) {
+  const pad = 0.9, avail = y1 - y0 - 2 * pad; if (avail < 1.5) return [];
+  let items = list.map(([id, h, fl]) => ({ id, h, fl }));
+  let fixed = 0, stars = 0; for (const it of items) { if (it.h === "*") stars++; else fixed += it.h; }
+  let f = 1;
+  if (fixed > avail) {
+    while (items.length > 1 && fixed * 0.6 > avail) { const k = items.length - 1; if (items[k].h === "*") stars--; else fixed -= items[k].h; items.pop(); }
+    f = Math.min(1, avail / fixed);
+  }
+  const fixedS = fixed * f; let starH = stars ? (avail - fixedS) / stars : 0; if (starH < 1.2) starH = 0;
+  const out = []; let y = y0 + pad;
+  const gap = !stars && fixedS < avail ? (avail - fixedS) / (items.length + 1) : 0;
+  for (const it of items) {
+    y += gap; const h = it.h === "*" ? starH : it.h * f;
+    if (h > 0 && it.id !== "plain") out.push({ id: it.id, y0: y, y1: y + h, h, yc: y + h / 2, fl: it.fl });
+    y += h;
+  }
+  return out;
+}
+
+function decorate(V, o, drnd) {
+  const { cx, rMm } = V, FS = o.foreshorten === "on", LIM = FS ? 1.40 : 1.0, S = o.mscale, D = o.dens, PITCH = Math.max(0.5, o.pitch);
+  const RAW = { incised: [], shade: [], paint: [] }, used = [];
+  const proj = (th, y) => [cx + rMm(y) * (FS ? Math.sin(th) : th), y];
+  const limFor = sp => FS ? Math.min(LIM, Math.max(0.6, Math.acos(Math.min(0.95, MINSEP / sp)))) : LIM;
+  function emitTY(layer, ty, closed, lim = LIM) {
+    lim = Math.min(lim, LIM); const n = ty.length, segs = closed ? n : n - 1, out = [];
+    for (let i = 0; i < segs; i++) {
+      const a = ty[i], b = ty[(i + 1) % n], rm = rMm((a[1] + b[1]) / 2), len = Math.hypot((b[0] - a[0]) * rm, b[1] - a[1]), k = Math.max(1, Math.ceil(len / 0.4));
+      for (let j = 0; j < k; j++) out.push([a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k]);
+    }
+    if (!closed) out.push(ty[n - 1]);
+    const ok = out.map(p => Math.abs(p[0]) <= lim);
+    if (closed && ok.every(Boolean)) { RAW[layer].push([out.map(([t, y]) => proj(t, y)), true]); return; }
+    let cur = []; const flush = () => { if (cur.length > 1) RAW[layer].push([cur, false]); cur = []; };
+    for (let i = 0; i < out.length; i++) { if (ok[i]) cur.push(proj(out[i][0], out[i][1])); else flush(); }
+    flush();
+  }
+  const rowTh = (r, w, ph) => { const n = Math.max(6, Math.round(TAU * r / w)), st = TAU / n, km = Math.ceil((LIM + st) / st) + 1, list = []; for (let k = -km; k <= km; k++) list.push({ t: (k + ph) * st, k }); return { n, st, list }; };
+  const thin = (list, r, minSep) => {
+    const vis = list.filter(e => Math.abs(e.t) <= LIM); if (!FS) return vis;
+    vis.sort((a, b) => Math.abs(a.t) - Math.abs(b.t)); let lp = -1e9, ln = 1e9; const out = [];
+    for (const e of vis) { const x = r * Math.sin(e.t); if (e.t >= 0) { if (x - lp >= minSep) { out.push(e); lp = x; } } else if (ln - x >= minSep) { out.push(e); ln = x; } }
+    return out;
+  };
+  const stamp = (layer, th, yc, uv, closed) => { const r0 = rMm(yc); emitTY(layer, uv.map(([u, v]) => [th + u / r0, yc + v]), closed, LIM); };
+  const rows = (B, sp, w, minSep, fn) => {
+    const k = Math.max(1, Math.floor(B.h / sp + 1e-6)), y00 = B.yc - (k - 1) * sp / 2;
+    for (let i = 0; i < k; i++) { const y = y00 + i * sp, r = rMm(y), rt = rowTh(r, w, (i & 1) ? 0.5 : 0); for (const e of thin(rt.list, r, minSep)) fn(e.t, y, i, e.k, r); }
+  };
+  const ell = (rx, ry, n = 10) => Array.from({ length: n }, (_, i) => [rx * Math.cos(TAU * i / n), ry * Math.sin(TAU * i / n)]);
+  const LN = B => B.paint ? "paint" : "incised", HT = B => B.paint ? "paint" : "shade";
+  function filled(B, ty, ang) {
+    const n = ty.length, dense = []; for (let i = 0; i < n; i++) { const a = ty[i], b = ty[(i + 1) % n], rm = rMm((a[1] + b[1]) / 2), k = Math.max(1, Math.ceil(Math.hypot((b[0] - a[0]) * rm, b[1] - a[1]) / 0.5)); for (let j = 0; j < k; j++) dense.push([a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k]); }
+    const poly = dense.map(([t, y]) => proj(Math.max(-LIM, Math.min(LIM, t)), y));
+    if (Math.abs(area2(poly)) / 2 >= 1.2) {
+      const p0 = proj(ty[0][0], ty[0][1]), p2 = proj(ty[2][0], ty[2][1]), hs = [];
+      hatchPoly(poly, ang == null ? Math.atan2(p2[1] - p0[1], p2[0] - p0[0]) : ang, PITCH, hs, 0.6);
+      for (const [l] of hs) RAW[HT(B)].push([densify(l, false, 0.4), false]);
+    }
+    emitTY(LN(B), ty, true, LIM);
+  }
+  const clipLR = (x0, y0, x1, y1, hw, hh) => {
+    let t0 = 0, t1 = 1; const dx = x1 - x0, dy = y1 - y0;
+    for (const [p, q] of [[-dx, x0 + hw], [dx, hw - x0], [-dy, y0 + hh], [dy, hh - y0]]) { if (Math.abs(p) < 1e-12) { if (q < 0) return null; } else { const r = q / p; if (p < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; } } }
+    return t1 - t0 < 1e-6 ? null : [[x0 + dx * t0, y0 + dy * t0], [x0 + dx * t1, y0 + dy * t1]];
+  };
+  const RECT = [[-0.4, -0.75], [0.4, -0.75], [0.4, 0.75], [-0.4, 0.75]];
+  const CRES = [...Array.from({ length: 9 }, (_, i) => { const a = Math.PI * (1 - i / 8); return [1.4 * Math.cos(a), -1.1 * Math.sin(a) + 0.4]; }), ...Array.from({ length: 9 }, (_, i) => { const a = Math.PI * i / 8; return [1.4 * Math.cos(a), -0.5 * Math.sin(a) + 0.4]; })];
+  const petal = (R, ang) => { const up = [], dn = []; for (let i = 0; i <= 8; i++) { const t = i / 8, w = 0.3 * R * Math.sin(Math.PI * t), x = R * 0.95 * t; up.push([x, w]); dn.push([x, -w]); } return [...up, ...dn.reverse()].map(([x, y]) => [x * Math.cos(ang) - y * Math.sin(ang), x * Math.sin(ang) + y * Math.cos(ang)]); };
+  function zig(B, k, sp) {
+    const w = 6.5 * S, rz = B.rz, n = Math.max(6, Math.round(TAU * rz / w)), st = TAU / n, amp = B.h - 0.4 - (k - 1) * sp; if (amp < 1.5) return;
+    const lim = limFor(w), J = Math.ceil(lim / (st / 2)) + 1;
+    for (let i = 0; i < k; i++) { const yt = B.y0 + 0.2 + i * sp, ty = []; for (let j = -J; j <= J; j++) ty.push([j * st / 2, (j & 1) ? yt + amp : yt]); emitTY(LN(B), ty, false, lim); }
+  }
+  const FILLPAIRS = [["lattice", "circles"], ["zigv", "diamond"], ["lattice", "zigv"], ["circles", "diamond"]];
+  const MOT = {
+    plain() {},
+    grooves(B) { const sp = 1.9 / D, k = Math.max(1, Math.min(9, Math.floor(B.h / sp + 0.4))); for (let i = 0; i < k; i++) { const y = k === 1 ? B.yc : B.y0 + 0.3 + (B.h - 0.6) * i / (k - 1); emitTY(LN(B), [[-LIM, y], [LIM, y]], false); } },
+    zigzag(B) { zig(B, 1, 0); },
+    chevron(B) { const k = Math.max(2, Math.min(6, Math.floor(B.h / 3.2))), sp = Math.min(1.7 / D, (B.h - 3) / (k - 1)); zig(B, k, Math.max(1.2, sp)); },
+    herring(B) { const wc = 1.5 * S, L = Math.min(B.h - 0.6, 14), lean = L * 0.55, rz = B.rz; for (const e of thin(rowTh(rz, wc, 0).list, rz, MINSEP)) { const dir = (Math.floor(e.k / 4) & 1) ? 1 : -1; stamp(LN(B), e.t, B.yc, [[-dir * lean / 2, -L / 2], [dir * lean / 2, L / 2]], false); } },
+    pendant(B) { const wt = Math.max(5, Math.min(14, B.h * 0.9)) * S, rz = B.rz, r = rowTh(rz, wt, 0); for (const e of thin(r.list, rz, 3.0)) filled(B, [[e.t - r.st / 2, B.y0], [e.t + r.st / 2, B.y0], [e.t, B.y1]], null); },
+    lattice(B) {
+      const sp = 3.0 * S / Math.max(0.7, D), rz = B.rz, lim = limFor(sp), sMax = rz * lim, h = B.h - 0.4, y0 = B.y0 + 0.2, y1 = y0 + h;
+      emitTY(LN(B), [[-lim, y0], [lim, y0]], false, lim); emitTY(LN(B), [[-lim, y1], [lim, y1]], false, lim);
+      for (const sg of [1, -1]) for (let s0 = -sMax - h; s0 <= sMax + h; s0 += sp) emitTY(LN(B), [[s0 / rz, y0], [(s0 + sg * h) / rz, y1]], false, lim);
+    },
+    lozenge(B) { const wl = Math.max(7, Math.min(22, B.h * 1.1)) * S, rz = B.rz, r = rowTh(rz, wl, 0); for (const e of thin(r.list, rz, 3.0)) filled(B, [[e.t - r.st / 2, B.yc], [e.t, B.y0], [e.t + r.st / 2, B.yc], [e.t, B.y1]], ((e.k & 1) ? 1 : -1) * 0.78); },
+    cord(B) { rows(B, 3.4 / D, 2.8 * S, 1.6, (t, y) => { for (const dx of [-0.4, 0.4]) stamp(LN(B), t, y, [[dx - 0.35, -1.2], [dx + 0.35, 1.2]], false); }); },
+    comb(B) { rows(B, 2.4 / D, 1.6 * S, 1.0, (t, y) => stamp(LN(B), t, y, RECT, true)); },
+    nail(B) { rows(B, 3.2 / D, 3.4 * S, 1.6, (t, y) => stamp(LN(B), t, y, CRES, true)); },
+    tip(B) { rows(B, Math.max(2.6, 3.0 / D), 3.6 * S, 1.8, (t, y, i, k) => stamp(LN(B), t, y, ell(1.35 * (0.92 + 0.16 * ((k * 7 & 3) / 3)), 0.95), true)); },
+    ringdot(B) { const R = 1.3 * S; rows(B, Math.max(2 * R + 1.2, (2 * R + 1.6) / D), 4.4 * S, 2.4, (t, y) => { stamp(LN(B), t, y, ell(R, R, 12), true); stamp(LN(B), t, y, ell(0.35, 0.35, 6), true); }); },
+    rosette(B) { const R = 2.3 * S; rows(B, Math.max(2 * R + 1.4, (2 * R + 1.6) / D), 5.6 * S, 3.0, (t, y) => { for (let k = 0; k < 6; k++) stamp(LN(B), t, y, petal(R, k * Math.PI / 3), true); }); },
+    crosscircle(B) { const R = 2.0 * S; rows(B, Math.max(2 * R + 1.4, (2 * R + 1.6) / D), 5.2 * S, 2.8, (t, y) => { stamp(LN(B), t, y, ell(R, R, 14), true); stamp(LN(B), t, y, [[-R, 0], [R, 0]], false); stamp(LN(B), t, y, [[0, -R], [0, R]], false); }); },
+    stab(B) { rows(B, 2.8 / D, 2.3 * S, 1.2, (t, y) => stamp(LN(B), t, y, [[-0.45, -1.0], [0.45, -1.0], [0, 1.0]], true)); },
+    roulette(B) { rows(B, 2.0 / D, 1.5 * S, 1.0, (t, y) => stamp(LN(B), t, y, [[-0.25, -0.7], [0.25, 0.7]], false)); },
+    notchrim(B) { const y = B.y0 + 1.1, r = rMm(y), rt = rowTh(r, 2.3 * S, 0); for (const e of thin(rt.list, r, 1.2)) stamp(LN(B), e.t, y, [[0, -0.9], [0, 0.9]], false); },
+    ribs(B) {
+      const L = Math.min(B.h - 1.2, 56), sp = L + 1.4, leaf = []; for (let i = 0; i <= 12; i++) { const t = i / 12; leaf.push([0.95 * Math.pow(Math.sin(Math.PI * t), 0.7), -L / 2 + L * t]); }
+      const sh = [...leaf, ...leaf.slice().reverse().map(([x, y]) => [-x, y])]; rows(B, sp, 3.6 * S, 1.4, (t, y) => stamp(LN(B), t, y, sh, true));
+    },
+    cordon(B) {
+      const y0 = B.yc - 1.75, y1 = B.yc + 1.75; emitTY(LN(B), [[-LIM, y0], [LIM, y0]], false); emitTY(LN(B), [[-LIM, y1], [LIM, y1]], false);
+      const r = rMm(B.yc), rt = rowTh(r, 3.4 * S, 0); for (const e of thin(rt.list, r, 1.8)) stamp(LN(B), e.t, B.yc, ell(1.25, 0.9, 10), true);
+    },
+    paintband(B) {
+      const y0 = B.y0 + 0.3, y1 = B.y1 - 0.3; if (y1 - y0 < 0.6) return; const k = Math.max(1, Math.floor((y1 - y0) / PITCH));
+      for (let i = 0; i <= k; i++) { const y = y0 + (y1 - y0) * i / k; emitTY(LN(B), [[-LIM, y], [LIM, y]], false); }
+    },
+    wave(B) {
+      const lam = 9 * S, rz = B.rz, k = Math.max(1, Math.min(3, Math.floor(B.h / 3.6))), sp = 1.7, A = (B.h - (k - 1) * sp) / 2 - 0.3; if (A < 1) return; const sMax = rz * LIM;
+      for (let i = 0; i < k; i++) { const yc = B.yc + (i - (k - 1) / 2) * sp, ty = []; for (let s = -sMax; s <= sMax; s += 0.5) ty.push([s / rz, yc + A * Math.sin(TAU * s / lam)]); emitTY(LN(B), ty, false); }
+    },
+    spiral(B) {
+      const R = Math.max(2, Math.min(B.h / 2 - 0.3, 6 * S)), turns = R >= 3.5 ? 2 : 1.25, pts = [];
+      for (let phi = -TAU * turns; phi <= 1e-9; phi += 0.18) { const r = 0.4 + (R - 0.4) * (phi + TAU * turns) / (TAU * turns); pts.push([-R + r * Math.cos(phi), -r * Math.sin(phi)]); }
+      pts.push([0, 0]);
+      for (let phi = Math.PI - 0.18; phi >= Math.PI - TAU * turns - 1e-9; phi -= 0.18) { const r = 0.4 + (R - 0.4) * (phi - (Math.PI - TAU * turns)) / (TAU * turns); pts.push([R + r * Math.cos(phi), -r * Math.sin(phi)]); }
+      rows(B, 2 * R + 1, 4 * R + 3, 3, (t, y, i) => stamp(LN(B), t, y, i & 1 ? pts.map(([u, v]) => [u, -v]) : pts, false));
+    },
+    meander(B) {
+      const a = Math.max(1.3, Math.min(B.h / 5, 7 * S)), rz = B.rz, yB = B.yc + 2.5 * a, HOOK = [[1, 0], [1, 4], [5, 4], [5, 1], [3, 1], [3, 3], [4, 3]], lim = limFor(a * 1.6), sMax = rz * lim;
+      emitTY(LN(B), [[-lim, yB], [lim, yB]], false, lim); emitTY(LN(B), [[-lim, yB - 5 * a], [lim, yB - 5 * a]], false, lim);
+      for (let p = Math.floor(-sMax / (6 * a)) - 1; p * 6 * a < sMax; p++) emitTY(LN(B), HOOK.map(([x, z]) => [(p * 6 * a + x * a) / rz, yB - z * a]), false, lim);
+    },
+    notes(B) {
+      const lam = 30 * S, rz = B.rz, A = Math.max(1, B.h / 2 - 2.4), sMax = rz * LIM, curve = (s, dy) => B.yc + dy + A * Math.sin(TAU * s / lam);
+      for (const dy of [-1.3, 1.3]) { const ty = []; for (let s = -sMax; s <= sMax; s += 0.5) ty.push([s / rz, curve(s, dy)]); emitTY(LN(B), ty, false); }
+      for (let s = -sMax; s <= sMax; s += 2.6) stamp(LN(B), s / rz, curve(s, 0), ell(0.45, 0.45, 8), true);
+    },
+    ovolo(B) {
+      const cw = 7.4 * S, rz = B.rz, r = rowTh(rz, cw, 0), st = r.st, cwm = st * rz, hh = B.h, ry = hh * 0.34, rx = Math.min(1.9 * S, cwm * 0.28), ay = hh * 0.46, ax = Math.min(3.0 * S, cwm * 0.42), ec = B.y0 + hh * 0.5;
+      emitTY(LN(B), [[-LIM, B.y0], [LIM, B.y0]], false);
+      for (const e of thin(r.list, rz, 3.0)) {
+        stamp(LN(B), e.t, ec, ell(rx, ry, 14), true);
+        const arch = []; for (let a = Math.PI - 0.25; a <= TAU + 0.25; a += 0.2) arch.push([ax * Math.cos(a), ay * Math.sin(a)]); stamp(LN(B), e.t, ec, arch, false);
+        const tx = cwm / 2; stamp(LN(B), e.t, ec, [[tx, -hh * 0.5], [tx, hh * 0.28]], false); stamp(LN(B), e.t, ec + hh * 0.28 + 0.7, ell(0.4, 0.4, 6).map(([u, v]) => [u + tx, v]), true);
+      }
+    },
+    burnish(B) {
+      const sp = 2.7 / D, rz = B.rz, st = sp / rz, list = []; for (let k = -Math.ceil((LIM + st) / st); k <= Math.ceil((LIM + st) / st); k++) list.push({ t: (k + (drnd() - 0.5) * 0.6) * st, k });
+      for (const e of thin(list, rz, MINSEP)) { let y = B.y0 + drnd() * 6; while (y < B.y1 - 1) { const L = Math.min(B.y1 - y - 0.3, 8 + drnd() * 22), lean = (drnd() - 0.5) * 2.0; if (L > 2.5) emitTY("shade", [[e.t, y], [e.t + (lean * 0.5 + (drnd() - 0.5) * 0.3) / rz, y + L / 2], [e.t + lean / rz, y + L]], false); y += L + 1 + drnd() * 3; } }
+    },
+    metopes(B) {
+      const rz = B.rz, pw = Math.max(10, Math.min(30, B.h * 1.15)) * S, st = TAU / (2 * Math.max(2, Math.round(TAU * rz / pw / 2))), fills = B.mp, kmax = Math.ceil((LIM + st) / st) + 1, hw = st * rz / 2 - 1.6, hh = B.h / 2 - 0.8; if (hw < 2 || hh < 2) return;
+      for (let k = -kmax; k <= kmax; k++) {
+        const td = (k + 0.5) * st; if (Math.abs(td) <= LIM + 0.05) for (const d of [-0.8, 0.8]) emitTY(LN(B), [[td + d / rz, B.y0], [td + d / rz, B.y1]], false);
+        const t = k * st; if (Math.abs(t) > LIM + st * 0.5) continue; const f = fills[k & 1];
+        if (f === "lattice") { for (const sg of [1, -1]) for (let c = -(hw + hh); c <= hw + hh; c += 2.4) { const seg = clipLR(-hw - 2, sg * (-hw - 2) + c, hw + 2, sg * (hw + 2) + c, hw, hh); if (seg) stamp(LN(B), t, B.yc, seg, false); } stamp(LN(B), t, B.yc, [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]], true); }
+        else if (f === "circles") { const R = Math.min(hw, hh); if (R >= 2) { for (let r = R; r > 0.9; r -= 1.7) stamp(LN(B), t, B.yc, ell(r, r, 20), true); stamp(LN(B), t, B.yc, ell(0.35, 0.35, 6), true); } }
+        else if (f === "zigv") { const pts = []; let s = 1; for (let v = -hh; v <= hh + 0.01; v += 2.8) { pts.push([s * hw * 0.55, v]); s = -s; } stamp(LN(B), t, B.yc, pts, false); }
+        else { const r0 = rMm(B.yc), ty = [[-hw, 0], [0, -hh], [hw, 0], [0, hh]].map(([u, v]) => [t + u / r0, B.yc + v]); filled(B, ty, 0.78); }
+      }
+    },
+  };
+
+  // ---- lay out the bands zone by zone and draw them
+  let scheme;
+  if (o.tradition === "custom") { scheme = {}; ZONES.forEach(z => scheme[z] = [[o["z" + z], "*"]]); } else scheme = SCHEMES[o.tradition];
+  const bands = [];
+  ZONES.forEach((z, zi) => {
+    for (const B of layoutBands(scheme[z], V.zoneBounds[zi], V.zoneBounds[zi + 1])) {
+      if (B.h < MINH[B.id]) continue;
+      const cap = CAPH[B.id]; if (cap && B.h > cap) { B.y0 = B.yc - cap / 2; B.y1 = B.yc + cap / 2; B.h = cap; }
+      B.rz = rMm(B.yc); B.zone = z; B.paint = o.medium === "colour" ? true : o.medium === "black" ? false : B.fl === "p"; B.mp = FILLPAIRS[Math.floor(drnd() * FILLPAIRS.length)];
+      bands.push(B);
+    }
+  });
+  for (const B of bands) { MOT[B.id](B); if (!used.some(u => u.id === B.id)) used.push({ id: B.id, zone: B.zone }); }
+  return { RAW, used, bands };
+}
+
+// ---------------- build ----------------
+const IDS = ["seed", "shape", "tradition", "zrim", "zneck", "zshoulder", "zbelly", "zlower", "mscale", "dens", "pitch", "foreshorten", "medium", "sherds", "along", "wiggle", "missing", "lost", "numbers", "sheet", "board", "view", "explode", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function makeCutHash(polys, R) {
+  const cs = 3, map = new Map(), seen = new Set(), sx = [], sy = [], ex = [], ey = [], K = (a, b) => (a + 4096) * 8192 + (b + 4096);
+  const qk = p => Math.round(p[0] * 1e5) + "," + Math.round(p[1] * 1e5);
+  for (const P of polys) for (let i = 0; i < P.length; i++) {
+    const a = P[i], b = P[(i + 1) % P.length], k1 = qk(a), k2 = qk(b), k = k1 < k2 ? k1 + "|" + k2 : k2 + "|" + k1; if (seen.has(k)) continue; seen.add(k);
+    const id = sx.length; sx.push(a[0]); sy.push(a[1]); ex.push(b[0]); ey.push(b[1]);
+    const x0 = Math.floor((Math.min(a[0], b[0]) - R) / cs), x1 = Math.floor((Math.max(a[0], b[0]) + R) / cs), y0 = Math.floor((Math.min(a[1], b[1]) - R) / cs), y1 = Math.floor((Math.max(a[1], b[1]) + R) / cs);
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const kk = K(x, y); let l = map.get(kk); if (!l) map.set(kk, l = []); l.push(id); }
+  }
+  // smallest distance to any cut segment near (x, y), capped at R
+  return (x, y) => { const l = map.get(K(Math.floor(x / cs), Math.floor(y / cs))); if (!l) return R; let b = R * R; for (const id of l) { const d = segDist2(x, y, sx[id], sy[id], ex[id], ey[id]); if (d < b) b = d; } return Math.sqrt(b); };
+}
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), board = o.sheet === "board";
+  const V = makeVessel(o, W, H), rnd = mulberry32(o.seed * 7919 + 101), drnd = mulberry32(o.seed * 131 + 7);
+  const T = {}; let tt = performance.now(); const mark = k => { const n = performance.now(); T[k] = Math.round(n - tt); tt = n; };
+  const fr = fracture(V, o, o.seed * 104729 + 17), polys = fr.polys, N = polys.length, m = o.margin;
+  const pcs = polys.map((poly, i) => ({ i, poly, a: Math.abs(area2(poly)) / 2, c: centroidOf(poly), bb: bboxOf(poly), ink: { incised: [], shade: [], paint: [] }, lost: false, tag: null, box: null }));
+  // numbering in reading order, lost pieces chosen
+  const band = V.Hv / 7, order = pcs.slice().sort((p, q) => Math.floor((p.c[1] - V.yTop) / band) - Math.floor((q.c[1] - V.yTop) / band) || p.c[0] - q.c[0]);
+  const nMiss = Math.min(o.missing, Math.max(0, N - 1)), pool = pcs.slice(); for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  for (let i = 0; i < nMiss; i++) pool[i].lost = true;
+  let nn = 0, ll = 0; for (const p of order) { if (!p.lost) p.tag = String(++nn); else if (o.lost === "plaster") p.tag = String.fromCharCode(65 + (ll++ % 26)); }
+  const showTags = board ? o.board === "numbered" : o.numbers === "small";
+  mark("fracture");
+  const cutDist = makeCutHash(polys, 1.4);
+  // where each number goes: the roomiest spot of its piece that holds the text box
+  const TH = 2.4;
+  for (const p of pcs) {
+    if (p.lost && !board && o.lost === "out") p.meas = measurePiece(p.poly);
+    if (!p.tag || !showTags) continue;
+    const w = txtW(p.tag, TH), G = pieceGrid(p.poly, 1.0), cells = []; for (let k = 0; k < G.D.length; k++) if (G.ins[k] && G.D[k] >= 3) cells.push(k);
+    cells.sort((a, b) => G.D[b] - G.D[a]);
+    for (let c = 0; c < Math.min(300, cells.length); c++) {
+      const k = cells[c], x = G.x0 + (k % G.gw) * G.g, y = G.y0 + Math.floor(k / G.gw) * G.g, hw = w / 2 + PLATE_MARK, hh = TH / 2 + PLATE_MARK;
+      let ok = true; for (const [dx, dy] of [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh], [0, -hh], [0, hh], [-hw, 0], [hw, 0]]) { const qx = x + dx, qy = y + dy; if (!pip(p.poly, qx, qy) || distEdges(p.poly, qx, qy) < INK_GAP + 0.3) { ok = false; break; } }
+      if (ok) { p.box = [x - hw, y - hh, x + hw, y + hh]; p.at = [x, y]; break; }
+    }
+  }
+  mark("spots");
+  const inks = { incised: [], shade: [], paint: [] }, furn = { incised: [], shade: [], paint: [] };
+  let cut = [], gates = [], usedList = [];
+  const total = () => 0;
+  // ---------------- card: decoration, clipped to the pieces ----------------
+  if (!board) {
+    const dec = decorate(V, o, drnd); usedList = dec.used; mark("decorate");
+    const cache = new Map(), G = 6, gk = (a, b) => a * 4096 + b; const pgrid = new Map();
+    for (const p of pcs) { for (let x = Math.floor(p.bb[0] / G); x <= Math.floor(p.bb[2] / G); x++) for (let y = Math.floor(p.bb[1] / G); y <= Math.floor(p.bb[3] / G); y++) { const k = gk(x, y); let l = pgrid.get(k); if (!l) pgrid.set(k, l = []); l.push(p); } }
+    const pieceAt = (x, y) => { const l = pgrid.get(gk(Math.floor(x / G), Math.floor(y / G))); if (!l) return null; for (const p of l) if (x >= p.bb[0] && x <= p.bb[2] && y >= p.bb[1] && y <= p.bb[3] && pip(p.poly, x, y)) return p; return null; };
+    for (const layer of ["incised", "shade", "paint"]) for (const [d, closed] of dec.RAW[layer]) {
+      const ok = d.map(([x, y]) => { if (cutDist(x, y) < INK_GAP) return false; const p = pieceAt(x, y); if (!p) return false; if (p.lost && o.lost === "plaster") return false; if (p.box && x > p.box[0] && x < p.box[2] && y > p.box[1] && y < p.box[3]) return false; return true; });
+      const tmp = []; runs(d, closed, ok, 0.3, tmp, -1);
+      for (const rr of tmp) { const q = rr[0], mid = q[q.length >> 1], p = pieceAt(mid[0], mid[1]); if (!p) continue; rr[2] = p.i; p.ink[layer].push(rr); }
+    }
+    mark("clip");
+    // plaster infill and waste marks
+    for (const p of pcs) {
+      if (!p.lost) continue;
+      if (o.lost === "plaster") {
+        const sp = Math.max(1.7, o.pitch * 2.6), bb = p.bb;
+        for (let y = bb[1] + sp / 2; y < bb[3]; y += sp) for (let x = bb[0] + sp / 2 + ((Math.round((y - bb[1]) / sp) & 1) ? sp / 2 : 0); x < bb[2]; x += sp) {
+          const jx = x + (rnd() - 0.5) * sp * 0.45, jy = y + (rnd() - 0.5) * sp * 0.45;
+          if (!pip(p.poly, jx, jy) || cutDist(jx, jy) < INK_GAP + 0.75) continue; if (p.box && jx > p.box[0] - 0.4 && jx < p.box[2] + 0.4 && jy > p.box[1] - 0.4 && jy < p.box[3] + 0.4) continue;
+          p.ink.shade.push([ell2(jx, jy, 0.3), true, p.i]);
+        }
+      } else if (p.meas && p.meas.spot) {
+        const [x, y] = p.meas.spot, h = Math.min(1.8, p.meas.rin * 0.4); p.ink.incised.push([[[x - h, y - h], [x + h, y + h]], false, p.i], [[[x - h, y + h], [x + h, y - h]], false, p.i]);
+      }
+    }
+  }
+  // numbers
+  if (showTags) for (const p of pcs) if (p.tag && p.box) { const tmp = []; txt(p.tag, p.at[0], p.at[1], TH, tmp, { a: "c" }); p.num = []; for (const [q] of tmp) { const e = [q, false, p.i]; p.ink.paint.push(e); p.num.push(e); } }
+  // ---------------- board furniture ----------------
+  const title = `POT ${o.seed}, ${V.S.name}, 1:1`, notes = [];
+  if (board) {
+    const outline = [V.poly, true]; furn.incised.push(outline);
+    // crack lines (each shared edge once)
+    if (o.board !== "blank") {
+      const cnt = new Map(), qk = p => Math.round(p[0] * 1e5) + "," + Math.round(p[1] * 1e5), sk = (a, b) => { const k1 = qk(a), k2 = qk(b); return k1 < k2 ? k1 + "|" + k2 : k2 + "|" + k1; };
+      for (const p of pcs) for (let i = 0; i < p.poly.length; i++) { const k = sk(p.poly[i], p.poly[(i + 1) % p.poly.length]); cnt.set(k, (cnt.get(k) || 0) + 1); }
+      for (const p of pcs) {
+        let cur = []; const P = p.poly, n = P.length, done = new Set();
+        const isInt = i => cnt.get(sk(P[i], P[(i + 1) % n])) === 2;
+        let s0 = 0; for (let i = 0; i < n; i++) if (!isInt(i)) { s0 = (i + 1) % n; break; }
+        const emit = () => { if (cur.length > 1) dashify(cur, 2.6, 1.4, furn.shade); cur = []; };
+        for (let k = 0; k < n; k++) { const i = (s0 + k) % n; if (isInt(i)) { const nb = false; if (!cur.length) cur.push(P[i]); cur.push(P[(i + 1) % n]); } else emit(); }
+        emit();
+      }
+      // interior edges are visited from both sides; drop the duplicate pass by keeping only paths whose first point orders before the last
+      const uniq = []; const seen = new Set(); for (const [q] of furn.shade) { const k = qk(q[0]) + ">" + qk(q.at(-1)), r = qk(q.at(-1)) + ">" + qk(q[0]); if (seen.has(r)) continue; seen.add(k); uniq.push([q, false]); } furn.shade = uniq;
+    }
+    // lost pieces on the board
+    for (const p of pcs) if (p.lost && o.lost === "plaster") { const sp = Math.max(1.7, o.pitch * 2.6), bb = p.bb; for (let y = bb[1] + sp / 2; y < bb[3]; y += sp) for (let x = bb[0] + sp / 2 + ((Math.round((y - bb[1]) / sp) & 1) ? sp / 2 : 0); x < bb[2]; x += sp) { if (!pip(p.poly, x, y) || distEdges(p.poly, x, y) < 1.4) continue; if (p.box && x > p.box[0] - 0.4 && x < p.box[2] + 0.4 && y > p.box[1] - 0.4 && y < p.box[3] + 0.4) continue; furn.shade.push([ell2(x, y, 0.3), true]); } }
+    // title strip
+    txt(title, m, m + 2.2, 3.4, furn.incised); txt(`IN THE MANNER OF ${TRADNAME[o.tradition]}, ${N} SHERDS`, m, m + 7.4, 2.2, furn.incised);
+    // section and key go where the pot leaves room
+    const need = [], usedZ = [];
+    const dec = { used: [] }; { const s0 = SCHEMES[o.tradition] || null; const seenId = new Set(); ZONES.forEach((z, zi) => { const list = o.tradition === "custom" ? [[o["z" + z], "*"]] : s0[z]; for (const [id] of list) if (id !== "plain" && !seenId.has(id) && MNAME[id]) { seenId.add(id); dec.used.push({ id, zone: z }); } }); }
+    usedList = dec.used;
+    const wall = Math.min(9, Math.max(3.5, V.Hv * 0.04)), rmaxMm = V.rmaxU * V.s;
+    const keyLines = usedList.map(u => `${u.zone.toUpperCase()}: ${MNAME[u.id]}`), titleW = Math.max(txtW(title, 3.4), txtW(`IN THE MANNER OF ${TRADNAME[o.tradition]}, ${N} SHERDS`, 2.2));
+    const placed = [[m, m, m + titleW, m + STRIP - 1]], free = (x, y, w, h, ymin) => {
+      if (x < m || y < ymin || x + w > W - m || y + h > H - m) return false;
+      for (const q of placed) if (x < q[2] + 3 && x + w > q[0] - 3 && y < q[3] + 3 && y + h > q[1] - 3) return false;
+      for (let px = x; px <= x + w + 0.01; px += Math.min(4, w)) for (let py = y; py <= y + h + 0.01; py += Math.min(4, h)) { if (py >= V.yTop - 3 && py <= V.yBot + 3 && Math.abs(px - V.cx) <= V.rMm(Math.min(V.yBot, Math.max(V.yTop, py))) + 3) return false; }
+      return true;
+    };
+    const find = (w, h, corner, ymin) => { let best = null, bd = 1e18; const tx = corner[0] ? W : 0, ty = corner[1] ? H : 0;
+      for (let x = m; x <= W - m - w; x += 2.5) for (let y = ymin; y <= H - m - h; y += 2.5) { if (!free(x, y, w, h, ymin)) continue; const d = Math.hypot(x + w / 2 - tx, y + h / 2 - ty); if (d < bd) { bd = d; best = [x, y]; } } return best; };
+    let secOK = false;
+    for (const k of [0.5, 1 / 3, 0.25]) {
+      const w = (rmaxMm + wall) * k + 8, h = V.Hv * k + 12, pos = find(w, h, [1, 1], m + STRIP); if (!pos) continue;
+      placed.push([pos[0], pos[1], pos[0] + w, pos[1] + h]); secOK = true;
+      const ax = pos[0] + 4, y0 = pos[1] + 3, r = yy => V.rMm(V.yTop + yy / k) * k, t = wall * k, tb = t * 1.2;
+      const outer = [], inner = []; for (let yy = 0; yy <= V.Hv * k + 1e-9; yy += 0.8) outer.push([ax + r(yy), y0 + yy]); const Hk = V.Hv * k; outer.push([ax + r(Hk), y0 + Hk]);
+      for (let yy = Hk - tb; yy >= 0; yy -= 0.8) inner.push([ax + Math.max(0.4, r(yy) - t), y0 + yy]); inner.push([ax + Math.max(0.4, r(0) - t), y0]);
+      const sec = [...outer, [ax, y0 + Hk], [ax, y0 + Hk - tb], ...inner];
+      furn.incised.push([simplify(sec, 0.03), true]); hatchPoly(sec, Math.PI / 4, Math.max(0.5, o.pitch) * (k < 0.4 ? 0.8 : 1), furn.shade, 0.5);
+      for (let yy = -3; yy < Hk + 3;) { const l = Math.min(5, Hk + 3 - yy); furn.shade.push([[[ax, y0 + yy], [ax, y0 + yy + l]], false]); yy += l + 1.2; }
+      txt(`SECTION ${k === 0.5 ? "1:2" : k > 0.3 ? "1:3" : "1:4"}`, ax + (rmaxMm * k) / 2, y0 + Hk + 6, 2.2, furn.incised, { a: "c" });
+      break;
+    }
+    if (!secOK) notes.push("no free space for the section: use a wider page or a smaller pot");
+    let keyDone = false;
+    for (const [cols, kh] of [[1, 2.2], [2, 2.0], [3, 1.8], [4, 1.7], [1, 1.8], [1, 1.5], [2, 1.5]]) {
+      const per = Math.ceil(keyLines.length / cols), cw = Math.max(...keyLines.map(s => txtW(s, kh))) + 4, kw = cols * cw + 4, kht = (per + 1) * (kh + 1.5) + 3;
+      const kpos = find(kw, kht, [1, 0], m); if (!kpos) continue;
+      furn.incised.push([[[kpos[0], kpos[1]], [kpos[0] + kw, kpos[1]], [kpos[0] + kw, kpos[1] + kht], [kpos[0], kpos[1] + kht]], true]);
+      txt("KEY", kpos[0] + 2, kpos[1] + 3, kh, furn.incised);
+      keyLines.forEach((sl, i) => txt(sl, kpos[0] + 2 + Math.floor(i / per) * cw, kpos[1] + 3 + (kh + 1.5) * (1 + i % per), kh, furn.incised)); keyDone = true; break;
+    }
+    if (!keyDone) notes.push("no free space for the key");
+  } else {
+    txt(`POT ${o.seed}, ${V.S.name}, ${N} SHERDS`, m, m + 2.2, 3.2, furn.incised);
+    usedList = usedList;
+  }
+  // ---------------- assemble layers ----------------
+  const gather = layer => { const all = []; for (const p of pcs) for (const q of p.ink[layer]) all.push(q); for (const q of furn[layer]) all.push([q[0], q[1], -1]); return orderPaths(all.filter(([q, c]) => q.length > 1 && plen(q, c) >= 0.3)); };
+  const incised = gather("incised"), shade = gather("shade"), paint = gather("paint");
+  if (!board) {
+    cut = pcs.map(p => [p.poly, true, p.i]);
+    cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true, -1]);
+  }
+  // ---------------- previews: exploded and shuffled ----------------
+  const expl = [], shuf = [];
+  if (!board && o.view === "exploded") { const f = 0.55 * o.explode, c0 = [V.cx, (V.yTop + V.yBot) / 2]; for (const p of pcs) expl.push([(p.c[0] - c0[0]) * f, (p.c[1] - c0[1]) * f]); }
+  let shufNote = "";
+  if (!board && o.view === "shuffled") {
+    const sr = mulberry32(o.seed * 977 + 5), ord = pcs.slice().sort((a, b) => b.a - a.a); let done = false, ksUsed = 1;
+    const samples = pcs.map(p => { const s = [], d = densify(p.poly, true, 1.5); for (const q of d) s.push([q[0] - p.c[0], q[1] - p.c[1]]); for (let y = p.bb[1] + 1.5; y < p.bb[3]; y += 3) for (let x = p.bb[0] + 1.5; x < p.bb[2]; x += 3) if (pip(p.poly, x, y)) s.push([x - p.c[0], y - p.c[1]]); return s; });
+    for (const ks of [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]) {
+      const occ = new Uint8Array(Math.ceil(W) * Math.ceil(H)), gw = Math.ceil(W); let all = true; shuf.length = 0; const res = new Array(N);
+      for (const p of ord) {
+        let ok = false;
+        for (let t = 0; t < 500 && !ok; t++) {
+          const ang = sr() * TAU, x = m + 6 + sr() * (W - 2 * m - 12), y = m + STRIP + 4 + sr() * (H - 2 * m - STRIP - 8), ca = Math.cos(ang), sa = Math.sin(ang), cells = []; let free = true;
+          for (const [u, v] of samples[p.i]) { const px = x + ks * (u * ca - v * sa), py = y + ks * (u * sa + v * ca); if (px < m || px > W - m || py < m + STRIP || py > H - m) { free = false; break; } const ci = Math.floor(px), cj = Math.floor(py); for (let dj = -1; dj <= 1 && free; dj++) for (let di = -1; di <= 1; di++) if (occ[(cj + dj) * gw + ci + di]) { free = false; break; } cells.push(cj * gw + ci); }
+          if (free) { for (const c of cells) occ[c] = 1; res[p.i] = { x, y, ang, k: ks }; ok = true; }
+        }
+        if (!ok) { all = false; break; }
+      }
+      if (all) { for (let i = 0; i < N; i++) shuf.push(res[i]); done = true; ksUsed = ks; break; }
+    }
+    shufNote = done ? `all placed at ${Math.round(ksUsed * 100)}% size, none touching` : "could not place every piece";
+    if (!done) for (const p of pcs) shuf.push({ x: p.c[0], y: p.c[1], ang: 0, k: 1 });
+  }
+  mark("layers");
+  // ---------------- gates ----------------
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000, ms = performance.now() - t0;
+  const pen = len(incised) + len(shade) + len(paint), pts = [incised, shade, paint, cut].reduce((a, L) => a + L.reduce((b, [p]) => b + p.length, 0), 0);
+  // pieces tile the vessel
+  const vA = Math.abs(area2(V.poly)) / 2, sA = pcs.reduce((a, p) => a + p.a, 0), tileErr = Math.abs(sA - vA) / vA;
+  let selfBad = 0, unclosed = 0; for (const p of pcs) { selfBad += selfCrosses(p.poly); if (p.poly.length < 3) unclosed++; }
+  let minR = 99, minAng = 9, neckBad = 0; for (const p of pcs) { const fm = measurePiece(p.poly, 0.8, -1.5); if (fm.rin < minR) minR = fm.rin; if (!measurePiece(p.poly, 0, 0.5, CUT_NECK_MIN / 2 + 0.75).neckOK) neckBad++; const a = minAngle(p.poly); if (a < minAng) minAng = a; }
+  const segCount = new Map(), qk = q => Math.round(q[0] * 1e5) + "," + Math.round(q[1] * 1e5); let once = 0, twice = 0, other = 0, outlineBad = 0;
+  for (const p of pcs) for (let i = 0; i < p.poly.length; i++) { const a = p.poly[i], b = p.poly[(i + 1) % p.poly.length], k1 = qk(a), k2 = qk(b), k = k1 < k2 ? k1 + "|" + k2 : k2 + "|" + k1; const e = segCount.get(k) || { n: 0, a, b }; e.n++; segCount.set(k, e); }
+  for (const e of segCount.values()) { if (e.n === 1) { once++; if (distEdges(V.poly, (e.a[0] + e.b[0]) / 2, (e.a[1] + e.b[1]) / 2) > 1e-4) outlineBad++; } else if (e.n === 2) twice++; else other++; }
+  mark("gates");
+  gates.push(["build time under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`]);
+  gates.push(["total pen length under 150 m (about 45 minutes of plotting, assumed)", pen < 150, `${pen.toFixed(1)} m`]);
+  gates.push(["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]);
+  gates.push(["every piece outline is closed and does not cross itself", unclosed === 0 && selfBad === 0, `${N} pieces, ${selfBad} crossings`]);
+  gates.push(["pieces tile the vessel (areas add up to within 0.5%)", tileErr < 0.005, `${(tileErr * 100).toFixed(3)}% off, ${sA.toFixed(0)} of ${vA.toFixed(0)} mm2`]);
+  gates.push(["every piece is at least the minimum size (assumed inscribed radius 5 mm)", minR >= CUT_MIN_R - 0.3, `smallest ${minR.toFixed(2)} mm radius`]);
+  gates.push(["no piece has a neck or arm thinner than the limit (assumed 6 mm)", neckBad === 0, `${neckBad} pieces with one`]);
+  let maxAsp = 1; for (const p of pcs) { p.asp = obb(p.poly)[0]; if (p.asp > maxAsp) maxAsp = p.asp; }
+  gates.push(["every piece is compact: longest side over shortest of its bounding box (assumed limit 2.6)", maxAsp <= CUT_MAX_ASPECT + 0.05, `most elongated ${maxAsp.toFixed(2)}`]);
+  gates.push(["no interior angle sharper than the limit (assumed 40 degrees)", minAng >= CUT_MIN_ANGLE * Math.PI / 180 - 1e-6, `sharpest ${(minAng * 180 / Math.PI).toFixed(1)} degrees`]);
+  gates.push(["every crack is shared by exactly two pieces, so the blade traces each side once", other === 0 && outlineBad === 0, `${twice} shared cracks, ${once} outline segments, ${other} odd`]);
+  gates.push(["lost pieces match the slider", pcs.filter(p => p.lost).length === nMiss, `${pcs.filter(p => p.lost).length} lost of ${N} (slider ${o.missing})`]);
+  // ink clear of cuts and inside the vessel; numbers inside their own piece
+  let nearCut = 0, outside = 0, checked = 0; const hash = makeCutHash(polys, 1.4);
+  for (const p of pcs) for (const L of [p.ink.incised, p.ink.shade, p.ink.paint]) for (const [q, cl] of L) { if (!board) for (const [x, y] of densify(q, cl, 0.2)) { checked++; if (hash(x, y) < INK_GAP - 0.06) nearCut++; if (y < V.yTop - 1e-6 || y > V.yBot + 1e-6 || Math.abs(x - V.cx) > V.rMm(y) + 0.02) outside++; } }
+  let numBad = 0, numN = 0; if (showTags) for (const p of pcs) if (p.tag && p.box) { numN++; for (const [q] of p.num) for (const [x, y] of q) if (!pip(p.poly, x, y) || distEdges(p.poly, x, y) < INK_GAP + 0.2) numBad++; }
+  if (!board) {
+    gates.push(["no ink within the gap of a cut line (assumed 0.4 mm)", nearCut === 0, `${nearCut} of ${checked} samples`]);
+    gates.push(["no ink outside the vessel", outside === 0, `${outside} samples`]);
+    const bb = a => { let b = [1e9, 1e9, -1e9, -1e9]; for (const [p] of a) for (const [x, y] of p) b = [Math.min(b[0], x), Math.min(b[1], y), Math.max(b[2], x), Math.max(b[3], y)]; return b.map(v => v.toFixed(3)).join(" "); };
+    const bt = bb(cornerTicks(W, H)), bc = bb([cut.at(-1)]);
+    gates.push(["trim frame and pen corner ticks have the same bounding box", bt === bc, `${bc}`]);
+  } else gates.push(["board sheet carries no cut layer", cut.length === 0, `${pcs.length} pieces shown as lines`]);
+  if (showTags) gates.push(["numbers sit inside their own piece, clear of the cuts", numBad === 0, `${numN} numbers placed of ${pcs.filter(p => p.tag).length}, ${numBad} bad points`]);
+  if (!board && o.view === "shuffled") gates.push(["shuffled pieces do not touch on the table", shuf.length === N && /none touching/.test(shufNote), shufNote]);
+  return { maxAsp, minAngDeg: minAng * 180 / Math.PI, W, H, o, ms, incised, shade, paint, cut, gates, pieces: pcs, V, expl, shuf, notes, T, used: usedList, N, asked: fr.asked, nMiss, title, pen, showTags };
+}
+const ell2 = (x, y, r) => Array.from({ length: 8 }, (_, i) => [x + r * Math.cos(TAU * i / 8), y + r * Math.sin(TAU * i / 8)]);
+
+// ---------------- previews ----------------
+function viewPaths(r) {
+  const v = r.o.sheet === "card" ? r.o.view : "cut";
+  if (v === "cut" || !r.pieces.length) return { incised: r.incised, shade: r.shade, paint: r.paint, cut: r.cut };
+  const out = { incised: [], shade: [], paint: [], cut: [] };
+  r.pieces.forEach((p, i) => {
+    let T; if (v === "exploded") { const [dx, dy] = r.expl[i]; T = ([x, y]) => [x + dx, y + dy]; } else { const s = r.shuf[i], c = Math.cos(s.ang), sn = Math.sin(s.ang); T = ([x, y]) => { const u = x - p.c[0], w = y - p.c[1]; return [s.x + s.k * (u * c - w * sn), s.y + s.k * (u * sn + w * c)]; }; }
+    for (const L of ["incised", "shade", "paint"]) for (const [q, cl] of p.ink[L]) out[L].push([q.map(T), cl]);
+    out.cut.push([p.poly.map(T), true]);
+  });
+  const all = out.cut.flatMap(([q]) => q), bb = bboxOf(all), m = r.o.margin, ks = Math.min(1, (r.W - 2 * m) / (bb[2] - bb[0]), (r.H - 2 * m) / (bb[3] - bb[1])), cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2;
+  if (v === "exploded") for (const L of Object.keys(out)) out[L] = out[L].map(([q, cl]) => [q.map(([x, y]) => [r.W / 2 + (x - cx) * ks, r.H / 2 + (y - cy) * ks]), cl]);
+  return out;
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w, dash) => { c.strokeStyle = col; c.lineWidth = w; c.setLineDash(dash || []); c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  const V = viewPaths(r);
+  stroke(V.shade, "#6b6356", 0.3); stroke(V.paint, "#" + PAINT, 0.4); stroke(V.incised, "#26200f", 0.4);
+  if (r.o.sheet === "card") stroke(V.cut, "#d0271c", 0.25, [1.6, 1.1]);
+  if (r.o.sheet === "card" && r.o.view === "cut") { c.strokeStyle = "rgba(208,39,28,0.18)"; c.lineWidth = 0.15; c.setLineDash([]); }
+  const lenm = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const lost = r.pieces.filter(p => p.lost).length;
+  $("stats").innerHTML = `${r.o.sheet === "board" ? "reassembly board" : "card"}: <b>${r.N}</b> pieces (${r.asked} asked), ${lost} lost as ${r.o.lost === "plaster" ? "plaster infill" : "waste"}, ${r.title} · ${r.ms.toFixed(0)} ms<br>`
+    + `incised 0.4 pen: <b>${lenm(r.incised).toFixed(1)} m</b>, ${r.incised.length} paths · shade 0.3 pen: <b>${lenm(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour pen: <b>${lenm(r.paint).toFixed(1)} m</b>, ${r.paint.length} paths · cut: <b>${lenm(r.cut).toFixed(1)} m</b>, ${r.cut.length} paths<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "incised", colour: "000000", w: 0.4, paths: r.incised }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade },
+  { name: "paint", colour: PAINT, w: 0.4, paths: r.paint }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.cut, cut: true },
+].filter(L => L.paths.length);
+// Pen files carry four corner ticks at 1 mm. The cut layer carries its own closed trim rectangle at 1 mm, so its box matches, and never gets ticks (they would slice the card).
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG pottery puzzle studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { seed: 7, shape: "beaker", tradition: "bell", zrim: "notchrim", zneck: "cord", zshoulder: "pendant", zbelly: "lattice", zlower: "burnish", mscale: 1, dens: 1, pitch: 0.8, foreshorten: "on", medium: "trad", sherds: 20, along: 0.5, wiggle: 0.6, missing: 0, lost: "plaster", numbers: "off", sheet: "card", board: "blank", view: "cut", explode: 0.4, page: "280x280", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  beaker: P({ seed: 7, shape: "beaker", tradition: "bell", sherds: 20, page: "280x280" }),
+  trb: P({ seed: 12, shape: "funnel", tradition: "trb", sherds: 24, along: 0.4, page: "190x250" }),
+  corded: P({ seed: 31, shape: "beaker", tradition: "corded", sherds: 18, along: 0.6, mscale: 1.1, page: "190x250" }),
+  lbk: P({ seed: 9, shape: "bowl", tradition: "lbk", sherds: 16, along: 0.3, page: "280x280" }),
+  grooved: P({ seed: 21, shape: "tub", tradition: "grooved", sherds: 22, along: 0.5, page: "280x280" }),
+  geometric: P({ seed: 5, shape: "amphora", tradition: "geometric", sherds: 26, along: 0.7, page: "190x250" }),
+  samian: P({ seed: 14, shape: "bowl", tradition: "samian", sherds: 24, along: 0.4, page: "280x280" }),
+  ironage: P({ seed: 3, shape: "jar", tradition: "ironage", sherds: 22, missing: 2, lost: "plaster", numbers: "small", page: "280x280" }),
+  easy: P({ seed: 17, shape: "carinated", tradition: "custom", zrim: "grooves", zneck: "lozenge", zshoulder: "chevron", zbelly: "ringdot", zlower: "plain", sherds: 12, along: 0.3, wiggle: 0.5, numbers: "small", page: "280x280" }),
+  hard: P({ seed: 5, shape: "beaker", tradition: "bell", sherds: 50, along: 0.5, missing: 4, lost: "out", numbers: "off", page: "280x280" }),
+  board: P({ seed: 7, shape: "beaker", tradition: "bell", sherds: 20, sheet: "board", board: "numbered", numbers: "off", page: "280x280" }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `pottery-${r.o.sheet}-s${r.o.seed}-${r.o.shape}-${r.o.tradition}-n${r.N}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, viewPaths, measurePiece, pieceGrid, tryChord, obb, pieceOK, splitPoly, chainOK, lineHits, fractal };
+run();
+</script>
+</body>
+</html>
