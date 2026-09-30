@@ -29,7 +29,7 @@ SVGs stay exact. WebP images are white-paper previews. Gallery loading uses the 
 
 `launch.html` is a separate homepage-owned shell. It validates the source fingerprint and all saved control IDs/options/ranges, then loads those controls in a same-origin iframe and triggers the studio's existing input handlers. No generator files are rewritten or restyled. A mismatched source fails visibly with a direct studio link rather than silently opening an unrelated default.
 
-Keep the generator title/control-panel redesign for a later coordinated change; the maker explicitly excluded generator edits from this pass.
+The control-panel part of the generator redesign landed on 2026-09-30 as the studio dock (see below); expressive titles are still to come.
 
 ## Checks
 
@@ -51,3 +51,7 @@ Open `02_WORK/site/animation-check.html` through the shared localhost preview an
 Use `node 02_WORK/publish-site.mjs --only=spider-web-studio.html,weather-studio.html` to mirror only the named registered pages from 04_DOCS, then rebuild the complete gallery against public snapshots. Other studios and shared source files are left unchanged. This cannot be combined with --homepage-only.
 
 Scene launch checks: open scene-launch-check.html through the shared preview; all controls must match, with at most 2% changed ink pixels at a 1000-pixel raster width (40/255 channel tolerance) for cross-engine geometry differences. The final selected examples measured at most 0.013%.
+## Studio dock
+Every `04_DOCS/*-studio.html` carries one shared block in `<head>` between `studio-dock:start` and `studio-dock:end` markers, written by `node 02_WORK/site/studio-dock.mjs` (plg-stego/build.mjs re-injects it on every rebuild).
+Desktop: the controls column scrolls on its own and the drawing fits the window. Phone: the drawing comes first and stays pinned (Image S/M/L/Unpinned button), controls below it, stats after. Every control group folds from its legend; folds and image size are remembered per studio in localStorage.
+The block is a `<script id=...>` in the head, so the headless harnesses, which slice the page's last bare `<script>` tag, never run it. Studio hashes change when it is re-injected, so publish in full afterwards.

@@ -50,6 +50,88 @@ canvas { display:block; max-width:100%; height:auto; }
 .foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
 code { font-family:var(--font-mono); font-size:0.85em; }
 </style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
 </head>
 <body>
 <header>
@@ -510,7 +592,7 @@ function build(o) {
     return { P, solids: [capT, T(stem)] };
   };
   const makeTree = (x, yb, rnd, tz) => {
-    const skyH = (yb - SY0) - (mono ? DYm : 0), Tr = 0.2 * skyH * Math.max(0.8, o.treesize), wb = 6 * sc * o.treesize, P = [], solids = [];
+    const skyH = (yb - SY0) - (mono ? DYm : 0), Tr = 0.34 * skyH * Math.max(0.8, o.treesize), wb = 6 * sc * o.treesize, P = [], solids = [];
     const cen = []; for (let j = 0; j <= 10; j++) { const t = j / 10; cen.push([x + Math.sin(t * 2.6 + rnd()) * 1.6 * sc * t, yb - Tr * t]); }
     const hw = cen.map((_, j) => { const t = j / 10; return wb * (1 - 0.3 * t) + wb * 0.7 * Math.pow(Math.max(0, 1 - t / 0.2), 2); });
     const [TL, TR] = tubeSides(cen, hw), trunk = [...TL, ...TR.slice().reverse()];
@@ -519,7 +601,7 @@ function build(o) {
       const u = -0.78 + 1.56 * (k + 0.5) / 9 + (rnd() - 0.5) * 0.12; let t0 = 0.02 + rnd() * 0.15;
       for (let g = 0; g < 4 && t0 < 0.92; g++) { const t1 = Math.min(0.97, t0 + 0.15 + 0.3 * rnd()), p = []; for (let j = 0; j <= 14; j++) { const t = t0 + (t1 - t0) * j / 14, i = Math.min(9, Math.floor(t * 10)), fr = t * 10 - i, cx = cen[i][0] * (1 - fr) + cen[i + 1][0] * fr, cy = cen[i][1] * (1 - fr) + cen[i + 1][1] * fr, hh = hw[i] * (1 - fr) + hw[i + 1] * fr; p.push([cx + u * hh + Math.sin(t * 23 + k * 2) * 0.45 * sc, cy]); } P.push({ p, c: false, pen: "shade" }); t0 = t1 + 0.04 + 0.1 * rnd(); }
     }
-    const top = cen.at(-1), tips = [], HH = 0.6 * crownHW;
+    const top = cen.at(-1), tips = []; let HH = 0.6 * crownHW;
     const limb = (px, py, ang, len, wd, depth, par) => {
       const n = Math.max(4, Math.round(len / 2.5)), pts = [[px, py]]; let a = ang, cx = px, cy = py;
       for (let i = 0; i < n; i++) { a += (rnd() - 0.5) * 0.7 - a * 0.04; cx += Math.sin(a) * len / n; cy -= Math.cos(a) * len / n; pts.push([cx, cy]); }
@@ -529,9 +611,11 @@ function build(o) {
     [-1.25, -0.45, 0.45, 1.25].forEach(a0 => limb(top[0] + a0 * 1.5 * sc, top[1] + 1, a0 + (rnd() - 0.5) * 0.3, crownHW * (0.55 + 0.3 * rnd()), hw.at(-1) * 0.75, 0, trunk));
     addItem(tz, P, solids);
     const ccx = x, ccy = top[1] - HH * 0.95, Rc = (8 + 3 * rnd()) * sc, dist = Rc * (1.5 - 0.6 * o.foliage), cl = tips.map(([px, py]) => [px, py - Rc * 0.5]);
+    // lift the crown: squash it to fit the sky above a tall trunk, then keep every leaf clump clear of the trunk's upper stretch
+    HH = Math.max(0.3 * crownHW, Math.min(HH, (top[1] - SY0 - 3 - 1.2 * Rc) / 1.95));
     const inCrown = (px, py) => ((px - ccx) / crownHW) ** 2 + ((py - ccy) / HH) ** 2 < 1;
     for (const q of poisson(ccx - crownHW, ccy - HH, ccx + crownHW, ccy + HH, dist, inCrown, rnd)) if (!cl.some(c => Math.hypot(c[0] - q[0], c[1] - q[1]) < dist * 0.7)) cl.push(q);
-    for (let i = cl.length - 1; i >= 0; i--) if (cl[i][1] > top[1] - Rc * 0.9) cl.splice(i, 1);
+    for (let i = cl.length - 1; i >= 0; i--) if (cl[i][1] > top[1] - Rc * 1.45) cl.splice(i, 1);
     cl.sort((a, b) => a[1] - b[1]);
     cl.forEach(([px, py], i) => {
       const R = Rc * (0.85 + 0.4 * rnd()), k = 9 + Math.floor(rnd() * 3), ph = rnd() * TAU, poly = [];
@@ -845,7 +929,8 @@ function build(o) {
           if (rM() < 0.045 && w.gen < 3 && q.length < 4000) q.push({ x, y, a: a + (rM() < 0.5 ? -1 : 1) * (0.5 + 0.7 * rM()), left: (w.left - s) * 0.6, gen: w.gen + 1 });
           const hit = nearTip(x, y, 2.2 * sc); if (hit && s > 3) { pts.push([hit.x, hit.y]); break; }
         }
-        if (pts.length > 2) out.push([pts, false]);
+        // the grid walk is first decimated (Douglas-Peucker 0.7 mm) so its unit steps stop reading as a staircase, then four Chaikin passes round the turns; the ends stay put, and emit() still gates every sample
+        if (pts.length > 2) out.push([chaikin(simplify(pts, 0.7), 4, false), false]);
       }
       emit(out, myceOut, (x, y) => soilKeep(x, y) && !tightG.test(x, y) && !mycObG.test(x, y), 0.6, catMyc);
     }

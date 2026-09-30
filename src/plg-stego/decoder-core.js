@@ -175,15 +175,39 @@ function pick(sp, cands, rMm = 0.28) {
   const scores = cands.map((ps, v) => {
     const bit = bitOf(v);
     if (!ps.length) return 0.4 - (mean(keys) ?? 0);
-    const mine = keys.filter(k => (owner.get(k) & bit) !== Z), own = mine.filter(k => (near.get(k) & ~bit) === Z), inV = own.length >= 3 ? own : mine;
+    const mine = keys.filter(k => (owner.get(k) & bit) !== Z), own = mine.filter(k => (near.get(k) & ~bit) === Z), alone = own.length >= 3 ? own : mine.filter(k => owner.get(k) === bit), inV = alone.length >= 3 ? alone : mine;
     const outV = keys.filter(k => (near.get(k) & bit) === Z);
     return mean(inV) - (outV.length ? mean(outV) : 0.4);
   });
   const order = scores.map((s, v) => [s, v]).sort((a, b) => b[0] - a[0]);
   // top: how well the winner's own strokes sit on ink, for fitting a hand-tapped anchor (a margin can be decisive and wrong)
-  return { value: order[0][1], conf: order[0][0] - (order[1] ? order[1][0] : 0), top: order[0][0] };
+  return { value: order[0][1], conf: order[0][0] - (order[1] ? order[1][0] : 0), top: order[0][0], scores };
 }
 
+// Pigpen's dot. A dotted letter and its plain twin share their walls; the twin is shaded across the whole shape and the dotted
+// one only inside the dot, so the test is how dark the dot's own strokes are against how dark the twin's shading is, both
+// read on ink the other does not have. A blurred hatch and a blurred dot look alike up close (they did, at 4 px per mm, and
+// every T read as X), but the shaded area outside the dot stays dark or blank at any distance.
+const PG_TWIN = v => (v < 9 ? v + 9 : v < 18 ? v - 9 : v < 22 ? v + 4 : v < 26 ? v - 4 : -1);
+const PG_DOTTED = v => (v >= 9 && v < 18) || (v >= 22 && v < 26);
+export const PG_CUT = 0.4;
+function pigpenDot(sp, cands, pk, rMm = 0.28) {
+  const v = pk.value; if (v >= 26) return pk;
+  const ext = p => { const xs = p.map(q => q[0]), ys = p.map(q => q[1]); return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys)); };
+  const dv = PG_DOTTED(v) ? v : PG_TWIN(v), pv = PG_TWIN(dv), ring = cands[dv].filter(([, c]) => c).map(([p]) => p).sort((a, b) => ext(a) - ext(b))[0];
+  if (!ring) return pk;
+  const cx = ring.reduce((a, q) => a + q[0], 0) / ring.length, cy = ring.reduce((a, q) => a + q[1], 0) / ring.length, r = Math.max(...ring.map(q => Math.hypot(q[0] - cx, q[1] - cy)));
+  const pts = (c, st = 0.3) => c.flatMap(([p, cl]) => (p.length > 1 ? densify(p, cl, st) : p));
+  const dotPts = pts(cands[dv]).filter(q => Math.hypot(q[0] - cx, q[1] - cy) < r + 0.15), mine = pts(cands[dv]);
+  const far = pts(cands[pv], 0.15).filter(q => Math.hypot(q[0] - cx, q[1] - cy) > r + 0.35 && !mine.some(m => Math.hypot(m[0] - q[0], m[1] - q[1]) < 0.45));
+  if (dotPts.length < 3 || far.length < 3) return pk;
+  const mean = a => a.reduce((t, q) => t + sp.area(q), 0) / a.length, D = mean(dotPts), P = mean(far), d = D - P, dotted = d > PG_CUT;
+  // with the dot settled, choose the shape among the letters of that kind only: the dotted shapes differ by a wall or two and
+  // share their dot, which tied them all when every letter competed at once
+  const kind = dotted ? [9, 10, 11, 12, 13, 14, 15, 16, 17, 22, 23, 24, 25, 26] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 18, 19, 20, 21, 26];
+  const again = pick(sp, kind.map(i => cands[i]), rMm), nv = kind[again.value];
+  return { ...again, value: nv, pgDiff: d, conf: again.conf };
+}
 // Template matching, for glyphs dense with hatching (the signal flags): each candidate is rendered as the darkness it
 // would leave on a 0.35 mm grid (pen width and a little blur included), the photo is sampled on the same grid, and the
 // candidate that correlates best wins. Stroke scoring could not tell hatch directions apart: every hatched flag read as E.
@@ -325,7 +349,7 @@ function pickAll(sp, cells, rMm = 0.28) {
     for (let k = 0; k < 20; k++) { const m = (a + z) / 2, lo2 = mos.filter(v => v <= m), hi2 = mos.filter(v => v > m); if (lo2.length) a = lo2.reduce((s, v) => s + v, 0) / lo2.length; if (hi2.length) z = hi2.reduce((s, v) => s + v, 0) / hi2.length; }
     bareCut = z - a > 0.15 ? (a + z) / 2 : a * 0.5;   // one level only: every cell holds a glyph
   }
-  return cells.map((c, i) => (Array.isArray(c.cands) ? (rMm === "template" ? pickTemplate(sp, c.cands, bareCut) : pick(sp, c.cands, rMm)) : { value: levels[i] > cut ? 1 : 0, conf: Math.min(1, Math.abs(levels[i] - cut) / Math.max(0.1, (hi - lo) / 2)) * 0.3 }));
+  return cells.map((c, i) => (Array.isArray(c.cands) ? (rMm === "template" ? pickTemplate(sp, c.cands, bareCut) : c.kind === "pigpen" ? pigpenDot(sp, c.cands, pick(sp, c.cands, rMm), rMm) : pick(sp, c.cands, rMm)) : { value: levels[i] > cut ? 1 : 0, conf: Math.min(1, Math.abs(levels[i] - cut) / Math.max(0.1, (hi - lo) / 2)) * 0.3 }));
 }
 // Retrofit marks were plotted onto a sheet put back on the mat by hand, so they may sit a millimetre or two off the
 // drawing. Try shifts on a sample of cells and keep the one whose cells read most decisively.

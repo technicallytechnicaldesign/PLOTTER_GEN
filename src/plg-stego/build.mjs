@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { injectDock } from "../site/studio-dock.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../../../../..");
@@ -34,7 +35,8 @@ for (const [entry, template, page] of PAGES) {
   });
   // The page is one inline script, so the bundle may not close or open a script tag of its own.
   const js = res.outputFiles[0].text.replace(/<\/script/gi, "<\\/script").replace(/<script/gi, "<\\script");
-  const html = fs.readFileSync(path.join(here, template), "utf8").replace("/*@@BUNDLE@@*/", () => js);
+  let html = fs.readFileSync(path.join(here, template), "utf8").replace("/*@@BUNDLE@@*/", () => js);
+  if (page.endsWith("-studio.html")) html = injectDock(html);   // fold-away controls and a pinned drawing, see ../site/studio-dock.mjs
   const out = path.resolve(here, "../../04_DOCS", page);
   fs.writeFileSync(out, html);
   console.log(`wrote ${path.relative(root, out)} (${Math.round(html.length / 1024)} KB, UTP ${rev})`);

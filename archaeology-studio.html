@@ -50,6 +50,88 @@ canvas { display:block; max-width:100%; height:auto; }
 .foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
 code { font-family:var(--font-mono); font-size:0.85em; }
 </style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
 </head>
 <body>
 <header>
@@ -59,7 +141,7 @@ code { font-family:var(--font-mono); font-size:0.85em; }
 <div class="wrap">
 <aside>
   <fieldset><legend>Presets</legend>
-    <div class="row"><button data-preset="midden">Shell midden</button><button data-preset="posthole">Postholes and ditch</button><button data-preset="wall">Wall foundation</button><button data-preset="farmstead">Farmstead plan</button><button data-preset="survey">Contour survey</button><button data-preset="sieve">Sieve of flints</button><button data-preset="sieveMixed">Mixed sieve</button><button data-preset="refit">Jar refit</button><button data-preset="beaker">Beaker refit</button><button data-preset="bowl">Bowl refit</button></div>
+    <div class="row"><button data-preset="midden">Shell midden</button><button data-preset="posthole">Postholes and ditch</button><button data-preset="wall">Wall foundation</button><button data-preset="farmstead">Farmstead plan</button><button data-preset="survey">Contour survey</button><button data-preset="sieve">Sieve of flints</button><button data-preset="sieveMixed">Mixed sieve</button><button data-preset="refit">Jar refit</button><button data-preset="beaker">Beaker refit</button><button data-preset="bowl">Bowl refit</button><button data-preset="amphora">Amphora refit</button></div>
   </fieldset>
   <fieldset><legend>The drawing</legend>
     <label>Kind of drawing <select id="mode"><option value="section">trench section (stratigraphy)</option><option value="plan">site plan (landscape)</option><option value="sieve">sieve tray (finds)</option><option value="refit">pottery refit</option></select></label>
@@ -407,6 +489,12 @@ function mkFind(kind, L, rnd, pitch) {
     poly = ring(0, 0, L / 2, 30).map(([x, y]) => [x * (1 + (rnd() - 0.5) * 0.03), y * (1 + (rnd() - 0.5) * 0.03)]);
     det.push([ring(0, 0, L / 2 * 0.8, 30), true], [[[-L * 0.2, 0], [L * 0.2, 0]], false], [[[0, -L * 0.2], [0, L * 0.2]], false]);
     for (let k = 0; k < 4; k++) { const a = Math.PI / 4 + k * Math.PI / 2, x = Math.cos(a) * L * 0.29, y = Math.sin(a) * L * 0.29; det.push([[[x - 0.25, y], [x + 0.25, y]], false]); }
+  } else if (kind === "handle") {
+    // a strap handle fragment: a bent band with a broken end each side and two grooves along its back
+    const w = L * 0.3, bend = L * (0.12 + 0.1 * rnd()), cl = t => [t * L / 2, -bend * (1 - t * t)], up = [], dn = [];
+    for (let i = 0; i <= 8; i++) { const t = -1 + i / 4, [x, y] = cl(t), dx = L / 2, dy = 2 * bend * t, l = Math.hypot(dx, dy), nx = -dy / l, ny = dx / l, hw = w / 2 * (1 - 0.12 * t * t) * (i === 0 || i === 8 ? 0.9 + 0.2 * rnd() : 1 + (rnd() - 0.5) * 0.08); up.push([x + nx * hw, y + ny * hw]); dn.push([x - nx * hw, y - ny * hw]); }
+    poly = [...up, ...dn.reverse()]; const inner = shrink(poly, 0.92);
+    for (const s of [-0.2, 0.2]) { const g = []; for (let i = 0; i <= 12; i++) { const t = -0.92 + 1.84 * i / 12, [x, y] = cl(t), dx = L / 2, dy = 2 * bend * t, l = Math.hypot(dx, dy); g.push([x + (-dy / l) * w * s, y + (dx / l) * w * s]); } clipIn(inner, g, det); }
   } else if (kind === "shell") {
     const R = L * 0.6; poly = [[-0.1 * L, -0.13 * L]]; for (let k = 0; k <= 12; k++) { const a = -1.1 + 2.2 * k / 12, r = R * (1 + (k % 2 ? 0.035 : -0.035)); poly.push([-0.1 * L + r * Math.cos(a), r * Math.sin(a)]); } poly.push([-0.1 * L, 0.13 * L]);
     const inner = shrink(poly, 0.9); for (let a = -0.85; a <= 0.86; a += 0.34) clipIn(inner, [[-0.1 * L + R * 0.15 * Math.cos(a), R * 0.15 * Math.sin(a)], [-0.1 * L + R * 0.92 * Math.cos(a), R * 0.92 * Math.sin(a)]], det);
@@ -510,14 +598,14 @@ const CUTMIX = {
   postholes: ["ditch", "posthole", "posthole", "posthole", "posthole", "posthole", "posthole", "posthole", "posthole"],
   wall: ["wall", "ditch", "pit", "posthole", "pit", "posthole", "posthole", "pit", "posthole"],
 };
-const FINDSIZE = { shell: [3.6, 5.2], bone: [4, 6.2], sherd: [2.6, 4.4], flake: [2.6, 3.8], charcoal: [1.8, 2.8] };
+const FINDSIZE = { shell: [3.6, 5.2], bone: [4, 6.2], sherd: [2.6, 4.4], handle: [5, 7], flake: [2.6, 3.8], charcoal: [1.8, 2.8] };
 const pillPoly = (x, y, w, h) => { const r = h / 2, p = []; for (let k = 0; k <= 6; k++) { const a = -Math.PI / 2 + Math.PI * k / 6; p.push([x + w / 2 - r + r * Math.cos(a), y + r * Math.sin(a)]); } for (let k = 0; k <= 6; k++) { const a = Math.PI / 2 + Math.PI * k / 6; p.push([x - w / 2 + r + r * Math.cos(a), y + r * Math.sin(a)]); } return p; };
 
 function buildSection(o, W, H, rnd) {
   const m = o.margin, N = o.layers, key = [], shade = [], colr = [], lab = o.labels === "on";
   const nzA = mkNoise(o.seed * 17 + 3);
   const legCols = W - 2 * m > 200 ? 3 : 2, rows = lab ? Math.ceil((N + o.ncut) / legCols) : 0, legH = lab ? rows * 6.4 + 5 : 0;
-  const xL = m + 18, xR = W - m, gB = m + 30, yb = H - m - legH - 4;
+  const xL = m + 18, xR = W - m, gB = m + (lab ? 46 : 30), yb = H - m - legH - 4;
   const DX = 0.5, nx = Math.ceil((xR - xL) / DX), xs = i => xL + i * DX;
   const at = (arr, x) => { const f = (x - xL) / DX; let i = Math.floor(f); if (i < 0) i = 0; if (i > nx - 1) i = nx - 1; const t = Math.min(1, Math.max(0, f - i)); return arr[i] + (arr[i + 1] - arr[i]) * t; };
   // ---- the deposits: boundaries B[0] (ground) to B[N] (floor of the trench)
@@ -619,11 +707,18 @@ function buildSection(o, W, H, rnd) {
   }
   // ---- artefacts
   function scatter(reg, n, rich) {
-    const pick = () => { const r = rnd(); if (rich) return r < 0.45 ? "shell" : r < 0.7 ? "bone" : r < 0.9 ? "sherd" : r < 0.97 ? "flake" : "charcoal"; return r < 0.38 ? "sherd" : r < 0.68 ? "flake" : r < 0.88 ? "bone" : "charcoal"; };
+    const pick = () => { const r = rnd(); if (rich) return r < 0.45 ? "shell" : r < 0.7 ? "bone" : r < 0.9 ? "sherd" : r < 0.97 ? "flake" : "charcoal"; return r < 0.35 ? "sherd" : r < 0.38 ? "handle" : r < 0.68 ? "flake" : r < 0.88 ? "bone" : "charcoal"; };
+    // a midden is tipped, not sown: shells pile into a few flat dumps (lenses) that follow the fill, with a thin spread between them
+    const dumps = [];
+    if (rich) { const nd = 2 + Math.floor(rnd() * 3); for (let t = 0; t < 200 && dumps.length < nd; t++) { const x = reg.x0 + rnd() * (reg.x1 - reg.x0), y = reg.ymin + rnd() * (reg.ymax - reg.ymin); if (inside(reg, x, y, 1.2)) dumps.push({ x, y, rx: 5 + rnd() * 5, ry: 1.3 + rnd() * 1.1, sl: 0 }); }
+      for (const d of dumps) d.sl = (reg.top(d.x + 2) - reg.top(d.x - 2)) / 4; }
     let placed = 0;
     for (let t = 0; t < n * 30 && placed < n; t++) {
-      const x = reg.x0 + rnd() * (reg.x1 - reg.x0), y = reg.ymin + rnd() * (reg.ymax - reg.ymin); if (!coreIn(reg, x, y)) continue;
-      const kind = pick(), L = FINDSIZE[kind][0] + rnd() * (FINDSIZE[kind][1] - FINDSIZE[kind][0]), ang = kind === "shell" || kind === "bone" || kind === "sherd" ? (rnd() - 0.5) * 0.9 : rnd() * TAU;
+      let x, y, inDump = null;
+      if (dumps.length && rnd() < 0.8) { inDump = dumps[Math.floor(rnd() * dumps.length)]; const u = (rnd() + rnd() + rnd() - 1.5) * 2 * inDump.rx / 1.5, v = (rnd() + rnd() - 1) * inDump.ry; x = inDump.x + u; y = inDump.y + v + inDump.sl * u; }
+      else { x = reg.x0 + rnd() * (reg.x1 - reg.x0); y = reg.ymin + rnd() * (reg.ymax - reg.ymin); }
+      if (!coreIn(reg, x, y)) continue;
+      const kind = inDump && rnd() < 0.8 ? "shell" : inDump ? pick() : rich ? (rnd() < 0.3 ? "shell" : pick()) : pick(), L = FINDSIZE[kind][0] + rnd() * (FINDSIZE[kind][1] - FINDSIZE[kind][0]), ang = kind === "shell" || kind === "bone" || kind === "sherd" ? (rnd() - 0.5) * 0.9 : rnd() * TAU;
       const f = putFind(mkFind(kind, L, rnd, o.pitch), x, y, ang);
       if (C.put(reg, f.poly, 1.0, 0.6)) { arte.push({ f, kind, reg }); emitFind(f, key, C.shade); placed++; }
     }
@@ -633,6 +728,22 @@ function buildSection(o, W, H, rnd) {
     if (reg.kind === "pipe") continue;
     const dens = reg.kind === "layer" ? (reg.i === 0 ? 0.0025 : 0.0045) : reg.rich ? 0.065 : reg.cut.type === "posthole" || reg.cut.type === "wall" ? 0 : 0.014;
     const n = Math.round(reg.area * dens * o.finds * (0.7 + rnd() * 0.6)); if (n > 0) scatter(reg, n, !!reg.rich);
+  }
+  // ---- tip lines: dumped fills show the lenses they were tipped in, thinning to a point at both ends and following the fill
+  let nLens = 0;
+  for (const reg of regsAll) {
+    if (reg.kind !== "fill" || !["midden", "pit", "ditch"].includes(reg.cut.type)) continue;
+    const want = Math.min(6, Math.floor(reg.area / (reg.cut.type === "midden" ? 70 : 110)) + 1);
+    for (let t = 0, got = 0; t < 80 && got < want; t++) {
+      const len = (reg.cut.type === "midden" ? 6 : 9) + rnd() * 14, xc = reg.x0 + len / 2 + 1 + rnd() * Math.max(0, reg.x1 - reg.x0 - len - 2), q = 0.2 + rnd() * 0.6, Th = 0.3 + rnd() * 0.45, n = 18, up = [], dn = [];
+      const base = x => reg.top(x) + q * (reg.bot(x) - reg.top(x));
+      for (let i = 0; i <= n; i++) { const u = -1 + 2 * i / n, x = xc + u * len / 2, h = Th * Math.pow(1 - u * u, 0.8), y = base(x); up.push([x, y - h]); dn.push([x, y + h]); }
+      const lens = [...up, ...dn.slice().reverse()];
+      if (!lens.every(([x, y]) => inside(reg, x, y, 0.55)) || lens.some(([x, y]) => C.hit(x, y))) continue;
+      let clear = true; for (let i = 0; i <= n && clear; i++) { const [x, y] = up[i]; if (!C.clash.ok([[x - 0.4, y - 0.4], [x + 0.4, y - 0.4], [x + 0.4, y + 0.4], [x - 0.4, y + 0.4]], 0.3)) clear = false; }
+      if (!clear) continue;
+      C.shade.push([up, false], [dn, false]); C.mask.add(growPoly(lens, 0.9)); got++; nLens++;
+    }
   }
   // ---- lines: ground, frame, boundaries, cuts
   const surfPts = []; for (let i = 0; i <= nx; i++) surfPts.push([xs(i), surf[i]]);
@@ -660,6 +771,17 @@ function buildSection(o, W, H, rnd) {
   key.push([[[xR - 3, yD], [xR - 6, yD - 3.2], [xR, yD - 3.2]], true]);
   if (lab) txt(`DATUM ${DH.toFixed(2)} M OD`, xR - 8, yD - 1.8, 2.3, key, { a: "r" });
   txt("S.1 NORTH-FACING SECTION", m, m + 3, 3.4, key);
+  // key plan: the trench in plan with the section line along its north face and the cuts it meets
+  if (lab) { const px = m, py = m + 18, pw = 58, ph = 15, sc = pw / (xR - xL);
+    key.push([rectPoly(px, py, px + pw, py + ph), true]);
+    key.push([[[px - 3, py + 0.9], [px + pw + 3, py + 0.9]], false]);
+    for (const x of [px - 3, px + pw + 3]) key.push([[[x, py - 0.6], [x, py + 2.4]], false]);
+    txt("S.1", px - 3, py - 3, 2.0, key, { a: "c" }); txt("S.1", px + pw + 3, py - 3, 2.0, key, { a: "c" });
+    for (const c of cuts) { const fx = px + (c.cx - xL) * sc, rx = Math.max(0.9, c.hw * sc), ry = c.type === "ditch" || c.type === "wall" ? ph : Math.min(ph - 1, rx * 1.15), inBox = rectPoly(px + 0.3, py + 0.3, px + pw - 0.3, py + ph - 0.3);
+      if (c.type === "ditch" || c.type === "wall") { const a = Math.max(px + 0.3, fx - rx), b = Math.min(px + pw - 0.3, fx + rx); colr.push([[[a, py + 0.3], [a, py + ph - 0.3]], false], [[[b, py + 0.3], [b, py + ph - 0.3]], false]); }
+      else { const el = ring(fx, py + 0.9, rx, 20).map(([x, y]) => [x, py + 0.9 + (y - py - 0.9) * ry / rx]); clipIn(inBox, [...el, el[0]], colr); } }
+    txt("KEY PLAN", px + pw + 26, py + 5, 2.0, key); txt("NOT TO SCALE", px + pw + 26, py + 9, 2.0, key);
+    const nx0 = px + pw + 14, ny0 = py + ph; key.push([[[nx0, ny0], [nx0, py + 2]], false], [[[nx0 - 1.8, py + 6], [nx0, py + 1.5], [nx0 + 1.8, py + 6]], true]); txt("N", nx0 + 4.5, py + 3, 2.3, key, { a: "c" }); }
   if (lab) txt(`TRENCH ${1 + o.seed % 4}, SITE A, 1:20`, m, m + 10, 2.6, key);
   { const bx = xR - 52, by = m + 2;
     key.push([rectPoly(bx, by, bx + 50, by + 2.4), true]);
@@ -704,7 +826,7 @@ function buildSection(o, W, H, rnd) {
     ["every cut truncates only deposits older than itself (Harris order)", viol === 0, `${cuts.length} cuts, ${trunc} deposits truncated, ${nest} nested pairs, ${viol} violations`],
     ["no artefact overlaps another or a context boundary", minGap >= 0.5 && cross === 0, `${arte.length} finds, closest ${minGap === 99 ? "n/a" : minGap.toFixed(2) + " mm"}, ${cross} crossings`],
   ];
-  return { key, shade, colour: colr, gates, info: `${N} deposits, ${cuts.length} cuts, ${arte.length} finds` };
+  return { key, shade, colour: colr, gates, info: `${N} deposits, ${cuts.length} cuts, ${arte.length} finds, ${nLens} tip lenses` };
 }
 
 // ================= mode 2: site plan =================
@@ -940,11 +1062,11 @@ function buildPlan(o, W, H, rnd) {
 // ================= mode 3: sieve tray =================
 const MIXES = {
   flint: [["flake", 0.4], ["blade", 0.12], ["scraper", 0.1], ["arrow", 0.03], ["pebble", 0.15], ["sherd", 0.07], ["bone", 0.05], ["charcoal", 0.05], ["snail", 0.03]],
-  mixed: [["sherd", 0.26], ["flake", 0.16], ["blade", 0.04], ["scraper", 0.05], ["bone", 0.14], ["charcoal", 0.1], ["snail", 0.08], ["pebble", 0.12], ["arrow", 0.02]],
-  pottery: [["sherd", 0.62], ["flake", 0.08], ["bone", 0.07], ["charcoal", 0.06], ["pebble", 0.1], ["snail", 0.04], ["scraper", 0.03]],
+  mixed: [["sherd", 0.22], ["handle", 0.04], ["flake", 0.16], ["blade", 0.04], ["scraper", 0.05], ["bone", 0.14], ["charcoal", 0.1], ["snail", 0.08], ["pebble", 0.12], ["arrow", 0.02]],
+  pottery: [["sherd", 0.55], ["handle", 0.07], ["flake", 0.08], ["bone", 0.07], ["charcoal", 0.06], ["pebble", 0.1], ["snail", 0.04], ["scraper", 0.03]],
 };
-const SIEVESIZE = { flake: [10, 20], blade: [18, 30], scraper: [11, 17], arrow: [22, 30], sherd: [10, 24], bone: [12, 26], charcoal: [5, 10], snail: [6, 10], pebble: [5, 13], coin: [14, 16] };
-const CLASSOF = { flake: "FLINT", blade: "FLINT", scraper: "FLINT", arrow: "FLINT", sherd: "POTTERY", bone: "BONE", charcoal: "CHARCOAL", snail: "SNAIL", pebble: "PEBBLE", coin: "COIN" };
+const SIEVESIZE = { flake: [10, 20], blade: [18, 30], scraper: [11, 17], arrow: [22, 30], sherd: [10, 24], handle: [18, 28], bone: [12, 26], charcoal: [5, 10], snail: [6, 10], pebble: [5, 13], coin: [14, 16] };
+const CLASSOF = { flake: "FLINT", blade: "FLINT", scraper: "FLINT", arrow: "FLINT", sherd: "POTTERY", handle: "POTTERY", bone: "BONE", charcoal: "CHARCOAL", snail: "SNAIL", pebble: "PEBBLE", coin: "COIN" };
 
 function buildSieve(o, W, H, rnd) {
   const m = o.margin, key = [], shade = [], col = [], lab = o.labels === "on";
@@ -1013,8 +1135,11 @@ function buildRefit(o, W, H, rnd) {
   const m = o.margin, key = [], shade = [], col = [], lab = o.labels === "on", V = VESSELS[o.vessel];
   const cp = V.pts.map(([y, r], i) => [y, r * (i === 0 || i === V.pts.length - 1 ? 1 : 1 + (rnd() - 0.5) * 0.08)]);
   const rAtF = yf => { yf = Math.min(1, Math.max(0, yf)); let i = 0; while (i < cp.length - 2 && yf > cp[i + 1][0]) i++; const a = cp[i], b = cp[i + 1], t = b[0] > a[0] ? (yf - a[0]) / (b[0] - a[0]) : 0; return crom(cp[Math.max(0, i - 1)][1], a[1], b[1], cp[Math.min(cp.length - 1, i + 2)][1], t); };
-  const laid = o.laid === "beside", availW = W - 2 * m - (laid ? 62 : 0), availH = H - 2 * m - 32;
-  const Hv = Math.min(availH, V.aspect * availW), Rmax = Hv / (2 * V.aspect), yTop = m + 16 + (availH - Hv) / 2, yBot = yTop + Hv, cx = laid ? m + Rmax + 2 : W / 2;
+  // a portrait sheet keeps the pot across the top and uses the rest: missing sherds laid out beneath, or a sherd register when none are laid out
+  const laid = o.laid === "beside", portrait = H > W * 1.15, side = laid && !portrait, below = laid && portrait, regist = lab && portrait && !below;
+  const amph = o.vessel === "amphora", HX = amph ? 1.3 : 1, regH = 16 + Math.ceil(o.sherds / 3) * 4.4 + 8, under = below ? 62 : regist ? regH : 0;
+  const availW = (W - 2 * m - (side ? 62 : 0)) / HX, availH = H - 2 * m - 32 - under;
+  const Hv = Math.min(availH, V.aspect * availW), Rmax = Hv / (2 * V.aspect), yTop = m + 16 + (availH - Hv) / 2, yBot = yTop + Hv, cx = side ? m + Rmax * HX + 2 : W / 2;
   const K = Math.min(1600, Math.max(30, Math.round(Hv / 0.15))), dyk = Hv / K, rTab = new Float64Array(K + 1); for (let k = 0; k <= K; k++) rTab[k] = Rmax * rAtF(k / K);
   const rLoc = y => { const f = Math.min(K, Math.max(0, y / dyk)), i = Math.min(K - 1, Math.floor(f)); return rTab[i] + (rTab[i + 1] - rTab[i]) * (f - i); };
   const tw = Math.min(4.5, Math.max(2.4, Rmax * 0.085)), tb = tw * 1.2;
@@ -1075,6 +1200,19 @@ function buildRefit(o, W, H, rnd) {
       else if (bot.hi - bot.lo > 0.4) { const nb = cellAt((bot.lo + bot.hi) / 2, r.k1 * dyk + 0.5); drawEdge([wp(bot.lo, r.k1 * dyk), wp(bot.hi, r.k1 * dyk)], miss.has(i) || miss.has(nb)); }
     }
   }
+  // ---- amphora: a pair of strap handles from the neck to the shoulder, the left one seen from outside, the right one cut by the section plane
+  if (amph) {
+    const y0 = 0.16 * Hv, y1 = 0.41 * Hv, r0 = rLoc(y0), r1 = rLoc(y1), xo = Math.max(r0, r1) + 0.34 * Rmax, sw = Math.max(3.4, 0.15 * Rmax);
+    const bz = t => { const u = 1 - t, P = [[r0 - 0.03 * Rmax, y0], [xo * 1.04, y0 - 0.03 * Hv], [xo + 0.06 * Rmax, y1 - 0.05 * Hv], [r1 - 0.03 * Rmax, y1]]; return [0, 1].map(k => u * u * u * P[0][k] + 3 * u * u * t * P[1][k] + 3 * u * t * t * P[2][k] + t * t * t * P[3][k]); };
+    const cl = [], outer = [], inner = []; for (let i = 0; i <= 40; i++) { const t = i / 40, a = bz(Math.max(0, t - 0.01)), b = bz(Math.min(1, t + 0.01)), c = bz(t), dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l, w = sw / 2 * (1 + 0.18 * Math.sin(Math.PI * t)); cl.push(c); outer.push([c[0] + nx * w, c[1] + ny * w]); inner.push([c[0] - nx * w, c[1] - ny * w]); }
+    const inBody = (x, y) => y > 0 && y < Hv && Math.abs(x) < rLoc(y) - 0.15;
+    for (const sg of [-1, 1]) {
+      const M = P => P.map(([x, y]) => [cx + sg * x, yTop + y]), hitB = (X, Y) => inBody(X - cx, Y - yTop);
+      clipHit(M(outer), false, hitB, 0.4, key, 0.3); clipHit(M(inner), false, hitB, 0.4, key, 0.3);
+      if (sg < 0) clipHit(M(cl.slice(3, -3)), false, hitB, 0.4, shade, 0.3);
+      else { const tmp = []; hatchPoly(M([...outer, ...inner.slice().reverse()]), Math.PI / 4, Math.max(0.5, o.pitch), tmp, 0.4); for (const [pp] of tmp) clipHit(pp, false, hitB, 0.4, shade, 0.3); }
+    }
+  }
   // ---- labels first (they hide decoration), then decoration, clipped to the sherds that are present
   const LM = mkGrid(10), MM = mkGrid(10), bigPoly = i => cells[i].polys.slice().sort((a, b) => b.area - a.area)[0];
   for (const i of miss) for (const P of cells[i].polys) MM.add(P.pts);
@@ -1110,9 +1248,9 @@ function buildRefit(o, W, H, rnd) {
   for (const [s, x, y] of labelTexts) txt(s, x, y, 2.4, key, { a: "c" });
   // ---- missing sherds laid out beside the pot
   let laidN = 0;
-  if (laid && miss.size) {
-    const zx0 = cx + Rmax + 10, zx1 = W - m - 2, zy0 = yTop, zy1 = yBot, zc = mkClash(20);
-    if (lab) txt("MISSING SHERDS", zx0, yTop - 4, 2.3, key);
+  if ((side || below) && miss.size) {
+    const zx0 = below ? m + 2 : cx + Rmax * HX + 10, zx1 = W - m - 2, zy0 = below ? yBot + 20 : yTop, zy1 = below ? yBot + 16 + 48 : yBot, zc = mkClash(20);
+    if (lab) txt("MISSING SHERDS", zx0, zy0 - 4, 2.3, key);
     for (const i of [...miss].sort((a, b) => cells[b].area - cells[a].area)) {
       const bp = bigPoly(i); if (!bp) continue; const c0 = centroid(bp.pts), local = simplifyRing(bp.pts, 0.05).map(([x, y]) => [x - c0[0], y - c0[1]]), coarse = simplifyRing(bp.pts, 0.3).map(([x, y]) => [x - c0[0], y - c0[1]]); let done = false;
       for (const clr of [3, 1.8]) { for (let tr = 0; tr < 150 && !done; tr++) {
@@ -1126,6 +1264,17 @@ function buildRefit(o, W, H, rnd) {
         if (R) txt(cells[i].tag, X, Y, 2.4, key, { a: "c" });
       } if (done) break; }
     }
+  }
+  // ---- sherd register: the table that goes with a refit drawing
+  let regRows = 0;
+  if (regist) {
+    const items = cells.map((c, i) => ({ tag: c.tag, a: c.area * 0.04, miss: miss.has(i) })).filter(e => e.tag).sort((a, b) => (+!isNaN(b.tag)) - (+!isNaN(a.tag)) || (isNaN(a.tag) ? a.tag.localeCompare(b.tag) : a.tag - b.tag));
+    const y0 = yBot + 16, cw = (W - 2 * m) / 3, rh = 4.4, per = Math.max(1, Math.floor((H - m - 14 - y0 - 8) / rh));
+    txt("SHERD REGISTER", m, y0, 2.6, key); txt("SURFACE AREA AT 1:1", m + 40, y0, 2.0, key);
+    items.forEach((e, n) => { const cn = Math.floor(n / per), row = n % per; if (cn > 2) return; const x = m + cn * cw, y = y0 + 7 + row * rh; regRows++;
+      if (row === 0) { key.push([[[x, y - 3], [x + cw - 6, y - 3]], false]); }
+      txt(e.tag, x + 1, y, 2.2, key); txt(e.a.toFixed(1) + " CM2", x + 27, y, 2.2, key, { a: "r" }); txt(e.miss ? "MISSING" : "PRESENT", x + 31, y, 2.2, key);
+      if (e.miss) dashify([[x, y + 2.1], [x + cw - 6, y + 2.1]], 1.2, 1.2, col); });
   }
   // ---- titles, scale, notes
   txt(`POT 1, ${V.name}`, m, m + 3, 3.4, key);
@@ -1213,6 +1362,7 @@ const PRESETS = {
   sieveMixed: { ...BASE, mode: "sieve", seed: 19, pieces: 85, mixture: "mixed", meshp: 5, page: "280x280" },
   refit: { ...BASE, mode: "refit", seed: 12, vessel: "jar", decor: "incised", sherds: 22, missing: 3, laid: "beside" },
   beaker: { ...BASE, mode: "refit", seed: 27, vessel: "beaker", decor: "cord", sherds: 26, missing: 5, laid: "beside" },
+  amphora: { ...BASE, mode: "refit", seed: 41, vessel: "amphora", decor: "incised", sherds: 24, missing: 4, laid: "beside" },
   bowl: { ...BASE, mode: "refit", seed: 9, vessel: "bowl", decor: "stamped", sherds: 16, missing: 2, laid: "none" },
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });

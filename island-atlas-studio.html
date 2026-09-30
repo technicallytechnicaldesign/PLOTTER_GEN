@@ -50,6 +50,88 @@ canvas { display:block; max-width:100%; height:auto; }
 .foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
 code { font-family:var(--font-mono); font-size:0.85em; }
 </style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
 </head>
 <body>
 <header>
@@ -407,8 +489,11 @@ function build(o) {
       if (blobs.every(b => Math.hypot(c[0] - b.c[0], c[1] - b.c[1]) > (r + b.r) * (r < 0.15 ? 0.95 : 0.85))) { blobs.push({ c, r, h }); break; }
     }
   }
-  const AMP = { one: 0.62, archipelago: 0.62, atoll: 0.66, volcano: 0.74, delta: 0.72 }[islands];
-  const cw = (0.16 + 0.16 * o.rugged) * (islands === "volcano" ? 0.4 : islands === "delta" ? 0.5 : 1);
+  const AMP = { one: 0.62, archipelago: 0.62, atoll: 0.66, volcano: 0.74, delta: 0.84 }[islands];
+  const cw = (0.16 + 0.16 * o.rugged) * (islands === "volcano" ? 0.4 : islands === "delta" ? 0.22 : 1);
+  // delta fan geometry (normalised page units, apex matches the distributary start below)
+  const dRd = mulberry32(o.seed * 4111 + 9), dCx = (mx0 + mx1) / 2 + (dRd() - 0.5) * 0.12 * mw;
+  const dU0 = (dCx - mx0) / mw * 2 - 1, dVA = -0.45, dRf = 1.0, dAr = mw / mh, dPh = dRd() * 6.28;
   for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) {
     const k = j * GX + i, x = gx0 + i * cs, y = gy0 + j * cs;
     // warp the falloff coordinates so coasts get bays and capes
@@ -419,11 +504,18 @@ function build(o) {
     else if (islands === "archipelago") { for (const b of blobs) m = Math.max(m, b.h * (1 - sstep(0.0, 1.0, Math.hypot(u - b.c[0], v - b.c[1]) / b.r))); }
     else if (islands === "atoll") { const g = 0.85 + 0.9 * nz2(Math.cos(Math.atan2(v, u)) * 1.4 + 3, Math.sin(Math.atan2(v, u)) * 1.4 + 1); m = Math.exp(-(((d - 0.6) / 0.17) ** 2)) * clamp(g, 0.35, 1.15); }
     else if (islands === "volcano") { m = Math.pow(clamp(1 - d * 0.88 / 0.8, 0, 1), 0.9) - 0.35 * Math.exp(-((d * 0.88 / 0.07) ** 2)); }
-    else { const yc = 0.05 + 0.55 * Math.exp(-((u / 0.5) ** 2)); m = Math.pow(clamp((yc - v) / 0.9, 0, 1), 0.9) * (1 - sstep(0.5, 0.95, Math.abs(u))) * sstep(-1.0, -0.76, v); }
+    else {
+      // a river delta: land inside a lobate fan that spreads from the river apex, plus an upstream body above it
+      const du = (u - dU0) * dAr, dv = v - dVA, rr = Math.hypot(du, dv), phi = Math.atan2(du, dv);
+      const lobe = 1 + 0.07 * Math.cos(phi * 6 + dPh) + 0.03 * Math.cos(phi * 11 + 2 * dPh);
+      const shoulder = 1 - 0.6 * sstep(0.6, 1.5, Math.abs(phi)), fanT = dv > 0 ? (dRf * lobe * shoulder - rr) / 0.45 : -1;
+      const valT = (0.3 - Math.abs(du)) / 0.3 * (1 - sstep(0, 0.35, dv));
+      m = 0.62 * Math.pow(clamp(Math.max(fanT, valT), 0, 1), 0.9) * sstep(-1.0, -0.82, v);
+    }
     let val = AMP * m + (1 - AMP) * (nn[k] - lo) / (hi - lo);
     // ragged detail only near sea level: capes, bays, offshore islets
     const wt = Math.exp(-(((val - sea) / 0.07) ** 2));
-    val += wt * (0.26 * nz2(x * FS * 2.7 + 9, y * FS * 2.7 + 2) + 0.13 * nz2(x * FS * 5.5 - 4, y * FS * 5.5 + 6)) * (islands === "delta" ? 0.5 : 1);
+    val += wt * (0.26 * nz2(x * FS * 2.7 + 9, y * FS * 2.7 + 2) + 0.13 * nz2(x * FS * 5.5 - 4, y * FS * 5.5 + 6)) * (islands === "delta" ? 0.2 : 1);
     const dc = Math.min(i, j, GX - 1 - i, GY - 1 - j), tp = clamp((dc - 2) / 6, 0, 1);
     if (val > sea) val = sea + (1 - sea) * Math.pow((val - sea) / (1 - sea), 1.25);
     e[k] = lerp(Math.min(val, sea - 0.1), val, tp);
@@ -432,8 +524,7 @@ function build(o) {
   const deltaCh = [];
   if (islands === "delta") {
     const rd = mulberry32(o.seed * 4111 + 9), cxm = (mx0 + mx1) / 2 + (rd() - 0.5) * 0.12 * mw;
-    let ycoast = my1 - 10; for (let y = my0 + 14; y < my1; y += 0.8) if (e[nodeAt(cxm, y)] <= sea) { ycoast = y; break; }
-    const Lf = clamp(0.24 * mh, 26, 60), Fy = Math.max(my0 + 30, ycoast - Lf), Fx = cxm;
+    const Fy = my0 + (dVA + 1) / 2 * mh, Fx = dCx;
     const Sx = cxm + (rd() - 0.5) * 0.25 * mw, Sy = my0 + 0.17 * mh, trunk = [], ph = rd() * 6.28, span = Fy - Sy;
     for (let t = 0; t <= 1.0001; t += 1 / Math.max(10, span)) trunk.push([Sx + (Fx - Sx) * t + 7 * Math.sin(2 * Math.PI * t * 1.6 + ph) * Math.sin(Math.PI * t), Sy + span * t, 2.0]);
     deltaCh.push({ pts: trunk, ramp: false });
@@ -448,10 +539,10 @@ function build(o) {
       }
       deltaCh.push({ pts, ramp: true });
     };
-    for (let i = 0; i < K; i++) walk(Fx, Fy, -0.95 + 1.9 * (i + 0.5) / K + (rd() - 0.5) * 0.16, 1.6, 0);
+    for (let i = 0; i < K; i++) walk(Fx, Fy, -1.1 + 2.2 * (i + 0.5) / K + (rd() - 0.5) * 0.16, 1.6, 0);
     const mouths = [], e00 = Float32Array.from(e);
     for (const ch of deltaCh) {
-      let mi = ch.pts.length; for (let i = 0; i < ch.pts.length; i++) if (e00[nodeAt(ch.pts[i][0], ch.pts[i][1])] <= sea) { mi = i; break; }
+      let mi = ch.pts.length; for (let i = 0; ch.ramp && i < ch.pts.length; i++) if (e00[nodeAt(ch.pts[i][0], ch.pts[i][1])] <= sea) { mi = i; break; }
       if (ch.ramp && mi < ch.pts.length) mouths.push(ch.pts[mi]);
       ch.pts.forEach(([px, py, hw], i) => {
         const rc = hw * 0.75 + 0.5, i0 = Math.floor((px - rc - gx0) / cs), i1 = Math.ceil((px + rc - gx0) / cs), j0 = Math.floor((py - rc - gy0) / cs), j1 = Math.ceil((py + rc - gy0) / cs);
@@ -994,18 +1085,30 @@ function build(o) {
 
   // ---- portolan net ----
   if (style !== "survey" && o.net > 0 && hubs.length) {
-    const seenL = Array.from({ length: 16 }, () => []), rays = [];
-    for (const h of hubs) {
-      const pts = [[h.x, h.y]]; for (let k = 0; k < o.net - 1; k++) { const a = 2 * Math.PI * k / Math.max(1, o.net - 1) + h.ri * 0.4; pts.push([h.x + 1.7 * h.R * Math.cos(a), h.y + 1.7 * h.R * Math.sin(a)]); }
-      for (const [px, py] of pts) for (let k = 0; k < 16; k++) {
-        const a = -Math.PI / 2 + k * Math.PI / 8, dx = Math.cos(a), dy = Math.sin(a), c = px * dy - py * dx;
-        if (!inClip(px, py, 0)) continue;
-        if (seenL[k].some(v => Math.abs(v - c) < Math.max(pitch * 1.05, 3.5))) continue; seenL[k].push(c); rays.push([px, py, dx, dy]);
+    // wind-rose hubs: the drawn roses plus extra centres spread evenly over open sea (farthest-point sampling),
+    // each radiating 16 (or 32 with 14+ hubs) compass rays at even angles
+    const NR = o.net >= 14 ? 32 : 16, seenL = Array.from({ length: NR }, () => []), rays = [], cents = hubs.map(h => [h.x, h.y]);
+    const cand = [];
+    for (let j = 0; j < GY; j += 2) for (let i = 0; i < GX; i += 2) { const k = j * GX + i, x = gx0 + i * cs, y = gy0 + j * cs; if (e[k] <= sea && dsea[k] > 3 && inClip(x, y, 6) && !occ.hit(x, y, false)) cand.push([x, y]); }
+    const nearEdge = (x, y) => Math.min(x - gx0, cx1 - x, y - gy0, cy1 - y);
+    while (cents.length < o.net && cand.length) {
+      let bi = -1, bs = -1;
+      for (let c = 0; c < cand.length; c++) {
+        const [x, y] = cand[c]; let dmin = 2 * Math.min(nearEdge(x, y), 40);
+        for (const [hx, hy] of cents) dmin = Math.min(dmin, Math.hypot(x - hx, y - hy));
+        if (dmin > bs) { bs = dmin; bi = c; }
       }
+      if (bi < 0 || bs < 12) break;
+      cents.push(cand[bi]);
+    }
+    for (const [px, py] of cents) for (let k = 0; k < NR; k++) {
+      const a = -Math.PI / 2 + k * 2 * Math.PI / NR, dx = Math.cos(a), dy = Math.sin(a), c = px * dy - py * dx;
+      if (!inClip(px, py, 0)) continue;
+      if (seenL[k].some(v => Math.abs(v - c) < Math.max(pitch * 1.05, 5))) continue; seenL[k].push(c); rays.push([px, py, dx, dy]);
     }
     for (const [px, py, dx, dy] of rays) {
       let tmax = 1e9; if (dx > 1e-9) tmax = Math.min(tmax, (cx1 - 0.8 - px) / dx); if (dx < -1e-9) tmax = Math.min(tmax, (gx0 + 0.8 - px) / dx); if (dy > 1e-9) tmax = Math.min(tmax, (cy1 - 0.8 - py) / dy); if (dy < -1e-9) tmax = Math.min(tmax, (gy0 + 0.8 - py) / dy);
-      tmax = Math.min(tmax, 130); if (!(tmax > 1)) continue; const d = densify([[px, py], [px + dx * tmax, py + dy * tmax]], false, 0.5);
+      tmax = Math.min(tmax, 95); if (!(tmax > 1)) continue; const d = densify([[px, py], [px + dx * tmax, py + dy * tmax]], false, 0.5);
       runs(d, false, d.map(([x, y]) => inClip(x, y, 0.5) && dsea[nodeAt(x, y)] > 0.7 && e[nodeAt(x, y)] <= sea && !occ.hit(x, y, false)), 1.0, rhumbLayer);
     }
   }
@@ -1080,7 +1183,7 @@ const PRESETS = {
   treasure: { seed: 73, islands: "one", sea: 0.5, relief: 600, rugged: 0.6, style: "treasure", interval: 40, depth: 0, spots: 0, waterlines: 8, peaks: 8, net: 3, roses: "1", rose: "16", rivers: 4, rwide: 0.4, forest: "mixed", treedens: 0.4, villages: 0, roads: "off", frame: "on", scalebar: "on", colourpen: "rhumb", pitch: 0.8 },
   atoll: { seed: 5, islands: "atoll", sea: 0.5, relief: 120, rugged: 0.4, style: "antique", interval: 10, depth: 0, spots: 0, waterlines: 12, peaks: 0, net: 4, roses: "1", rose: "8", rivers: 0, rwide: 0.5, forest: "lollipop", treedens: 0.5, villages: 2, roads: "off", frame: "on", scalebar: "on", colourpen: "rhumb", pitch: 0.8 },
   volcano: { seed: 28, islands: "volcano", sea: 0.45, relief: 1400, rugged: 0.35, style: "antique", interval: 50, depth: 0, spots: 0, waterlines: 8, peaks: 0, net: 0, roses: "1", rose: "16", rivers: 9, rwide: 0.5, forest: "conifer", treedens: 0.3, villages: 3, roads: "off", frame: "on", scalebar: "on", colourpen: "water", pitch: 0.8 },
-  delta: { seed: 61, islands: "delta", sea: 0.42, relief: 120, rugged: 0.3, style: "survey", interval: 10, depth: 5, spots: 6, waterlines: 8, peaks: 0, net: 0, roses: "1", rose: "8", rivers: 12, rwide: 0.9, forest: "lollipop", treedens: 0.35, villages: 6, roads: "on", frame: "on", scalebar: "on", colourpen: "water", pitch: 0.8 },
+  delta: { seed: 61, islands: "delta", sea: 0.42, relief: 120, rugged: 0.3, style: "survey", interval: 5, depth: 5, spots: 6, waterlines: 8, peaks: 0, net: 0, roses: "1", rose: "8", rivers: 12, rwide: 0.9, forest: "lollipop", treedens: 0.35, villages: 6, roads: "on", frame: "on", scalebar: "on", colourpen: "water", pitch: 0.8 },
   portolan: { seed: 204, islands: "archipelago", sea: 0.33, relief: 500, rugged: 0.7, style: "antique", interval: 40, depth: 0, spots: 0, waterlines: 6, peaks: 6, net: 9, roses: "1", rose: "16", rivers: 3, rwide: 0.5, forest: "off", treedens: 0.3, villages: 3, roads: "off", frame: "on", scalebar: "on", colourpen: "rhumb", pitch: 0.8 },
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
