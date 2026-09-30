@@ -6,7 +6,7 @@
 //   cardano   a field of letters and the grille that finds the few that matter
 // Both sheets carry the same frame and corner crosses, so they register on the mat and on each other.
 "use strict";
-import { rect, ellipse, plen, simplify, drawText, wrap, svgOf, ADV } from "./core.js";
+import { rect, ellipse, plen, simplify, drawText, wrap, svgOf, ADV, wireSettingsLoader, applySettings } from "./core.js";
 import { PACKS } from "@utp/glyphs";
 import * as morse from "@utp/morse";
 import { encipher } from "@utp/ciphers";
@@ -221,5 +221,6 @@ const stem = o => `plg-overlay-${o.method}-s${o.seed}-${o.msg.replace(/[^A-Z0-9]
 $("export").onclick = () => { if (last && !last.error) { const ls = penLayers(last); ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, true), `${stem(last.o)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500)); } };
 addEventListener("resize", () => last && draw(last));
 if ($("rev")) $("rev").textContent = UTP_REV;
-window.__studio = { build, read, PRESETS, penLayers, paint, toSVG };   // hooks for checking
+wireSettingsLoader($, IDS, run);
+window.__studio = { applySettings: obj => applySettings(obj, IDS, $), IDS, build, read, PRESETS, penLayers, paint, toSVG };   // hooks for checking
 run();

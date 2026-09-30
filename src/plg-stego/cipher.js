@@ -1,6 +1,6 @@
 // Cipher garden page: controls, preview and export around cipher-core.js (the methods, shared with the plot decoder).
 "use strict";
-import { plen, svgOf } from "./core.js";
+import { plen, svgOf, wireSettingsLoader, applySettings } from "./core.js";
 import { build, howToRead } from "./cipher-core.js";
 import { labelSheet } from "./marks.js";
 
@@ -78,5 +78,6 @@ if ($("rev")) $("rev").textContent = UTP_REV;
 const labelPairs = o => Object.entries(o).filter(([k]) => !/^(msg|ckey|pkey|tpen|rpen)$/.test(k));
 const labelSVG = r => { const lab = labelSheet(r.marks.bits, "PLG CIPHER GARDEN", labelPairs(r.o)); return svgOf(lab, [{ name: "marks", colour: "000000", w: 0.4, paths: lab.marks }, { name: "text", colour: "000000", w: 0.3, paths: lab.text }], "PLG CIPHER GARDEN settings label"); };
 $("label").onclick = () => { if (!last || last.error) return; if (!last.marks || !last.marks.bits) { $("stats").insertAdjacentHTML("afterbegin", '<span class="fail">Turn machine marks on (any kind) to make a settings label.</span><br>'); return; } save(labelSVG(last), stem(last.o) + "-label.svg"); };
-window.__studio = { labelSVG, build, read, PRESETS, penLayers, paint, toSVG, howToRead };   // hooks for checking
+wireSettingsLoader($, IDS, run);
+window.__studio = { applySettings: obj => applySettings(obj, IDS, $), IDS, labelSVG, build, read, PRESETS, penLayers, paint, toSVG, howToRead };   // hooks for checking
 run();

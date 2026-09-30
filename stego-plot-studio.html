@@ -233,7 +233,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="on">in every file</option>
       <option value="off">never</option>
     </select></label>
-    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen</button><button id="label">Settings label (for the back)</button></div>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen</button><button id="label">Settings label (for the back)</button><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
     <p class="hint">Split export saves one SVG per pen that has line (outline, fill, text, reveal), numbered in plotting order, each with the same four corner ticks so Design Space places them alike. Plot the answer key on a tracing-paper overlay if the page itself should keep its secret.</p>
   </fieldset>
 </aside>
@@ -2186,7 +2186,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return { preamble, finishing, plainRows: below + above };
   }
 
-  // core.js
+  // 02_WORK/plg-stego/core.js
   var TAU = 2 * Math.PI;
   var lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   var area = (P) => {
@@ -2582,16 +2582,61 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     if (cur) lines.push(cur);
     return lines;
   }
+  var SECRET_KEYS = /^(msg|ckey|pkey)$/;
+  function settingsOf(o) {
+    const out = {};
+    for (const [k, v] of Object.entries(o)) if (!SECRET_KEYS.test(k)) out[k] = v;
+    if (typeof o.msg === "string") out.msgLen = o.msg.length;
+    return out;
+  }
+  var settingsDesc = (o) => o ? `<desc id="plg-settings">${JSON.stringify(settingsOf(o)).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>
+` : "";
+  function settingsFromSVG(text) {
+    const m = String(text).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+    if (!m) return null;
+    try {
+      return JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&"));
+    } catch {
+      return null;
+    }
+  }
+  function applySettings(obj, IDS2, $2) {
+    let n = 0;
+    for (const [k, v] of Object.entries(obj || {})) if (IDS2.includes(k) && !SECRET_KEYS.test(k)) {
+      $2(k).value = v;
+      n++;
+    }
+    return n;
+  }
+  function wireSettingsLoader($2, IDS2, run2) {
+    const say = (t) => {
+      const s = $2("stats");
+      if (s) s.textContent = t;
+    };
+    $2("loadbtn").onclick = () => $2("loadsvg").click();
+    $2("loadsvg").onchange = async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      e.target.value = "";
+      const obj = settingsFromSVG(await f.text());
+      if (!obj) {
+        say("That SVG carries no PLG settings (it was exported before 2026-09-29, or by another tool).");
+        return;
+      }
+      applySettings(obj, IDS2, $2);
+      run2();
+    };
+  }
   var cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map((p) => [p, false]);
   function svgOf(r, layers, title, only = null, ticks = false) {
     const f = (v) => v.toFixed(3), group = (L) => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">
 ` + [...L.paths, ...ticks ? cornerTicks(r.W, r.H) : []].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
     return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">
 <title>${title}${only ? " (" + only + ")" : ""}</title>
-` + layers.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+${settingsDesc(r.o)}` + layers.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
   }
 
-  // marks.js
+  // 02_WORK/plg-stego/marks.js
   var MARK = { inset: 4, size: 10, margin: 17, slots: 64, rows: 2 };
   var LAYOUTS = {
     normal: { name: "normal", inset: 4, size: 10, ring: 1.6, core: 3.2, hollow: 0.8, stripX: 5, rowsAt: [0.78, 0.22], dot: 0.85 },
@@ -2788,7 +2833,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return [...bits, ...new Array(MARK.slots * MARK.rows - bits.length).fill(0)];
   }
 
-  // studio.js
+  // 02_WORK/plg-stego/studio.js
   var UTP_REV = true ? "d74c18b" : "dev";
   var ON = /* @__PURE__ */ new Set(["purl", "B", "c4b", "k2tog", "mb", "pb"]);
   var stateFor = (on, carrier) => ({ "two-colour": on ? "B" : "A", stripes: on ? "B" : "A", bobble: on ? "mb" : "knit", bead: on ? "pb" : "knit", lace: on ? "k2tog" : "ssk" })[carrier] ?? (on ? "purl" : "knit");
@@ -3388,7 +3433,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     }
     save(labelSVG(last), stem(last.o) + "-label.svg");
   };
-  window.__studio = { labelSVG, build, read: read2, PRESETS, penLayers, paint, toSVG, fillConvex };
+  wireSettingsLoader($, IDS, run);
+  window.__studio = { applySettings: (obj) => applySettings(obj, IDS, $), IDS, labelSVG, build, read: read2, PRESETS, penLayers, paint, toSVG, fillConvex };
   run();
 })();
 </script>

@@ -1,6 +1,6 @@
 // Signal book page: controls, preview and export around signals-core.js (the alphabets, shared with the plot decoder).
 "use strict";
-import { plen, svgOf } from "./core.js";
+import { plen, svgOf, wireSettingsLoader, applySettings } from "./core.js";
 import { build, PEN } from "./signals-core.js";
 import { labelSheet } from "./marks.js";
 
@@ -62,5 +62,6 @@ if ($("rev")) $("rev").textContent = UTP_REV;
 const labelPairs = o => Object.entries(o).filter(([k]) => !/^(msg|ckey|pkey|tpen|rpen)$/.test(k));
 const labelSVG = r => { const lab = labelSheet(r.marks.bits, "PLG SIGNAL BOOK", labelPairs(r.o)); return svgOf(lab, [{ name: "marks", colour: "000000", w: 0.4, paths: lab.marks }, { name: "text", colour: "000000", w: 0.3, paths: lab.text }], "PLG SIGNAL BOOK settings label"); };
 $("label").onclick = () => { if (!last || last.error) return; if (!last.marks || !last.marks.bits) { $("stats").insertAdjacentHTML("afterbegin", '<span class="fail">Turn machine marks on (any kind) to make a settings label.</span><br>'); return; } save(labelSVG(last), stem(last.o) + "-label.svg"); };
-window.__studio = { labelSVG, build, read, PRESETS, penLayers, paint, toSVG };   // hooks for checking
+wireSettingsLoader($, IDS, run);
+window.__studio = { applySettings: obj => applySettings(obj, IDS, $), IDS, labelSVG, build, read, PRESETS, penLayers, paint, toSVG };   // hooks for checking
 run();

@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="190mm" height="250mm" viewBox="0 0 190 250">
 <title>PLG signal book (UTP d74c18b)</title>
+<desc id="plg-settings">{"cipher":"none","alpha":"semaphore","layout":"chart","labels":"on","ink":"heraldic","pitch":0.6,"angle":45,"ghost":"on","gsize":22,"caption":"name","tsize":6,"tpen":"#132c42","page":"190x250","marks":"on","mount":25,"msgLen":15}</desc>
 <g id="pen-outline" stroke="#111111" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M35.207,24.374 L35.142,24.782 L34.955,25.150 L34.662,25.442 L34.294,25.629 L33.886,25.694 L33.478,25.629 L33.110,25.442 L32.818,25.150 L32.631,24.782 L32.566,24.374 L32.631,23.966 L32.818,23.597 L33.110,23.305 L33.478,23.118 L33.886,23.053 L34.294,23.118 L34.662,23.305 L34.955,23.597 L35.142,23.966 Z" fill="none"/>
 <path d="M33.886,25.694 L33.886,32.484" fill="none"/>

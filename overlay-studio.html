@@ -159,7 +159,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="250x190">250 x 190 landscape</option>
       <option value="280x280">280 x 280 (12 x 12 mat)</option>
     </select></label>
-    <div class="row"><button class="go" id="export">Export both sheets</button></div>
+    <div class="row"><button class="go" id="export">Export both sheets</button><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
     <p class="hint">Export writes one SVG per sheet with matching corner ticks. Visual cryptography and moire: plot the second sheet on acetate or tracing paper with a pen that grips it. Grilles: send the grille file to the Cricut as a cut on card.</p>
   </fieldset>
 </aside>
@@ -172,7 +172,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
 </div>
 <script>"use strict";
 (() => {
-  // core.js
+  // 02_WORK/plg-stego/core.js
   var TAU = 2 * Math.PI;
   function ellipse(cx, cy, rx, ry, rotDeg = 0, n = 28) {
     const a = rotDeg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), p = [];
@@ -297,13 +297,58 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     if (cur) lines2.push(cur);
     return lines2;
   }
+  var SECRET_KEYS = /^(msg|ckey|pkey)$/;
+  function settingsOf(o) {
+    const out = {};
+    for (const [k, v] of Object.entries(o)) if (!SECRET_KEYS.test(k)) out[k] = v;
+    if (typeof o.msg === "string") out.msgLen = o.msg.length;
+    return out;
+  }
+  var settingsDesc = (o) => o ? `<desc id="plg-settings">${JSON.stringify(settingsOf(o)).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>
+` : "";
+  function settingsFromSVG(text) {
+    const m = String(text).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+    if (!m) return null;
+    try {
+      return JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&"));
+    } catch {
+      return null;
+    }
+  }
+  function applySettings(obj, IDS2, $2) {
+    let n = 0;
+    for (const [k, v] of Object.entries(obj || {})) if (IDS2.includes(k) && !SECRET_KEYS.test(k)) {
+      $2(k).value = v;
+      n++;
+    }
+    return n;
+  }
+  function wireSettingsLoader($2, IDS2, run2) {
+    const say = (t) => {
+      const s = $2("stats");
+      if (s) s.textContent = t;
+    };
+    $2("loadbtn").onclick = () => $2("loadsvg").click();
+    $2("loadsvg").onchange = async (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      e.target.value = "";
+      const obj = settingsFromSVG(await f.text());
+      if (!obj) {
+        say("That SVG carries no PLG settings (it was exported before 2026-09-29, or by another tool).");
+        return;
+      }
+      applySettings(obj, IDS2, $2);
+      run2();
+    };
+  }
   var cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map((p) => [p, false]);
   function svgOf(r, layers, title, only = null, ticks = false) {
     const f = (v) => v.toFixed(3), group = (L) => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">
 ` + [...L.paths, ...ticks ? cornerTicks(r.W, r.H) : []].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
     return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">
 <title>${title}${only ? " (" + only + ")" : ""}</title>
-` + layers.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+${settingsDesc(r.o)}` + layers.filter((L) => !only || L.name === only).map(group).join("\n") + "\n</svg>";
   }
 
   // D:/CLAUDE/PROJECTS/UNRAVEL_THE_PURLOINED/LOCAL_UNRAVEL_THE_PURLOINED_CLAUDE/src/engine/grid.ts
@@ -613,7 +658,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
     return cells.slice(0, count);
   }
 
-  // overlay.js
+  // 02_WORK/plg-stego/overlay.js
   var UTP_REV = true ? "d74c18b" : "dev";
   var FREQ = "EEEEEEEEEEEETTTTTTTTTAAAAAAAAOOOOOOOIIIIIIINNNNNNNSSSSSSHHHHHHRRRRRRDDDDLLLLCCCUUUMMMWWFFGGYYPPBVK";
   var cipherOf = (o) => o.cipher === "none" ? null : { kind: o.cipher, key: String(o.ckey || "") };
@@ -913,7 +958,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
   };
   addEventListener("resize", () => last && draw(last));
   if ($("rev")) $("rev").textContent = UTP_REV;
-  window.__studio = { build, read, PRESETS, penLayers, paint, toSVG };
+  wireSettingsLoader($, IDS, run);
+  window.__studio = { applySettings: (obj) => applySettings(obj, IDS, $), IDS, build, read, PRESETS, penLayers, paint, toSVG };
   run();
 })();
 </script>

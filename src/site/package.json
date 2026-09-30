@@ -1,0 +1,9 @@
+{
+  "name": "plotter-gen-site-builder",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "sharp": "0.35.4",
+    "@napi-rs/canvas": "0.1.100"
+  }
+}

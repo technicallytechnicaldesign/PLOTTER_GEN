@@ -24,6 +24,7 @@ import { readGlyphs } from "@utp/glyphs";
 import { decipher } from "@utp/ciphers";
 import { MOTIFS } from "@utp/motifs";
 import { rng } from "@utp/fabric";
+import { alignAnchor } from "./align.js";
 
 // ---------------- image ----------------
 // { width, height, data } as RGBA (canvas ImageData) or one byte per pixel (grey), scaled so the long side is at most maxSide.
@@ -341,15 +342,15 @@ function findShift(I, Hm, cells, how = 0.28, span0 = 2) {
 const STUDIO_NAMES = { 1: "cipher garden", 2: "purloined plot", 3: "signal book", 4: "cipher garden", 5: "cipher garden" };
 // Tapped corners miss by a few millimetres each, and independently, which warps the fit as well as shifting it. Nudge each
 // corner in turn (8 px down to 1 px steps) and keep a move when the sample cells read more decisively.
-function refineAnchor(I, mm, quad, cells, how) {
+function refineAnchor(I, mm, quad, cells, how, fine = 0) {   // fine: px per mm, to polish an already close fit within about half a millimetre
   const sample = cells.filter((_, i) => i % Math.max(1, Math.floor(cells.length / 60)) === 0);
   const score = q => { const ps = pickAll(sampler(I, homography(mm, q)), sample, how); return ps.reduce((s, p) => s + (p.fit ?? p.top ?? 0), 0) / ps.length; };
   let q = quad.map(p => [...p]), best = score(q);
   // first the whole quad together (the taps' shared error), on a grid a quarter cell apart and wide enough for a cell
-  const span = Math.round(Math.hypot(quad[1][0] - quad[0][0], quad[1][1] - quad[0][1]) * 0.04), st0 = Math.max(2, Math.round(span / 6));
+  const span = fine ? Math.max(2, Math.round(0.5 * fine)) : Math.round(Math.hypot(quad[1][0] - quad[0][0], quad[1][1] - quad[0][1]) * 0.04), st0 = fine ? 1 : Math.max(2, Math.round(span / 6));
   const q0 = q;
   for (let dx = -span; dx <= span; dx += st0) for (let dy = -span; dy <= span; dy += st0) { const tq = q0.map(([x, y]) => [x + dx, y + dy]), s = score(tq); if (s > best) { best = s; q = tq; } }
-  for (const step of [8, 4, 2, 1]) {
+  for (const step of fine ? [2, 1] : [8, 4, 2, 1]) {
     for (let pass = 0, moved = true; pass < 8 && moved; pass++) {
       moved = false;
       for (let i = 0; i < 4; i++) for (const [dx, dy] of [[step, 0], [-step, 0], [0, step], [0, -step]]) {
@@ -364,6 +365,8 @@ function refineAnchor(I, mm, quad, cells, how) {
 // label: a record read earlier off a settings label, for a front that carries only its four corner finders.
 // anchor (with label): no marks at all, four points tapped on the photo (px) that sit at known page millimetres (mm),
 // usually the corners of the drawing; a wider shift search then pulls the rebuilt drawing onto the ink.
+// page size in mm of a settings-label record, for the tap-the-corners page
+export const pageMm = rec => (PAGES[rec.fields.page] || "").split("x").map(Number);
 export function decode(src, { cipherKey = "", quad = null, label = null, anchor = null } = {}) {
   const t0 = Date.now(), I = prepare(src);
   let q = quad ? quad.map(([x, y]) => [x * I.scale, y * I.scale]) : null, finders = [];
@@ -379,11 +382,17 @@ export function decode(src, { cipherKey = "", quad = null, label = null, anchor 
   if (!S.rec) return { ok: false, stage: "strip", message: "Found the corners but could not read the key strip. Get closer, or hold the phone square to the page. A piece with corner targets only needs its settings label scanned first.", tried: S.tried, finders, quad: q, I };
   try {
     const st = S.rec.studio, plan = st === 1 || st === 4 || st === 5 ? cipherPlan(S.rec.fields, st) : st === 3 ? signalBookPlan(S.rec.fields) : stegoPlan(S.rec.fields);
-    if (S.lay.name === "hand") { q = refineAnchor(I, anchor.mm, q, plan.cells, st === 3 ? "template" : 0.28); S.Hm = homography(anchor.mm, q); }
+    let aligned = null;
+    if (S.lay.name === "hand") {
+      const how0 = st === 3 ? "template" : 0.28;
+      if (anchor.legacy) q = refineAnchor(I, anchor.mm, q, plan.cells, how0);
+      else { aligned = alignAnchor(I, anchor.mm, q, plan.cells, qq => pickAll(sampler(I, homography(anchor.mm, qq)), plan.cells, how0), { log: anchor.log }); q = aligned.quad; q = refineAnchor(I, anchor.mm, q, plan.cells, how0, aligned.ppm); }
+      S.Hm = homography(anchor.mm, q);
+    }
     const shift = S.lay.name === "retro" || S.lay.name === "corners" ? findShift(I, S.Hm, plan.cells, st === 3 ? "template" : 0.28) : [0, 0], sp = sampler(I, S.Hm, shift);
     const how = st === 3 ? "template" : 0.28, picks = pickAll(sp, plan.cells, how), res = plan.finish(picks, cipherKey);
     const confs = picks.map(p => p.conf), weak = confs.filter(c => c < 0.08).length;
-    return { ok: true, ...res, picks, cells: plan.cells, page: S.page, marks: S.lay.name, fromLabel: S.lay.name === "corners", shift, record: S.rec, Hm: sp, quad: q, finders, I, weak, cellsRead: confs.length, ms: Date.now() - t0 };
+    return { ok: true, ...res, picks, cells: plan.cells, page: S.page, marks: S.lay.name, aligned, fromLabel: S.lay.name === "corners", shift, record: S.rec, Hm: sp, quad: q, finders, I, weak, cellsRead: confs.length, ms: Date.now() - t0 };
   } catch (err) {
     return { ok: false, stage: "cells", message: String(err && err.message || err), finders, quad: q, I, record: S.rec };
   }

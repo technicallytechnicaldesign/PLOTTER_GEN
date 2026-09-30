@@ -44,4 +44,7 @@ console.log("wrote 02_WORK/plg-stego/_build/decoder-core.mjs (for decoder-test.m
 await build({
   entryPoints: [path.join(here, "freegrid.js")], bundle: true, format: "esm", platform: "node", target: "node20", outfile: path.join(here, "_build/freegrid.mjs"),
   alias: { "@utp": path.join(utp, "src/engine") }, logLevel: "warning",
+});await build({
+  entryPoints: [path.join(here, "align.js")], bundle: true, format: "esm", platform: "node", target: "node20", outfile: path.join(here, "_build/align.mjs"),
+  alias: { "@utp": path.join(utp, "src/engine") }, logLevel: "warning",
 });

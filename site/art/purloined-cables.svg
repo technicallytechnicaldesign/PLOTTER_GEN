@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="190mm" height="250mm" viewBox="0 0 190 250">
 <title>PLG purloined plot studio (UTP d74c18b)</title>
+<desc id="plg-settings">{"enc":"fivebit","check":"none","cipher":"none","hide":"chart","carrier":"cable","border":"off","width":24,"perline":22,"density":"3","seed":7,"look":"stitches","boxes":"on","gaps":"shaded","wobble":0.3,"fill":"lines","pitch":0.8,"angle":45,"offfill":"none","caption":"message","tsize":6,"reveal":"off","tpen":"#26200f","rpen":"#b03a30","page":"190x250","cellmax":9,"marks":"on","mount":25,"msgLen":3}</desc>
 <g id="pen-outline" stroke="#000000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M25.855,32.406 L25.765,32.798 L25.516,33.168 L25.120,33.497 L24.597,33.768 L23.973,33.967 L23.280,34.085 L22.551,34.116 L21.824,34.058 L21.135,33.914 L20.519,33.691 L20.007,33.401 L19.624,33.058 L19.389,32.678 L19.314,32.283 L19.404,31.890 L19.653,31.520 L20.048,31.191 L20.572,30.920 L21.196,30.721 L21.889,30.603 L22.618,30.572 L23.345,30.630 L24.033,30.774 L24.649,30.997 L25.162,31.287 L25.545,31.631 L25.780,32.010 Z" fill="none"/>
 <path d="M27.985,34.789 L27.525,34.534 L27.081,34.135 L26.676,33.617 L26.337,33.017 L26.087,32.374 L25.943,31.732 L25.915,31.136 L26.004,30.626 L26.206,30.237 L26.506,29.994 L26.883,29.916 L26.993,29.939" fill="none"/>

@@ -275,11 +275,38 @@ export function drawGlyphAt(ch, cx, cy, h, ang, out) {
     else out.push([pts, false]);
   }
 }
+// Settings travel inside every exported SVG (<desc id="plg-settings">) so a plot can be rebuilt and read later.
+// The message and every key or passphrase are left out: they stay with the maker. msgLen is the message length, which the layout depends on.
+export const SECRET_KEYS = /^(msg|ckey|pkey)$/;
+export function settingsOf(o) {
+  const out = {}; for (const [k, v] of Object.entries(o)) if (!SECRET_KEYS.test(k)) out[k] = v;
+  if (typeof o.msg === "string") out.msgLen = o.msg.length;
+  return out;
+}
+export const settingsDesc = o => (o ? `<desc id="plg-settings">${JSON.stringify(settingsOf(o)).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n` : "");
+export function settingsFromSVG(text) {
+  const m = String(text).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) return null;
+  try { return JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")); } catch { return null; }
+}
+// Put loaded settings on the controls, never touching the message or a key. Returns the number of controls set.
+export function applySettings(obj, IDS, $) { let n = 0; for (const [k, v] of Object.entries(obj || {})) if (IDS.includes(k) && !SECRET_KEYS.test(k)) { $(k).value = v; n++; } return n; }
+// The Load settings from an SVG button: reads an earlier export's <desc>, sets the controls, and calls run().
+export function wireSettingsLoader($, IDS, run) {
+  const say = t => { const s = $("stats"); if (s) s.textContent = t; };
+  $("loadbtn").onclick = () => $("loadsvg").click();
+  $("loadsvg").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return; e.target.value = "";
+    const obj = settingsFromSVG(await f.text());
+    if (!obj) { say("That SVG carries no PLG settings (it was exported before 2026-09-29, or by another tool)."); return; }
+    applySettings(obj, IDS, $); run();
+  };
+}
 // Pen layers in plotting order and the SVG writer, shared so every studio exports the same way.
 export const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
 export function svgOf(r, layers, title, only = null, ticks = false) {
   const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
     + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
-  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>${title}${only ? " (" + only + ")" : ""}</title>\n`
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>${title}${only ? " (" + only + ")" : ""}</title>\n${settingsDesc(r.o)}`
     + layers.filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }

@@ -21,7 +21,7 @@ const UTP_REV = typeof __UTP_REV__ === "string" ? __UTP_REV__ : "dev";
 
 
 import { markMode, applyMarks, packRecord, PAGES, STEGO, labelSheet } from "./marks.js";
-import { TAU, lerp, area, centroid, bbox, ellipse, rect, capsule, sector, plen, densify, simplify, dashed, segIn, insideRuns, inset, hash2, fillConvex, painter, GLYPHS, ADV, textWidth, drawText, wrap, svgOf } from "./core.js";
+import { TAU, lerp, area, centroid, bbox, ellipse, rect, capsule, sector, plen, densify, simplify, dashed, segIn, insideRuns, inset, hash2, fillConvex, painter, GLYPHS, ADV, textWidth, drawText, wrap, svgOf, wireSettingsLoader, applySettings } from "./core.js";
 
 // ---------------- message to cells ----------------
 // Every layout returns screen rows (top first) of cells or null, with labels under letter columns.
@@ -432,5 +432,6 @@ if ($("rev")) $("rev").textContent = UTP_REV;
 const labelPairs = o => Object.entries(o).filter(([k]) => !/^(msg|ckey|pkey|tpen|rpen)$/.test(k));
 const labelSVG = r => { const lab = labelSheet(r.marks.bits, "PLG PURLOINED PLOT", labelPairs(r.o)); return svgOf(lab, [{ name: "marks", colour: "000000", w: 0.4, paths: lab.marks }, { name: "text", colour: "000000", w: 0.3, paths: lab.text }], "PLG PURLOINED PLOT settings label"); };
 $("label").onclick = () => { if (!last || last.error) return; if (!last.marks || !last.marks.bits) { $("stats").insertAdjacentHTML("afterbegin", '<span class="fail">Turn machine marks on (any kind) to make a settings label.</span><br>'); return; } save(labelSVG(last), stem(last.o) + "-label.svg"); };
-window.__studio = { labelSVG, build, read, PRESETS, penLayers, paint, toSVG, fillConvex };   // hooks for checking
+wireSettingsLoader($, IDS, run);
+window.__studio = { applySettings: obj => applySettings(obj, IDS, $), IDS, labelSVG, build, read, PRESETS, penLayers, paint, toSVG, fillConvex };   // hooks for checking
 run();
