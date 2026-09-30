@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Island atlas studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Island atlas studio</h1>
+  <p class="sub">A procedural archipelago drawn as a map. Every seed is an island nobody has visited, and the same land can be drawn as a survey sheet with contours and spot heights, as an antique chart with hachures and water lines, or as a treasure map with a trail to an X. Export a millimetre SVG with up to three pens for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="survey">Survey sheet</button><button data-preset="antique">Antique archipelago</button><button data-preset="treasure">Treasure island</button><button data-preset="atoll">Atoll</button><button data-preset="volcano">Volcanic peak</button><button data-preset="delta">River delta coast</button><button data-preset="portolan">Portolan chart</button></div>
+  </fieldset>
+  <fieldset><legend>Land</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="42"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Islands <select id="islands"><option value="one">one island</option><option value="archipelago">archipelago</option><option value="atoll">atoll with lagoon</option><option value="volcano">volcano</option><option value="delta">river delta coast</option></select></label>
+    <label>Sea level <output id="o-sea"></output><input type="range" id="sea" min="0.3" max="0.7" step="0.01" value="0.5"></label>
+    <label>Relief (metres) <output id="o-relief"></output><input type="range" id="relief" min="60" max="1600" step="10" value="700"></label>
+    <label>Ruggedness <output id="o-rugged"></output><input type="range" id="rugged" min="0" max="1" step="0.05" value="0.55"></label>
+  </fieldset>
+  <fieldset><legend>Map style</legend>
+    <label>Style <select id="style"><option value="survey">survey sheet</option><option value="antique">antique chart</option><option value="treasure">treasure map (one island)</option></select></label>
+    <label>Contour interval (m) <output id="o-interval"></output><input type="range" id="interval" min="5" max="100" step="5" value="40"></label>
+    <label>Depth contours (sea) <output id="o-depth"></output><input type="range" id="depth" min="0" max="6" step="1" value="4"></label>
+    <label>Spot heights <output id="o-spots"></output><input type="range" id="spots" min="0" max="30" step="1" value="12"></label>
+    <label>Water lines <output id="o-waterlines"></output><input type="range" id="waterlines" min="0" max="14" step="1" value="8"></label>
+    <label>Mountain glyphs <output id="o-peaks"></output><input type="range" id="peaks" min="0" max="30" step="1" value="0"></label>
+    <label>Portolan hubs (0 = none) <output id="o-net"></output><input type="range" id="net" min="0" max="16" step="1" value="0"></label>
+    <label>Compass roses <select id="roses"><option value="1">one</option><option value="2">two</option></select></label>
+    <label>Rose points <select id="rose"><option value="8">8 points</option><option value="16">16 points</option><option value="off">no rose</option></select></label>
+  </fieldset>
+  <fieldset><legend>Rivers and settlement</legend>
+    <label>Rivers <output id="o-rivers"></output><input type="range" id="rivers" min="0" max="24" step="1" value="7"></label>
+    <label>River width <output id="o-rwide"></output><input type="range" id="rwide" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Forests <select id="forest"><option value="mixed">mixed trees</option><option value="lollipop">round trees</option><option value="conifer">conifers</option><option value="off">none</option></select></label>
+    <label>Forest density <output id="o-treedens"></output><input type="range" id="treedens" min="0" max="1" step="0.05" value="0.3"></label>
+    <label>Villages <output id="o-villages"></output><input type="range" id="villages" min="0" max="12" step="1" value="5"></label>
+    <label>Roads <select id="roads"><option value="on">on</option><option value="off">off</option></select></label>
+  </fieldset>
+  <fieldset><legend>Frame</legend>
+    <label>Map frame <select id="frame"><option value="on">graduated border</option><option value="off">none</option></select></label>
+    <label>Scale bar <select id="scalebar"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Colour pen <select id="colourpen"><option value="water">rivers and lakes</option><option value="rhumb">rhumb lines</option><option value="none">none (two pens)</option></select></label>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (key line, shade, then colour), numbered in plotting order. Each carries the same four corner ticks so Design Space sizes them identically: place each file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">The land is a height grid of seeded noise with domain warping, shaped by a falloff for one island, several, an atoll, a volcano or a delta. Rivers start at high points and follow steepest descent over a pit-filled copy of the grid, so each one ends at the sea or in a lake, and they are carved into the ground lightly afterwards. Where a river carries a large share of the catchment it is drawn as two bank lines. The survey style draws contours, with every fifth on the key pen, plus spot heights in a small single-stroke digit font and dashed depth contours in the sea. The antique style draws hachures that follow the downhill direction, hatched mountain glyphs, water lines that grow further apart offshore and stop where another island's lines meet them, and a portolan net of rhumb lines that stops at every coast. The treasure style adds a least-cost trail to an X. Contours, water lines and hachures are thinned so no two lines lie nearer than the hatch pitch. The scale bar assumes 1 mm on paper is 0.625 km. In Design Space: send the layers to Pen, black 0.4 for the key line, black 0.3 for the shade, and a colour pen for water or rhumb lines, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// ---------------- small helpers ----------------
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v, lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, t) => { t = clamp((t - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// seeded gradient noise (about -0.7 .. 0.7)
+function makeNoise(seed) {
+  const rnd = mulberry32(seed), p = new Int32Array(512), gx = new Float32Array(256), gy = new Float32Array(256), a = [];
+  for (let i = 0; i < 256; i++) a.push(i);
+  for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  for (let i = 0; i < 512; i++) p[i] = a[i & 255];
+  for (let i = 0; i < 256; i++) { const t = rnd() * 6.2832; gx[i] = Math.cos(t); gy[i] = Math.sin(t); }
+  const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+  return (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, X = xi & 255, Y = yi & 255;
+    const h00 = p[p[X] + Y], h10 = p[p[X + 1] + Y], h01 = p[p[X] + Y + 1], h11 = p[p[X + 1] + Y + 1];
+    const d00 = gx[h00] * xf + gy[h00] * yf, d10 = gx[h10] * (xf - 1) + gy[h10] * yf;
+    const d01 = gx[h01] * xf + gy[h01] * (yf - 1), d11 = gx[h11] * (xf - 1) + gy[h11] * (yf - 1);
+    const u = fade(xf), v = fade(yf), t0 = d00 + (d10 - d00) * u;
+    return t0 + ((d01 + (d11 - d01) * u) - t0) * v;
+  };
+}
+
+class Heap {
+  constructor() { this.k = []; this.v = []; this.rk = 0; }
+  get size() { return this.k.length; }
+  push(key, val) {
+    const K = this.k, V = this.v; let i = K.length; K.push(key); V.push(val);
+    while (i > 0) { const p = (i - 1) >> 1; if (K[p] <= key) break; K[i] = K[p]; V[i] = V[p]; i = p; }
+    K[i] = key; V[i] = val;
+  }
+  pop() {
+    const K = this.k, V = this.v, rk = K[0], rv = V[0], lk = K.pop(), lv = V.pop(), n = K.length;
+    if (n > 0) { let i = 0; for (;;) { let c = 2 * i + 1; if (c >= n) break; if (c + 1 < n && K[c + 1] < K[c]) c++; if (K[c] >= lk) break; K[i] = K[c]; V[i] = V[c]; i = c; } K[i] = lk; V[i] = lv; }
+    this.rk = rk; return rv;
+  }
+}
+
+// points hashed on a grid, for "is anything within r of here"
+class PtHash {
+  constructor(W, H, cell) { this.c = cell; this.nx = Math.ceil(W / cell) + 2; this.ny = Math.ceil(H / cell) + 2; this.head = new Int32Array(this.nx * this.ny).fill(-1); this.nxt = []; this.x = []; this.y = []; this.id = []; this.ix = []; this.info = {}; }
+  add(x, y, id, ix) { const k = Math.floor(y / this.c) * this.nx + Math.floor(x / this.c), n = this.x.length; this.x.push(x); this.y.push(y); this.id.push(id); this.ix.push(ix); this.nxt.push(this.head[k]); this.head[k] = n; }
+  scan(x, y, r, cb) {
+    const c = this.c, i0 = Math.max(0, Math.floor((x - r) / c)), i1 = Math.min(this.nx - 1, Math.floor((x + r) / c)), j0 = Math.max(0, Math.floor((y - r) / c)), j1 = Math.min(this.ny - 1, Math.floor((y + r) / c)), r2 = r * r;
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) for (let n = this.head[j * this.nx + i]; n >= 0; n = this.nxt[n]) {
+      const dx = this.x[n] - x, dy = this.y[n] - y, d2 = dx * dx + dy * dy;
+      if (d2 < r2 && cb(n, d2)) return true;
+    }
+    return false;
+  }
+  near(x, y, r, fn) { return this.scan(x, y, r, n => fn(this.id[n], this.ix[n])); }
+  // smallest distance between two points that are not neighbours on the same line
+  minSep(win, rmax) {
+    let best = Infinity;
+    for (let a = 0; a < this.x.length; a++) {
+      const ida = this.id[a], ixa = this.ix[a];
+      this.scan(this.x[a], this.y[a], Math.min(best, rmax), (n, d2) => {
+        if (n === a || (ida < 0 && this.id[n] < 0)) return false;
+        if (this.id[n] === ida) { const inf = this.info[ida] || [1e9, false]; let df = Math.abs(this.ix[n] - ixa); if (inf[1]) df = Math.min(df, inf[0] - df); if (df < win) return false; }
+        if (d2 < best * best) best = Math.sqrt(d2);
+        return false;
+      });
+    }
+    return best;
+  }
+}
+
+// things that hide lines behind them: circles, polygons, rectangles. "soft" items only hide when asked (trail dots, roads)
+function pip(px, py, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c; } return c; }
+class Occ {
+  constructor(W, H, cell) { this.c = cell; this.nx = Math.ceil(W / cell) + 1; this.ny = Math.ceil(H / cell) + 1; this.g = new Array(this.nx * this.ny); }
+  add(bb, test, soft) {
+    const it = { test, soft: !!soft };
+    for (let j = Math.max(0, Math.floor(bb[1] / this.c)); j <= Math.min(this.ny - 1, Math.floor(bb[3] / this.c)); j++)
+      for (let i = Math.max(0, Math.floor(bb[0] / this.c)); i <= Math.min(this.nx - 1, Math.floor(bb[2] / this.c)); i++) { const k = j * this.nx + i; (this.g[k] || (this.g[k] = [])).push(it); }
+  }
+  circ(x, y, r, soft) { this.add([x - r, y - r, x + r, y + r], (px, py) => (px - x) ** 2 + (py - y) ** 2 < r * r, soft); }
+  rect(x0, y0, x1, y1, soft) { this.add([x0, y0, x1, y1], (px, py) => px >= x0 && px <= x1 && py >= y0 && py <= y1, soft); }
+  poly(p, soft) { let b = [1e9, 1e9, -1e9, -1e9]; for (const [x, y] of p) b = [Math.min(b[0], x), Math.min(b[1], y), Math.max(b[2], x), Math.max(b[3], y)]; this.add(b, (px, py) => pip(px, py, p), soft); }
+  hit(x, y, soft) {
+    const i = Math.floor(x / this.c), j = Math.floor(y / this.c); if (i < 0 || j < 0 || i >= this.nx || j >= this.ny) return false;
+    const l = this.g[j * this.nx + i]; if (!l) return false;
+    for (const it of l) if ((!it.soft || soft) && it.test(x, y)) return true;
+    return false;
+  }
+}
+
+// ---------------- path helpers ----------------
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const a = p[i], b = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / step));
+    for (let j = 0; j < k; j++) { const t = j / k, q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; if (a.length > 2) q.push(a[2] + (b[2] - a[2]) * t); out.push(q); }
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+const p2 = p => p.map(q => [q[0], q[1]]);
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([p2(simplify(p, 0.02)), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([p2(simplify(cur, 0.02)), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+function chaikin(p, closed, it) {
+  for (let k = 0; k < it; k++) {
+    const n = p.length; if (n < 3) return p;
+    const q = [], m = closed ? n : n - 1, mix = (a, b, t) => a.map((v, d) => v + (b[d] - v) * t);
+    if (!closed) q.push(p[0]);
+    for (let i = 0; i < m; i++) { const a = p[i], b = p[(i + 1) % n]; q.push(mix(a, b, 0.25), mix(a, b, 0.75)); }
+    if (!closed) q.push(p[n - 1]);
+    p = q;
+  }
+  return p;
+}
+const avgOpen = (p, w) => p.map((q, i) => { let s = 0, c = 0; const r = new Array(q.length).fill(0); for (let k = Math.max(0, i - w); k <= Math.min(p.length - 1, i + w); k++) { for (let d = 0; d < q.length; d++) r[d] += p[k][d]; c++; } return i === 0 || i === p.length - 1 ? q : r.map(v => v / c); });
+function dashes(p, on, off, ph) {
+  const per = on + off, out = []; let cur = [], s = 0;
+  for (let i = 0; i < p.length; i++) {
+    if (i) s += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+    if (((s + ph) % per) < on) cur.push(p[i]); else { if (cur.length > 1) out.push(cur); cur = []; }
+  }
+  if (cur.length > 1) out.push(cur);
+  return out;
+}
+const circle = (cx, cy, r, n = 10) => { const p = []; for (let k = 0; k < n; k++) { const a = 2 * Math.PI * k / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; };
+// parallel lines at angle ang, `pitch` apart, clipped to a polygon
+function hatchPoly(poly, ang, pitch) {
+  const c = Math.cos(ang), s = Math.sin(ang), R = poly.map(([x, y]) => [x * c + y * s, -x * s + y * c]), n = R.length, out = [];
+  let y0 = 1e9, y1 = -1e9; for (const q of R) { y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
+  for (let y = y0 + pitch * 0.5; y < y1; y += pitch) {
+    const xs = [];
+    for (let i = 0; i < n; i++) { const a = R[i], b = R[(i + 1) % n]; if ((a[1] <= y) !== (b[1] <= y)) xs.push(a[0] + (y - a[1]) / (b[1] - a[1]) * (b[0] - a[0])); }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2) if (xs[k + 1] - xs[k] > 0.3) out.push([[xs[k] * c - y * s, xs[k] * s + y * c], [xs[k + 1] * c - y * s, xs[k + 1] * s + y * c]]);
+  }
+  return out;
+}
+
+// compact single-stroke digit font on a 2 x 4 grid, y up
+const FONT = {
+  "0": [[[0, 0], [2, 0], [2, 4], [0, 4], [0, 0]]], "1": [[[0.4, 3.2], [1, 4], [1, 0]]], "2": [[[0, 4], [2, 4], [2, 2], [0, 2], [0, 0], [2, 0]]],
+  "3": [[[0, 4], [2, 4], [2, 0], [0, 0]], [[0, 2], [2, 2]]], "4": [[[0, 4], [0, 2], [2, 2]], [[2, 4], [2, 0]]], "5": [[[2, 4], [0, 4], [0, 2], [2, 2], [2, 0], [0, 0]]],
+  "6": [[[2, 4], [0, 4], [0, 0], [2, 0], [2, 2], [0, 2]]], "7": [[[0, 4], [2, 4], [2, 0]]], "8": [[[0, 0], [2, 0], [2, 4], [0, 4], [0, 0]], [[0, 2], [2, 2]]],
+  "9": [[[2, 2], [0, 2], [0, 4], [2, 4], [2, 0], [0, 0]]], "N": [[[0, 0], [0, 4], [2, 0], [2, 4]]],
+};
+function text(s, x, y, h) {
+  const sc = h / 4, adv = 3 * sc, paths = []; let cx = x;
+  for (const ch of s) { const g = FONT[ch]; if (g) for (const st of g) paths.push(st.map(([a, b]) => [cx + a * sc, y + (4 - b) * sc])); cx += adv; }
+  return { paths, w: s.length * adv - sc };
+}
+
+// marching squares on a grid field; chains of edge crossings, closed or open
+function marching(f, GX, GY, L) {
+  L += 1e-7;
+  const segs = [], adj = new Map();
+  const add = (a, b) => { const s = segs.length >> 1; segs.push(a, b); let l = adj.get(a); if (!l) adj.set(a, l = []); l.push(s); l = adj.get(b); if (!l) adj.set(b, l = []); l.push(s); };
+  for (let j = 0; j < GY - 1; j++) for (let i = 0; i < GX - 1; i++) {
+    const k = j * GX + i, a = f[k], b = f[k + 1], c = f[k + GX + 1], d = f[k + GX];
+    const cs = (a >= L ? 1 : 0) | (b >= L ? 2 : 0) | (c >= L ? 4 : 0) | (d >= L ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const T = 2 * k, B = 2 * (k + GX), Lf = 2 * k + 1, R = 2 * (k + 1) + 1, mid = (a + b + c + d) / 4 >= L;
+    switch (cs) {
+      case 1: case 14: add(Lf, T); break; case 2: case 13: add(T, R); break; case 3: case 12: add(Lf, R); break;
+      case 4: case 11: add(R, B); break; case 6: case 9: add(T, B); break; case 7: case 8: add(Lf, B); break;
+      case 5: if (mid) { add(T, R); add(B, Lf); } else { add(Lf, T); add(R, B); } break;
+      case 10: if (mid) { add(Lf, T); add(R, B); } else { add(T, R); add(B, Lf); } break;
+    }
+  }
+  const used = new Uint8Array(segs.length >> 1), chains = [];
+  const other = (s, e) => segs[2 * s] === e ? segs[2 * s + 1] : segs[2 * s];
+  const ext = arr => { for (;;) { const e = arr[arr.length - 1]; let nx = -1; for (const s of adj.get(e)) if (!used[s]) { nx = s; break; } if (nx < 0) return false; used[nx] = 1; const o2 = other(nx, e); arr.push(o2); if (o2 === arr[0]) return true; } };
+  const pt = id => { const h = id >> 1, i = h % GX, j = (h - i) / GX; if (id & 1) { const a = f[h], b = f[h + GX]; return [i, j + (L - a) / (b - a)]; } const a = f[h], b = f[h + 1]; return [i + (L - a) / (b - a), j]; };
+  for (let s0 = 0; s0 < used.length; s0++) {
+    if (used[s0]) continue; used[s0] = 1;
+    const arr = [segs[2 * s0], segs[2 * s0 + 1]]; let closed = ext(arr);
+    if (!closed) { arr.reverse(); ext(arr); }
+    if (closed) arr.pop();
+    chains.push({ p: arr.map(pt), closed });
+  }
+  return chains;
+}
+
+// two-pass 5x5 chamfer distance (mm) with optional labels; d holds starting distances (1e9 where unknown)
+function dist5(d, lab, GX, GY, cs) {
+  const a = cs, b = cs * Math.SQRT2, c = cs * Math.sqrt(5);
+  const fw = [[-1, 0, a], [-1, -1, b], [0, -1, a], [1, -1, b], [-2, -1, c], [-1, -2, c], [1, -2, c], [2, -1, c]], bw = fw.map(([x, y, w]) => [-x, -y, w]);
+  const pass = (list, rev) => {
+    for (let jj = 0; jj < GY; jj++) for (let ii = 0; ii < GX; ii++) {
+      const i = rev ? GX - 1 - ii : ii, j = rev ? GY - 1 - jj : jj, k = j * GX + i;
+      let best = d[k], bl = lab ? lab[k] : 0;
+      for (const [dx, dy, w] of list) { const ni = i + dx, nj = j + dy; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni, v = d[nk] + w; if (v < best) { best = v; if (lab) bl = lab[nk]; } }
+      if (best < d[k]) { d[k] = best; if (lab) lab[k] = bl; }
+    }
+  };
+  for (let it = 0; it < 2; it++) { pass(fw, false); pass(bw, true); }
+}
+
+// nearest-neighbour ordering of paths so the pen does not criss-cross the page
+function orderPaths(paths, W, H) {
+  const n = paths.length; if (n < 3) return paths;
+  const cw = 12, nx = Math.ceil(W / cw) + 1, ny = Math.ceil(H / cw) + 1, cells = Array.from({ length: nx * ny }, () => []), used = new Uint8Array(n);
+  const cid = p => Math.min(ny - 1, Math.max(0, Math.floor(p[1] / cw))) * nx + Math.min(nx - 1, Math.max(0, Math.floor(p[0] / cw)));
+  paths.forEach(([p, c], i) => { cells[cid(p[0])].push(i * 2); if (!c) cells[cid(p[p.length - 1])].push(i * 2 + 1); });
+  const out = [paths[0]]; used[0] = 1; let pos = paths[0][1] ? paths[0][0][0] : paths[0][0].at(-1);
+  for (let step = 1; step < n; step++) {
+    const cx = Math.min(nx - 1, Math.max(0, Math.floor(pos[0] / cw))), cy = Math.min(ny - 1, Math.max(0, Math.floor(pos[1] / cw)));
+    let best = -1, bd = Infinity;
+    for (let r = 0; r < Math.max(nx, ny); r++) {
+      for (let j = cy - r; j <= cy + r; j++) for (let i = cx - r; i <= cx + r; i++) {
+        if (Math.max(Math.abs(i - cx), Math.abs(j - cy)) !== r || i < 0 || j < 0 || i >= nx || j >= ny) continue;
+        const l = cells[j * nx + i];
+        for (let m = l.length - 1; m >= 0; m--) {
+          const e = l[m], id = e >> 1; if (used[id]) { l[m] = l[l.length - 1]; l.pop(); continue; }
+          const pp = paths[id][0], q = (e & 1) ? pp[pp.length - 1] : pp[0], dd = Math.hypot(q[0] - pos[0], q[1] - pos[1]);
+          if (dd < bd) { bd = dd; best = e; }
+        }
+      }
+      if (best >= 0 && bd <= r * cw) break;
+    }
+    const id = best >> 1; used[id] = 1;
+    let path = paths[id];
+    if (best & 1) path = [path[0].slice().reverse(), path[1]];
+    out.push(path); pos = path[1] ? path[0][0] : path[0].at(-1);
+  }
+  return out;
+}
+
+// spacing filter: keep a sample only when no other line has an accepted sample nearer than pitch
+function spaceFilter(hash, d, closed, id, pitch, test) {
+  const n = d.length, win = Math.ceil(3 * pitch / 0.3), ok = new Array(n);
+  hash.info[id] = [n, closed];
+  for (let i = 0; i < n; i++) {
+    const x = d[i][0], y = d[i][1]; let good = test(x, y);
+    if (good) good = !hash.near(x, y, pitch, (id2, ix2) => { if (id2 !== id) return true; let df = Math.abs(i - ix2); if (closed) df = Math.min(df, n - df); return df >= win; });
+    ok[i] = good; if (good) hash.add(x, y, id, i);
+  }
+  return ok;
+}
+
+// ---------------- the map ----------------
+const IDS = ["seed", "islands", "sea", "relief", "rugged", "style", "interval", "depth", "spots", "waterlines", "peaks", "net", "roses", "rose", "rivers", "rwide", "forest", "treedens", "villages", "roads", "frame", "scalebar", "colourpen", "pitch", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function build(o) {
+  const t0 = performance.now();
+  const [W, H] = o.page.split("x").map(Number), pitch = o.pitch, style = o.style, sea = o.sea;
+  const rnd = mulberry32(o.seed * 7919 + 13);
+  const islands = style === "treasure" ? "one" : o.islands;
+  const frameOn = o.frame === "on", FW = 5, F = o.margin, inset = F + (frameOn ? FW : 0);
+  const mx0 = inset, my0 = inset, mx1 = W - inset, my1 = H - inset, mw = mx1 - mx0, mh = my1 - my0;
+  const GX = Math.min(300, Math.round(mw / 0.8) + 1), cs = mw / (GX - 1), GY = Math.floor(mh / cs) + 1, N = GX * GY;
+  const gx0 = mx0, gy0 = my0 + (mh - (GY - 1) * cs) / 2, cx1 = gx0 + (GX - 1) * cs, cy1 = gy0 + (GY - 1) * cs;
+  const inClip = (x, y, m = 0.3) => x >= gx0 + m && x <= cx1 - m && y >= gy0 + m && y <= cy1 - m;
+  const nodeAt = (x, y) => clamp(Math.round((y - gy0) / cs), 0, GY - 1) * GX + clamp(Math.round((x - gx0) / cs), 0, GX - 1);
+  const samp = (f, x, y) => { const u = clamp((x - gx0) / cs, 0, GX - 1.0001), v = clamp((y - gy0) / cs, 0, GY - 1.0001), i = u | 0, j = v | 0, fu = u - i, fv = v - j, k = j * GX + i; return (f[k] * (1 - fu) + f[k + 1] * fu) * (1 - fv) + (f[k + GX] * (1 - fu) + f[k + GX + 1] * fu) * fv; };
+  const key = [], shade = [], colour = [];
+  const riverLayer = o.colourpen === "water" ? colour : key, rhumbLayer = o.colourpen === "rhumb" ? colour : shade;
+  const occ = new Occ(W, H, 3);
+
+  // ---- heightfield: warped fBm shaped by a falloff ----
+  const nz = makeNoise(o.seed * 131 + 7), nz2 = makeNoise(o.seed * 577 + 3);
+  const oct = 3 + Math.round(o.rugged * 1.4), gain = 0.42 + 0.22 * o.rugged, warp = 0.3 + 0.9 * o.rugged, FS = 1 / 42;
+  const fbm = (nf, x, y) => { let s = 0, a = 1, f = 1, t = 0; for (let k = 0; k < oct; k++) { s += a * nf(x * f, y * f); t += a; a *= gain; f *= 2.02; } return s / t; };
+  const e = new Float32Array(N), nn = new Float32Array(N);
+  let lo = 1e9, hi = -1e9;
+  for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) {
+    const x = (gx0 + i * cs) * FS, y = (gy0 + j * cs) * FS, k = j * GX + i;
+    const qx = fbm(nz2, x + 5.2, y + 1.3), qy = fbm(nz2, x - 3.1, y + 7.7), v = fbm(nz, x + warp * qx * 1.8, y + warp * qy * 1.8);
+    nn[k] = v; if (v < lo) lo = v; if (v > hi) hi = v;
+  }
+  const blobs = [];
+  if (islands === "archipelago") {
+    // one big island, a few medium, several tiny
+    const sizes = [0.34, 0.24, 0.2, 0.17, 0.1, 0.085, 0.08, 0.07, 0.07, 0.06, 0.06];
+    for (const r of sizes) for (let t = 0; t < 200; t++) {
+      const c = [(rnd() * 2 - 1) * 0.8, (rnd() * 2 - 1) * 0.8], h = 0.78 + rnd() * 0.22;
+      if (blobs.every(b => Math.hypot(c[0] - b.c[0], c[1] - b.c[1]) > (r + b.r) * (r < 0.15 ? 0.95 : 0.85))) { blobs.push({ c, r, h }); break; }
+    }
+  }
+  const AMP = { one: 0.62, archipelago: 0.62, atoll: 0.66, volcano: 0.74, delta: 0.72 }[islands];
+  const cw = (0.16 + 0.16 * o.rugged) * (islands === "volcano" ? 0.4 : islands === "delta" ? 0.5 : 1);
+  for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) {
+    const k = j * GX + i, x = gx0 + i * cs, y = gy0 + j * cs;
+    // warp the falloff coordinates so coasts get bays and capes
+    const wu = nz2(x * FS * 0.9 + 21.3, y * FS * 0.9 + 8.1) + 0.5 * nz2(x * FS * 2.1 + 3, y * FS * 2.1 + 1), wv = nz2(x * FS * 0.9 - 7.7, y * FS * 0.9 + 15.2) + 0.5 * nz2(x * FS * 2.1 + 9, y * FS * 2.1 - 4);
+    const u = (x - mx0) / mw * 2 - 1 + cw * wu, v = (y - my0) / mh * 2 - 1 + cw * wv, d = Math.hypot(u, v);
+    let m = 0;
+    if (islands === "one") m = 1 - sstep(0.0, 1.02, d * 0.78);
+    else if (islands === "archipelago") { for (const b of blobs) m = Math.max(m, b.h * (1 - sstep(0.0, 1.0, Math.hypot(u - b.c[0], v - b.c[1]) / b.r))); }
+    else if (islands === "atoll") { const g = 0.85 + 0.9 * nz2(Math.cos(Math.atan2(v, u)) * 1.4 + 3, Math.sin(Math.atan2(v, u)) * 1.4 + 1); m = Math.exp(-(((d - 0.6) / 0.17) ** 2)) * clamp(g, 0.35, 1.15); }
+    else if (islands === "volcano") { m = Math.pow(clamp(1 - d * 0.88 / 0.8, 0, 1), 0.9) - 0.35 * Math.exp(-((d * 0.88 / 0.07) ** 2)); }
+    else { const yc = 0.05 + 0.55 * Math.exp(-((u / 0.5) ** 2)); m = Math.pow(clamp((yc - v) / 0.9, 0, 1), 0.9) * (1 - sstep(0.5, 0.95, Math.abs(u))) * sstep(-1.0, -0.76, v); }
+    let val = AMP * m + (1 - AMP) * (nn[k] - lo) / (hi - lo);
+    // ragged detail only near sea level: capes, bays, offshore islets
+    const wt = Math.exp(-(((val - sea) / 0.07) ** 2));
+    val += wt * (0.26 * nz2(x * FS * 2.7 + 9, y * FS * 2.7 + 2) + 0.13 * nz2(x * FS * 5.5 - 4, y * FS * 5.5 + 6)) * (islands === "delta" ? 0.5 : 1);
+    const dc = Math.min(i, j, GX - 1 - i, GY - 1 - j), tp = clamp((dc - 2) / 6, 0, 1);
+    if (val > sea) val = sea + (1 - sea) * Math.pow((val - sea) / (1 - sea), 1.25);
+    e[k] = lerp(Math.min(val, sea - 0.1), val, tp);
+  }
+  // ---- delta: a wide river forks into distributaries across a fan-shaped low coast, with sandbar islets ----
+  const deltaCh = [];
+  if (islands === "delta") {
+    const rd = mulberry32(o.seed * 4111 + 9), cxm = (mx0 + mx1) / 2 + (rd() - 0.5) * 0.12 * mw;
+    let ycoast = my1 - 10; for (let y = my0 + 14; y < my1; y += 0.8) if (e[nodeAt(cxm, y)] <= sea) { ycoast = y; break; }
+    const Lf = clamp(0.24 * mh, 26, 60), Fy = Math.max(my0 + 30, ycoast - Lf), Fx = cxm;
+    const Sx = cxm + (rd() - 0.5) * 0.25 * mw, Sy = my0 + 0.17 * mh, trunk = [], ph = rd() * 6.28, span = Fy - Sy;
+    for (let t = 0; t <= 1.0001; t += 1 / Math.max(10, span)) trunk.push([Sx + (Fx - Sx) * t + 7 * Math.sin(2 * Math.PI * t * 1.6 + ph) * Math.sin(Math.PI * t), Sy + span * t, 2.0]);
+    deltaCh.push({ pts: trunk, ramp: false });
+    const K = clamp(Math.round(o.rivers / 2.5), 3, 8), inL = (x, y) => x > mx0 + 6 && x < mx1 - 6 && y > my0 + 6 && y < my1 - 6;
+    const walk = (x, y, th0, hw0, depth) => {
+      const pts = [[x, y, hw0]]; let th = th0, seaN = 0, spl = depth === 0 && rd() < 0.35 ? 18 + Math.floor(rd() * 26) : -1;
+      for (let i = 0; i < 420; i++) {
+        th += (rd() - 0.5) * 0.3 + 0.06 * (th0 - th); x += Math.sin(th); y += Math.cos(th);
+        if (!inL(x, y)) break; pts.push([x, y, Math.max(0.75, hw0 * (1 - 0.4 * Math.min(1, i / 60)))]);
+        if (i === spl) walk(x, y, th + (rd() < 0.5 ? -0.4 : 0.4), Math.max(0.8, hw0 * 0.8), 1);
+        if (e[nodeAt(x, y)] <= sea && ++seaN > 7) break;
+      }
+      deltaCh.push({ pts, ramp: true });
+    };
+    for (let i = 0; i < K; i++) walk(Fx, Fy, -0.95 + 1.9 * (i + 0.5) / K + (rd() - 0.5) * 0.16, 1.6, 0);
+    const mouths = [], e00 = Float32Array.from(e);
+    for (const ch of deltaCh) {
+      let mi = ch.pts.length; for (let i = 0; i < ch.pts.length; i++) if (e00[nodeAt(ch.pts[i][0], ch.pts[i][1])] <= sea) { mi = i; break; }
+      if (ch.ramp && mi < ch.pts.length) mouths.push(ch.pts[mi]);
+      ch.pts.forEach(([px, py, hw], i) => {
+        const rc = hw * 0.75 + 0.5, i0 = Math.floor((px - rc - gx0) / cs), i1 = Math.ceil((px + rc - gx0) / cs), j0 = Math.floor((py - rc - gy0) / cs), j1 = Math.ceil((py + rc - gy0) / cs);
+        for (let jj = Math.max(1, j0); jj <= Math.min(GY - 2, j1); jj++) for (let ii = Math.max(1, i0); ii <= Math.min(GX - 2, i1); ii++) {
+          if (Math.hypot(gx0 + ii * cs - px, gy0 + jj * cs - py) > rc) continue; const k = jj * GX + ii;
+          if (e[k] <= sea) continue; e[k] = i >= mi - 7 ? Math.min(e[k], sea - 0.02) : Math.max(sea + 0.006, e[k] - 0.03);
+        }
+      });
+    }
+    mouths.sort((a, b) => a[0] - b[0]);
+    const isl = [];
+    for (let i = 0; i + 1 < mouths.length; i++) if (Math.abs(mouths[i + 1][0] - mouths[i][0]) > 6) isl.push([(mouths[i][0] + mouths[i + 1][0]) / 2, (mouths[i][1] + mouths[i + 1][1]) / 2 + 6 + rd() * 3, 2.6 + rd() * 1.6, 1.2 + rd() * 0.6]);
+    for (const m of mouths) if (rd() < 0.7) isl.push([m[0] + (rd() - 0.5) * 5, m[1] + 9 + rd() * 6, 1.8 + rd() * 1.5, 1 + rd() * 0.5]);
+    for (const [ix, iy, sx, sy] of isl) for (let jj = 1; jj < GY - 1; jj++) { const yy = gy0 + jj * cs; if (Math.abs(yy - iy) > 4 * sy) continue; for (let ii = 1; ii < GX - 1; ii++) { const xx = gx0 + ii * cs; if (Math.abs(xx - ix) > 4 * sx) continue; const k = jj * GX + ii, b = Math.exp(-0.5 * (((xx - ix) / sx) ** 2 + ((yy - iy) / sy) ** 2)); if (e00[k] <= sea) e[k] = Math.max(e[k], sea - 0.05 + 0.09 * b); } }
+  }
+  { // sink specks of land too small to draw
+    const comp = new Uint8Array(N), st = [];
+    for (let k = 0; k < N; k++) {
+      if (e[k] <= sea || comp[k]) continue; const cells = [k]; comp[k] = 1; st.push(k);
+      while (st.length) { const c = st.pop(), ci = c % GX, cj = (c - ci) / GX; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ni = ci + di, nj = cj + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni; if (e[nk] > sea && !comp[nk]) { comp[nk] = 1; st.push(nk); cells.push(nk); } } }
+      if (cells.length < 8) for (const c of cells) e[c] = sea - 0.005;
+    }
+  }
+  let emax = 0, landN = 0; for (let k = 0; k < N; k++) { if (e[k] > emax) emax = e[k]; if (e[k] > sea) landN++; }
+  const zOf = v => (v - sea) / (1 - sea) * o.relief, zmax = zOf(emax);
+
+  // ---- priority-flood: every land cell drains to the sea, pits become lakes ----
+  const filled = new Float64Array(N), par = new Int32Array(N).fill(-1), seen = new Uint8Array(N), order = new Int32Array(N); let on = 0;
+  const hp = new Heap();
+  for (let k = 0; k < N; k++) if (e[k] <= sea) { filled[k] = e[k]; seen[k] = 1; hp.push(e[k], k); }
+  while (hp.size) {
+    const c = hp.pop(); order[on++] = c; const ci = c % GX, cj = (c - ci) / GX;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      if (!di && !dj) continue; const ni = ci + di, nj = cj + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue;
+      const nk = nj * GX + ni; if (seen[nk]) continue; seen[nk] = 1; filled[nk] = Math.max(e[nk], filled[c] + 2e-6); par[nk] = c; hp.push(filled[nk], nk);
+    }
+  }
+  const acc = new Float32Array(N).fill(1);
+  for (let k = on - 1; k >= 0; k--) { const c = order[k], p = par[c]; if (p >= 0) acc[p] += acc[c]; }
+  const lakeMask = new Uint8Array(N);
+  for (let k = 0; k < N; k++) if (e[k] > sea && filled[k] - e[k] > 0.009) lakeMask[k] = 1;
+  { // drop small lakes
+    const comp = new Int32Array(N).fill(-1), sizes = []; const st = [];
+    for (let k = 0; k < N; k++) {
+      if (!lakeMask[k] || comp[k] >= 0) continue; const id = sizes.length; let cnt = 0; comp[k] = id; st.push(k);
+      while (st.length) { const c = st.pop(); cnt++; const ci = c % GX, cj = (c - ci) / GX; for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const ni = ci + di, nj = cj + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni; if (lakeMask[nk] && comp[nk] < 0) { comp[nk] = id; st.push(nk); } } }
+      sizes.push(cnt);
+    }
+    for (let k = 0; k < N; k++) if (lakeMask[k] && sizes[comp[k]] < 26) lakeMask[k] = 0;
+  }
+  const lakeF = new Float32Array(N); for (let k = 0; k < N; k++) lakeF[k] = lakeMask[k] ? filled[k] - e[k] - 0.003 : -0.01;
+  const e0 = Float32Array.from(e);
+  const landIdx = []; for (let k = 0; k < N; k++) if (e[k] > sea) landIdx.push(k);
+  landIdx.sort((a, b) => e[b] - e[a]);
+
+  // ---- rivers: seeded sources on high ground, steepest descent along the flood parents ----
+  const rivers = [], rvId = new Int32Array(N).fill(-1), thr = Math.max(40, landN * lerp(0.08, 0.008, o.rwide));
+  if (o.rivers > 0 && landIdx.length > 50) {
+    const pool = landIdx.slice(0, Math.max(200, Math.floor(landIdx.length * 0.2))).filter(k => !lakeMask[k]), srcs = [], sepC = Math.max(6, 8 / cs);
+    for (let t = 0; t < 5000 && srcs.length < o.rivers && pool.length; t++) {
+      const k = pool[Math.floor(rnd() * pool.length)], ci = k % GX, cj = (k - ci) / GX;
+      if (srcs.every(s => Math.hypot(s % GX - ci, Math.floor(s / GX) - cj) > sepC)) srcs.push(k);
+    }
+    for (const src of srcs) {
+      let c = src; const path = [c]; let type = "", into = -1;
+      for (let g = 0; g < N; g++) {
+        if (e[c] <= sea) { type = "sea"; break; }
+        if (c !== src && rvId[c] >= 0) { type = "merge"; into = rvId[c]; break; }
+        const p = par[c]; if (p < 0) { type = "edge"; break; } c = p; path.push(c);
+      }
+      if (path.length < 10) continue;
+      const idx = rivers.length; for (const q of path) if (e[q] > sea && rvId[q] < 0) rvId[q] = idx;
+      rivers.push({ cells: path, type, into, pts: null });
+    }
+    for (const rv of rivers) {
+      let pts = rv.cells.map(c => [gx0 + (c % GX) * cs, gy0 + Math.floor(c / GX) * cs, acc[c]]);
+      pts = chaikin(avgOpen(avgOpen(pts, 2), 2), false, 2);
+      if (rv.type === "merge") { const tr = rivers[rv.into].pts, jc = rv.cells.at(-1), jx = gx0 + (jc % GX) * cs, jy = gy0 + Math.floor(jc / GX) * cs; let bd = 1e9, bp = null; for (const q of tr) { const dd = Math.hypot(q[0] - jx, q[1] - jy); if (dd < bd) { bd = dd; bp = q; } } if (bp) pts.push([bp[0], bp[1], Math.max(pts.at(-1)[2], bp[2])]); }
+      rv.pts = pts;
+    }
+    // a light carve so contours dip along the valleys
+    const floorAt = v => Math.min(v, sea + 0.003);
+    for (const rv of rivers) for (const c of rv.cells) {
+      if (e0[c] <= sea) continue; const amt = 0.006 + 0.010 * Math.min(1, acc[c] / (thr * 2)), ci = c % GX, cj = (c - ci) / GX;
+      e[c] = Math.max(e[c] - amt, floorAt(e[c]));
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ni = ci + di, nj = cj + dj; if ((!di && !dj) || ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni; if (e[nk] > sea) e[nk] = Math.max(e[nk] - amt * 0.4, floorAt(e[nk])); }
+    }
+  }
+  const endsOk = (i, dep = 0) => { const r = rivers[i], c = r.cells.at(-1); if (r.type === "sea") return e0[c] <= sea; if (r.type === "merge") return dep < 60 && endsOk(r.into, dep + 1); return lakeMask[c] === 1; };
+  const riversOk = rivers.filter((_, i) => endsOk(i)).length;
+  const eAt = (x, y) => samp(e, x, y), isLand = (x, y) => eAt(x, y) > sea;
+
+  // ---- distance fields: sea distance with island labels, land distance, river distance ----
+  const dsea = new Float32Array(N).fill(1e9), lab = new Int32Array(N).fill(-1), nb4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  { const st = []; let nl = 0;
+    for (let k = 0; k < N; k++) {
+      if (e[k] <= sea || lab[k] >= 0) continue; lab[k] = nl; st.push(k);
+      while (st.length) { const c = st.pop(), ci = c % GX, cj = (c - ci) / GX; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ni = ci + di, nj = cj + dj; if ((!di && !dj) || ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni; if (e[nk] > sea && lab[nk] < 0) { lab[nk] = nl; st.push(nk); } } }
+      nl++;
+    }
+    for (let k = 0; k < N; k++) if (e[k] > sea) dsea[k] = 0;
+    for (let k = 0; k < N; k++) {
+      if (e[k] > sea) continue; const ci = k % GX, cj = (k - ci) / GX;
+      for (const [di, dj] of nb4) { const ni = ci + di, nj = cj + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni; if (e[nk] > sea) { const d = (sea - e[k]) / (e[nk] - e[k]) * cs; if (d < dsea[k]) { dsea[k] = d; lab[k] = lab[nk]; } } }
+    }
+    dist5(dsea, lab, GX, GY, cs);
+  }
+  const dland = new Float32Array(N).fill(1e9);
+  for (let k = 0; k < N; k++) {
+    if (e[k] <= sea) { dland[k] = 0; continue; } const ci = k % GX, cj = (k - ci) / GX;
+    for (const [di, dj] of nb4) { const ni = ci + di, nj = cj + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni; if (e[nk] <= sea) { const d = (e[k] - sea) / (e[k] - e[nk]) * cs; if (d < dland[k]) dland[k] = d; } }
+  }
+  dist5(dland, null, GX, GY, cs);
+  const rvD = new Float32Array(N).fill(1e9); for (const rv of rivers) for (const c of rv.cells) rvD[c] = 0;
+  dist5(rvD, null, GX, GY, cs);
+
+  // ---- slope: hachures, trees, roads and villages all read it ----
+  const eb = new Float32Array(N), gxg = new Float32Array(N), gyg = new Float32Array(N), gm = new Float32Array(N), sg = new Float32Array(N);
+  for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) { let s = 0, c = 0; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ni = i + di, nj = j + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; s += e[nj * GX + ni]; c++; } eb[j * GX + i] = s / c; }
+  for (let j = 1; j < GY - 1; j++) for (let i = 1; i < GX - 1; i++) { const k = j * GX + i; gxg[k] = (eb[k + 1] - eb[k - 1]) / (2 * cs); gyg[k] = (eb[k + GX] - eb[k - GX]) / (2 * cs); gm[k] = Math.hypot(gxg[k], gyg[k]); }
+  const ls = []; for (let k = 0; k < N; k += 3) if (e[k] > sea + 0.004) ls.push(gm[k]); ls.sort((a, b) => a - b);
+  const gref = ls.length ? Math.max(1e-5, ls[Math.floor(ls.length * 0.9)]) : 1;
+  for (let k = 0; k < N; k++) sg[k] = Math.min(1, gm[k] / gref);
+  const sAt = (x, y) => samp(sg, x, y);
+  const mids = ls.filter(g => g > gref * 0.15); const gmed = mids.length ? mids[Math.floor(mids.length / 2)] : gref * 0.4;
+
+  // ---- coarse cost grid: trail and roads follow gentle ground ----
+  const CX = ((GX - 1) >> 1) + 1, CY = ((GY - 1) >> 1) + 1, CN = CX * CY, cstep = 2 * cs;
+  const cpass = new Uint8Array(CN), ce = new Float32Array(CN), crv = new Uint8Array(CN);
+  for (let J = 0; J < CY; J++) for (let I = 0; I < CX; I++) { const k = 2 * J * GX + 2 * I, q = J * CX + I; ce[q] = e[k]; cpass[q] = e[k] > sea + 0.002 && !lakeMask[k] ? 1 : 0; crv[q] = rvD[k] < 0.9 ? 1 : 0; }
+  const cnode = (x, y) => { const I0 = Math.round((x - gx0) / cstep), J0 = Math.round((y - gy0) / cstep); let best = -1, bd = 1e9; for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) { const I = clamp(I0 + di, 0, CX - 1), J = clamp(J0 + dj, 0, CY - 1), q = J * CX + I; if (!cpass[q]) continue; const dd = Math.hypot(gx0 + I * cstep - x, gy0 + J * cstep - y); if (dd < bd) { bd = dd; best = q; } } return best; };
+  const cpos = q => [gx0 + (q % CX) * cstep, gy0 + Math.floor(q / CX) * cstep];
+  function dijk(src, targets) {
+    const dist = new Float64Array(CN).fill(Infinity), prev = new Int32Array(CN).fill(-1), h = new Heap(); dist[src] = 0; h.push(0, src);
+    let left = targets ? new Set(targets) : null;
+    while (h.size) {
+      const q = h.pop(), dq = h.rk; if (dq > dist[q]) continue;
+      if (left) { left.delete(q); if (!left.size) break; }
+      const I = q % CX, J = (q - I) / CX;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+        if (!di && !dj) continue; const NI = I + di, NJ = J + dj; if (NI < 0 || NJ < 0 || NI >= CX || NJ >= CY) continue; const nq = NJ * CX + NI; if (!cpass[nq]) continue;
+        const len = cstep * (di && dj ? Math.SQRT2 : 1), g = Math.abs(ce[nq] - ce[q]) / len, cost = len * (1 + 2.4 * (g / gref) ** 2) + (crv[nq] ? 3 : 0), nd = dq + cost;
+        if (nd < dist[nq]) { dist[nq] = nd; prev[nq] = q; h.push(nd, nq); }
+      }
+    }
+    return { dist, prev };
+  }
+  const tracePath = (prev, to) => { const out = []; for (let q = to; q >= 0; q = prev[q]) out.push(cpos(q)); return out.reverse(); };
+
+  // ---- features that hide lines behind them ----
+  const scaleOn = o.scalebar === "on", roseP = o.rose === "off" ? 0 : +o.rose;
+  const glyphKey = [], glyphShade = [];
+  const pushKey = (p, c = false) => key.push([p, c]);
+  const landIn = (x0, y0, x1, y1) => { let c = 0; for (let y = y0; y <= y1; y += 1.5) for (let x = x0; x <= x1; x += 1.5) if (inClip(x, y, 0) && e[nodeAt(x, y)] > sea) c++; return c; };
+  let bar = null;
+  if (scaleOn) {
+    const L = 32, bh = 1.6, tall = bh + 4.5, cands = [[mx0 + 4, my1 - 3 - tall], [mx1 - 4 - L, my1 - 3 - tall], [mx0 + 4, my0 + 4], [mx1 - 4 - L, my0 + 4]];
+    let best = 0, bs = 1e9; cands.forEach(([x, y], i) => { const s = landIn(x - 2, y - 2, x + L + 2, y + tall + 2); if (s < bs) { bs = s; best = i; } });
+    const [bx, by] = cands[best]; bar = { x: bx, y: by, w: L, h: tall };
+    pushKey([[bx, by], [bx + L, by], [bx + L, by + bh], [bx, by + bh]], true);
+    for (let i = 0; i < 4; i++) {
+      const x = bx + i * 8; if (i > 0) pushKey([[x, by], [x, by + bh]]);
+      if (i % 2 === 0) for (const [a, b] of hatchPoly([[x, by], [x + 8, by], [x + 8, by + bh], [x, by + bh]], Math.PI / 4, pitch)) glyphShade.push([[a, b], false]);
+    }
+    for (let i = 0; i <= 4; i++) { const t = text(String(i * 5), 0, 0, 1.6), tx = bx + i * 8 - t.w / 2; for (const s of text(String(i * 5), tx, by + bh + 1.2, 1.6).paths) pushKey(s); }
+    occ.rect(bx - 1, by - 1, bx + L + 1, by + tall + 1);
+  }
+  const rectDist = (x, y, r) => { const dx = Math.max(r.x - x, 0, x - (r.x + r.w)), dy = Math.max(r.y - y, 0, y - (r.y + r.h)); return Math.hypot(dx, dy); };
+  const hubs = [];       // rose centres, drawn or not, that portolan lines radiate from
+  const RB = 0.105 * Math.min(mw, mh);
+  if (roseP || (o.net > 0 && style !== "survey")) {
+    const nR = style === "survey" ? 1 : +o.roses;
+    for (let ri = 0; ri < nR; ri++) {
+      const R = ri === 0 ? RB : RB * 0.7, pad = R * 1.35 + 3;
+      let best = -1, bs = -1e9;
+      for (let j = 0; j < GY; j += 2) for (let i = 0; i < GX; i += 2) {
+        const k = j * GX + i, x = gx0 + i * cs, y = gy0 + j * cs;
+        if (e[k] > sea || x < mx0 + pad || x > mx1 - pad || y < my0 + pad || y > my1 - pad) continue;
+        let sc = Math.min(dsea[k], R * 3) + rnd() * 0.6;
+        if (bar) sc = Math.min(sc, rectDist(x, y, bar) - R * 0.3);
+        for (const h of hubs) sc = Math.min(sc, Math.hypot(x - h.x, y - h.y) - h.R * 1.4 - R * 0.6);
+        if (sc > bs) { bs = sc; best = k; }
+      }
+      if (best < 0 || (ri > 0 && bs < R * 0.9)) continue;
+      const x = gx0 + (best % GX) * cs, y = gy0 + Math.floor(best / GX) * cs; hubs.push({ x, y, R, ri });
+      occ.circ(x, y, R * 1.12);
+      if (!roseP) continue;
+      // the rose: star outline, half of each principal point hatched
+      const P = roseP, rin = 0.3 * R;
+      const nP = 8, star = [];   // eight principal points; the 16-point rose adds eight short minor points
+      for (let k = 0; k < nP; k++) { const a = -Math.PI / 2 + k * 2 * Math.PI / nP, t = k % 2 === 0 ? R : 0.72 * R; star.push([x + t * Math.cos(a), y + t * Math.sin(a)]); const a2 = a + Math.PI / nP; star.push([x + rin * Math.cos(a2), y + rin * Math.sin(a2)]); }
+      pushKey(star, true);
+      for (let k = 0; k < nP; k++) {
+        const a = -Math.PI / 2 + k * 2 * Math.PI / nP, tip = star[2 * k], nt = star[2 * k + 1];
+        for (const [s, t] of hatchPoly([[x, y], tip, nt], a, pitch)) glyphShade.push([[s, t], false]);
+      }
+      if (P === 16) for (let k = 0; k < 8; k++) {
+        const a = -Math.PI / 2 + (k + 0.5) * 2 * Math.PI / 8, tip = [x + 0.52 * R * Math.cos(a), y + 0.52 * R * Math.sin(a)];
+        for (const s of [-1, 1]) { const b = [x + rin * 1.15 * Math.cos(a + s * 0.19), y + rin * 1.15 * Math.sin(a + s * 0.19)], d = densify([b, tip], false, 0.3); const okp = d.map(q => !pip(q[0], q[1], star)); runs(d, false, okp, 0.4, key); }
+      }
+      pushKey(circle(x, y, 0.42 * R, 48), true); pushKey(circle(x, y, 0.42 * R + Math.max(1.2, pitch * 1.6), 48), true);
+      const t = text("N", 0, 0, R * 0.2), th = R * 0.2; for (const s of text("N", x - t.w / 2, y - R - 1.2 - th, th).paths) pushKey(s);
+    }
+  }
+  const occFree = (x, y, r) => { if (!inClip(x, y, r * 0.5)) return false; for (let a = 0; a < 8; a++) if (occ.hit(x + r * Math.cos(a * 0.785), y + r * Math.sin(a * 0.785), true)) return false; return !occ.hit(x, y, true); };
+
+  // ---- treasure island: landing, trail, X, landmarks ----
+  let tre = null;
+  const rot2 = (x, y, th) => ([a, b]) => [x + a * Math.cos(th) - b * Math.sin(th), y + a * Math.sin(th) + b * Math.cos(th)];
+  const skullRock = (x, y, s) => {
+    const rock = []; for (let k = 0; k < 14; k++) { const a = 2 * Math.PI * k / 14, r = 4.2 * s * (0.82 + 0.3 * rnd()); rock.push([x + r * Math.cos(a), y + r * 0.78 * Math.sin(a) + 0.5 * s]); }
+    pushKey(chaikin(rock, true, 1), true);
+    for (const [dx, dy, r] of [[-4.6, 2.2, 0.9], [4.9, 1.8, 0.7]]) pushKey(circle(x + dx * s, y + dy * s, r * s, 9), true);
+    pushKey(circle(x, y - 1.0 * s, 1.7 * s, 18), true);
+    for (const sx of [-1, 1]) pushKey(circle(x + sx * 0.62 * s, y - 1.2 * s, 0.5 * s, 8), true);
+    pushKey([[x, y - 0.3 * s], [x - 0.3 * s, y + 0.25 * s], [x + 0.3 * s, y + 0.25 * s]], true);
+    pushKey([[x - 1.0 * s, y + 0.4 * s], [x - 1.0 * s, y + 1.5 * s], [x + 1.0 * s, y + 1.5 * s], [x + 1.0 * s, y + 0.4 * s]]);
+    for (const t of [-0.5, 0, 0.5]) pushKey([[x + t * s, y + 0.6 * s], [x + t * s, y + 1.5 * s]]);
+    pushKey([[x - 2.6 * s, y + 2.9 * s], [x + 2.6 * s, y + 2.0 * s]]); pushKey([[x - 2.6 * s, y + 2.0 * s], [x + 2.6 * s, y + 2.9 * s]]);
+    occ.circ(x, y + 0.5 * s, 5.3 * s);
+  };
+  const palm = (x, y, s, lean) => {
+    const R = rot2(x, y, lean), trunk = []; for (let t = 0; t <= 1.001; t += 0.125) trunk.push(R([0.9 * t * t * s, -6.2 * s * t]));
+    pushKey(trunk); const top = R([0.9 * s, -6.2 * s]);
+    pushKey([R([-1.4 * s, 0.1 * s]), R([0, -0.3 * s]), R([1.4 * s, 0.1 * s])]);
+    for (let f = 0; f < 7; f++) {
+      const a = -Math.PI * 0.98 + f * Math.PI * 0.98 / 3.5, L = (3.6 + 0.5 * ((f * 5) % 3)) * s, up = [], dn = [];
+      for (let t = 0; t <= 1.001; t += 0.2) { const px = top[0] + Math.cos(a) * L * t, py = top[1] + Math.sin(a) * L * t * 0.5 + 2.3 * s * t * t, w = 0.55 * s * Math.sin(Math.PI * t); up.push([px, py - w]); dn.push([px, py + w]); }
+      pushKey([...up, ...dn.reverse().slice(1)], true);
+    }
+    for (const sx of [-0.5, 0.5]) pushKey(circle(top[0] + sx * s, top[1] + 0.8 * s, 0.4 * s, 6), true);
+    occ.circ(top[0], top[1] + 2 * s, 4.6 * s);
+  };
+  const wreck = (x, y, s, th) => {
+    const R = rot2(x, y, th);
+    pushKey([[-4.6, -0.4], [-3.2, 1.9], [3.0, 2.2], [4.8, -1.3], [4.0, -1.6], [3.0, -0.2], [-3.4, -0.1], [-4.6, -0.4]].map(([a, b]) => R([a * s, b * s])));
+    for (const rx of [-2.4, -0.8, 0.8, 2.4]) pushKey([[rx, -0.1], [rx * 0.95, 1.9 + (Math.abs(rx) > 2 ? -0.3 : 0)]].map(([a, b]) => R([a * s, b * s])));
+    pushKey([[-1.2, -0.1], [-1.6, -5.0]].map(([a, b]) => R([a * s, b * s])));
+    pushKey([[1.5, -0.1], [2.3, -3.4], [1.9, -3.9]].map(([a, b]) => R([a * s, b * s])));
+    pushKey([[-1.6, -5.0], [-1.5, -1.6], [-4.0, -2.4], [-3.1, -3.4], [-3.6, -4.4], [-1.6, -5.0]].map(([a, b]) => R([a * s, b * s])));
+    for (const [wx, wy] of [[-5.6, 3.2], [0.5, 3.8], [5.4, 3.1]]) pushKey([[wx - 1.6, wy], [wx - 0.5, wy - 0.7], [wx + 0.5, wy], [wx + 1.6, wy - 0.7]].map(([a, b]) => [x + a * s, y + b * s]));
+    occ.circ(x, y, 6.2 * s);
+  };
+  const boat = (x, y, s) => {
+    pushKey([[-3.4, 0], [-2.4, 1.6], [2.4, 1.6], [3.6, -0.2], [-3.4, 0]].map(([a, b]) => [x + a * s, y + b * s]));
+    pushKey([[0, 0], [0, -5.2]].map(([a, b]) => [x + a * s, y + b * s]));
+    pushKey([[0.3, -4.9], [0.3, -0.6], [3.0, -0.6], [0.3, -4.9]].map(([a, b]) => [x + a * s, y + b * s]));
+    pushKey([[-0.3, -4.2], [-0.3, -0.8], [-2.4, -0.8], [-0.3, -4.2]].map(([a, b]) => [x + a * s, y + b * s]));
+    pushKey([[0, -5.2], [1.4, -5.0], [0, -4.6]].map(([a, b]) => [x + a * s, y + b * s]));
+    for (const [wx, wy] of [[-4.2, 2.6], [3.6, 2.7]]) pushKey([[wx - 1.4, wy], [wx - 0.4, wy - 0.6], [wx + 0.6, wy], [wx + 1.4, wy - 0.6]].map(([a, b]) => [x + a * s, y + b * s]));
+    occ.circ(x, y - 1.2 * s, 5.4 * s);
+  };
+  if (style === "treasure" && landIdx.length > 200) {
+    const cands = []; for (const k of landIdx) if (dland[k] > 0.7 && dland[k] < 2.2 && sg[k] < 0.4 && !lakeMask[k] && rvD[k] > 2.5) cands.push(k);
+    const cy0 = (my0 + my1) / 2, south = cands.filter(k => gy0 + Math.floor(k / GX) * cs > cy0 - 0.1 * mh), pickFrom = south.length > 5 ? south : cands;
+    if (pickFrom.length) {
+      const lk = pickFrom[Math.floor(rnd() * pickFrom.length)], lx = gx0 + (lk % GX) * cs, ly = gy0 + Math.floor(lk / GX) * cs, q0 = cnode(lx, ly);
+      if (q0 >= 0) {
+        const { dist, prev } = dijk(q0); let maxC = 0; for (let q = 0; q < CN; q++) if (dist[q] < Infinity && dist[q] > maxC) maxC = dist[q];
+        const xc = []; for (let q = 0; q < CN; q++) { if (!cpass[q] || dist[q] === Infinity || dist[q] < maxC * 0.45 || dist[q] > maxC * 0.85) continue; const [x, y] = cpos(q), k = nodeAt(x, y); if (dland[k] > 5 && rvD[k] > 2.5 && sg[k] < 0.7 && zOf(e[k]) > 0.15 * zmax) xc.push(q); }
+        if (xc.length) {
+          const xq = xc[Math.floor(rnd() * xc.length)], [xx, xy] = cpos(xq);
+          let path = tracePath(prev, xq); path = [[lx, ly], ...path.slice(1), [xx, xy]];
+          path = chaikin(avgOpen(avgOpen(path, 2), 1), false, 2);
+          tre = { lx, ly, xx, xy, path };
+        }
+      }
+    }
+    if (tre) {
+      const dense = densify(tre.path, false, 0.3), tot = plen(dense, false);
+      const at = f => { let s2 = 0; for (let i = 1; i < dense.length; i++) { s2 += Math.hypot(dense[i][0] - dense[i - 1][0], dense[i][1] - dense[i - 1][1]); if (s2 >= f * tot) { const a = dense[Math.max(0, i - 3)], b = dense[Math.min(dense.length - 1, i + 3)], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return { x: dense[i][0], y: dense[i][1], nx: -(b[1] - a[1]) / L, ny: (b[0] - a[0]) / L }; } } return null; };
+      const landOK = (x, y, r) => inClip(x, y, 4) && e[nodeAt(x, y)] > sea && !lakeMask[nodeAt(x, y)] && dland[nodeAt(x, y)] > 2 && rvD[nodeAt(x, y)] > 2 && occFree(x, y, r);
+      const sideSpot = (f, off, r) => { const q = at(f); if (!q) return null; for (const o2 of [off, off * 1.25, off * 0.8]) for (const sg2 of [1, -1]) { const x = q.x + sg2 * q.nx * o2, y = q.y + sg2 * q.ny * o2; if (landOK(x, y, r)) return [x, y]; } return null; };
+      // the X, doubled strokes
+      for (const sgn of [-1, 1]) { const q = 2.4; pushKey([[tre.xx - q, tre.xy - sgn * q], [tre.xx + q, tre.xy + sgn * q]]); }
+      pushKey(circle(tre.xx, tre.xy, 3.9, 24), true); occ.circ(tre.xx, tre.xy, 4.6);
+      // landmarks beside the trail
+      const sk = sideSpot(0.32, 7.5, 6); if (sk) skullRock(sk[0], sk[1], 1.15);
+      const pm = sideSpot(0.66, 6.5, 5); if (pm) { palm(pm[0], pm[1], 1.15, -0.1); const p2c = [pm[0] + 4.2, pm[1] + 1.6]; if (landOK(p2c[0], p2c[1], 3)) palm(p2c[0], p2c[1], 0.85, 0.15); }
+      // landing: a small boat in the water just off the beach
+      let bt = null, bd = 1e9;
+      for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) { const k = j * GX + i; if (e[k] > sea || dsea[k] < 2.6 || dsea[k] > 4.5) continue; const x = gx0 + i * cs, y = gy0 + j * cs, dd = Math.hypot(x - tre.lx, y - tre.ly); if (dd < bd && dd < 9 && occFree(x, y, 5.5)) { bd = dd; bt = [x, y]; } }
+      if (bt) boat(bt[0], bt[1], 1.15);
+      pushKey(circle(tre.lx, tre.ly, 0.7, 10), true);
+      // wreck out at sea
+      const seaC = []; for (let j = 0; j < GY; j += 2) for (let i = 0; i < GX; i += 2) { const k = j * GX + i; if (e[k] <= sea && dsea[k] > 4 && dsea[k] < 8) seaC.push([gx0 + i * cs, gy0 + j * cs]); }
+      for (let t = 0; t < 500 && seaC.length; t++) { const [x, y] = seaC[Math.floor(rnd() * seaC.length)]; if (occFree(x, y, 8) && Math.hypot(x - tre.lx, y - tre.ly) > 16 && (!bt || Math.hypot(x - bt[0], y - bt[1]) > 16)) { wreck(x, y, 1.2, (rnd() - 0.5) * 0.4); break; } }
+      // the trail: tiny dashes 0.6 mm apart, key pen
+      for (const seg of dashes(dense, 0.7, 0.6, 1.5)) {
+        const okp = seg.map(q => inClip(q[0], q[1], 1) && !occ.hit(q[0], q[1], false) && Math.hypot(q[0] - tre.xx, q[1] - tre.xy) > 4.7 && Math.hypot(q[0] - tre.lx, q[1] - tre.ly) > 1.4 && !lakeMask[nodeAt(q[0], q[1])]);
+        runs(seg, false, okp, 0.3, key);
+      }
+      for (let i = 0; i < dense.length; i += 3) occ.circ(dense[i][0], dense[i][1], 1.0, true);
+    }
+  }
+
+  // ---- spot heights (survey) ----
+  if (style === "survey" && o.spots > 0) {
+    const sp = [];
+    for (const k of landIdx) {
+      if (sp.length >= o.spots) break; const x = gx0 + (k % GX) * cs, y = gy0 + Math.floor(k / GX) * cs;
+      if (lakeMask[k] || zOf(e[k]) < 0.12 * zmax || rvD[k] < 1.0 || !inClip(x, y, 8) || occ.hit(x, y, true)) continue;
+      if (sp.some(s => Math.hypot(s[0] - x, s[1] - y) < 20)) continue;
+      sp.push([x, y, zOf(e0[k])]);
+    }
+    for (const [x, y, z] of sp) {
+      const s = String(Math.max(1, Math.round(z))), t = text(s, 0, 0, 2.0), tx = x + 1.1 + t.w > mx1 - 3 ? x - 1.1 - t.w : x + 1.1;
+      pushKey(circle(x, y, 0.42, 8), true);
+      for (const st of text(s, tx, y - 1.6, 2.0).paths) pushKey(st);
+      occ.rect(Math.min(x - 0.8, tx - 0.5), y - 2.2, Math.max(x + 0.8, tx + t.w + 0.5), y + 1.0);
+    }
+  }
+
+  // ---- villages, roads ----
+  const vils = [];
+  if (o.villages > 0 && landIdx.length > 50) {
+    const cand = [];
+    for (const rv of rivers) if (rv.type === "sea" && rv.cells.length > 8) { const c = rv.cells[Math.max(0, rv.cells.length - 1 - 5)]; cand.push(c); }
+    const flat = landIdx.filter(k => dland[k] > 2.0 && dland[k] < 4.5 && sg[k] < 0.35 && !lakeMask[k] && rvD[k] > 1.5);
+    for (let i = flat.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [flat[i], flat[j]] = [flat[j], flat[i]]; }
+    for (const k of [...cand, ...flat]) {
+      if (vils.length >= o.villages) break; const x = gx0 + (k % GX) * cs, y = gy0 + Math.floor(k / GX) * cs;
+      if (dland[k] < 1.6 || lakeMask[k] || !inClip(x, y, 4) || occ.hit(x, y, true) || vils.some(v => Math.hypot(v.x - x, v.y - y) < 15)) continue;
+      const th = rnd() * Math.PI, sq = [], n = 3 + Math.floor(rnd() * 4);
+      for (let t = 0; t < 40 && sq.length < n; t++) {
+        const a = rnd() * 6.28, r = Math.sqrt(rnd()) * 2.6, qx = x + r * Math.cos(a), qy = y + r * Math.sin(a), kk = nodeAt(qx, qy);
+        if (e[kk] <= sea || lakeMask[kk] || dland[kk] < 0.9 || rvD[kk] < 1.1 || occ.hit(qx, qy, true) || sq.some(s => Math.hypot(s[0] - qx, s[1] - qy) < 1.9)) continue;
+        sq.push([qx, qy, 0.9 + rnd() * 0.35]);
+      }
+      if (sq.length < 2) continue;
+      vils.push({ x, y, sq });
+      for (const [qx, qy, s] of sq) { const h = s / 2, poly = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([a, b]) => [qx + a * Math.cos(th) - b * Math.sin(th), qy + a * Math.sin(th) + b * Math.cos(th)]); pushKey(poly, true); occ.poly(poly.map(([a, b]) => [qx + (a - qx) * 1.5, qy + (b - qy) * 1.5])); }
+    }
+  }
+  let roadLen = 0;
+  if (o.roads === "on" && vils.length > 1) {
+    const nodes = vils.map(v => cnode(v.x, v.y)), ok = nodes.map(q => q >= 0), res = [];
+    for (let a = 0; a < vils.length; a++) res.push(ok[a] ? dijk(nodes[a], nodes.filter((q, i) => i !== a && ok[i])) : null);
+    const inT = new Uint8Array(vils.length); inT[0] = 1;
+    for (let it = 1; it < vils.length; it++) {
+      let ba = -1, bb = -1, bc = Infinity;
+      for (let a = 0; a < vils.length; a++) if (inT[a] && res[a]) for (let b = 0; b < vils.length; b++) if (!inT[b] && ok[b] && res[a].dist[nodes[b]] < bc) { bc = res[a].dist[nodes[b]]; ba = a; bb = b; }
+      if (ba < 0 || bc === Infinity) break; inT[bb] = 1;
+      if (bc > 160) continue;
+      let path = tracePath(res[ba].prev, nodes[bb]); path = [[vils[ba].x, vils[ba].y], ...path, [vils[bb].x, vils[bb].y]];
+      path = chaikin(avgOpen(avgOpen(path, 2), 1), false, 2);
+      const d = densify(path, false, 0.3);
+      for (const seg of dashes(d, 1.7, 1.1, 0.5)) { const okp = seg.map(q => inClip(q[0], q[1], 1) && isLand(q[0], q[1]) && !occ.hit(q[0], q[1], false) && !lakeMask[nodeAt(q[0], q[1])]); runs(seg, false, okp, 0.6, shade); }
+      for (let i = 0; i < d.length; i += 4) occ.circ(d[i][0], d[i][1], 0.7, true);
+    }
+  }
+
+  // ---- mountain glyphs ----
+  const mtnCount = { n: 0 };
+  if (style !== "survey" && o.peaks > 0 && landIdx.length > 50) {
+    const placed = [];
+    for (const k of landIdx) {
+      if (placed.length >= o.peaks) break; if (e[k] < sea + 0.4 * (emax - sea)) break;
+      const x = gx0 + (k % GX) * cs, y = gy0 + Math.floor(k / GX) * cs, zr = (e[k] - sea) / (emax - sea), w = lerp(4.2, 7.5, zr);
+      if (!inClip(x, y, 7) || lakeMask[k] || !occFree(x, y, w * 0.6)) continue;
+      let nearLake = false; for (let dj = -4; dj <= 4 && !nearLake; dj++) for (let di = -4; di <= 4; di++) { const kk = k + dj * GX + di; if (kk >= 0 && kk < N && lakeMask[kk]) { nearLake = true; break; } }
+      if (nearLake || placed.some(p => Math.hypot(p.x - x, p.y - y) < (w + p.w) * 0.62 + 1)) continue;
+      placed.push({ x, y, w });
+    }
+    for (const g of placed) {
+      const peaks = [{ bx: g.x, by: g.y + g.w * 0.3, w: g.w, h: g.w * 0.85 }];
+      const extra = 1 + Math.floor(rnd() * 2);
+      for (let q = 0; q < extra; q++) { const s = (q % 2 ? 1 : -1), w2 = g.w * (0.55 + 0.25 * rnd()); peaks.push({ bx: g.x + s * g.w * (0.5 + 0.2 * rnd()), by: g.y + g.w * 0.3 + w2 * 0.25, w: w2, h: w2 * 0.85 }); }
+      peaks.sort((a, b) => a.by - b.by);
+      const tris = peaks.map(p => [[p.bx - p.w / 2, p.by], [p.bx, p.by - p.h], [p.bx + p.w / 2, p.by]]);
+      peaks.forEach((p, i) => {
+        const front = tris.slice(i + 1), hidden = (x, y) => front.some(t => pip(x, y, t)) || !inClip(x, y, 0.8);
+        const d = densify(tris[i], false, 0.3); runs(d, false, d.map(q => !hidden(q[0], q[1])), 0.4, key);
+        const half = [[p.bx, p.by - p.h], [p.bx + p.w / 2, p.by], [p.bx, p.by]], ang = Math.atan2(-p.h, p.w / 2);
+        for (const [a, b] of hatchPoly(half, ang, pitch)) { const dd = densify([a, b], false, 0.3); runs(dd, false, dd.map(q => !hidden(q[0], q[1])), 0.5, shade); }
+      });
+      for (const t of tris) occ.poly(t);
+      mtnCount.n++;
+    }
+  }
+
+  // ---- trees ----
+  let treeN = 0;
+  if (o.forest !== "off" && o.treedens > 0 && landIdx.length > 50) {
+    const r = lerp(3.4, 2.0, o.treedens), th = new PtHash(W, H, r), lowE = sea + 0.06 * (emax - sea), highE = sea + 0.6 * (emax - sea), sp = r * 0.75, nzt = makeNoise(o.seed * 91 + 17), cand = [];
+    for (let y = gy0 + sp; y < cy1 - sp; y += sp) for (let x = gx0 + sp; x < cx1 - sp; x += sp) cand.push([x + (rnd() - 0.5) * sp, y + (rnd() - 0.5) * sp]);
+    for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
+    for (const [x, y] of cand) {
+      if (!inClip(x, y, 1.5)) continue; const k = nodeAt(x, y);
+      if (e[k] < lowE || e[k] > highE || lakeMask[k] || dland[k] < 1.6 || rvD[k] < 2.6 || sg[k] > 0.8) continue;
+      if (nzt(x / 24 + 3.1, y / 24 + 1.7) < -0.02) continue;
+      if (occ.hit(x, y, true) || occ.hit(x, y + 0.6, true) || th.near(x, y, r, () => true)) continue;
+      th.add(x, y, treeN, 0);
+      const kind = o.forest === "mixed" ? (e[k] > sea + 0.32 * (emax - sea) ? "conifer" : "lollipop") : o.forest;
+      if (kind === "lollipop") { const rr = 0.8 + 0.2 * ((treeN * 7) % 3) / 2; shade.push([circle(x, y - 0.3, rr, 10), true]); shade.push([[[x, y - 0.3 + rr], [x, y + rr + 0.8]], false]); }
+      else { shade.push([[[x, y - 1.4], [x + 0.85, y + 0.7], [x - 0.85, y + 0.7]], true]); shade.push([[[x, y + 0.7], [x, y + 1.4]], false]); }
+      occ.circ(x, y + 0.2, 1.5); treeN++;
+    }
+  }
+
+  // ---- marsh tufts on the low delta ground ----
+  let marshN = 0;
+  if (islands === "delta") {
+    const mh2 = new PtHash(W, H, 2.6), cand = [];
+    for (let y = gy0 + 2; y < cy1 - 2; y += 2) for (let x = gx0 + 2; x < cx1 - 2; x += 2) cand.push([x + (rnd() - 0.5) * 1.8, y + (rnd() - 0.5) * 1.8]);
+    for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
+    for (const [x, y] of cand) {
+      if (!inClip(x, y, 1.5)) continue; const k = nodeAt(x, y);
+      if (e[k] <= sea + 0.004 || e[k] > sea + 0.05 || lakeMask[k] || dland[k] < 1.0 || rvD[k] < 1.6 || occ.hit(x, y, true) || mh2.near(x, y, 2.6, () => true)) continue;
+      mh2.add(x, y, marshN, 0);
+      for (const dx of [-0.55, 0, 0.55]) shade.push([[[x, y], [x + dx, y - 1.1 + Math.abs(dx) * 0.3]], false]);
+      shade.push([[[x - 1.1, y + 0.05], [x + 1.1, y + 0.05]], false]);
+      occ.circ(x, y - 0.4, 1.3); marshN++;
+    }
+  }
+
+  // ---- coast and lakes ----
+  const toMM = c => ({ p: c.p.map(([a, b]) => [gx0 + a * cs, gy0 + b * cs]), closed: c.closed });
+  const coastRaw = marching(e, GX, GY, sea).map(toMM);
+  const coast = coastRaw.map(c => ({ p: chaikin(c.p, c.closed, 2), closed: c.closed })).filter(c => plen(c.p, c.closed) >= 2.5);
+  const lakes = marching(lakeF, GX, GY, 0).map(toMM).map(c => ({ p: chaikin(c.p, c.closed, 1), closed: c.closed })).filter(c => plen(c.p, c.closed) >= 3);
+  const coastClosed = coastRaw.filter(c => c.closed).length;
+  const simpRing = p => { let bi = 1, bd = 0; for (let i = 1; i < p.length; i++) { const d = Math.hypot(p[i][0] - p[0][0], p[i][1] - p[0][1]); if (d > bd) { bd = d; bi = i; } } const a = simplify(p.slice(0, bi + 1), 0.02), b = simplify(p.slice(bi).concat([p[0]]), 0.02); return a.concat(b.slice(1, -1)); };
+  for (const c of coast) key.push([c.closed ? simpRing(c.p) : simplify(c.p, 0.02), c.closed]);
+  for (const c of lakes) riverLayer.push([c.closed ? simpRing(c.p) : simplify(c.p, 0.02), c.closed]);
+  let aid = 0;
+  const anchor = (hash, list) => { for (const c of list) { const d = densify(c.p, c.closed, 0.3), id = -(++aid); hash.info[id] = [d.length, c.closed]; d.forEach((q, i) => hash.add(q[0], q[1], id, i)); } };
+  let sepMin = Infinity, sepFams = 0, wlSamples = 0, wlLand = 0, hachLines = 0, contourM = 0;
+  const famSep = h => { if (h.x.length < 2) return; sepFams++; const m = h.minSep(Math.ceil(3 * pitch / 0.3), pitch * 1.5); sepMin = Math.min(sepMin, m); };
+  const hardOK = (x, y) => inClip(x, y, 0.8) && !occ.hit(x, y, false);
+
+  // ---- rivers: single line, doubled banks where the flow is large ----
+  for (const rv of rivers) {
+    const d = densify(rv.pts, false, 0.4), n = d.length; if (n < 3) continue;
+    const hwMin = 0.5 * Math.max(0.9, pitch + 0.1); let firstD = -1, sD = 0; const hw = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) if (d[i][2] >= thr) { if (firstD < 0) firstD = i; sD = 0.4 * (i - firstD); hw[i] = clamp(hwMin + 0.55 * Math.log2(d[i][2] / thr), hwMin, 2.2) * Math.min(1, sD / 2.5); }
+    const nrm = i => { const a = d[Math.max(0, i - 1)], b = d[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; return [-dy / L, dx / L]; };
+    const okAt = (x, y) => hardOK(x, y) && isLand(x, y) && !lakeMask[nodeAt(x, y)];
+    const single = firstD < 0 ? d : d.slice(0, firstD + 1);
+    runs(single, false, single.map(q => okAt(q[0], q[1])), 0.6, riverLayer);
+    if (firstD >= 0) for (const s of [-1, 1]) {
+      const bank = []; for (let i = firstD; i < n; i++) { const [nx, ny] = nrm(i); bank.push([d[i][0] + s * nx * hw[i], d[i][1] + s * ny * hw[i]]); }
+      runs(bank, false, bank.map(q => okAt(q[0], q[1])), 0.6, riverLayer);
+    }
+  }
+
+  if (deltaCh.length) {
+    const chH = new PtHash(W, H, 3);
+    deltaCh.forEach((ch, ci) => { for (const q of densify(ch.pts, false, 0.5)) chH.add(q[0], q[1], ci, q[2]); });
+    deltaCh.forEach((ch, ci) => {
+      const d = densify(ch.pts, false, 0.4), n = d.length; if (n < 3) return;
+      const hw = d.map((q, i) => q[2] * (ch.ramp ? Math.min(1, 0.4 * i / 3) : 1));
+      const okAt = (x, y) => hardOK(x, y) && isLand(x, y) && !lakeMask[nodeAt(x, y)] && !chH.scan(x, y, 2.6, (m, d2) => chH.id[m] !== ci && d2 < (chH.ix[m] * 0.92) ** 2);
+      for (const sd of [-1, 1]) {
+        const bank = d.map((q, i) => { const a = d[Math.max(0, i - 1)], b = d[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; return [q[0] - sd * dy / L * hw[i], q[1] + sd * dx / L * hw[i]]; });
+        runs(bank, false, bank.map(q => okAt(q[0], q[1])), 0.6, riverLayer);
+      }
+    });
+  }
+
+  // ---- style lines ----
+  const cHash = new PtHash(W, H, pitch), wHash = new PtHash(W, H, pitch), hHash = new PtHash(W, H, pitch * 1.6);
+  if (style === "survey") {
+    anchor(cHash, coast); anchor(cHash, lakes);
+    const levels = []; for (let k = 1; k * o.interval < zmax; k++) levels.push(k);
+    levels.sort((a, b) => ((a % 5 === 0) ? 0 : 1) - ((b % 5 === 0) ? 0 : 1) || a - b);
+    let lid = 1;
+    for (const k of levels) {
+      const eL = sea + k * o.interval / o.relief * (1 - sea), idx = k % 5 === 0, target = idx ? key : shade;
+      for (const c of marching(e, GX, GY, eL).map(toMM)) {
+        const p = chaikin(c.p, c.closed, 1), d = densify(p, c.closed, 0.3); if (d.length < 4) continue;
+        const ok = spaceFilter(cHash, d, c.closed, lid++, pitch, (x, y) => hardOK(x, y) && isLand(x, y) && !lakeMask[nodeAt(x, y)]);
+        const before = target.length; runs(d, c.closed, ok, 0.8, target); for (let q = before; q < target.length; q++) contourM += plen(target[q][0], target[q][1]);
+      }
+    }
+    if (o.depth > 0) {
+      anchor(wHash, coast);
+      const nzb = makeNoise(o.seed * 313 + 5), Fd = new Float32Array(N);
+      for (let j = 0; j < GY; j++) for (let i = 0; i < GX; i++) { const kq = j * GX + i; Fd[kq] = dsea[kq] * (0.85 + 0.35 * nzb((gx0 + i * cs) / 30, (gy0 + j * cs) / 30)); }
+      const dl = [3, 6.5, 11, 17, 25, 36].slice(0, o.depth);
+      for (const L of dl) for (const c of marching(Fd, GX, GY, L).map(toMM)) {
+        const p = chaikin(c.p, c.closed, 1), d = densify(p, c.closed, 0.3); if (d.length < 4) continue;
+        const ok = spaceFilter(wHash, d, c.closed, lid++, pitch, (x, y) => hardOK(x, y) && !isLand(x, y));
+        const tmp = []; runs(d, c.closed, ok, 0.8, tmp);
+        for (const [q] of tmp) { const dd = densify(q, false, 0.3); for (const seg of dashes(dd, 2.4, 1.3, rnd() * 3)) if (plen(seg, false) >= 0.8) shade.push([p2(simplify(seg, 0.02)), false]); }
+      }
+    }
+  } else {
+    // water lines outward from every coast, broken where two islands' lines meet
+    if (o.waterlines > 0) {
+      anchor(wHash, coast);
+      const brk = new Uint8Array(N);
+      for (let k = 0; k < N; k++) { if (e[k] > sea) continue; const ci = k % GX, cj = (k - ci) / GX; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ni = ci + di, nj = cj + dj; if (ni < 0 || nj < 0 || ni >= GX || nj >= GY) continue; const nk = nj * GX + ni; if (e[nk] <= sea && lab[nk] !== lab[k] && lab[nk] >= 0 && lab[k] >= 0) brk[k] = 1; } }
+      const brk2 = new Uint8Array(N); for (let k = 0; k < N; k++) if (brk[k]) { const ci = k % GX, cj = (k - ci) / GX; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ni = ci + di, nj = cj + dj; if (ni >= 0 && nj >= 0 && ni < GX && nj < GY) brk2[nj * GX + ni] = 1; } }
+      let dd = 0, lid = 1000; const wl = [];
+      for (let k = 0; k < o.waterlines; k++) { dd += k === 0 ? Math.max(pitch * 1.3, 1.1) : pitch * (1.1 + 0.22 * k); wl.push(dd); }
+      for (const L of wl) for (const c of marching(dsea, GX, GY, L).map(toMM)) {
+        const p = chaikin(c.p, c.closed, 1), d = densify(p, c.closed, 0.3); if (d.length < 4) continue;
+        const ok = spaceFilter(wHash, d, c.closed, lid++, pitch, (x, y) => hardOK(x, y) && !brk2[nodeAt(x, y)] && dsea[nodeAt(x, y)] > 0.4);
+        const before = shade.length; runs(d, c.closed, ok, 0.8, shade);
+        for (let q = before; q < shade.length; q++) for (const [x, y] of shade[q][0]) { wlSamples++; if (isLand(x, y)) wlLand++; }
+      }
+    }
+    // hachures: evenly spaced streamlines down the slope, cut into dashes by height so neighbours line up
+    {
+      const dsep = s => pitch * (1 + 1.3 * Math.pow(1 - s, 1.2)), st = 0.4;
+      const hvalid = (x, y) => { if (!inClip(x, y, 0.8)) return false; const k = nodeAt(x, y); return e[k] > sea + 0.004 && !lakeMask[k] && rvD[k] > 0.8 && !occ.hit(x, y, true); };
+      const dirAt = (x, y) => { const gxv = samp(gxg, x, y), gyv = samp(gyg, x, y), m = Math.hypot(gxv, gyv); return m < 1e-9 ? null : [-gxv / m, -gyv / m]; };
+      const cand = [], sp = pitch * 1.15;
+      for (let y = gy0 + sp / 2; y < cy1; y += sp) for (let x = gx0 + sp / 2; x < cx1; x += sp) { const jx = x + (rnd() - 0.5) * sp * 0.9, jy = y + (rnd() - 0.5) * sp * 0.9; if (inClip(jx, jy, 1)) { const s = sAt(jx, jy); if (s >= 0.12 && e[nodeAt(jx, jy)] > sea + 0.004) cand.push([jx, jy, s + rnd() * 0.25]); } }
+      cand.sort((a, b) => b[2] - a[2]);
+      const De = Math.max(1e-4, 3.4 * gmed); let lid = 0; const lines = [];
+      for (const [sx, sy] of cand) {
+        if (!hvalid(sx, sy)) continue; const s0 = sAt(sx, sy); if (s0 < 0.12 || hHash.near(sx, sy, dsep(s0), () => true)) continue;
+        const trace = dir => {
+          const pts = []; let x = sx, y = sy, px = 0, py = 0;
+          for (let n = 0; n < 32; n++) {
+            const d1 = dirAt(x, y); if (!d1) break; const dx = d1[0] * dir, dy = d1[1] * dir; if (n && dx * px + dy * py < 0) break;
+            const d2 = dirAt(x + dx * st / 2, y + dy * st / 2); if (!d2) break; const ex = d2[0] * dir, ey = d2[1] * dir; if (ex * dx + ey * dy < 0) break;
+            const nx = x + ex * st, ny = y + ey * st; if (!hvalid(nx, ny)) break; const s = sAt(nx, ny); if (s < 0.1) break;
+            if (hHash.near(nx, ny, dsep(s), () => true)) break;
+            pts.push([nx, ny]); x = nx; y = ny; px = ex; py = ey;
+          }
+          return pts;
+        };
+        const back = trace(-1).reverse(), fwd = trace(1), line = [...back, [sx, sy], ...fwd];
+        if (line.length < 4) continue;
+        const id = lid++; hHash.info[id] = [line.length, false]; line.forEach((q, i) => hHash.add(q[0], q[1], id, i)); lines.push(line);
+      }
+      hachLines = lines.length;
+      for (const line of lines) {
+        const ph = ((line[0][0] * 7.31 + line[0][1] * 3.17) % 1 + 1) % 1 * 0.08;
+        const onp = line.map(([x, y]) => { const s = sAt(x, y), v = eAt(x, y) / De + ph; return (v - Math.floor(v)) < 0.5 + 0.42 * s; });
+        runs(line, false, onp, 0.7, shade);
+      }
+      famSep(hHash);
+    }
+    famSep(wHash);
+  }
+
+  // ---- portolan net ----
+  if (style !== "survey" && o.net > 0 && hubs.length) {
+    const seenL = Array.from({ length: 16 }, () => []), rays = [];
+    for (const h of hubs) {
+      const pts = [[h.x, h.y]]; for (let k = 0; k < o.net - 1; k++) { const a = 2 * Math.PI * k / Math.max(1, o.net - 1) + h.ri * 0.4; pts.push([h.x + 1.7 * h.R * Math.cos(a), h.y + 1.7 * h.R * Math.sin(a)]); }
+      for (const [px, py] of pts) for (let k = 0; k < 16; k++) {
+        const a = -Math.PI / 2 + k * Math.PI / 8, dx = Math.cos(a), dy = Math.sin(a), c = px * dy - py * dx;
+        if (!inClip(px, py, 0)) continue;
+        if (seenL[k].some(v => Math.abs(v - c) < Math.max(pitch * 1.05, 3.5))) continue; seenL[k].push(c); rays.push([px, py, dx, dy]);
+      }
+    }
+    for (const [px, py, dx, dy] of rays) {
+      let tmax = 1e9; if (dx > 1e-9) tmax = Math.min(tmax, (cx1 - 0.8 - px) / dx); if (dx < -1e-9) tmax = Math.min(tmax, (gx0 + 0.8 - px) / dx); if (dy > 1e-9) tmax = Math.min(tmax, (cy1 - 0.8 - py) / dy); if (dy < -1e-9) tmax = Math.min(tmax, (gy0 + 0.8 - py) / dy);
+      tmax = Math.min(tmax, 130); if (!(tmax > 1)) continue; const d = densify([[px, py], [px + dx * tmax, py + dy * tmax]], false, 0.5);
+      runs(d, false, d.map(([x, y]) => inClip(x, y, 0.5) && dsea[nodeAt(x, y)] > 0.7 && e[nodeAt(x, y)] <= sea && !occ.hit(x, y, false)), 1.0, rhumbLayer);
+    }
+  }
+
+  // ---- frame ----
+  if (frameOn) {
+    pushKey([[F, F], [W - F, F], [W - F, H - F], [F, H - F]], true); pushKey([[F + FW, F + FW], [W - F - FW, F + FW], [W - F - FW, H - F - FW], [F + FW, H - F - FW]], true);
+    const seg = (x0, y0, x1, y1, horiz) => {
+      const len = horiz ? x1 - x0 : y1 - y0, cnt = Math.max(2, 2 * Math.round(len / 16));
+      for (let i = 0; i < cnt; i++) {
+        const a = i / cnt, b = (i + 1) / cnt, r = horiz ? [[x0 + len * a, y0], [x0 + len * b, y0], [x0 + len * b, y1], [x0 + len * a, y1]] : [[x0, y0 + len * a], [x1, y0 + len * a], [x1, y0 + len * b], [x0, y0 + len * b]];
+        if (i > 0) pushKey(horiz ? [[x0 + len * a, y0], [x0 + len * a, y1]] : [[x0, y0 + len * a], [x1, y0 + len * a]]);
+        if (i % 2 === 0) for (const [p, q] of hatchPoly(r, Math.PI / 4, pitch)) glyphShade.push([[p, q], false]);
+      }
+    };
+    seg(F + FW, F, W - F - FW, F + FW, true); seg(F + FW, H - F - FW, W - F - FW, H - F, true); seg(F, F + FW, F + FW, H - F - FW, false); seg(W - F - FW, F + FW, W - F, H - F - FW, false);
+  }
+  for (const s of glyphShade) shade.push(s);
+
+  // ---- order the pen paths and gate ----
+  const layers = { key: orderPaths(key, W, H), shade: orderPaths(shade, W, H), colour: orderPaths(colour, W, H) };
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  let pts = 0, minEdge = 1e9; for (const L of Object.values(layers)) for (const [p] of L) for (const [x, y] of p) { pts++; minEdge = Math.min(minEdge, x, y, W - x, H - y); }
+  const totalM = len(layers.key) + len(layers.shade) + len(layers.colour), ms = performance.now() - t0, kb = pts * 16 / 1024;
+  const colHex = o.colourpen === "rhumb" ? "b03a30" : "1f5f99";
+  const gates = [
+    ["build under 4000 ms", ms < 4000, `${Math.round(ms)} ms`],
+    ["total pen length under 150 m", totalM < 150, `${totalM.toFixed(1)} m`],
+    ["SVG under 3 MB (estimated)", kb < 3072, `${Math.round(kb)} KB`],
+    ["every river reaches the sea or a lake", riversOk === rivers.length, `${riversOk} of ${rivers.length}`],
+    ["coastline rings are closed", coastClosed === coastRaw.length, `${coastClosed} of ${coastRaw.length}`],
+    ["water lines never cross land", wlLand === 0, `${wlLand} of ${wlSamples} points on land`],
+    ["contours, water lines and hachures at least pitch apart", sepFams === 0 && sepMin === Infinity ? true : sepMin >= pitch - 0.03, sepMin === Infinity ? "none drawn" : `${sepMin.toFixed(3)} mm (pitch ${pitch})`],
+    ["lines stay 4 mm clear of the paper edge", minEdge >= 4 - 1e-6, `${minEdge.toFixed(2)} mm`],
+  ];
+  if (style === "survey") { /* contour spacing measured through cHash below */ const h = cHash; if (h.x.length > 2) { const m = h.minSep(Math.ceil(3 * pitch / 0.3), pitch * 1.5), g = gates[6]; if (m < Infinity) { sepMin = Math.min(sepMin, m); g[1] = sepMin >= pitch - 0.03; g[2] = `${sepMin.toFixed(3)} mm (pitch ${pitch})`; } } }
+  return { W, H, o, ms, key: layers.key, shade: layers.shade, colour: layers.colour, colHex, gates, stats: { landPct: 100 * landN / N, rivers: rivers.length, lakes: lakes.length, coasts: coast.length, trees: treeN, marsh: marshN, villages: vils.length, mountains: mtnCount.n, hachures: hachLines, zmax, hubs: hubs.length, trail: !!tre } };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.colour, "#" + r.colHex, 0.3); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000, S = r.stats;
+  $("stats").innerHTML = `land <b>${S.landPct.toFixed(0)}%</b> · <b>${S.rivers}</b> rivers · <b>${S.lakes}</b> lakes · ${S.villages} villages · ${S.trees} trees · ${S.mountains} mountain glyphs · top <b>${Math.round(S.zmax)} m</b> · ${r.ms.toFixed(0)} ms<br>`
+    + `0.4 pen (key line): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 pen (shade): <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths`
+    + (r.colour.length ? ` · colour pen: <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths` : "") + `<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${n}: <b>${v}</b></span>`).join("<br>");
+}
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: r.colHex, w: 0.3, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG Island atlas studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const PRESETS = {
+  survey: { seed: 42, islands: "one", sea: 0.5, relief: 700, rugged: 0.55, style: "survey", interval: 40, depth: 4, spots: 12, waterlines: 8, peaks: 0, net: 0, roses: "1", rose: "8", rivers: 7, rwide: 0.5, forest: "mixed", treedens: 0.3, villages: 5, roads: "on", frame: "on", scalebar: "on", colourpen: "water", pitch: 0.8 },
+  antique: { seed: 17, islands: "archipelago", sea: 0.33, relief: 700, rugged: 0.6, style: "antique", interval: 40, depth: 0, spots: 0, waterlines: 9, peaks: 14, net: 3, roses: "2", rose: "16", rivers: 6, rwide: 0.5, forest: "lollipop", treedens: 0.35, villages: 4, roads: "off", frame: "on", scalebar: "on", colourpen: "rhumb", pitch: 0.8 },
+  treasure: { seed: 73, islands: "one", sea: 0.5, relief: 600, rugged: 0.6, style: "treasure", interval: 40, depth: 0, spots: 0, waterlines: 8, peaks: 8, net: 3, roses: "1", rose: "16", rivers: 4, rwide: 0.4, forest: "mixed", treedens: 0.4, villages: 0, roads: "off", frame: "on", scalebar: "on", colourpen: "rhumb", pitch: 0.8 },
+  atoll: { seed: 5, islands: "atoll", sea: 0.5, relief: 120, rugged: 0.4, style: "antique", interval: 10, depth: 0, spots: 0, waterlines: 12, peaks: 0, net: 4, roses: "1", rose: "8", rivers: 0, rwide: 0.5, forest: "lollipop", treedens: 0.5, villages: 2, roads: "off", frame: "on", scalebar: "on", colourpen: "rhumb", pitch: 0.8 },
+  volcano: { seed: 28, islands: "volcano", sea: 0.45, relief: 1400, rugged: 0.35, style: "antique", interval: 50, depth: 0, spots: 0, waterlines: 8, peaks: 0, net: 0, roses: "1", rose: "16", rivers: 9, rwide: 0.5, forest: "conifer", treedens: 0.3, villages: 3, roads: "off", frame: "on", scalebar: "on", colourpen: "water", pitch: 0.8 },
+  delta: { seed: 61, islands: "delta", sea: 0.42, relief: 120, rugged: 0.3, style: "survey", interval: 10, depth: 5, spots: 6, waterlines: 8, peaks: 0, net: 0, roses: "1", rose: "8", rivers: 12, rwide: 0.9, forest: "lollipop", treedens: 0.35, villages: 6, roads: "on", frame: "on", scalebar: "on", colourpen: "water", pitch: 0.8 },
+  portolan: { seed: 204, islands: "archipelago", sea: 0.33, relief: 500, rugged: 0.7, style: "antique", interval: 40, depth: 0, spots: 0, waterlines: 6, peaks: 6, net: 9, roses: "1", rose: "16", rivers: 3, rwide: 0.5, forest: "off", treedens: 0.3, villages: 3, roads: "off", frame: "on", scalebar: "on", colourpen: "rhumb", pitch: 0.8 },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `island-atlas-s${r.o.seed}-${r.o.style}-${r.o.islands}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>

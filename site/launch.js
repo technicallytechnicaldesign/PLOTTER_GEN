@@ -3,11 +3,11 @@
 const $=id=>document.getElementById(id);
 try{
  const id=new URLSearchParams(location.search).get('specimen');
- const response=await fetch('catalogue.json');if(!response.ok)throw Error('The catalogue could not be loaded.');
+ const response=await fetch('catalogue.json',{cache:'no-cache'});if(!response.ok)throw Error('The catalogue could not be loaded.');
  const catalogue=await response.json();const collection=catalogue.find(c=>c.samples.some(s=>s.id===id));if(!collection)throw Error('This specimen is not in the current catalogue.');
  const specimen=collection.samples.find(s=>s.id===id),url='../'+collection.page;
  $('launch-title').textContent=specimen.title;$('standalone').href=url;$('standalone').hidden=false;
- const source=await fetch(url);if(!source.ok)throw Error('The studio is unavailable.');
+ const source=await fetch(url,{cache:'no-cache'});if(!source.ok)throw Error('The studio is unavailable.');
  const text=(await source.text()).replace(/^\uFEFF/,'').replace(/\r\n/g,'\n');
  const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))].map(x=>x.toString(16).padStart(2,'0')).join('');
  if(hash!==specimen.sourceHash)throw Error('This studio has been updated since the specimen was made. Open the standalone studio to explore the new version, or return to the atlas after its previews are refreshed.');

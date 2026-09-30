@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spider web studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Spider web studio</h1>
+  <p class="sub">Webs grown in the order a spider builds them: a bridge thread, a frame hung from twigs and grass, radii from a hub that sits above the middle, then the sticky spiral laid from the outside in with turn-backs in the roomy lower half. Every seed comes out a little lopsided. Export a millimetre SVG with two or three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="garden">Garden orb</button><button data-preset="dew">Dew morning</button><button data-preset="argiope">Argiope</button><button data-preset="cobweb">Old cobweb corner</button><button data-preset="moonhedge">Moonlit hedge</button><button data-preset="sheet">Meadow sheet</button><button data-preset="zygiella">Retreat web</button><button data-preset="tattered">Tattered orb</button></div>
+  </fieldset>
+  <fieldset><legend>Web</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="11"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Web <select id="web"><option value="orb">orb web</option><option value="tattered">tattered orb</option><option value="cobweb">cobweb corner</option><option value="sheet">sheet web in grass</option><option value="hedge">a hedge of webs</option></select></label>
+    <label>Size (share of the page) <output id="o-size"></output><input type="range" id="size" min="0.55" max="1" step="0.01" value="0.8"></label>
+    <label>Webs in a hedge <output id="o-webs"></output><input type="range" id="webs" min="2" max="4" step="1" value="3"></label>
+  </fieldset>
+  <fieldset><legend>Orb build</legend>
+    <label>Frame threads <output id="o-frame"></output><input type="range" id="frame" min="4" max="7" step="1" value="5"></label>
+    <label>Radii <output id="o-radii"></output><input type="range" id="radii" min="10" max="40" step="1" value="22"></label>
+    <label>Hub height above centre <output id="o-hubup"></output><input type="range" id="hubup" min="0.06" max="0.32" step="0.01" value="0.16"></label>
+    <label>Free zone around the hub <output id="o-freezone"></output><input type="range" id="freezone" min="0.08" max="0.4" step="0.01" value="0.16"></label>
+    <label>Capture spacing, or sheet mesh (mm) <output id="o-spacing"></output><input type="range" id="spacing" min="0.9" max="4" step="0.05" value="1.9"></label>
+    <label>Thread sag toward the hub <output id="o-sag"></output><input type="range" id="sag" min="0" max="0.5" step="0.01" value="0.16"></label>
+    <label>Radii pulled at crossings <output id="o-pull"></output><input type="range" id="pull" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Turn-backs in the lower sector <output id="o-turnbacks"></output><input type="range" id="turnbacks" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Capture spiral pen <select id="capen"><option value="shade">shade pen (0.3)</option><option value="key">key pen (one-pen plot)</option></select></label>
+  </fieldset>
+  <fieldset><legend>Extras</legend>
+    <label>Stabilimentum <select id="stab"><option value="none">none</option><option value="pair">zigzag band, up and down</option><option value="cross">zigzag cross (Argiope)</option></select></label>
+    <label>Band length <output id="o-stablen"></output><input type="range" id="stablen" min="0.2" max="0.9" step="0.05" value="0.55"></label>
+    <label>Torn patch <output id="o-damage"></output><input type="range" id="damage" min="0" max="1" step="0.05" value="0"></label>
+    <label>Missing sector and retreat <output id="o-sector"></output><input type="range" id="sector" min="0" max="1" step="0.05" value="0"></label>
+    <label>Dew <output id="o-dew"></output><input type="range" id="dew" min="0" max="1" step="0.05" value="0"></label>
+    <label>Drop size (mm radius) <output id="o-dewsize"></output><input type="range" id="dewsize" min="0.3" max="1.2" step="0.05" value="0.6"></label>
+    <label>Dew pen <select id="dewcol"><option value="2f6f9f">blue</option><option value="1f8a7a">teal</option><option value="6a4c9c">violet</option><option value="b03a30">red</option></select></label>
+    <label>Spider <select id="spider"><option value="hub">at the hub</option><option value="retreat">at the retreat</option><option value="none">none</option></select></label>
+    <label>Spider body length (mm) <output id="o-spidersize"></output><input type="range" id="spidersize" min="3" max="16" step="0.5" value="7"></label>
+  </fieldset>
+  <fieldset><legend>Moon</legend>
+    <label>Moon behind the web <select id="moon"><option value="off">off</option><option value="on">on</option></select></label>
+    <label>Moon radius (mm) <output id="o-moonr"></output><input type="range" id="moonr" min="15" max="95" step="1" value="55"></label>
+    <label>Moon across <output id="o-moonx"></output><input type="range" id="moonx" min="0" max="1" step="0.01" value="0.7"></label>
+    <label>Moon down <output id="o-moony"></output><input type="range" id="moony" min="0" max="1" step="0.01" value="0.25"></label>
+  </fieldset>
+  <fieldset><legend>Anchors and lines</legend>
+    <label>Tangle density (cobweb, sheet) <output id="o-tangle"></output><input type="range" id="tangle" min="0.2" max="1" step="0.05" value="0.6"></label>
+    <label>Twig thickness (mm) <output id="o-thick"></output><input type="range" id="thick" min="3" max="14" step="0.5" value="7"></label>
+    <label>Leaves <output id="o-leaves"></output><input type="range" id="leaves" min="0" max="40" step="1" value="14"></label>
+    <label>Leaf size (mm) <output id="o-leafsize"></output><input type="range" id="leafsize" min="5" max="24" step="0.5" value="11"></label>
+    <label>Bark <select id="bark"><option value="lines">lengthwise lines</option><option value="hatch">edge hatching</option><option value="plain">plain outline</option></select></label>
+    <label>Hatch and line pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (key, shade, then colour), numbered in plotting order. Every file carries the same four corner ticks so Design Space sizes them identically: place each file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">Each seed builds a web the way a spider would. First the twigs or grass stems come in from the page edges and the frame corners are pinned to points on them. A bridge thread and the frame threads go up, then the radii run from the hub to the frame, with the hub above the middle so the lower half is the bigger one. A tight mesh of irregular rings sits at the hub, an empty ring surrounds it, and the sticky spiral is laid from the outside in. Its spacing is uneven and widens toward the frame, each piece between two radii sags a little toward the hub, and the radii are tugged sideways where the spiral crosses them. In the lower sector the spiral sometimes doubles back before it carries on. Twigs, leaves and the spider hide the threads behind them, and threads cut the moon lines with a small gap so the web reads in silhouette. The stats line lists the checks: spiral pieces that do not run between two radii, hub height, anchors, pen length and build time. In Design Space: all layers to Pen, black 0.4 on the key layer, black 0.3 (or grey) on the shade layer, a coloured pen on the dew layer, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// ---------------- basics ----------------
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const gauss = rnd => (rnd() + rnd() + rnd() + rnd() - 2) * 1.732;
+const unit = (x, y) => { const l = Math.hypot(x, y) || 1e-9; return [x / l, y / l]; };
+
+// ---------------- path helpers (from gear-weave) ----------------
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+const circ = (cx, cy, r, n) => { const p = []; for (let i = 0; i < n; i++) { const a = TAU * i / n; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; };
+function orderPaths(paths) {
+  const n = paths.length; if (n < 3) return paths;
+  const used = new Uint8Array(n), out = [], sx = new Float64Array(n), sy = new Float64Array(n), ex = new Float64Array(n), ey = new Float64Array(n);
+  for (let i = 0; i < n; i++) { const p = paths[i][0]; sx[i] = p[0][0]; sy[i] = p[0][1]; ex[i] = p.at(-1)[0]; ey[i] = p.at(-1)[1]; }
+  let cx = 0, cy = 0;
+  for (let c = 0; c < n; c++) {
+    let best = -1, bd = Infinity, flip = false;
+    for (let i = 0; i < n; i++) {
+      if (used[i]) continue;
+      let d = (sx[i] - cx) ** 2 + (sy[i] - cy) ** 2; if (d < bd) { bd = d; best = i; flip = false; }
+      if (!paths[i][1]) { d = (ex[i] - cx) ** 2 + (ey[i] - cy) ** 2; if (d < bd) { bd = d; best = i; flip = true; } }
+    }
+    used[best] = 1; const [p, cl] = paths[best];
+    if (flip) { out.push([p.slice().reverse(), cl]); cx = sx[best]; cy = sy[best]; }
+    else { out.push(paths[best]); cx = cl ? sx[best] : ex[best]; cy = cl ? sy[best] : ey[best]; }
+  }
+  return out;
+}
+
+// ---------------- geometry ----------------
+function pip(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+function polyCentroid(p) {
+  let a = 0, cx = 0, cy = 0; const n = p.length;
+  for (let i = 0; i < n; i++) { const j = (i + 1) % n, c = p[i][0] * p[j][1] - p[j][0] * p[i][1]; a += c; cx += (p[i][0] + p[j][0]) * c; cy += (p[i][1] + p[j][1]) * c; }
+  if (Math.abs(a) < 1e-6) return [p.reduce((s, v) => s + v[0], 0) / n, p.reduce((s, v) => s + v[1], 0) / n];
+  return [cx / (3 * a), cy / (3 * a)];
+}
+function rayHit(o, d, poly) {
+  let best = Infinity; const n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i], b = poly[(i + 1) % n], ex = b[0] - a[0], ey = b[1] - a[1], den = d[0] * ey - d[1] * ex;
+    if (Math.abs(den) < 1e-12) continue;
+    const wx = a[0] - o[0], wy = a[1] - o[1], t = (wx * ey - wy * ex) / den, u = (wx * d[1] - wy * d[0]) / den;
+    if (t > 1e-6 && u >= 0 && u <= 1 && t < best) best = t;
+  }
+  return best;
+}
+function qcurve(a, b, c, step) {
+  const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(2, Math.ceil(L / step)), p = [];
+  for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t; p.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]); }
+  return p;
+}
+function sagCurve(a, b, toward, sag, step) {
+  const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, [vx, vy] = unit(toward[0] - mx, toward[1] - my);
+  return qcurve(a, b, [mx + vx * 2 * sag, my + vy * 2 * sag], step);
+}
+const gravCurve = (a, b, sag) => qcurve(a, b, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 2 * sag], 1.2);
+const segDist2 = (px, py, ax, ay, bx, by) => {
+  const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0;
+  const qx = ax + dx * t - px, qy = ay + dy * t - py; return qx * qx + qy * qy;
+};
+
+// spatial grid of occluders (polygons and circles), tested by (x, y) and an optional group to skip
+function Occ(cell) {
+  const g = new Map(), key = (i, j) => (i + 200) * 4096 + (j + 200);
+  return {
+    add(it) {
+      if (it.poly) { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of it.poly) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } it.x0 = x0; it.y0 = y0; it.x1 = x1; it.y1 = y1; }
+      else { it.x0 = it.cx - it.r; it.x1 = it.cx + it.r; it.y0 = it.cy - it.r; it.y1 = it.cy + it.r; it.r2 = it.r * it.r; }
+      for (let i = Math.floor(it.x0 / cell); i <= Math.floor(it.x1 / cell); i++) for (let j = Math.floor(it.y0 / cell); j <= Math.floor(it.y1 / cell); j++) { const k = key(i, j); if (!g.has(k)) g.set(k, []); g.get(k).push(it); }
+    },
+    hit(x, y, skip) {
+      const a = g.get(key(Math.floor(x / cell), Math.floor(y / cell))); if (!a) return false;
+      for (const it of a) {
+        if (it.grp === skip) continue;
+        if (x < it.x0 || x > it.x1 || y < it.y0 || y > it.y1) continue;
+        if (it.poly ? pip(it.poly, x, y) : (x - it.cx) ** 2 + (y - it.cy) ** 2 < it.r2) return true;
+      }
+      return false;
+    },
+  };
+}
+
+// ---------------- twigs, grass stems and leaves ----------------
+function makeBranch(rnd, E0, V, opt) {
+  const L1 = Math.hypot(V[0] - E0[0], V[1] - E0[1]) || 1, dx = (V[0] - E0[0]) / L1, dy = (V[1] - E0[1]) / L1, nx = -dy, ny = dx;
+  const A = Math.min(opt.wob * 0.07 * L1, opt.wob * 6), n1 = Math.max(3, Math.ceil(L1 / 3)), am = [rnd() - 0.5, rnd() - 0.5, rnd() - 0.5];
+  const cl = [];
+  for (let i = 0; i <= n1; i++) {
+    const t = i / n1, off = A * (am[0] * 2 * Math.sin(Math.PI * t) + am[1] * Math.sin(2 * Math.PI * t) + 0.5 * am[2] * Math.sin(3 * Math.PI * t));
+    cl.push([E0[0] + dx * L1 * t + nx * off, E0[1] + dy * L1 * t + ny * off]);
+  }
+  const sV = L1, a0 = Math.atan2(dy, dx), bx = opt.box, inside = p => p[0] > bx[0] + 2 && p[0] < bx[2] - 2 && p[1] > bx[1] + 2 && p[1] < bx[3] - 2;
+  let ext = opt.ext, tail = [];
+  for (let tries = 0; tries < 7; tries++) {
+    tail = []; const n2 = Math.max(1, Math.ceil(ext / 3)); let x = V[0], y = V[1], ok = true;
+    for (let j = 1; j <= n2; j++) { const t = j / n2, a = a0 + opt.bend * t + 0.12 * Math.sin(j * 1.7 + am[0] * 6); x += Math.cos(a) * ext / n2; y += Math.sin(a) * ext / n2; tail.push([x, y]); if (!inside([x, y])) ok = false; }
+    if (ok) break; ext *= 0.65;
+  }
+  const cl2 = cl.concat(tail), cum = [0];
+  for (let i = 1; i < cl2.length; i++) cum.push(cum[i - 1] + Math.hypot(cl2[i][0] - cl2[i - 1][0], cl2[i][1] - cl2[i - 1][1]));
+  const len = cum.at(-1), tx = [], ty = [], w = [];
+  for (let i = 0; i < cl2.length; i++) {
+    const p = cl2[Math.max(0, i - 1)], q = cl2[Math.min(cl2.length - 1, i + 1)], [ux, uy] = unit(q[0] - p[0], q[1] - p[1]);
+    tx.push(ux); ty.push(uy);
+    const s = cum[i] / len; w.push(Math.max(opt.wmin, opt.w0 * (1 - 0.6 * Math.pow(s, 0.9))) * (1 + 0.07 * Math.sin(cum[i] * 0.31 + am[1] * 9)));
+  }
+  const left = [], right = [];
+  for (let i = 0; i < cl2.length; i++) { left.push([cl2[i][0] - ty[i] * w[i] / 2, cl2[i][1] + tx[i] * w[i] / 2]); right.push([cl2[i][0] + ty[i] * w[i] / 2, cl2[i][1] - tx[i] * w[i] / 2]); }
+  const k = cl2.length - 1, tip = [cl2[k][0] + tx[k] * w[k] * 0.45, cl2[k][1] + ty[k] * w[k] * 0.45];
+  const poly = left.concat([tip], right.reverse());
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of poly) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return { cl: cl2, cum, len, tx, ty, w, poly, bb: [x0, y0, x1, y1], sV, w0: opt.w0, kind: opt.kind || "branch", front: opt.front !== false, parent: opt.parent || null };
+}
+function brAt(b, s) {
+  const c = b.cum; s = clamp(s, 0, b.len); let lo = 0, hi = c.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= s) lo = m; else hi = m; }
+  const t = (s - c[lo]) / ((c[hi] - c[lo]) || 1), [tx, ty] = unit(lerp(b.tx[lo], b.tx[hi], t), lerp(b.ty[lo], b.ty[hi], t));
+  return { x: lerp(b.cl[lo][0], b.cl[hi][0], t), y: lerp(b.cl[lo][1], b.cl[hi][1], t), tx, ty, nx: -ty, ny: tx, w: lerp(b.w[lo], b.w[hi], t) };
+}
+function barkLines(b, rnd, o) {
+  const out = []; if (o.bark === "plain") return out;
+  if (o.bark === "hatch" && b.kind === "branch") {
+    const st = Math.max(o.pitch * 1.7, 1.3);
+    for (let s = 2; s < b.len - 1; s += st * (0.8 + 0.4 * rnd())) {
+      const f = brAt(b, s), f2 = brAt(b, Math.min(b.len, s + 1.0)); if (f.w < 2.6) continue;
+      const e1 = f.w * 0.5 - 0.2, e0 = e1 - Math.min(0.5 * f.w, 2.6);
+      out.push([[f.x + f.nx * e1, f.y + f.ny * e1], [f2.x + f2.nx * e0, f2.y + f2.ny * e0]]);
+    }
+    return out;
+  }
+  const sp = Math.max(o.pitch * 1.3, 1.0), nl = b.kind === "branch" ? clamp(Math.floor(0.8 * b.w0 / sp) + 1, 1, 5) : 1;
+  for (let l = 0; l < nl; l++) {
+    const off = (l - (nl - 1) / 2) * sp; let s = rnd() * 8;
+    while (s < b.len) {
+      const on = 8 + rnd() * 28; let pts = [];
+      for (let q = s; q <= Math.min(b.len, s + on); q += 1.5) {
+        const f = brAt(b, q);
+        if (Math.abs(off) > 0.42 * f.w) { if (pts.length > 1) out.push(pts); pts = []; continue; }
+        pts.push([f.x + f.nx * off, f.y + f.ny * off]);
+      }
+      if (pts.length > 1) out.push(pts);
+      s += on + 3 + rnd() * 9;
+    }
+  }
+  return out;
+}
+function makeLeaf(base, ang, len, wid, curl) {
+  const n = 14, ax = Math.cos(ang), ay = Math.sin(ang), px = -ay, py = ax, Lf = [], Rt = [];
+  const hw = t => wid / 2 * Math.pow(Math.sin(Math.PI * Math.pow(t, 0.75)), 0.85) * (1 - 0.2 * t);
+  const axis = t => { const off = curl * len * t * t * 0.3; return [base[0] + ax * len * t + px * off, base[1] + ay * len * t + py * off]; };
+  for (let i = 0; i <= n; i++) { const t = i / n, c = axis(t), h = hw(t); Lf.push([c[0] + px * h, c[1] + py * h]); Rt.push([c[0] - px * h, c[1] - py * h]); }
+  const poly = Lf.concat(Rt.reverse().slice(1, -1)), mid = [], veins = [];
+  for (let i = 0; i <= 12; i++) mid.push(axis(i / 12 * 0.93));
+  const vs = Math.max(2.0, len / 6) / len;
+  for (let t = 0.16; t < 0.85; t += vs) {
+    const c = axis(t), t2 = Math.min(0.97, t + 0.16), h2 = hw(t2) * 0.8, c2 = axis(t2);
+    veins.push([c, [c2[0] + px * h2, c2[1] + py * h2]], [c, [c2[0] - px * h2, c2[1] - py * h2]]);
+  }
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const [x, y] of poly) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return { poly, mid, veins, bb: [x0, y0, x1, y1] };
+}
+
+// ---------------- spider ----------------
+function makeSpider(rnd, cx, cy, size, head) {
+  const hx = Math.cos(head), hy = Math.sin(head), px = -hy, py = hx;
+  const ceph = { c: [cx + hx * size * 0.2, cy + hy * size * 0.2], a: size * 0.22, b: size * 0.17, h: head };
+  const abd = { c: [cx - hx * size * 0.27, cy - hy * size * 0.27], a: size * 0.34, b: size * 0.27, h: head };
+  const legs = [], TH = [0.5, 1.0, 1.55, 2.15], LEN = [0.95, 1.08, 1.0, 1.2];
+  for (let i = 0; i < 4; i++) for (const s of [1, -1]) {
+    const phi = TH[i] * 0.85, base = [ceph.c[0] + hx * Math.cos(phi) * ceph.a + s * px * Math.sin(phi) * ceph.b, ceph.c[1] + hy * Math.cos(phi) * ceph.a + s * py * Math.sin(phi) * ceph.b];
+    const jit = (rnd() - 0.5) * 0.18, a1 = head + s * (TH[i] + jit), a2 = head + s * (TH[i] + (i < 2 ? -0.8 : 0.55) + jit), a3 = head + s * (TH[i] + (i < 2 ? -1.3 : 0.9) + jit);
+    const l1 = size * 0.72 * LEN[i], l2 = size * 0.9 * LEN[i], l3 = size * 0.6 * LEN[i];
+    const k1 = [base[0] + Math.cos(a1) * l1, base[1] + Math.sin(a1) * l1], k2 = [k1[0] + Math.cos(a2) * l2, k1[1] + Math.sin(a2) * l2], k3 = [k2[0] + Math.cos(a3) * l3, k2[1] + Math.sin(a3) * l3];
+    legs.push([base, k1, k2, k3]);
+  }
+  return { ceph, abd, legs };
+}
+const inEll = (e, x, y, g) => { const dx = x - e.c[0], dy = y - e.c[1], u = dx * Math.cos(e.h) + dy * Math.sin(e.h), v = -dx * Math.sin(e.h) + dy * Math.cos(e.h); return (u / (e.a + g)) ** 2 + (v / (e.b + g)) ** 2 < 1; };
+const ellPoly = (e, g, n) => { const p = [], c = Math.cos(e.h), s = Math.sin(e.h); for (let i = 0; i < n; i++) { const t = TAU * i / n, u = (e.a + g) * Math.cos(t), v = (e.b + g) * Math.sin(t); p.push([e.c[0] + u * c - v * s, e.c[1] + u * s + v * c]); } return p; };
+
+// ---------------- the orb web ----------------
+function orbWeb(rnd, P) {
+  const V = P.verts, nf = V.length, T = P.T || (p => p), N = P.nr;
+  const cen = polyCentroid(V), Rm = V.reduce((a, v) => a + Math.hypot(v[0] - cen[0], v[1] - cen[1]), 0) / nf;
+  let hub = [cen[0], cen[1] - P.hubup * Rm];
+  // frame threads and the bridge thread
+  const fpoly = [], all = [];
+  let topI = 0, topY = 1e9;
+  for (let i = 0; i < nf; i++) { const a = V[i], b = V[(i + 1) % nf], my = (a[1] + b[1]) / 2; if (my < topY) { topY = my; topI = i; } }
+  for (let i = 0; i < nf; i++) {
+    const a = V[i], b = V[(i + 1) % nf], L = Math.hypot(b[0] - a[0], b[1] - a[1]), k = 0.03 * (0.6 + 0.8 * rnd()) * (i === topI ? 1.8 : 1);
+    const c = sagCurve(a, b, cen, k * L, 1.5); all.push({ pts: c, pen: "key" }); c.slice(0, -1).forEach(p => fpoly.push(p));
+    if (i === topI) all.push({ pts: sagCurve(a, b, cen, 0.012 * L, 1.5), pen: "key" });
+  }
+  if (!pip(fpoly, hub[0], hub[1])) hub = cen.slice();
+  // radii
+  const a0 = rnd() * TAU, ang = [], dir = [], E = [], Lr = [];
+  for (let k = 0; k < N; k++) ang.push(a0 + (k + (rnd() - 0.5) * 0.6) * TAU / N);
+  for (let k = 0; k < N; k++) {
+    const d = [Math.cos(ang[k]), Math.sin(ang[k])]; dir.push(d);
+    let t = rayHit(hub, d, fpoly); if (!isFinite(t)) t = Rm;
+    E.push([hub[0] + d[0] * t, hub[1] + d[1] * t]); Lr.push(t);
+  }
+  const alive = new Array(N).fill(true); let sig = -1;
+  if (P.sector > 0) {
+    const sc = -Math.PI / 2 + (rnd() - 0.5) * 1.0, angd = (a, b) => { let d = (a - b) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return Math.abs(d); };
+    const hw = Math.max(P.sector * 0.9, 1.3 * TAU / N); let bd = 9;
+    for (let k = 0; k < N; k++) { const d = angd(ang[k], sc); if (d < bd) { bd = d; sig = k; } }
+    for (let k = 0; k < N; k++) if (angd(ang[k], sc) < hw && k !== sig) alive[k] = false;
+  }
+  const al = []; for (let k = 0; k < N; k++) if (alive[k]) al.push(k);
+  const nAct = al.length, Lm = al.reduce((s, k) => s + Lr[k], 0) / nAct;
+  const gapAfter = al.map((k, i) => al[(i + 1) % nAct] !== (k + 1) % N);
+  const rs = Math.max(1.2, N * 0.42 / TAU), hubStep = Math.max(P.pitch * 1.3, 0.9), hubR = Math.max(rs + 2.2 * hubStep, 0.45 * P.fz * Lm), freeR = Math.max(hubR + 1.6, P.fz * Lm);
+  // tears
+  const tears = [];
+  for (let t = 0; t < P.tears; t++) {
+    const k = al[Math.floor(rnd() * nAct)], fr = 0.35 + 0.45 * rnd(), c = [hub[0] + dir[k][0] * Lr[k] * fr, hub[1] + dir[k][1] * Lr[k] * fr];
+    tears.push({ x: c[0], y: c[1], r: P.tearR * (t ? 0.55 : 1) * (0.75 + 0.5 * rnd()) * Lm, p: [rnd() * 6, rnd() * 6, rnd() * 6] });
+  }
+  if (P.tattered) {
+    for (let t = 0; t < 2; t++) { const i = Math.floor(rnd() * nf), a = V[i], b = V[(i + 1) % nf], u = 0.3 + 0.4 * rnd(); tears.push({ x: lerp(a[0], b[0], u), y: lerp(a[1], b[1], u), r: 0.07 * Math.hypot(b[0] - a[0], b[1] - a[1]) + 1, p: [rnd() * 6, rnd() * 6, rnd() * 6] }); }
+    for (let t = 0; t < 3; t++) { const k = al[Math.floor(rnd() * nAct)], fr = 0.2 + 0.7 * rnd(); tears.push({ x: hub[0] + dir[k][0] * Lr[k] * fr, y: hub[1] + dir[k][1] * Lr[k] * fr, r: (0.05 + 0.05 * rnd()) * Lm, p: [rnd() * 6, rnd() * 6, rnd() * 6] }); }
+  }
+  const inTear = (x, y) => {
+    for (const t of tears) { const dx = x - t.x, dy = y - t.y, d2 = dx * dx + dy * dy; if (d2 > (t.r * 1.5) ** 2) continue; const a = Math.atan2(dy, dx), r = t.r * (1 + 0.22 * Math.sin(3 * a + t.p[0]) + 0.12 * Math.sin(5 * a + t.p[1]) + 0.08 * Math.sin(8 * a + t.p[2])); if (d2 < r * r) return true; }
+    return false;
+  };
+  // capture spiral, laid from the outside in
+  const radCross = Array.from({ length: N }, () => []), segs = [], gm = f => P.sp * (0.62 + 0.9 * Math.pow(f, 1.4)), minSep = Math.max(0.55, 0.5 * P.sp);
+  const addCross = (k, f, dw, gap) => {
+    let d = f * Lr[k]; const rc = radCross[k]; if (rc.length) d = Math.min(d, rc[rc.length - 1].d - minSep);
+    if (d < freeR) return null;
+    const lat = dw * P.pull * (0.15 + 0.3 * rnd()) * gap, o = { k, d, x: hub[0] + dir[k][0] * d - dir[k][1] * lat, y: hub[1] + dir[k][1] * d + dir[k][0] * lat };
+    rc.push(o); return o;
+  };
+  let f = 0.95, ci = Math.floor(rnd() * nAct), dw = rnd() < 0.5 ? 1 : -1; const queue = []; let cool = 0;
+  let prev = addCross(al[ci], f, dw, gm(f)), guard = 0;
+  while (prev && guard++ < 14000) {
+    if (cool > 0) cool--;
+    if (!queue.length && cool === 0 && P.tb > 0 && Math.sin(ang[al[ci]]) > 0.3 && rnd() < P.tb * 0.12) {
+      const m = 2 + Math.floor(rnd() * 3), m2 = 1 + Math.floor(rnd() * (m - 1));
+      for (let i = 0; i < m; i++) queue.push(dw); for (let i = 0; i < m2; i++) queue.push(-dw);
+      cool = Math.round(nAct * 0.9) + m + m2;
+    }
+    let d0 = queue.length ? queue.shift() : dw, nx = (ci + d0 + nAct) % nAct;
+    const crossesGap = d0 > 0 ? gapAfter[ci] : gapAfter[nx];
+    if (crossesGap) { d0 = -d0; nx = (ci + d0 + nAct) % nAct; queue.length = 0; dw = d0; }
+    const step = gm(f) / (Lm * nAct) * (0.7 + 0.6 * rnd());
+    f -= d0 === dw || crossesGap ? step : -step;
+    f = Math.min(f, 0.97);
+    ci = nx; const cur = addCross(al[ci], f, d0, gm(f)); if (!cur) break;
+    segs.push({ a: prev, b: cur }); prev = cur;
+  }
+  // radii pass through every crossing, so a crossing tugs its radius sideways
+  const rs0 = [];
+  for (let k = 0; k < N; k++) {
+    rs0.push([hub[0] + dir[k][0] * rs, hub[1] + dir[k][1] * rs]);
+    if (!alive[k] && k !== sig) continue;
+    const pts = [rs0[k]].concat(radCross[k].slice().sort((p, q) => p.d - q.d).map(c => [c.x, c.y]), [E[k]]);
+    all.push({ pts, pen: "key" });
+  }
+  // spiral pieces and their checks
+  let segBad = 0; const posOf = new Map(al.map((k, i) => [k, i])), dewSegs = [];
+  let cur = [], tattered = P.tattered;
+  const spiral = [];
+  for (const s of segs) {
+    const L = Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y), okAdj = s.a.k !== s.b.k && [1, nAct - 1].includes(Math.abs(posOf.get(s.a.k) - posOf.get(s.b.k)) % nAct) && radCross[s.a.k].includes(s.a) && radCross[s.b.k].includes(s.b);
+    if (!okAdj) segBad++;
+    const c = sagCurve([s.a.x, s.a.y], [s.b.x, s.b.y], hub, P.sag > 0 ? clamp(P.sag * L * 1.6, 0.15, Math.min(1.1, 0.45 * P.sp)) : 0, 0.7);
+    const mid = c[c.length >> 1], dead = inTear(mid[0], mid[1]) || inTear(s.a.x, s.a.y) || inTear(s.b.x, s.b.y);
+    dewSegs.push({ pts: c, len: L, dead });
+    if (tattered && rnd() < 0.04) { if (cur.length > 1) spiral.push(cur); cur = []; continue; }
+    if (cur.length) c.shift(); cur = cur.concat(c);
+  }
+  if (cur.length > 1) spiral.push(cur);
+  for (const pts of spiral) all.push({ pts, pen: P.pen });
+  // hub mesh: tight irregular rings
+  for (let r = rs + hubStep; r <= hubR; r += hubStep) {
+    const pts = [];
+    for (let k = 0; k < N; k++) pts.push([hub[0] + dir[k][0] * (r + (rnd() - 0.5) * 0.18 * hubStep), hub[1] + dir[k][1] * (r + (rnd() - 0.5) * 0.18 * hubStep)]);
+    let ring = [];
+    for (let k = 0; k < N; k++) { const a = pts[k], b = pts[(k + 1) % N], c = sagCurve(a, b, hub, 0.03 * Math.hypot(b[0] - a[0], b[1] - a[1]), 0.6); c.pop(); ring = ring.concat(c); }
+    ring.push(ring[0]); all.push({ pts: ring, pen: "shade" });
+  }
+  // stabilimentum: a dense zigzag band, in front of the spiral
+  const stabThreads = [], stabPolys = [];
+  if (P.stab !== "none") {
+    const base = P.stab === "pair" ? [-Math.PI / 2 + (rnd() - 0.5) * 0.3, Math.PI / 2 + (rnd() - 0.5) * 0.3] : (() => { const b = -Math.PI / 4 + (rnd() - 0.5) * 0.25; return [b, b + Math.PI / 2, b + Math.PI, b + 1.5 * Math.PI]; })();
+    const zs = Math.max(1.0, P.pitch * 1.4);
+    for (const a of base) {
+      const d = [Math.cos(a), Math.sin(a)], pp = [-d[1], d[0]], d0 = Math.max(hubR * 0.6, rs * 1.6), d1 = d0 + P.stablen * Lm * (0.75 + 0.25 * rnd()) * (Math.sin(a) > 0.2 ? 1.12 : 1), pts = [];
+      let sgn = 1; const wmax = 1.7;
+      for (let s = d0, q = 0; s <= d1; s += zs, q++) { const u = (s - d0) / (d1 - d0), w = (0.9 + 0.8 * Math.min(1, u / 0.35)) * (1 - 0.5 * Math.pow(u, 3)); pts.push([hub[0] + d[0] * s + pp[0] * w * sgn, hub[1] + d[1] * s + pp[1] * w * sgn]); sgn = -sgn; }
+      if (pts.length > 1) stabThreads.push({ pts, pen: "key", grp: "st" });
+      stabPolys.push([[hub[0] + d[0] * d0 + pp[0] * (wmax + 0.4), hub[1] + d[1] * d0 + pp[1] * (wmax + 0.4)], [hub[0] + d[0] * d1 + pp[0] * (wmax * 0.6), hub[1] + d[1] * d1 + pp[1] * (wmax * 0.6)], [hub[0] + d[0] * d1 - pp[0] * (wmax * 0.6), hub[1] + d[1] * d1 - pp[1] * (wmax * 0.6)], [hub[0] + d[0] * d0 - pp[0] * (wmax + 0.4), hub[1] + d[1] * d0 - pp[1] * (wmax + 0.4)]]);
+    }
+  }
+  // torn patch: cut threads at the hole, let loose ends droop
+  const threads = [];
+  const dangle = (p, dx, dy, len) => {
+    const out = [[p[0], p[1]]]; let [vx, vy] = unit(dx, dy), x = p[0], y = p[1]; const step = 0.6, n = Math.ceil(len / step), curl = rnd() < 0.45, cd = rnd() < 0.5 ? 1 : -1;
+    for (let i = 1; i <= n; i++) {
+      vy += 0.05 + 0.2 * i / n; vx *= 0.97;
+      if (curl && i > n * 0.55) { const a = cd * 0.35 * (i / n), c = Math.cos(a), s = Math.sin(a); [vx, vy] = [vx * c - vy * s, vx * s + vy * c]; }
+      [vx, vy] = unit(vx, vy); x += vx * step; y += vy * step; out.push([x, y]);
+    }
+    return out;
+  };
+  for (const th of all) {
+    if (!tears.length) { threads.push(th); continue; }
+    const d = densify(th.pts, false, 0.5), ok = d.map(([x, y]) => !inTear(x, y)), n = d.length;
+    if (ok.every(Boolean)) { threads.push(th); continue; }
+    let i = 0;
+    while (i < n) {
+      if (!ok[i]) { i++; continue; }
+      let j = i; while (j + 1 < n && ok[j + 1]) j++;
+      const piece = d.slice(i, j + 1);
+      if (plen(piece, false) >= 0.3) threads.push({ pts: piece, pen: th.pen });
+      if (piece.length >= 2) {
+        if (j + 1 < n && !ok[j + 1] && rnd() < 0.75) { const q = piece.at(-1), r = piece.at(-2); threads.push({ pts: dangle(q, q[0] - r[0], q[1] - r[1], (2.5 + rnd() * 6) * (0.5 + P.tearR * 3)), pen: th.pen }); }
+        if (i > 0 && !ok[i - 1] && rnd() < 0.75) { const q = piece[0], r = piece[1]; threads.push({ pts: dangle(q, q[0] - r[0], q[1] - r[1], (2.5 + rnd() * 6) * (0.5 + P.tearR * 3)), pen: th.pen }); }
+      }
+      i = j + 1;
+    }
+  }
+  const M = th => ({ ...th, pts: th.pts.map(T) });
+  const hubP = T(hub), cenP = T(cen);
+  return {
+    threads: threads.map(M).concat(stabThreads.map(M)), dewSegs: dewSegs.map(s => ({ pts: s.pts.map(T), len: s.len, dead: s.dead })),
+    stabPolys: stabPolys.map(p => p.map(T)), hub: hubP, cen: cenP, segBad, segN: segs.length,
+    sigE: sig >= 0 ? T(E[sig]) : null, sigDir: sig >= 0 ? dir[sig] : null, Lm, tears: tears.length,
+  };
+}
+
+// ---------------- build ----------------
+const IDS = ["seed", "web", "size", "webs", "frame", "radii", "hubup", "freezone", "spacing", "sag", "pull", "turnbacks", "capen", "stab", "stablen", "damage", "sector", "dew", "dewsize", "dewcol", "spider", "spidersize", "moon", "moonr", "moonx", "moony", "tangle", "thick", "leaves", "leafsize", "bark", "pitch", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number);
+  const lo = Math.max(4, o.margin), bx0 = lo, by0 = lo, bx1 = W - lo, by1 = H - lo, bw = bx1 - bx0, bh = by1 - by0, BOX = [bx0, by0, bx1, by1];
+  const inBox = (x, y) => x >= bx0 && x <= bx1 && y >= by0 && y <= by1;
+  const rnd = mulberry32(o.seed * 7919 + 101);
+  const key = [], shade = [], dew = [], LAY = { key, shade, dew };
+  const branches = [], leaves = [], threads = [], anchors = [], dewSegs = [], extra = [], stabPolys = [], occAll = Occ(8), occFront = Occ(8), occSp = Occ(6);
+  const info = { segBad: 0, segN: 0, hubOK: true, hubMin: Infinity, anchN: 0, anchOK: 0, drops: 0, webs: 0, orbs: 0 };
+  let spiderHub = null, spiderRet = null, retreatLeaf = null;
+  const isOrbType = o.web === "orb" || o.web === "tattered" || o.web === "hedge";
+
+  const addBranch = (E0, V, opt) => { const b = makeBranch(rnd, E0, V, { wob: 1, wmin: 0.6, w0: o.thick, ext: 6, bend: 0, box: BOX, ...opt }); branches.push(b); return b; };
+  const fork = (b, cnt) => {
+    for (let q = 0; q < cnt; q++) {
+      if (rnd() < 0.2) continue;
+      const f = brAt(b, b.len * (0.3 + 0.4 * rnd())), side = rnd() < 0.5 ? 1 : -1, a = Math.atan2(f.ty, f.tx) + side * (0.5 + 0.4 * rnd()), len = 10 + rnd() * 14, V = [f.x + Math.cos(a) * len, f.y + Math.sin(a) * len];
+      if (V[0] < bx0 + 4 || V[0] > bx1 - 4 || V[1] < by0 + 4 || V[1] > by1 - 4) continue;
+      addBranch([f.x, f.y], V, { w0: Math.max(1.8, f.w * 0.7), wmin: 0.5, ext: 2 + rnd() * 5, bend: side * rnd() * 0.6, wob: 0.8, parent: b });
+    }
+  };
+  const edgeStart = v => {
+    const d = [v[0] - bx0, bx1 - v[0], v[1] - by0, by1 - v[1]], m = Math.min(...d), s = (rnd() - 0.5) * 30;
+    if (m === d[0]) return [bx0 - 6, clamp(v[1] + s, by0, by1)]; if (m === d[1]) return [bx1 + 6, clamp(v[1] + s, by0, by1)];
+    if (m === d[2]) return [clamp(v[0] + s, bx0, bx1), by0 - 6]; return [clamp(v[0] + s, bx0, bx1), by1 + 6];
+  };
+  const nearestOnBranches = (x, y) => {
+    let best = null;
+    for (const b of branches) for (let i = 0; i < b.cl.length; i++) { const p = b.cl[i]; if (p[0] < bx0 + 3 || p[0] > bx1 - 3 || p[1] < by0 + 3 || p[1] > by1 - 3) continue; const d = Math.hypot(p[0] - x, p[1] - y); if (!best || d < best.d) best = { d, x: p[0], y: p[1], b }; }
+    return best;
+  };
+  const anchorVert = (v, reach, c) => {
+    const nb = nearestOnBranches(v[0], v[1]);
+    if (nb && nb.d < reach) { v[0] = nb.x; v[1] = nb.y; anchors.push([v[0], v[1]]); return; }
+    const E0 = edgeStart(v), d0 = unit(v[0] - E0[0], v[1] - E0[1]), out = unit(v[0] - c[0], v[1] - c[1]);
+    const cand = [1.1, -1.1].map(b => { const a = Math.atan2(d0[1], d0[0]) + b; return { b, dot: Math.cos(a) * out[0] + Math.sin(a) * out[1] }; });
+    cand.sort((p, q) => q.dot - p.dot);
+    fork(addBranch(E0, v, { ext: 12 + rnd() * 12, bend: cand[0].b, w0: o.thick * (1.1 + 0.4 * rnd()) }), 2);
+    anchors.push([v[0], v[1]]);
+  };
+  const spawnStem = (x, tipY, lean, front) => addBranch([x, by1 + 6], [x + lean, tipY], { kind: "stem", w0: 1.6 + rnd() * 1.4, wmin: 0.5, ext: 2 + rnd() * 5, bend: (rnd() - 0.5) * 0.9, wob: 0.6, front });
+  const orbSpec = (verts, T, nr, sp, extra2) => ({ verts, T, nr, sp, hubup: o.hubup, fz: o.freezone, sag: o.sag, pull: o.pull, tb: o.turnbacks, sector: 0, pitch: o.pitch, pen: o.capen, tears: 0, tearR: 0, tattered: false, stab: "none", stablen: o.stablen, ...extra2 });
+  const takeWeb = (w, first) => {
+    for (const t of w.threads) threads.push(t);
+    for (const s of w.dewSegs) dewSegs.push(s);
+    for (const p of w.stabPolys) stabPolys.push(p);
+    info.segBad += w.segBad; info.segN += w.segN; info.orbs++;
+    const dy = w.cen[1] - w.hub[1]; info.hubMin = Math.min(info.hubMin, dy); if (dy <= 0.5) info.hubOK = false;
+  };
+
+  // ---- scenes ----
+  const sceneOrb = tattered => {
+    const c = [W / 2 + (rnd() - 0.5) * 0.04 * bw, H / 2 + (rnd() - 0.5) * 0.04 * bh + (o.sector > 0 ? 0.05 * bh : 0)], szz = o.sector > 0 ? o.size * 0.86 : o.size, nf = Math.round(o.frame), a0 = rnd() * TAU, verts = [];
+    for (let i = 0; i < nf; i++) {
+      const a = a0 + (i + (rnd() - 0.5) * 0.55) * TAU / nf, rr = 0.82 + 0.3 * rnd();
+      verts.push([clamp(c[0] + Math.cos(a) * bw / 2 * szz * rr, bx0 + 3, bx1 - 3), clamp(c[1] + Math.sin(a) * bh / 2 * szz * rr, by0 + 3, by1 - 3)]);
+    }
+    for (const v of verts) anchorVert(v, 20, c);
+    const dmg = tattered ? Math.max(o.damage, 0.6) : o.damage;
+    const w = orbWeb(rnd, orbSpec(verts, null, Math.round(o.radii), o.spacing, { sector: o.sector, stab: o.stab, tears: dmg > 0 ? (tattered ? 2 + Math.floor(rnd() * 2) : 1) : 0, tearR: 0.1 + 0.2 * dmg, tattered }));
+    takeWeb(w, true);
+    spiderHub = { x: w.hub[0], y: w.hub[1], head: Math.PI / 2 + (rnd() - 0.5) * 0.5 };
+    if (o.sector > 0 && w.sigE) {
+      const E = w.sigE, d = w.sigDir, rl = w.Lm * 0.12 + 7;
+      const RP = [clamp(E[0] + d[0] * rl, bx0 + 14, bx1 - 14), clamp(E[1] + d[1] * rl, by0 + 16, by1 - 14)];
+      threads.push({ pts: gravCurve(E, RP, 0.01 * rl), pen: "key" });
+      anchorVert(RP, 22, w.cen);
+      const la = Math.atan2(d[1], d[0]) + (rnd() - 0.5) * 0.8;
+      retreatLeaf = makeLeaf(RP, la + 0.2, 20, 11, 0.9);
+      const sp = [RP[0] + Math.cos(la) * 5.5, RP[1] + Math.sin(la) * 5.5];
+      spiderRet = { x: sp[0], y: sp[1], head: Math.atan2(w.hub[1] - sp[1], w.hub[0] - sp[0]) };
+    }
+  };
+  const sceneHedge = () => {
+    const nW = Math.round(o.webs);
+    const bT = addBranch([bx0 - 6, by0 + 0.09 * bh], [bx0 + 0.86 * bw, by0 + 0.17 * bh], { ext: 0.06 * bw, bend: 0.25, w0: o.thick, wob: 1.2 });
+    const bB = addBranch([bx1 + 6, by0 + 0.92 * bh], [bx0 + 0.18 * bw, by0 + 0.83 * bh], { ext: 0.06 * bw, bend: -0.3, w0: o.thick, wob: 1.2 });
+    fork(bT, 3); fork(bB, 3);
+    const base = 0.3 * Math.min(bw, bh * 1.25), placed = [], fr = [0.34, 0.24, 0.17, 0.13];
+    for (let i = 0; i < nW; i++) {
+      let R = base * (1 + fr[i] * 0) * [1, 0.72, 0.52, 0.4][i] * (0.9 + 0.2 * rnd()), c = null;
+      for (let att = 0; att < 400 && !c; att++) {
+        if (att % 100 === 99) R *= 0.9;
+        const x = bx0 + R + rnd() * (bw - 2 * R), y = by0 + 0.2 * bh + R + rnd() * Math.max(1, bh * 0.66 - 2 * R);
+        if (y + R > by1 - 0.05 * bh) continue;
+        if (placed.every(p => Math.hypot(p.x - x, p.y - y) > (p.R + R) * 0.95)) c = [x, y];
+      }
+      if (!c) c = [bx0 + R + rnd() * (bw - 2 * R), by0 + 0.3 * bh + rnd() * 0.3 * bh];
+      placed.push({ x: c[0], y: c[1], R });
+      const nf = clamp(Math.round(o.frame), 4, 6), a0 = rnd() * TAU, verts = [];
+      for (let k = 0; k < nf; k++) { const a = a0 + (k + (rnd() - 0.5) * 0.55) * TAU / nf, rr = 0.9 + 0.2 * rnd(); verts.push([c[0] + Math.cos(a) * R * rr, c[1] + Math.sin(a) * R * rr]); }
+      const kk = 0.8 + 0.2 * rnd(), rot = (rnd() - 0.5) * 0.6, sqx = rnd() < 0.5, cr = Math.cos(rot), sr = Math.sin(rot);
+      const T = p => { let x = p[0] - c[0], y = p[1] - c[1]; if (sqx) x *= kk; else y *= kk; return [c[0] + x * cr - y * sr, c[1] + x * sr + y * cr]; };
+      const sc = R / base, nr = Math.max(10, Math.round(o.radii * (0.55 + 0.45 * sc)));
+      const w = orbWeb(rnd, orbSpec(verts, T, nr, o.spacing * (0.7 + 0.3 * sc), { stab: i === 0 ? o.stab : "none", tears: i === 0 && o.damage > 0 ? 1 : 0, tearR: 0.1 + 0.2 * o.damage, hubup: o.hubup }));
+      takeWeb(w, i === 0);
+      if (i === 0) spiderHub = { x: w.hub[0], y: w.hub[1], head: Math.PI / 2 + (rnd() - 0.5) * 0.5 };
+      for (const v of verts) {
+        const p = T(v), nb = nearestOnBranches(p[0], p[1]); if (!nb) continue;
+        if (nb.d > 9) { addBranch([nb.x, nb.y], p, { kind: "branch", w0: Math.max(2.4, o.thick * 0.4), wmin: 0.7, ext: 3 + rnd() * 6, bend: (rnd() - 0.5) * 1.4, wob: 1.4, parent: nb.b }); anchors.push(p); continue; }
+        const cands = []; for (const b of branches) for (const q of b.cl) if (q[0] > bx0 + 3 && q[0] < bx1 - 3 && q[1] > by0 + 3 && q[1] < by1 - 3 && Math.hypot(q[0] - p[0], q[1] - p[1]) < nb.d * 1.6 + 3) cands.push(q);
+        const q = cands[Math.floor(rnd() * cands.length)] || [nb.x, nb.y];
+        threads.push({ pts: gravCurve(p, q, 0.015 * Math.hypot(q[0] - p[0], q[1] - p[1])), pen: "key" });
+        anchors.push([q[0], q[1]]);
+      }
+    }
+  };
+  const nodeThreads = (nodes, k, maxLen, sagK, pen) => {
+    const seen = new Set();
+    for (let i = 0; i < nodes.length; i++) {
+      const ds = [];
+      for (let j = 0; j < nodes.length; j++) if (j !== i) ds.push([Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y) + 6 * Math.abs(nodes[i].z - nodes[j].z), j]);
+      ds.sort((a, b) => a[0] - b[0]);
+      for (let q = 0; q < Math.min(k, ds.length); q++) {
+        const j = ds[q][1], kk = i < j ? i * 10000 + j : j * 10000 + i; if (seen.has(kk)) continue; seen.add(kk);
+        const a = [nodes[i].x, nodes[i].y], b = [nodes[j].x, nodes[j].y], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L > maxLen || L < 0.8) continue;
+        const pts = gravCurve(a, b, L * sagK * (0.3 + rnd()));
+        threads.push({ pts, pen }); dewSegs.push({ pts, len: L, dead: false });
+      }
+    }
+  };
+  const ground = (gy, hatchTo) => {
+    const ph = rnd() * 6, pts = []; for (let x = bx0 - 4; x <= bx1 + 4; x += 2) pts.push([x, gy + 0.9 * Math.sin(x * 0.13 + ph) + 0.6 * Math.sin(x * 0.31 + ph * 2)]);
+    extra.push({ pts, pen: "key" });
+    const step = Math.max(o.pitch * 2.5, 2.0);
+    for (let y = gy + step; y < hatchTo; y += step) for (let x = bx0 + rnd() * 6; x < bx1;) { const on = 3 + rnd() * 11; extra.push({ pts: [[x, y], [Math.min(bx1, x + on), y]], pen: "shade" }); x += on + 2 + rnd() * 8; }
+  };
+  const sceneCobweb = () => {
+    const mir = rnd() < 0.5, X = x => mir ? W - x : x, sg = mir ? -1 : 1;
+    const A = addBranch([X(bx0 - 6), by0 + 0.1 * bh], [X(bx0 + 0.74 * bw), by0 + 0.2 * bh], { ext: 0.1 * bw, bend: 0.3 * sg, w0: o.thick, wob: 1.2 });
+    const B = addBranch([X(bx0 - 6), by0 + 0.68 * bh], [X(bx0 + 0.7 * bw), by0 + 0.3 * bh], { ext: 0.07 * bw, bend: -0.5 * sg, w0: o.thick * 0.85, wob: 1.2 });
+    fork(A, 2); fork(B, 2);
+    const vA = A.cl[Math.round(A.sV / 3)], vB = B.cl[Math.round(B.sV / 3)], vp = [(vA[0] + vB[0]) / 2, (vA[1] + vB[1]) / 2];
+    const n = Math.round(90 + 380 * o.tangle), nodes = [];
+    for (let i = 0; i < n; i++) {
+      const t = 0.12 + 0.88 * (1 - Math.pow(1 - rnd(), 1.45)), pa = brAt(A, t * A.sV), pb = brAt(B, t * B.sV), u = 0.1 + 0.8 * rnd(), z = (rnd() - 0.5) * 2.6, s = 1 / (1 + 0.25 * z);
+      const p = [lerp(pa.x, pb.x, u), lerp(pa.y, pb.y, u)]; nodes.push({ x: vp[0] + (p[0] - vp[0]) * s, y: vp[1] + (p[1] - vp[1]) * s, z });
+    }
+    const free = nodes.slice();
+    for (const br of [A, B]) for (let i = 0; i < 10; i++) { const p = brAt(br, br.sV * (0.3 + 0.7 * rnd())); nodes.push({ x: p.x, y: p.y, z: 0, anchor: true }); }
+    nodeThreads(nodes, 4, 42, 0.1, "shade");
+    for (let i = 0; i < 7; i++) {
+      const t1 = 0.25 + 0.73 * rnd(), t2 = clamp(t1 + (rnd() - 0.5) * 0.4, 0.2, 0.98), a = brAt(A, t1 * A.sV), b = brAt(B, t2 * B.sV), L = Math.hypot(a.x - b.x, a.y - b.y);
+      threads.push({ pts: gravCurve([a.x, a.y], [b.x, b.y], 0.02 * L), pen: "key" });
+    }
+    const gy = by1 - 10 - rnd() * 4, cand = free.slice().sort((q, r) => r.y - q.y), chosen = [], wantN = 8 + Math.floor(rnd() * 6);
+    for (const c of cand) { if (chosen.length >= wantN) break; if (c.y < by0 + 0.3 * bh) continue; const gx = 5 + rnd() * 9; if (chosen.every(q => Math.abs(q.x - c.x) > gx)) chosen.push(c); }
+    for (const c of chosen) {
+      const yEnd = gy - 2 - Math.pow(rnd(), 1.6) * (gy - c.y) * 0.7, slant = (rnd() - 0.5) * 10, ph = rnd() * 6, pts = [];
+      if (yEnd < c.y + 3) continue;
+      for (let y = c.y; y < yEnd; y += 4) { const t = (y - c.y) / (yEnd - c.y); pts.push([c.x + slant * t + 0.4 * Math.sin(y * 0.4 + ph), y]); }
+      pts.push([c.x + slant, yEnd]); if (pts.length > 1) threads.push({ pts, pen: "shade" });
+      extra.push({ pts: circ(c.x + slant, yEnd + 0.5, 0.4, 10), pen: "shade", closed: true });
+    }
+    ground(gy, by1 - 1);
+    const ns = 4 + Math.floor(rnd() * 4);
+    for (let i = 0; i < ns; i++) spawnStem(bx0 + 6 + rnd() * (bw - 12), gy - 8 - rnd() * 30, (rnd() - 0.5) * 12, true);
+    spiderHub = spiderRet = { x: vp[0] + (rnd() - 0.5) * 3, y: vp[1], head: Math.PI * 0.5 + sg * 0.9 };
+  };
+  const sceneSheet = () => {
+    const n = 5 + Math.floor(rnd() * 4), cxp = W / 2 + (rnd() - 0.5) * 0.06 * bw, cyp = by0 + (0.6 + 0.06 * rnd()) * bh, K = 0.5 + 0.12 * rnd(), a0 = rnd() * TAU, rx = 0.44 * bw;
+    const sq = p => [p[0], cyp + (p[1] - cyp) * K], cP = [cxp, cyp], vp = [];
+    for (let i = 0; i < n; i++) { const a = a0 + (i + (rnd() - 0.5) * 0.5) * TAU / n, rr = 0.8 + 0.28 * rnd(); vp.push([clamp(cxp + Math.cos(a) * rx * rr, bx0 + 3, bx1 - 3), cyp + Math.sin(a) * rx * rr]); }
+    let rim = [];
+    for (let i = 0; i < n; i++) { const A = vp[i], B = vp[(i + 1) % n], L = Math.hypot(B[0] - A[0], B[1] - A[1]), c = sagCurve(A, B, cP, (0.12 + 0.1 * rnd()) * L, 1.5); c.pop(); rim = rim.concat(c); }
+    const tips = [];
+    for (let i = 0; i < n; i++) {
+      const pa = sq(vp[i]), back = vp[i][1] < cyp - 0.1 * rx, x = pa[0] + (rnd() - 0.5) * 8;
+      if (pa[1] > by1 - 8) pa[1] = by1 - 8;
+      const st = addBranch([x, by1 + 6], pa, { kind: "stem", w0: 2.0 + rnd() * 1.2, wmin: 0.5, ext: back ? (0.04 + 0.16 * rnd()) * bh : 3 + rnd() * 4, bend: (rnd() - 0.5) * 0.4, wob: 0.6, front: !back });
+      if (back) tips.push(st.cl.at(-1));
+    }
+    const gy = by1 - 4, nx = 4 + Math.floor(rnd() * 5);
+    for (let i = 0; i < nx; i++) spawnStem(bx0 + 4 + rnd() * (bw - 8), gy - 8 - rnd() * 24, (rnd() - 0.5) * 10, true);
+    const dip = 0.08 * bh;
+    const surf = (a, b) => {
+      const dx = (a - 0.5) * 2, dy = (b - 0.5) * 2, sm = Math.max(Math.abs(dx), Math.abs(dy));
+      if (sm < 1e-6) return [cxp, cyp + dip];
+      const d = unit(dx, dy); let t = rayHit(cP, d, rim); if (!isFinite(t)) t = rx;
+      const q = sq([cxp + d[0] * t * sm, cyp + d[1] * t * sm]); return [q[0], q[1] + dip * (1 - sm * sm)];
+    };
+    const ph = [rnd() * 6, rnd() * 6, rnd() * 6], mask = (x, y) => Math.sin(x * 0.09 + ph[0]) * Math.sin(y * 0.11 + ph[1]) + 0.6 * Math.sin(x * 0.05 - y * 0.07 + ph[2]) > -1.4;
+    const mesh = Math.max(o.spacing, 1.0), nu = Math.round(1.7 * rx / mesh), nv = Math.round(1.7 * rx * K / mesh), curve = (fn, m) => { const p = []; for (let i = 0; i <= m; i++) p.push(fn(i / m)); return p; };
+    for (let i = 0; i <= nu; i++) { const u0 = (i + (rnd() - 0.5) * 0.6) / nu, amp = 0.3 / nu, p1 = rnd() * 6, k = 1 + rnd() * 2; threads.push({ pts: curve(t => surf(clamp(u0 + amp * Math.sin(t * k * TAU + p1), 0, 1), t), 40), pen: "shade", mask }); }
+    for (let j = 0; j <= nv; j++) { const v0 = (j + (rnd() - 0.5) * 0.6) / nv, amp = 0.3 / nv, p1 = rnd() * 6, k = 1 + rnd() * 2; threads.push({ pts: curve(t => surf(t, clamp(v0 + amp * Math.sin(t * k * TAU + p1), 0, 1)), 60), pen: "shade", mask }); }
+    for (let i = 0, nd = Math.round(0.6 * (nu + nv)); i < nd; i++) {
+      const u1 = rnd(), v1 = rnd(), u2 = clamp(u1 + (rnd() - 0.5) * 0.7, 0, 1), v2 = clamp(v1 + (rnd() - 0.5) * 0.7, 0, 1);
+      threads.push({ pts: curve(t => surf(lerp(u1, u2, t), lerp(v1, v2, t)), 14), pen: "shade", mask });
+    }
+    const rimS = rim.map(sq); rimS.push(rimS[0]); threads.push({ pts: rimS, pen: "key" });
+    // the tangle: an irregular cloud that thins upward
+    const backRim = rimS.filter(p => p[1] < cyp - 2), topY = Math.min(...rimS.map(p => p[1])), nodes = [], nn = Math.round(80 + 260 * o.tangle), Hmax = 0.3 * bh;
+    for (const p of backRim) if (rnd() < 0.35) nodes.push({ x: p[0], y: p[1], z: 0 });
+    for (const t of tips) nodes.push({ x: t[0], y: t[1], z: 0 });
+    for (let i = 0; i < nn; i++) {
+      const h = Math.min(Hmax, -Math.log(1 - rnd()) * 0.09 * bh), x = cxp + gauss(rnd) * rx * 0.5 * (1 - 0.6 * h / Hmax);
+      if (x < bx0 + 2 || x > bx1 - 2) continue;
+      nodes.push({ x, y: topY + 0.03 * bh - h, z: (rnd() - 0.5) * 2 });
+    }
+    nodeThreads(nodes, 3, 16, 0.08, "shade");
+    const c = surf(0.5, 0.5); spiderHub = { x: c[0], y: c[1], head: Math.PI / 2 + (rnd() - 0.5) * 0.6 };
+  };
+
+  if (o.web === "orb") sceneOrb(false); else if (o.web === "tattered") sceneOrb(true);
+  else if (o.web === "hedge") sceneHedge(); else if (o.web === "cobweb") sceneCobweb(); else sceneSheet();
+
+  // ---- leaves on the twigs ----
+  const twigs = branches.filter(b => b.kind === "branch");
+  if (twigs.length && o.leaves > 0) {
+    const tot = twigs.reduce((a, b) => a + b.len, 0);
+    for (let n = 0; n < o.leaves; n++) {
+      let r = rnd() * tot, b = twigs[0]; for (const t of twigs) { if (r < t.len) { b = t; break; } r -= t.len; }
+      let s = b.len * (0.15 + 0.85 * Math.sqrt(rnd())), f = brAt(b, s);
+      for (let tr = 0; tr < 12 && !inBox(f.x, f.y); tr++) { s = b.len * (0.15 + 0.85 * Math.sqrt(rnd())); f = brAt(b, s); }
+      if (!inBox(f.x, f.y)) continue;
+      const side = rnd() < 0.5 ? 1 : -1, len = o.leafsize * (0.6 + 0.8 * rnd()), wid = len * (0.32 + 0.1 * rnd());
+      const base = [f.x + f.nx * side * f.w * 0.45, f.y + f.ny * side * f.w * 0.45], ang = Math.atan2(f.ty, f.tx) + side * (0.6 + 0.6 * rnd());
+      if (anchors.some(a => Math.hypot(a[0] - base[0], a[1] - base[1]) < len * 0.35)) continue;
+      leaves.push(makeLeaf(base, ang, len, wid, (rnd() - 0.5) * 1.2));
+    }
+  }
+  if (retreatLeaf) leaves.push(retreatLeaf);
+
+  // ---- spider ----
+  let spider = null;
+  const sAt = o.spider === "none" ? null : o.spider === "retreat" ? (spiderRet || spiderHub) : spiderHub;
+  if (sAt) spider = makeSpider(rnd, sAt.x, sAt.y, o.spidersize, sAt.head);
+
+  // ---- occluders ----
+  for (const b of branches) if (b.front) occAll.add({ poly: b.poly, grp: "br" });
+  for (const L of leaves) { occAll.add({ poly: L.poly, grp: "lf" }); occFront.add({ poly: L.poly, grp: "lf" }); }
+  for (const p of stabPolys) occAll.add({ poly: p, grp: "st" });
+  if (spider) {
+    const items = [{ poly: ellPoly(spider.abd, 0.6, 40) }, { poly: ellPoly(spider.ceph, 0.6, 32) }];
+    for (const leg of spider.legs) for (let i = 0; i < 3; i++) { const a = leg[i], b = leg[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / 0.6); for (let k = 0; k <= n; k++) items.push({ cx: lerp(a[0], b[0], k / n), cy: lerp(a[1], b[1], k / n), r: 0.55 }); }
+    for (const it of items) { it.grp = "sp"; occAll.add(it); occFront.add({ ...it }); occSp.add({ ...it }); }
+  }
+
+  // ---- dew ----
+  if (o.dew > 0 && dewSegs.length) {
+    const cell = 3, hash = new Map(), hk = (i, j) => i * 4096 + j, drops = [];
+    const at = (pts, s) => { let acc = 0; for (let i = 1; i < pts.length; i++) { const L = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (acc + L >= s) { const t = (s - acc) / (L || 1); return [lerp(pts[i - 1][0], pts[i][0], t), lerp(pts[i - 1][1], pts[i][1], t)]; } acc += L; } return pts.at(-1); };
+    for (const s of dewSegs) {
+      if (s.dead || s.len < 1.5 || rnd() > o.dew * 0.85 || drops.length > 3200) continue;
+      const pl = plen(s.pts, false); let d = 0.7 + rnd() * 2.0;
+      while (d < pl - 0.7) {
+        if (rnd() < 0.85) {
+          const [x, y] = at(s.pts, d), r = clamp(o.dewsize * Math.exp(0.35 * gauss(rnd)), 0.3, 1.5);
+          if (x > bx0 + r && x < bx1 - r && y > by0 + r && y < by1 - r && !occAll.hit(x, y)) {
+            const ci = Math.floor(x / cell), cj = Math.floor(y / cell); let clash = false;
+            for (let a = -1; a <= 1 && !clash; a++) for (let b = -1; b <= 1 && !clash; b++) for (const q of hash.get(hk(ci + a, cj + b)) || []) if (Math.hypot(q.x - x, q.y - y) < q.r + r + 0.45) { clash = true; break; }
+            if (!clash) { const dd = { x, y, r }; drops.push(dd); const k = hk(ci, cj); if (!hash.has(k)) hash.set(k, []); hash.get(k).push(dd); }
+          }
+        }
+        d += (2.4 + rnd() * 3.2) * (0.6 + 0.8 * (1 - o.dew * 0.5));
+      }
+    }
+    for (const d of drops) { dew.push([circ(d.x, d.y, d.r, clamp(Math.ceil(TAU * d.r / 0.35), 10, 28)), true]); occAll.add({ cx: d.x, cy: d.y, r: d.r * 0.97, grp: "dw" }); }
+    info.drops = drops.length;
+  }
+
+  // ---- emit: twigs, bark, leaves ----
+  const clip = (path, closed, vis, out, minLen = 0.3) => { const d = densify(path, closed, 0.5); runs(d, closed, d.map(([x, y]) => vis(x, y)), minLen, out); };
+  const bboxpip = (b, x, y) => x >= b.bb[0] && x <= b.bb[2] && y >= b.bb[1] && y <= b.bb[3] && pip(b.poly, x, y);
+  branches.forEach((b, i) => {
+    const later = branches.slice(i + 1).filter(l => l.front), vis = (x, y) => inBox(x, y) && !occFront.hit(x, y) && !later.some(l => bboxpip(l, x, y)) && !(b.parent && bboxpip(b.parent, x, y));
+    clip(b.poly, true, vis, key);
+    for (const ln of barkLines(b, rnd, o)) clip(ln, false, vis, shade);
+  });
+  leaves.forEach((L, i) => {
+    const vis = (x, y) => { if (!inBox(x, y) || occSp.hit(x, y)) return false; for (let j = i + 1; j < leaves.length; j++) if (bboxpip(leaves[j], x, y)) return false; return true; };
+    clip(L.poly, true, vis, key); clip(L.mid, false, vis, shade); for (const v of L.veins) clip(v, false, vis, shade);
+  });
+  // ---- emit: threads ----
+  for (const th of extra) { const vis = (x, y) => inBox(x, y) && !occAll.hit(x, y); if (th.closed) clip(th.pts, true, vis, LAY[th.pen]); else clip(th.pts, false, vis, LAY[th.pen]); }
+  for (const th of threads) {
+    const d = densify(th.pts, false, 0.5), ok = d.map(([x, y]) => inBox(x, y) && !occAll.hit(x, y, th.grp) && (!th.mask || th.mask(x, y)));
+    runs(d, false, ok, 0.3, LAY[th.pen]);
+  }
+  // ---- emit: spider ----
+  if (spider) {
+    const { abd, ceph, legs } = spider, vb = (x, y) => inBox(x, y);
+    clip(ellPoly(abd, 0, 48), true, (x, y) => vb(x, y) && !inEll(ceph, x, y, 0), key);
+    clip(ellPoly(ceph, 0, 40), true, vb, key);
+    for (const leg of legs) clip(leg, false, (x, y) => vb(x, y) && !inEll(abd, x, y, 0) && !inEll(ceph, x, y, 0), key);
+    const ca = Math.cos(1.05 + abd.h), sa = Math.sin(1.05 + abd.h), R = abd.a + 1;
+    for (let t = -R; t <= R; t += o.pitch) clip([[abd.c[0] - sa * t - ca * R, abd.c[1] + ca * t - sa * R], [abd.c[0] - sa * t + ca * R, abd.c[1] + ca * t + sa * R]], false, (x, y) => vb(x, y) && inEll(abd, x, y, -0.4) && !inEll(ceph, x, y, 0.4), shade, 0.5);
+  }
+  // ---- moon, broken where a thread crosses ----
+  if (o.moon === "on") {
+    const mc = [bx0 + o.moonx * bw, by0 + o.moony * bh], MR = o.moonr, GAP = 0.6, cell = 3, grid = new Map(), gk = (i, j) => i * 4096 + j;
+    const addSeg = (a, b) => {
+      const x0 = Math.min(a[0], b[0]) - GAP, x1 = Math.max(a[0], b[0]) + GAP, y0 = Math.min(a[1], b[1]) - GAP, y1 = Math.max(a[1], b[1]) + GAP;
+      if (x1 < mc[0] - MR || x0 > mc[0] + MR || y1 < mc[1] - MR || y0 > mc[1] + MR) return;
+      const s = [a[0], a[1], b[0], b[1]];
+      for (let i = Math.floor(x0 / cell); i <= Math.floor(x1 / cell); i++) for (let j = Math.floor(y0 / cell); j <= Math.floor(y1 / cell); j++) { const k = gk(i, j); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(s); }
+    };
+    for (const layer of [key, shade, dew]) for (const [p, cl] of layer) for (let i = 1; i < p.length; i++) addSeg(p[i - 1], p[i]);
+    for (const [p] of dew) addSeg(p.at(-1), p[0]);
+    const near = (x, y) => { const a = grid.get(gk(Math.floor(x / cell), Math.floor(y / cell))); if (!a) return false; for (const s of a) if (segDist2(x, y, s[0], s[1], s[2], s[3]) < GAP * GAP) return true; return false; };
+    for (let y = mc[1] - MR + o.pitch / 2; y < mc[1] + MR; y += o.pitch) {
+      const hw = Math.sqrt(Math.max(0, MR * MR - (y - mc[1]) ** 2)); if (hw < 1) continue;
+      const pts = []; for (let x = mc[0] - hw; x <= mc[0] + hw; x += 0.3) pts.push([x, y]);
+      runs(pts, false, pts.map(([x, yy]) => inBox(x, yy) && !occAll.hit(x, yy) && !near(x, yy)), 0.6, shade);
+    }
+  }
+
+  // ---- tidy: order the pens' paths, drop crumbs ----
+  const clean = a => a.filter(([p, cl]) => p.length > 1 && plen(p, cl) >= 0.3);
+  const K = orderPaths(clean(key)), S = orderPaths(clean(shade)), D = orderPaths(clean(dew));
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000, pts = ps => ps.reduce((a, [p]) => a + p.length, 0);
+  const ms = performance.now() - t0, total = len(K) + len(S) + len(D), kb = (pts(K) + pts(S) + pts(D)) * 16 / 1024;
+  info.anchN = anchors.length; info.anchOK = anchors.filter(a => branches.some(b => bboxpip(b, a[0], a[1]))).length;
+  const gates = [
+    ["build under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`],
+    ["total pen length under 150 m", total < 150, `${total.toFixed(1)} m`],
+    ["SVG under 3 MB (estimated from point count)", kb < 3072, `${kb.toFixed(0)} KB`],
+    ["every capture-spiral segment spans two radii", info.segBad === 0 && (!isOrbType || info.segN > 0), isOrbType ? `${info.segBad} bad of ${info.segN}` : "no spiral in this web"],
+    ["hub is above the frame centre", info.hubOK, isOrbType ? `by ${info.hubMin.toFixed(1)} mm` : "no hub in this web"],
+  ];
+  if (o.web === "orb" || o.web === "tattered" || o.web === "hedge") gates.push(["every frame corner sits on an anchor", info.anchOK === info.anchN && info.anchN > 0, `${info.anchOK} of ${info.anchN}`]);
+  return { W, H, o, ms, key: K, shade: S, dew: D, gates, drops: info.drops, spiralSegs: info.segN, twigs: twigs.length, leafN: leaves.length };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.dew, "#" + r.o.dewcol, 0.4); stroke(r.shade, "#6b6356", 0.3); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `0.4 pen (key): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 pen (shade): <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour pen (dew): <b>${len(r.dew).toFixed(1)} m</b>, ${r.dew.length} drops · ${r.ms.toFixed(0)} ms<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: <b>${v}</b>`).join("<br>");
+}
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "dew", colour: r.o.dewcol, w: 0.4, paths: r.dew }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG Spider web studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { web: "orb", size: 0.8, webs: 3, frame: 5, radii: 22, hubup: 0.16, freezone: 0.16, spacing: 1.9, sag: 0.16, pull: 0.5, turnbacks: 0.5, capen: "shade", stab: "none", stablen: 0.55, damage: 0, sector: 0, dew: 0, dewsize: 0.6, dewcol: "2f6f9f", spider: "hub", spidersize: 7, moon: "off", moonr: 55, moonx: 0.7, moony: 0.25, tangle: 0.6, thick: 7, leaves: 14, leafsize: 11, bark: "lines", pitch: 0.8, page: "190x250", margin: 10 };
+const P = (seed, o) => ({ ...BASE, seed, ...o });
+const PRESETS = {
+  garden: P(11, {}),
+  dew: P(27, { size: 0.88, frame: 6, radii: 26, spacing: 2.6, sag: 0.2, dew: 0.85, dewsize: 0.7, dewcol: "1f8a7a", spider: "none", leaves: 7, turnbacks: 0.6, thick: 6 }),
+  argiope: P(5, { size: 0.9, radii: 30, spacing: 1.5, stab: "cross", stablen: 0.6, spider: "hub", spidersize: 12, leaves: 6, thick: 8, pull: 0.4, turnbacks: 0.3, hubup: 0.2, bark: "hatch" }),
+  cobweb: P(42, { web: "cobweb", spider: "retreat", spidersize: 6, tangle: 0.8, leaves: 7, thick: 8, dew: 0.25, dewsize: 0.5, dewcol: "6a4c9c", pitch: 0.9 }),
+  moonhedge: P(8, { web: "hedge", webs: 3, radii: 20, spacing: 1.7, moon: "on", moonr: 68, moonx: 0.66, moony: 0.38, pitch: 0.9, leaves: 10, thick: 6, spider: "none", page: "250x190", frame: 5, turnbacks: 0.4 }),
+  sheet: P(19, { web: "sheet", spacing: 2.0, tangle: 0.7, dew: 0.3, dewsize: 0.5, spider: "hub", spidersize: 6, pitch: 0.8, page: "250x190" }),
+  zygiella: P(63, { size: 0.82, radii: 24, spacing: 2.0, sector: 0.75, spider: "retreat", spidersize: 6, leaves: 12, dew: 0.2, dewsize: 0.5, thick: 7, capen: "shade", moon: "on", moonr: 62, moonx: 0.5, moony: 0.36, pitch: 0.9 }),
+  tattered: P(91, { web: "tattered", size: 0.86, radii: 24, spacing: 2.2, damage: 0.7, spider: "none", leaves: 9, turnbacks: 0.4, thick: 6.5, bark: "hatch" }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `spider-web-s${r.o.seed}-${r.o.web}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
