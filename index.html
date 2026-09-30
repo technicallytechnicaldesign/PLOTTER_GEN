@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#f2f4f6">
 <meta name="description" content="A playground for pen-plotter art. Explore real generated drawings, uncover their settings, and make something your own.">
 <title>PLOTTER_GEN — pen, paper, machinery</title>
-<link rel="stylesheet" href="site/site.css"><link rel="stylesheet" href="site/bench.css"><script src="site/site.js" type="module"></script>
+<link rel="preload" href="site/art/weave-sunflower.svg" as="fetch" crossorigin><link rel="stylesheet" href="site/site.css"><link rel="stylesheet" href="site/bench.css"><script src="site/site.js" type="module"></script>
 </head>
 <body>
 <a class="skip" href="#explore">Skip to the gallery</a>
@@ -15,7 +15,7 @@
 <main id="top">
 <section class="hero bench" aria-labelledby="hero-title">
 <div class="bench-top"><h1 id="hero-title">PLOTTER_GEN / <span>on the bed</span></h1><button id="minimize">Fold this away −</button></div>
-<div id="hero-art" class="bench-art" aria-label="Animated real generator output"><span class="loading">Fetching the ink…</span></div>
+<div id="hero-art" class="bench-art" aria-label="Animated real generator output"></div>
 <div class="bench-label"><span id="hero-family"></span><strong id="hero-name">Loading…</strong><span id="hero-meta"></span><a id="hero-make" href="#explore">Open this in the studio ↗</a></div>
 <button id="shuffle" class="again">ANOTHER<br>ONE ↻</button>
 <div class="scraps"><span>also on the desk</span><div id="scrap-rack"></div></div>

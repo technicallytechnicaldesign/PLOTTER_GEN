@@ -1,3 +1,4 @@
+import {createDrawing,drawProgress} from './plot-animation.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let catalogue=[], all=[], expanded=null, selected=null, filter='all', heroId=null, userPaused=false, inView=true, drawing=null, frame=0, lastTime=0;
@@ -49,30 +50,28 @@ $('reset').onclick=()=>{filter='all';$('search').value='';document.querySelector
 function surprise(){if(all.length)openSpecimen(all[Math.floor(Math.random()*all.length)])}
 $('surprise-nav').onclick=surprise;$('surprise-bottom').onclick=surprise;
 function stopFrame(){cancelAnimationFrame(frame);frame=0;lastTime=0}
-function syncAnimation(){stopFrame();if(drawing&&!drawing.complete&&!userPaused&&inView&&!document.hidden&&!reduced.matches)frame=requestAnimationFrame(animate)}
-function setProgress(progress){
- const d=drawing;if(!d)return;progress=Math.max(0,Math.min(1,progress));d.elapsed=progress*12000;
- const position=progress*d.paths.length,index=Math.min(Math.floor(position),d.paths.length-1);
- if(index<d.finished)d.paths.slice(index).forEach(p=>p.style.strokeDashoffset='1');
- for(let i=Math.min(d.finished,index);i<index;i++)d.paths[i].style.strokeDashoffset='0';
- d.finished=index;const p=d.paths[index];if(p){const fraction=progress===1?1:position-index;p.style.strokeDashoffset=String(1-fraction);const point=p.getPointAtLength(p.getTotalLength()*fraction);d.marker.setAttribute('cx',point.x);d.marker.setAttribute('cy',point.y)}
- d.marker.style.display=progress===1?'none':'';d.complete=progress===1;$('transport').value=String(progress*100);$('progress').textContent=Math.round(progress*100)+'%';
-}
+function syncAnimation(){stopFrame();if(drawing&&!drawing.complete&&!userPaused&&inView&&!document.hidden&&!reduced.matches){lastTime=performance.now();frame=requestAnimationFrame(animate)}}
+function setProgress(progress){if(!drawing)return;progress=Math.max(0,Math.min(1,progress));drawProgress(drawing,progress);$('transport').value=String(progress*100);$('progress').textContent=Math.round(progress*100)+'%'}
 function animate(t){if(!drawing)return;const elapsed=drawing.elapsed+(lastTime?Math.min(t-lastTime,60):0);lastTime=t;setProgress(elapsed/12000);if(!drawing.complete)frame=requestAnimationFrame(animate);else frame=0}
-let heroRequest=0,wholeSheet=false,recent=[];
+let heroRequest=0,wholeSheet=false,recent=[],nextPlot=null;
+const plotCache=new Map();
+function loadPlot(url){if(!plotCache.has(url))plotCache.set(url,fetch(url).then(r=>{if(!r.ok)throw Error('Preview unavailable');return r.text()}).catch(error=>{plotCache.delete(url);throw error}));return plotCache.get(url)}
+// Start the first SVG request alongside the catalogue; cache upcoming sheets.
+loadPlot('site/art/weave-sunflower.svg').catch(()=>{});
+function warmNextPlots(){const candidates=all.filter(s=>s.id!==heroId);nextPlot=candidates[Math.floor(Math.random()*candidates.length)];if(nextPlot)loadPlot(nextPlot.svg).catch(()=>{});$('scrap-rack').querySelectorAll('[data-sheet]').forEach(b=>{const s=specimenById(b.dataset.sheet);if(s)loadPlot(s.svg).catch(()=>{})})}
+
 function renderScraps(){const ids=[...new Set([...recent,...['cipher-ridges','signal-hoist','bam-bam']])].filter(id=>id!==heroId).slice(0,3);$('scrap-rack').innerHTML=ids.map(id=>{const s=specimenById(id);return s?`<button data-sheet="${esc(id)}" aria-label="Put ${esc(s.title)} on the drawing bed"><img src="${s.image}" alt="" width="100" height="100"></button>`:''}).join('');$('scrap-rack').querySelectorAll('button').forEach(b=>b.onclick=()=>showHero(specimenById(b.dataset.sheet)))}
 async function showHero(s){
- const request=++heroRequest;if(heroId)recent=[heroId,...recent].slice(0,6);heroId=s.id;stopFrame();drawing=null;userPaused=false;updatePause();renderScraps();$('hero-name').textContent=s.title;$('hero-family').textContent=s.collection.name.toUpperCase();$('hero-meta').textContent=`${s.page.replace('x',' × ')} mm${s.seed===null?'':` / seed ${s.seed}`} / ${wholeSheet?'whole sheet':'cropped detail'}`;$('hero-make').href=launch(s);$('hero-make').setAttribute('aria-label',`Open ${s.title} in the studio`);$('hero-art').innerHTML=`<img src="${s.image}" alt="${esc(s.title)}">`;$('progress').textContent='…';
- try{const response=await fetch(s.svg);if(!response.ok)throw Error('Preview unavailable');const text=await response.text();if(request!==heroRequest)return;
+ const request=++heroRequest;if(heroId)recent=[heroId,...recent].slice(0,6);heroId=s.id;stopFrame();drawing=null;userPaused=false;updatePause();renderScraps();$('hero-name').textContent=s.title;$('hero-family').textContent=s.collection.name.toUpperCase();$('hero-meta').textContent=`${s.page.replace('x',' × ')} mm${s.seed===null?'':` / seed ${s.seed}`} / ${wholeSheet?'whole sheet':'cropped detail'}`;$('hero-make').href=launch(s);$('hero-make').setAttribute('aria-label',`Open ${s.title} in the studio`);$('hero-art').replaceChildren();$('transport').value='0';$('progress').textContent='0%';
+ try{const text=await loadPlot(s.svg);if(request!==heroRequest)return;
  const doc=new DOMParser().parseFromString(text,'image/svg+xml');const svg=doc.documentElement;if(svg.tagName!=='svg')throw Error('Invalid drawing');svg.querySelectorAll('script,foreignObject').forEach(n=>n.remove());
  svg.removeAttribute('width');svg.removeAttribute('height');svg.setAttribute('aria-hidden','true');svg.setAttribute('preserveAspectRatio',wholeSheet?'xMidYMid meet':'xMidYMid slice');$('hero-art').replaceChildren(document.importNode(svg,true));const mounted=$('hero-art').firstElementChild;
- const paths=[...mounted.querySelectorAll('path')].filter(p=>p.getTotalLength()>0);paths.forEach(p=>{p.setAttribute('pathLength','1');p.style.strokeDasharray='1';p.style.strokeDashoffset='1'});
- const marker=document.createElementNS('http://www.w3.org/2000/svg','circle');marker.setAttribute('r','1.3');marker.classList.add('pen-marker');mounted.append(marker);
- drawing={paths,marker,elapsed:0,finished:0,complete:false};setProgress(reduced.matches?1:.12);syncAnimation();
- }catch{if(request===heroRequest){$('progress').textContent='—';$('hero-art').innerHTML=`<img src="${s.image}" alt="${esc(s.title)}">`}}
+ drawing=createDrawing(mounted);setProgress(reduced.matches?1:0);syncAnimation();
+ warmNextPlots();
+ }catch{if(request===heroRequest){$('progress').textContent='—';$('hero-art').textContent='Drawing unavailable. Try another sheet.'}}
 }
 function updatePause(){$('pause').setAttribute('aria-pressed',String(userPaused));$('pause').textContent=userPaused?'Resume ▷':'Pause Ⅱ'}
-$('shuffle').onclick=()=>{const candidates=all.filter(s=>s.id!==heroId);if(candidates.length)showHero(candidates[Math.floor(Math.random()*candidates.length)])};
+$('shuffle').onclick=()=>{const candidates=all.filter(s=>s.id!==heroId);if(candidates.length)showHero(nextPlot?.id!==heroId&&nextPlot?nextPlot:candidates[Math.floor(Math.random()*candidates.length)])};
 $('pause').onclick=()=>{userPaused=!userPaused;updatePause();syncAnimation()};
 $('replay').onclick=()=>{setProgress(reduced.matches?1:0);userPaused=false;updatePause();syncAnimation()};
 $('transport').addEventListener('input',()=>{userPaused=true;updatePause();stopFrame();setProgress(Number($('transport').value)/100)});
