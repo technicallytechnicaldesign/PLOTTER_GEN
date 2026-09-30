@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="190mm" height="250mm" viewBox="0 0 190 250">
 <title>PLG overlay studio (UTP d74c18b)</title>
+<desc id="plg-settings">{"cipher":"none","method":"moire","per":6,"cell":1.4,"mark":"squares","pitch":0.8,"wave":"off","noise":0.4,"gsize":8,"density":"4","seed":7,"caption":"none","tsize":5,"tpen":"#111111","opcol":"#111111","page":"190x250","view":"stacked","slide":0,"msgLen":11}</desc>
 <g id="pen-base" stroke="#000000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M14.000,94.246 L48.750,94.246 L48.750,94.646 L51.000,94.646 L51.000,94.246 L176.000,94.246" fill="none"/>
 <path d="M14.000,95.046 L139.000,95.046 L139.000,95.446 L141.250,95.446 L141.250,95.046 L176.000,95.046" fill="none"/>

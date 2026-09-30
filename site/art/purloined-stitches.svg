@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="190mm" height="250mm" viewBox="0 0 190 250">
 <title>PLG purloined plot studio (UTP d74c18b)</title>
+<desc id="plg-settings">{"enc":"fivebit","check":"none","cipher":"none","hide":"chart","carrier":"purl-relief","border":"on","width":18,"perline":22,"density":"3","seed":7,"look":"stitches","boxes":"on","gaps":"shaded","wobble":0.5,"fill":"lines","pitch":0.7,"angle":60,"offfill":"none","caption":"message","tsize":6,"reveal":"off","tpen":"#26200f","rpen":"#b03a30","page":"190x250","cellmax":9,"marks":"on","mount":25,"msgLen":12}</desc>
 <g id="pen-marks" stroke="#000000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M4.000,4.000 L14.000,4.000 L14.000,14.000 L4.000,14.000 Z" fill="none"/>
 <path d="M4.400,4.400 L13.600,4.400 L13.600,13.600 L4.400,13.600 Z" fill="none"/>

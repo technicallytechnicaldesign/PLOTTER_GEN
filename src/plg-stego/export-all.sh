@@ -29,3 +29,5 @@ run signal-book-studio.html "$R/03_OUTPUT/plg-stego/signals/signals-semaphore-mo
 run cipher-garden-studio.html "$R/03_OUTPUT/plg-stego/cipher-garden/cipher-disk-corners" disk marks=corners
 run stego-plot-studio.html "$R/03_OUTPUT/plg-stego/stego-motif-corners" motif marks=corners
 run signal-book-studio.html "$R/03_OUTPUT/plg-stego/signals/signals-ogham-corners" ogham marks=corners
+# PLG-0474 gate: settings ride in every SVG (never the message or a key) and rebuild a byte-identical plot
+node "$R/02_WORK/plg-stego/settings-test.mjs" | tail -1

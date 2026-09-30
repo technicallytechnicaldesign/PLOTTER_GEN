@@ -63,7 +63,7 @@ code { font-family:var(--font-mono); font-size:0.85em; }
 <div class="wrap">
 <aside>
   <fieldset><legend>01 presets</legend>
-    <div class="row"><button data-preset="spark">Spark</button><button data-preset="reverb">Reverb</button><button data-preset="ripple">Ripple</button><button data-preset="stream">Stream</button><button data-preset="truchet">Truchet</button><button data-preset="both">Reverb + spark</button></div>
+    <div class="row"><button data-preset="spark">Spark</button><button data-preset="reverb">Reverb</button><button data-preset="ripple">Ripple</button><button data-preset="stream">Stream</button><button data-preset="truchet">Truchet</button><button data-preset="both">Reverb + spark</button><button data-preset="stack2">Two-storey stack</button><button data-preset="stack3">Three-storey stack</button></div>
   </fieldset>
   <fieldset><legend>02 gears</legend>
     <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="3"></label>
@@ -71,6 +71,8 @@ code { font-family:var(--font-mono); font-size:0.85em; }
     <label>Gears <output id="o-gears"></output><input type="range" id="gears" min="1" max="14" step="1" value="2"></label>
     <label>Module (mm, before fitting) <output id="o-mod"></output><input type="range" id="mod" min="1" max="6" step="0.5" value="4"></label>
     <label>Thickness (in modules) <output id="o-thick"></output><input type="range" id="thick" min="0.5" max="8" step="0.25" value="2.5"></label>
+    <label>Compound stacks <select id="stack"><option value="off">off</option><option value="two">up to 2 gears per axle</option><option value="three">up to 3 gears per axle</option></select></label>
+    <label>Stacked axles (extra pairs) <output id="o-stackn"></output><input type="range" id="stackn" min="1" max="8" step="1" value="3"></label>
     <label>Zoom <output id="o-zoom"></output><input type="range" id="zoom" min="0.3" max="2.5" step="0.05" value="0.55"></label>
   </fieldset>
   <fieldset><legend>03 camera and light</legend>
@@ -176,6 +178,34 @@ function meshTree(rnd, m, n) {
     gears.push({ z, x, y, rot: th + 180 - 180 / z - (par.rot - th) * par.z / z, parent: pi, spin: -par.spin });
   }
   return gears;
+}
+
+// Compound stacks: extra gears layered on an axle's top gear, each level meshing a different neighbour.
+// The neighbour is a raised gear on a shaft post (floor to its underside), so nothing floats. rc is its own PRNG,
+// so the floor-standing tree above is the same tree with the control off.
+function stackUp(rc, m, tree, hgt, maxLv, want) {
+  const KS = [12, 15, 18, 24, 30, 40], ro = z => z * m / 2 + m, gap = 2 * m, hit = (a0, a1, b0, b1) => a0 < b1 - 1e-6 && b0 < a1 - 1e-6;
+  const gs = tree.map((g, i) => ({ ...g, z0: 0, z1: hgt, lvl: 0, axle: i })), axles = tree.map((g, i) => ({ x: g.x, y: g.y, top: 0, last: i, first: i })), posts = [];
+  const solids = () => [...gs.map(g => ({ x: g.x, y: g.y, r: ro(g.z), z0: g.z0, z1: g.z1, axle: g.axle })), ...posts.map(p => ({ x: p.x, y: p.y, r: p.r, z0: 0, z1: p.z1, axle: p.axle }))];
+  let added = 0;
+  for (let t = 0; t < 4000 && added < want; t++) {
+    const ai = Math.floor(rc() * axles.length), ax = axles[ai];
+    const za = KS[Math.floor(rc() * KS.length)], zc = KS[Math.floor(rc() * KS.length)], th = rc() * 360;
+    const h = Math.max(0.5 * m, Math.round(hgt * (0.55 + 0.45 * rc()) / (0.25 * m)) * 0.25 * m);
+    if (ax.top + 1 >= maxLv) continue;
+    const z0 = gs[ax.last].z1, lvl = ax.top + 1, c = (za + zc) * m / 2, x = ax.x + c * Math.cos(th * Math.PI / 180), y = ax.y + c * Math.sin(th * Math.PI / 180);
+    if (Math.hypot(x, y) > 60 * m) continue;
+    const pr = (zc < 18 ? 6 : 8) / 2, all = solids();
+    if (all.some(s => s.axle !== ai && hit(z0, z0 + h, s.z0, s.z1) && Math.hypot(ax.x - s.x, ax.y - s.y) < ro(za) + s.r + gap)) continue;
+    if (all.some(s => hit(z0, z0 + h, s.z0, s.z1) && Math.hypot(x - s.x, y - s.y) < ro(zc) + s.r + gap)) continue;
+    if (all.some(s => hit(0, z0, s.z0, s.z1) && Math.hypot(x - s.x, y - s.y) < pr + s.r + 1.5)) continue;
+    const base = gs[ax.first], up = { z: za, x: ax.x, y: ax.y, rot: base.rot, parent: -1, spin: base.spin, z0, z1: z0 + h, lvl, axle: ai };
+    gs.push(up); const ui = gs.length - 1; ax.top = lvl; ax.last = ui;
+    gs.push({ z: zc, x, y, rot: th + 180 - 180 / zc - (up.rot - th) * za / zc, parent: ui, spin: -up.spin, z0, z1: z0 + h, lvl, axle: axles.length });
+    axles.push({ x, y, top: lvl, last: gs.length - 1, first: gs.length - 1 });
+    posts.push({ x, y, r: pr, z1: z0, axle: axles.length - 1 }); added++;
+  }
+  return { gs, posts };
 }
 
 // ---------------- rasters ----------------
@@ -291,8 +321,12 @@ function runs(p, closed, ok, minLen, out, smooth) {
 
 // ---------------- build ----------------
 const $ = id => document.getElementById(id);
-const IDS = ["seed", "gears", "mod", "thick", "zoom", "az", "el", "lens", "la", "le", "shadow", "ink", "bg", "bg2", "extent", "sp", "reach", "mingap", "ramp", "dash", "rpt", "wave", "fr", "fdir", "swirl", "tile", "strands", "hp", "dp", "page", "frame"];
-const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+const IDS = ["seed", "gears", "mod", "thick", "zoom", "az", "el", "lens", "la", "le", "shadow", "ink", "bg", "bg2", "extent", "sp", "reach", "mingap", "ramp", "dash", "rpt", "wave", "fr", "fdir", "swirl", "tile", "strands", "hp", "dp", "page", "frame", "stack", "stackn"];
+const read = () => {   // the stack keys ride in the settings only when the control is on, so older exports read back unchanged
+  const o = Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+  if (o.stack === "off") { delete o.stack; delete o.stackn; }
+  return o;
+};
 const V = 1, H = 2, D1 = 4, D2 = 8, C = 16;
 let last = null;
 
@@ -300,7 +334,10 @@ function build(o) {
   const t0 = performance.now(), [W, Hh] = o.page.split("x").map(Number), M = o.frame === "on" ? 9 : 4;
   const panel = [M, M, W - M, Hh - M], PW = panel[2] - panel[0], PH = panel[3] - panel[1];
   const rnd = mulberry32(o.seed * 7919 + 3), m = o.mod, hgt = o.thick * m;
-  const tree = meshTree(rnd, m, o.gears);
+  const stackOn = !!o.stack && o.stack !== "off";
+  let tree = meshTree(rnd, m, o.gears), postRaw = [];
+  if (stackOn) ({ gs: tree, posts: postRaw } = stackUp(mulberry32(o.seed * 104729 + 11), m, tree, hgt, o.stack === "three" ? 3 : 2, o.stackn));
+  else tree = tree.map(g => ({ ...g, z0: 0, z1: hgt, lvl: 0 }));
   const gx = tree.reduce((a, g) => a + g.x, 0) / tree.length, gy = tree.reduce((a, g) => a + g.y, 0) / tree.length;
   const az = o.az * Math.PI / 180, el = o.el * Math.PI / 180, ca = Math.cos(az), sa = Math.sin(az), se = Math.sin(el), ce = Math.cos(el);
   const rot = ([x, y]) => [(x - gx) * ca - (y - gy) * sa, (x - gx) * sa + (y - gy) * ca];
@@ -311,6 +348,11 @@ function build(o) {
     const [cx, cy] = rot([g.x, g.y]);
     return { ...g, gi, cx, cy, R: g.z * m / 2 + m, rotW: a + az, outline: place(rings[0]), bore: place(rings.at(-1)), pocket: rings.length === 4 ? [place(rings[1]), place(rings[2])] : [] };
   });
+  const posts = postRaw.map((p, k) => {   // shaft posts under raised gears: plain drums from the floor to the gear's underside
+    const [cx, cy] = rot([p.x, p.y]);
+    return { gi: gears.length + k, axle: p.axle, cx, cy, R: p.r, post: true, z0: 0, z1: p.z1, bore: null, pocket: [], outline: circlePts(p.r, 32).map(([x, y]) => rot([x + p.x, y + p.y])) };
+  });
+  const solids = [...gears, ...posts], floorGears = gears.filter(g => g.z0 === 0);
   const E = Math.max(...gears.map(g => Math.hypot(g.cx, g.cy) + g.R));
   const ortho = o.lens <= 0, D = ortho ? 0 : o.lens * E;
   const proj = ortho ? (X, Y, z) => [X, -(Y * se + z * ce)]
@@ -320,10 +362,10 @@ function build(o) {
   const la = o.la * Math.PI / 180, le = o.le * Math.PI / 180, Lt = [Math.cos(le) * Math.cos(la), Math.cos(le) * Math.sin(la), Math.sin(le)];
 
   // fit the gears into the panel
-  const sh = o.shadow === "on" ? [-hgt * Lt[0] / Lt[2], -hgt * Lt[1] / Lt[2]] : [0, 0];
+  const shOf = z => o.shadow === "on" ? [-z * Lt[0] / Lt[2], -z * Lt[1] / Lt[2]] : [0, 0];
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
   const grow = ([u, v]) => { x0 = Math.min(x0, u); y0 = Math.min(y0, v); x1 = Math.max(x1, u); y1 = Math.max(y1, v); };
-  for (const g of gears) for (const [X, Y] of g.outline) { grow(proj(X, Y, hgt)); grow(proj(X, Y, 0)); grow(proj(X + sh[0], Y + sh[1], 0)); }
+  for (const g of gears) { const sh = shOf(g.z1); for (const [X, Y] of g.outline) { grow(proj(X, Y, g.z1)); grow(proj(X, Y, g.z0)); grow(proj(X + sh[0], Y + sh[1], 0)); } }
   const s = o.zoom * Math.min(PW / (x1 - x0), PH / (y1 - y0));
   const ox = panel[0] + (PW - s * (x1 - x0)) / 2 - s * x0, oy = panel[1] + (PH - s * (y1 - y0)) / 2 - s * y0;
   const P = (X, Y, z) => { const [u, v] = proj(X, Y, z); return [s * u + ox, s * v + oy]; };
@@ -347,36 +389,45 @@ function build(o) {
   const Lscr = (() => { const u = Lt[0], v = -Lt[1] * se, n = Math.hypot(u, v) || 1; return [u / n, v / n]; })();
   const pg = pts => pts.map(([X, Y, z]) => { const [x, y] = P(X, Y, z); return [x * RES, y * RES]; });
   if (o.shadow === "on") {
-    const f = face(group(!hatchOn, { bg: true }), 0.7, D2), N = Math.min(60, Math.max(2, Math.ceil(Math.hypot(...sh) * s * RES / 1.2)));
-    for (const g of gears) for (let k = 0; k <= N; k++) draws.push([[g.outline.map(([X, Y]) => [X + sh[0] * k / N, Y + sh[1] * k / N, 0])], f]);
+    const f = face(group(!hatchOn, { bg: true }), 0.7, D2);
+    for (const g of solids) {
+      const sh = shOf(g.z1), s0 = shOf(g.z0), N = Math.min(60, Math.max(2, Math.ceil(Math.hypot(sh[0] - s0[0], sh[1] - s0[1]) * s * RES / 1.2)));
+      for (let k = 0; k <= N; k++) draws.push([[g.outline.map(([X, Y]) => g.z0 === 0 ? [X + sh[0] * k / N, Y + sh[1] * k / N, 0] : [X + s0[0] + (sh[0] - s0[0]) * k / N, Y + s0[1] + (sh[1] - s0[1]) * k / N, 0])], f]);
+    }
   }
   const creases = [], capDetail = [];
-  gears.slice().sort((a, b) => depth(a.cx, a.cy, 0) - depth(b.cx, b.cy, 0)).forEach(g => {
-    const gBore = group(true), gWall = group(true), gCap = group(true), walls = [], n = g.outline.length, ef = new Int32Array(n).fill(-1);
-    g.bore.forEach((a, i) => {
+  const order = solids.slice().sort((a, b) => depth(a.cx, a.cy, 0) - depth(b.cx, b.cy, 0));
+  if (stackOn) {   // painter's order with layers: anything wholly below another piece it overlaps in plan goes first, otherwise far to near
+    const done = new Set(), out = [], below = (p, q) => p.z1 <= q.z0 + 1e-6 && Math.hypot(p.cx - q.cx, p.cy - q.cy) < p.R + q.R;
+    const visit = q => { if (done.has(q)) return; done.add(q); for (const p of order) if (p !== q && below(p, q)) visit(p); out.push(q); };
+    order.forEach(visit); order.splice(0, order.length, ...out);
+  }
+  order.forEach(g => {
+    const zt = g.z1, zb = g.z0, gBore = group(true), gWall = group(true), gCap = group(true), walls = [], n = g.outline.length, ef = new Int32Array(n).fill(-1);
+    (g.bore || []).forEach((a, i) => {
       const b = g.bore[(i + 1) % g.bore.length], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
       let nx = b[1] - a[1], ny = a[0] - b[0]; if (nx * (g.cx - mx) + ny * (g.cy - my) < 0) { nx = -nx; ny = -ny; }
       const L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
       if (!facing(nx, ny, mx, my)) return;
-      walls.push([depth(mx, my, 0) - 1e6, [[[a[0], a[1], hgt], [b[0], b[1], hgt], [b[0], b[1], 0], [a[0], a[1], 0]]], face(gBore, 0.9, V | H | D1, null, { gear: g.gi })]);
+      walls.push([depth(mx, my, 0) - 1e6, [[[a[0], a[1], zt], [b[0], b[1], zt], [b[0], b[1], zb], [a[0], a[1], zb]]], face(gBore, 0.9, V | H | D1, null, { gear: g.gi })]);
     });
     for (let i = 0; i < n; i++) {
       const a = g.outline[i], b = g.outline[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = (b[1] - a[1]) / L, ny = -(b[0] - a[0]) / L;
       if (!facing(nx, ny, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) continue;
       const t = wallTone(nx, ny);
       ef[i] = face(gWall, t, patsFor(t), null, { gear: g.gi });
-      walls.push([depth((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0), [[[a[0], a[1], hgt], [b[0], b[1], hgt], [b[0], b[1], 0], [a[0], a[1], 0]]], ef[i]]);
+      walls.push([depth((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0), [[[a[0], a[1], zt], [b[0], b[1], zt], [b[0], b[1], zb], [a[0], a[1], zb]]], ef[i]]);
     }
     walls.sort((p, q) => p[0] - q[0]).forEach(([, r, f]) => draws.push([r, f]));
-    const [ccx, ccy] = P(g.cx, g.cy, hgt), Rs = g.R * s;
+    const [ccx, ccy] = P(g.cx, g.cy, zt), Rs = g.R * s;
     const cap = face(gCap, 0, 0, (x, y) => Math.min(0.6, Math.max(0.06, 0.3 - 0.26 * ((x - ccx) * Lscr[0] + (y - ccy) * Lscr[1]) / Rs)), { gear: g.gi });
-    draws.push([[g.outline.map(([X, Y]) => [X, Y, hgt]), g.bore.map(([X, Y]) => [X, Y, hgt])], cap]);
+    draws.push([[g.outline.map(([X, Y]) => [X, Y, zt]), ...(g.bore ? [g.bore.map(([X, Y]) => [X, Y, zt])] : [])], cap]);
     for (let i = 0; i < n; i++) {
       const a = g.outline[(i - 1 + n) % n], b = g.outline[i], c = g.outline[(i + 1) % n];
       const t = Math.abs(Math.atan2((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]), (b[0] - a[0]) * (c[0] - b[0]) + (b[1] - a[1]) * (c[1] - b[1])));
-      if (t > 0.45 && (ef[i] >= 0 || ef[(i - 1 + n) % n] >= 0)) creases.push([P(b[0], b[1], hgt), P(b[0], b[1], 0), ef[(i - 1 + n) % n], ef[i]]);
+      if (t > 0.45 && (ef[i] >= 0 || ef[(i - 1 + n) % n] >= 0)) creases.push([P(b[0], b[1], zt), P(b[0], b[1], zb), ef[(i - 1 + n) % n], ef[i]]);
     }
-    for (const r of g.pocket) capDetail.push([r.map(([X, Y]) => P(X, Y, hgt)), cap]);
+    for (const r of g.pocket) capDetail.push([r.map(([X, Y]) => P(X, Y, zt)), cap]);
   });
   for (const [rings, f] of draws) fillPx(B.buf, B.nx, B.ny, rings.map(pg), f);
   const [pi0, pj0, pi1, pj1] = panel.map(v => Math.round(v * RES));
@@ -422,9 +473,9 @@ function build(o) {
   };
   if (hatchOn) {
     straight(Math.PI / 2, V); straight(0, H); straight(Math.PI / 4, D1); straight(-Math.PI / 4, D2);
-    if (ce > 0.08) for (const g of gears) {
+    if (ce > 0.08) for (const g of solids) {
       const dz = hp / (s * ce);
-      for (let z = dz; z < hgt - dz * 0.4; z += dz) {
+      for (let z = g.z0 + dz; z < g.z1 - dz * 0.4; z += dz) {
         const d = densify(g.outline.map(([X, Y]) => P(X, Y, z)), true, 0.2);
         runs(d, true, d.map(([x, y]) => { const f = faces[fAt(x, y)]; return f.gear === g.gi && (f.pats & C) > 0; }), 0.6, shade, false);
       }
@@ -467,7 +518,7 @@ function build(o) {
   if (o.extent === "organic") { const bx0 = Math.min(...gears.map(g => g.cx - g.R)) - reachP * 1.1, bx1 = Math.max(...gears.map(g => g.cx + g.R)) + reachP * 1.1, by0 = Math.min(...gears.map(g => g.cy - g.R)) - reachP * 1.1, by1 = Math.max(...gears.map(g => g.cy + g.R)) + reachP * 1.1; fx0 = Math.max(fx0, bx0); fx1 = Math.min(fx1, bx1); fy0 = Math.max(fy0, by0); fy1 = Math.min(fy1, by1); }
   const ext = Math.max(fx1 - fx0, fy1 - fy0, 1), h = Math.max(ext / 1800, 0.2 / s0);
   const G = { x0: fx0 - 2 * h, y0: fy0 - 2 * h, h }; G.nx = Math.ceil((fx1 - fx0) / h) + 4; G.ny = Math.ceil((fy1 - fy0) / h) + 4;
-  const dist = distanceField(G, gears.map(g => g.outline));
+  const dist = distanceField(G, solids.map(g => g.outline));
   const distAt = (X, Y) => {   // bilinear, so rings traced from it stay smooth
     const u = (X - G.x0) / h - 0.5, v = (Y - G.y0) / h - 0.5, i = Math.floor(u), j = Math.floor(v);
     if (i < 0 || j < 0 || i >= G.nx - 1 || j >= G.ny - 1) return 1e9;
@@ -523,7 +574,7 @@ function build(o) {
     },
     rays(out) {   // spark: one ray (or a fan) out of every tooth tip, radial, stopping at the next gear
       const rr = mulberry32(o.seed * 13 + 1), L = organic ? reachP : Math.max(reachP, ext);
-      for (const g of gears) for (let t = 0; t < g.z * o.rpt; t++) {
+      for (const g of floorGears) for (let t = 0; t < g.z * o.rpt; t++) {
         const a = g.rotW + 2 * Math.PI * t / (g.z * o.rpt), dx = Math.cos(a), dy = Math.sin(a), r0 = g.R + 0.5 * m, r1 = g.R + L * (0.45 + 0.55 * rr());
         let r = r0, on = true, seg = [];
         const flush = () => { if (seg.length > 1) emit(seg, false, (X, Y) => 2 * Math.PI * Math.hypot(X - g.cx, Y - g.cy) / (g.z * o.rpt), out, 0.4); seg = []; };
@@ -537,13 +588,13 @@ function build(o) {
       }
     },
     ripple(out) {   // every gear drops ripples; their interference draws the lines
-      const lam = spP * o.wave, fn = (X, Y) => { let v = 0; for (const g of gears) { const d = Math.max(0, Math.hypot(X - g.cx, Y - g.cy) - g.R); v += Math.cos(2 * Math.PI * d / lam) / Math.sqrt(1 + d / (3 * lam)); } return v; };
+      const lam = spP * o.wave, fn = (X, Y) => { let v = 0; for (const g of floorGears) { const d = Math.max(0, Math.hypot(X - g.cx, Y - g.cy) - g.R); v += Math.cos(2 * Math.PI * d / lam) / Math.sqrt(1 + d / (3 * lam)); } return v; };
       const lv = o.fr === 1 ? [0] : o.fr === 2 ? [-0.45, 0.45] : [-0.7, 0, 0.7];
       const F = pageField(fn); pageLevels(F, lv, () => gapAt(F, 1.2 / lv.length), out);
     },
     stream(out) {   // a uniform stream past every gear (a cylinder each), plus swirl from each gear's spin
       const phi = o.fdir * Math.PI / 180, cp = Math.cos(phi), spn = Math.sin(phi);
-      const psi = (X, Y) => { let v = Y * cp - X * spn; for (const g of gears) { const dx = X - g.cx, dy = Y - g.cy, r2 = Math.max(dx * dx + dy * dy, (0.5 * g.R) ** 2); v -= g.R * g.R * (dy * cp - dx * spn) / r2; v += g.spin * o.swirl * g.R * 0.5 * Math.log(r2) / 2; } return v; };
+      const psi = (X, Y) => { let v = Y * cp - X * spn; for (const g of floorGears) { const dx = X - g.cx, dy = Y - g.cy, r2 = Math.max(dx * dx + dy * dy, (0.5 * g.R) ** 2); v -= g.R * g.R * (dy * cp - dx * spn) / r2; v += g.spin * o.swirl * g.R * 0.5 * Math.log(r2) / 2; } return v; };
       const F = pageField(psi); let lo = 1e9, hi = -1e9; for (const v of F.f) { if (v === OFF) continue; if (v < lo) lo = v; if (v > hi) hi = v; }
       const step = Math.max(spP, (hi - lo) / 700), lv = []; for (let v = Math.ceil(lo / step) * step; v < hi; v += step) lv.push(v);
       pageLevels(F, lv, () => gapAt(F, step), out);
@@ -567,7 +618,33 @@ function build(o) {
   if (o.bg2 !== "none" && o.bg2 !== o.bg) PATTERNS[o.bg2](bg2);
   if (organic && o.bg !== "none") pageLevels(pageField(distAt), [reachP], () => null, bg);
 
-  return { W, H: Hh, key, bg, bg2, shade, spot, gears, dots, minGap: minDot, bgTight: tightest, dropped, keptPts, s, o, faces: faces.length, ms: performance.now() - t0 };
+  // compound-stack gates (only when the control is on, so the plain studio's result keeps its exact shape)
+  let stackInfo = null;
+  if (stackOn) {
+    const vis = new Int32Array(gears.length); for (let i = 0; i < B.buf.length; i++) { const gi = faces[B.buf[i]].gear; if (gi !== undefined && gi < gears.length) vis[gi]++; }
+    const lvls = Math.max(...gears.map(g => g.lvl)) + 1;
+    let clear = 1e9, meshErr = 0, stacked = 0, distinct = 0, rooted = 0;
+    const ax = tree.map(g => g.axle), band = (a, b) => a.z0 < b.z1 - 1e-6 && b.z0 < a.z1 - 1e-6;
+    gears.forEach((g, i) => {
+      if (g.parent >= 0) { const q = gears[g.parent]; meshErr = Math.max(meshErr, Math.abs(Math.hypot(g.cx - q.cx, g.cy - q.cy) - (g.z + q.z) * m / 2), Math.abs(g.z0 - q.z0), Math.abs(g.z1 - q.z1)); }
+      for (let j = i + 1; j < gears.length; j++) { const q = gears[j]; if (ax[i] === ax[j] || g.parent === j || q.parent === i || !band(g, q)) continue; clear = Math.min(clear, Math.hypot(g.cx - q.cx, g.cy - q.cy) - g.R - q.R); }
+      for (const p of posts) if (ax[i] !== p.axle && g.z0 < p.z1 - 1e-6 && band({ z0: 0, z1: p.z1 }, g)) clear = Math.min(clear, Math.hypot(g.cx - p.cx, g.cy - p.cy) - g.R - p.R);
+    });
+    const axles = new Map(); gears.forEach((g, i) => { const a = ax[i]; (axles.get(a) || axles.set(a, []).get(a)).push(i); });
+    for (const [, gi] of axles) if (gi.length > 1) {
+      stacked++;
+      const partners = gi.map(i => new Set(gears.flatMap((q, j) => (q.parent === i ? [ax[j]] : []).concat(gears[i].parent === j ? [ax[j]] : []))));
+      const all = partners.flatMap(s => [...s]);
+      if (new Set(all).size === all.length && partners.slice(1).every(s => s.size > 0)) distinct++;
+    }
+    stackInfo = [
+      ["stacked axles: every level meshes a different neighbour", stacked > 0 && distinct === stacked, `${distinct} of ${stacked} axles, ${lvls} levels, ${gears.length} gears, ${posts.length} posts`],
+      ["mesh pairs: centre distance and z band match", meshErr < 1e-6, `worst error ${meshErr.toExponential(1)} mm`],
+      ["no gear or post touches another in its z band (clearance >= 0)", clear >= 0, `${clear === 1e9 ? "n/a" : clear.toFixed(2)} mm`],
+      ["every gear shows in the frame (hidden-line buffer)", [...vis].every(v => v > 0), `least visible ${Math.min(...vis)} px`],
+    ];
+  }
+  return { ...(stackInfo ? { gates: stackInfo } : {}), W, H: Hh, key, bg, bg2, shade, spot, gears, dots, minGap: minDot, bgTight: tightest, dropped, keptPts, s, o, faces: faces.length, ms: performance.now() - t0 };
 }
 
 // ---------------- draw + export ----------------
@@ -584,7 +661,7 @@ function draw(r) {
   const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
   const layer = (name, col, w, ps) => ps.length ? `<span class="sw" style="background:${col}"></span>${name} ${w}: <b>${len(ps).toFixed(1)} m</b>, ${ps.length} paths` : "";
   const ok = r.bgTight >= r.o.mingap - 1e-9, thin = r.dropped / Math.max(1, r.dropped + r.keptPts);
-  $("stats").innerHTML = `<b>${r.gears.length}</b> gears, ${r.gears.length - 1} meshes (SCAD pair phase) · ${r.o.lens > 0 ? "lens x" + r.o.lens : "flat (orthographic)"} · ${r.ms.toFixed(0)} ms<br>`
+  $("stats").innerHTML = `<b>${r.gears.length}</b> gears, ${r.gears.filter(g => g.parent >= 0).length} meshes (SCAD pair phase) · ${r.o.lens > 0 ? "lens x" + r.o.lens : "flat (orthographic)"} · ${r.ms.toFixed(0)} ms<br>`
     + [layer("gears", INK.key, 0.4, r.key), layer("floor", INK.bg, 0.3, r.bg), layer("floor 2", INK.bg2, 0.3, r.bg2), layer("hatch", INK.shade, 0.3, r.shade), layer("dots", INK.spot, 0.3, r.spot)].filter(Boolean).join(" · ") + "<br>"
     + `tightest floor gap kept <b class="${ok ? "pass" : "fail"}">${r.bgTight === 99 ? "n/a" : r.bgTight.toFixed(2) + " mm"}</b> (limit ${r.o.mingap}) · thinned ${(thin * 100).toFixed(1)}% of floor points where lines would pack`
     + (r.dots ? ` · dot gap <b class="${r.minGap >= 0.2 ? "pass" : "fail"}">${r.minGap.toFixed(2)} mm</b>` : "");
@@ -618,13 +695,15 @@ const PRESETS = {
   ripple: { gears: 3, mod: 3, thick: 2.5, zoom: 0.6, az: -25, el: 40, lens: 3, bg: "ripple", bg2: "none", extent: "floor", sp: 1.1, wave: 4, fr: 2, ink: "lines", shadow: "off" },
   stream: { gears: 5, mod: 2.5, thick: 3, zoom: 0.6, az: 10, el: 50, lens: 4, bg: "stream", bg2: "none", extent: "floor", sp: 2, fdir: 0, swirl: 0.8, ink: "outline", shadow: "off" },
   truchet: { gears: 3, mod: 3.5, thick: 3, zoom: 0.6, az: 30, el: 42, lens: 3, bg: "truchet", bg2: "none", extent: "floor", sp: 1.1, tile: 18, strands: 3, ink: "outline", shadow: "on" },
+  stack2: { seed: 7, gears: 2, mod: 3, thick: 3.5, stack: "two", stackn: 2, zoom: 1, az: 25, el: 34, lens: 3, bg: "rings", bg2: "none", extent: "organic", sp: 1, reach: 25, ramp: 3, ink: "lines", shadow: "off" },
+  stack3: { seed: 8, gears: 2, mod: 3, thick: 2.5, stack: "three", stackn: 4, zoom: 0.9, az: 25, el: 36, lens: 3, bg: "rings", bg2: "none", extent: "organic", sp: 1, reach: 25, ramp: 3, ink: "lines", shadow: "off" },
   both: { gears: 2, mod: 4, thick: 4, zoom: 0.55, az: 20, el: 38, lens: 3, bg: "rings", bg2: "rays", extent: "organic", sp: 1.1, reach: 45, ramp: 3, dash: "dashed", rpt: 1, ink: "outline", shadow: "off" },
 };
-document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { $("stack").value = "off"; for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
 $("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
 IDS.forEach(k => $(k).addEventListener("input", run));
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-const stem = o => `gear-3d-s${o.seed}-g${o.gears}m${o.mod}-${o.bg}${o.bg2 !== "none" ? "+" + o.bg2 : ""}-az${o.az}el${o.el}-${o.ink}`;
+const stem = o => `gear-3d-s${o.seed}-g${o.gears}m${o.mod}${o.stack ? "-stk" + o.stack + o.stackn : ""}-${o.bg}${o.bg2 !== "none" ? "+" + o.bg2 : ""}-az${o.az}el${o.el}-${o.ink}`;
 $("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last.o) + ".svg"); };
 $("split").onclick = () => {
   if (!last) return;
@@ -636,6 +715,7 @@ $("loadsvg").onchange = async e => {   // read the settings an earlier export ca
   const f = e.target.files[0]; if (!f) return; e.target.value = "";
   const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
   if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported before 2026-09-28, or by another tool)."; return; }
+  $("stack").value = "off";   // an export made without stacks carries no stack keys
   for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
   run();
 };

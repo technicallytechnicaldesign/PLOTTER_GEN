@@ -1,6 +1,6 @@
 // Plot decoder page: camera, photo or sample in; decoder-core.js reads it; the page shows the message and its working.
 "use strict";
-import { decode } from "./decoder-core.js";
+import { decode, pageMm } from "./decoder-core.js";
 import { build, howToRead } from "./cipher-core.js";
 import { build as signalBuild, HOW as SIGNAL_HOW } from "./signals-core.js";
 import { densify } from "./core.js";
@@ -85,6 +85,42 @@ $("file").addEventListener("change", async e => {
   const bmp = await createImageBitmap(f), g = $("grab"); g.width = bmp.width; g.height = bmp.height;
   const c = g.getContext("2d", { willReadFrequently: true }); c.drawImage(bmp, 0, 0); read(c.getImageData(0, 0, g.width, g.height));
 });
+// ---------------- no marks: tap the four page corners (PLG-0475) ----------------
+// Needs a settings label already read (it gives the page size and layout). Taps go top-left, top-right, bottom-right,
+// bottom-left of the PAGE as it lies on the mat; a fifth tap starts over. The fit snaps each tap to the real paper edge
+// and slides the drawing into place, so a tap off by a few mm still reads.
+let taps = [], tapImage = null;
+function drawTaps() {
+  const img = tapImage, view = $("view"), c = view.getContext("2d"); c.putImageData(img, 0, 0);
+  const lw = Math.max(3, img.width / 300); c.fillStyle = c.strokeStyle = "#a568e0"; c.lineWidth = lw;
+  c.beginPath(); taps.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); if (taps.length === 4) c.closePath(); c.stroke();
+  taps.forEach(([x, y], i) => { c.beginPath(); c.arc(x, y, lw * 2.5, 0, 7); c.fill(); c.font = `${lw * 6}px sans-serif`; c.fillText(["TL", "TR", "BR", "BL"][i], x + lw * 3, y - lw * 3); });
+}
+$("nomarks").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = ""; stopCamera();
+  if (!label) { $("stage").classList.add("on"); $("status").textContent = "scan or pick the settings label from the back first, then pick the front here"; return; }
+  const bmp = await createImageBitmap(f), g = $("grab"); g.width = bmp.width; g.height = bmp.height;
+  const c = g.getContext("2d", { willReadFrequently: true }); c.drawImage(bmp, 0, 0);
+  tapImage = c.getImageData(0, 0, g.width, g.height); taps = [];
+  const view = $("view"), stage = $("stage"); stage.classList.add("on"); $("video").style.display = "none"; view.style.display = "block"; view.width = g.width; view.height = g.height;
+  drawTaps(); $("status").textContent = "tap the page corners: top-left, top-right, bottom-right, bottom-left";
+});
+$("view").addEventListener("click", e => {
+  if (!tapImage) return;
+  if (taps.length === 4) taps = [];
+  const view = $("view"), r = view.getBoundingClientRect();
+  taps.push([(e.clientX - r.left) * view.width / r.width, (e.clientY - r.top) * view.height / r.height]);
+  drawTaps();
+  if (taps.length < 4) { $("status").textContent = `tapped ${["top-left", "top-right", "bottom-right", "bottom-left"][taps.length - 1]}; next: ${["top-right", "bottom-right", "bottom-left"][taps.length - 1]}`; return; }
+  const [W, H] = pageMm(label);
+  $("status").textContent = "fitting…";
+  setTimeout(() => {
+    const res = decode(tapImage, { ...opts(), anchor: { mm: [[0, 0], [W, 0], [W, H], [0, H]], px: taps } });
+    lastImage = tapImage; show(tapImage, res); report(res);
+    if (res.ok) $("status").textContent = `read ${res.cellsRead} cells from the tapped corners (tap again to redo)`;
+    else $("status").textContent = res.message + " (tap four corners again to retry)";
+  }, 30);
+});
 const SAMPLES = {
   arcs: { method: "truchet", tiles: "arcs", msg: "NOTHING TO SEE HERE", hide: "scatter", density: "2", size: 22, fill: "contour", pitch: 0.7 },
   maze: { method: "maze", walls: "line", msg: "YOU FOUND THE WAY IN", size: 24, fill: "lines", pitch: 0.6 },
@@ -114,4 +150,4 @@ $("ckey").addEventListener("input", () => { if (lastImage) { const r = decode(la
 $("scan").onclick = startCamera;
 $("stop").onclick = stopCamera;
 $("rev").textContent = UTP_REV;
-window.__decoder = { decode, SAMPLES };   // hooks for checking
+window.__decoder = { decode, SAMPLES, taps: () => taps };   // hooks for checking
