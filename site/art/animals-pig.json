@@ -1,12 +1,12 @@
 {
   "studio": "jointed-animal-studio.html",
-  "id": "animals-rabbit",
-  "title": "Rabbit",
-  "preset": "rabbit",
+  "id": "animals-pig",
+  "title": "Pig",
+  "preset": "pig",
   "settings": {
-    "length": "200",
+    "length": "250",
     "stock": "1",
-    "seed": "7",
+    "seed": "15",
     "detail": "1",
     "front": "15",
     "back": "10",
@@ -14,9 +14,9 @@
     "nod": "0",
     "wag": "0",
     "margin": "10",
-    "animal": "rabbit",
+    "animal": "pig",
     "joints": "hips",
-    "markings": "none",
+    "markings": "patches",
     "shade": "contour",
     "fur": "on",
     "accent": "on",
@@ -26,8 +26,8 @@
     "ticks": "split"
   },
   "sourceHash": "e909a7ed377214b4121cc13cb3406cc9330e464fe77659f1275db536f81483c1",
-  "svg": "site/art/animals-rabbit.svg",
-  "image": "site/art/animals-rabbit.webp",
+  "svg": "site/art/animals-pig.svg",
+  "image": "site/art/animals-pig.webp",
   "page": "280x280",
-  "seed": 7
+  "seed": 15
 }
