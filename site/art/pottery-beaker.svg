@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="280mm" height="280mm" viewBox="0 0 280 280">
 <title>PLG pottery puzzle studio</title>
-<desc id="plg-settings">{"seed":7,"shape":"beaker","tradition":"bell","zrim":"notchrim","zneck":"cord","zshoulder":"pendant","zbelly":"lattice","zlower":"burnish","mscale":1,"dens":1,"pitch":0.8,"foreshorten":"on","medium":"trad","sherds":20,"along":0.5,"wiggle":0.6,"missing":0,"lost":"plaster","numbers":"off","sheet":"card","board":"blank","view":"cut","explode":0.4,"page":"280x280","margin":10}</desc>
+<desc id="plg-settings">{"seed":7,"shape":"beaker","tradition":"bell","zrim":"notchrim","zneck":"cord","zshoulder":"pendant","zbelly":"lattice","zlower":"burnish","mscale":1,"dens":1,"pitch":0.8,"foreshorten":"on","medium":"trad","sherds":20,"along":0.5,"wiggle":0.6,"missing":0,"lost":"plaster","numbers":"off","outline":"off","outlinein":0.6,"sheet":"card","board":"blank","view":"cut","explode":0.4,"page":"280x280","margin":10}</desc>
 <g id="pen-incised" stroke="#000000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M99.460,141.824 L97.594,145.460 L96.644,142.187" fill="none"/>
 <path d="M96.334,141.096 L95.234,137.096 L94.278,133.460 L103.699,133.460 L100.018,140.733" fill="none"/>

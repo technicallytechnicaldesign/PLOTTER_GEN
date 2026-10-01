@@ -6,6 +6,7 @@
   "settings": {
     "height": "300",
     "stock": "1",
+    "outlinein": "0.6",
     "detail": "1",
     "arms": "35",
     "legs": "10",
@@ -29,12 +30,13 @@
     "sheet": "all",
     "doll": "off",
     "stitch": "on",
+    "outlines": "off",
     "letters": "on",
     "view": "dressed",
     "page": "280x280",
     "ticks": "split"
   },
-  "sourceHash": "1a1f158b3683d0881424560072e513a62345229c46d66ec88cef4336031fbdfe",
+  "sourceHash": "8fa90e4cad0595b61f3ba7be744cf24bf97da20dfbf30d9471fd475f162a93c7",
   "svg": "site/art/wardrobe-party.svg",
   "image": "site/art/wardrobe-party.webp",
   "page": "280x280",

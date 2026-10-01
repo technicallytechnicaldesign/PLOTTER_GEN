@@ -156,6 +156,8 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Shading <select id="shade"><option value="contour">engraved lines along the undersides</option><option value="rim">hatched along the lower edges</option><option value="off">off</option></select></label>
     <label>Fur strokes <select id="fur"><option value="on">on</option><option value="off">off</option></select></label>
     <label>Accents in the colour pen <select id="accent"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Draw the outlines with a pen <select id="outlines"><option value="off">off</option><option value="on">on, their own layer</option></select></label>
+    <label>Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.6"></label>
     <label>Assembly letters at the joints <select id="letters"><option value="on">on</option><option value="off">off</option></select></label>
   </fieldset>
   <fieldset><legend>Preview</legend>
@@ -599,6 +601,8 @@ function decorate(p, o, R, rnd) {
   if (o.shade === "rim") Sh.push(...hatch(p, 0.9 / det, -PI / 4, (x, y) => { const f = sampleF(p.G, x, y); if (f > -INK_GAP || f < -2.4) return false; const [gx, gy] = grad(p.G, x, y); return (gx + gy) / (hypot(gx, gy) || 1) > 0.35; }));
   return { line: L, shade: Sh, colour: o.accent === "on" ? Co : [] };
 }
+// the pen outline of a part, d mm inside its cut line (or on it at 0), from the part's own distance field
+const outlineOf = (p, d, G = p.G) => d < 0.05 ? [p.outline] : contours(G, -d).filter(l => abs(loopArea(l)) > 1).map(l => smooth(l, 1));
 
 // ---------------- build ----------------
 function build(o) {
@@ -638,11 +642,12 @@ function build(o) {
   const fits = best.ok;
   if (!fits) notes.push(`the parts do not all fit on this page: try a length of about ${max(120, floor(o.length * min(1, (H - 2 * m) / best.need) * 0.95 / 5) * 5)} mm, or a bigger page`);
   const mv = p => q => { const [x, y] = p.rot ? [-q[1], q[0]] : q; return [x + p.at[0], y + p.at[1]]; };
-  const layers = { line: [], shade: [], colour: [], cut: [] };
+  const layers = { line: [], shade: [], colour: [], outline: [], cut: [] };
   for (const p of R.parts) {
     const f = mv(p);
     for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) layers[k].push([l.map(f), false]);
     layers.cut.push([p.outline.map(f), true]);
+    if (o.outlines === "on") for (const l of outlineOf(p, o.outlinein)) layers.outline.push([l.map(f), true]);
     for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]);
   }
   layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
@@ -705,18 +710,18 @@ function draw(r, pose) {
     }
     if (r.R.jack) { c.strokeStyle = "rgba(122,92,0,0.6)"; c.lineWidth = 0.3; }
   } else {
-    for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
+    for (const key of ["shade", "colour", "line", "outline"]) { c.strokeStyle = key === "outline" ? "#1d3a8a" : COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
     c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(q, cl); c.stroke(); c.setLineDash([]);
   }
   const lenm = L => L.reduce((a, [q, cl]) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + s; }, 0) / 1000;
   $("stats").innerHTML = `${r.o.animal}${r.o.markings !== "none" ? " with " + r.o.markings : ""}: <b>${r.R.parts.length}</b> parts, <b>${r.pins}</b> split pins (three layers of card on the shoulder and hip pins) · ${r.ms.toFixed(0)} ms<br>`
-    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · cut: <b>${r.cutm.toFixed(1)} m</b>, ${r.layers.cut.length} paths<br>`
+    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · ${r.layers.outline.length ? `outline pen: <b>${lenm(r.layers.outline).toFixed(1)} m</b> · ` : ""}cut: <b>${r.cutm.toFixed(1)} m</b>, ${r.layers.cut.length} paths<br>`
     + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
     + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
 }
 const penLayers = r => [
   { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade },
-  { name: "colour", colour: "b0126b", w: 0.4, paths: r.layers.colour }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+  { name: "colour", colour: "b0126b", w: 0.4, paths: r.layers.colour }, { name: "outline", colour: "1d3a8a", w: 0.4, paths: r.layers.outline }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
 ].filter(L => L.paths.length);
 // Pen files carry four corner ticks at 1 mm. The cut layer carries its own closed trim rectangle at 1 mm, so its box matches, and never gets ticks (they would slice the card).
 const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
@@ -727,7 +732,7 @@ function toSVG(r, only = null, ticks = false) {
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["animal", "joints", "markings", "length", "stock", "seed", "detail", "shade", "fur", "accent", "letters", "view", "front", "back", "bend", "nod", "wag", "page", "margin"];
+const IDS = ["animal", "joints", "markings", "length", "stock", "seed", "detail", "shade", "fur", "accent", "letters", "outlines", "outlinein", "view", "front", "back", "bend", "nod", "wag", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
@@ -745,7 +750,7 @@ $("wiggle").onclick = () => {
   anim = requestAnimationFrame(step);
 };
 
-const BASE = { animal: "dog", joints: "hips", markings: "none", length: 240, stock: 1, seed: 7, detail: 1, shade: "contour", fur: "on", accent: "on", letters: "on", view: "sheet", front: 15, back: 10, bend: 0, nod: 0, wag: 0, page: "280x280", margin: 10 };
+const BASE = { animal: "dog", joints: "hips", markings: "none", length: 240, stock: 1, seed: 7, detail: 1, shade: "contour", fur: "on", accent: "on", letters: "on", outlines: "off", outlinein: 0.6, view: "sheet", front: 15, back: 10, bend: 0, nod: 0, wag: 0, page: "280x280", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   rabbit: P({ animal: "rabbit", fur: "on", length: 200 }),

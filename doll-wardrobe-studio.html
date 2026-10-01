@@ -168,6 +168,8 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Sheet holds <select id="sheet"><option value="all">the whole outfit</option><option value="top">tops, hair, hats and accessories</option><option value="acc">accessories only</option><option value="bottom">bottoms and shoes</option></select></label>
     <label>The doll too <select id="doll"><option value="off">no, clothes only</option><option value="on">yes, doll parts on this sheet</option></select></label>
     <label>Stitching along the edges <select id="stitch"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Draw the outlines with a pen <select id="outlines"><option value="off">off</option><option value="on">on, their own layer</option></select></label>
+    <label>Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.6"></label>
     <label>Assembly letters at the pin holes <select id="letters"><option value="on">on</option><option value="off">off</option></select></label>
     <label>Detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
   </fieldset>
@@ -627,6 +629,8 @@ function details(pc, o, R) {
 }
 const dollFace = (R) => { const u = R.u, hc = R.hc; return [circle(hc[0] - 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), circle(hc[0] + 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), arc(hc[0], hc[1] + 0.05 * u, 0.22 * u, 0.2 * u, 30, 150)]; };
 
+// the pen outline of a part, d mm inside its cut line (or on it at 0), from the part's own distance field
+const outlineOf = (p, d, G = p.G) => d < 0.05 ? [p.dressedOutline || p.outline] : contours(G, -d).filter(l => abs(loopArea(l)) > 1).map(l => smooth(l, 1));
 // ---------------- build ----------------
 function build(o) {
   const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [];
@@ -654,8 +658,8 @@ function build(o) {
   for (const p of order) { const w = p.box[2] - p.box[0], hh = p.box[3] - p.box[1]; if (x + w > W - m + 1e-6) { x = m; y += rowH + PART_GAP; rowH = 0; } if (y + hh > H - m + 1e-6 || w > W - 2 * m) fits = false; p.at = [x - p.box[0], y - p.box[1]]; x += w + PART_GAP; rowH = max(rowH, hh); }
   if (!sheet.length) notes.push("nothing chosen for this sheet");
   if (!fits) { const need = y + rowH - m, k = (H - 2 * m) / need; notes.push(`the pieces do not all fit: split them over two sheets (Sheet holds), or try a height of about ${max(110, floor(o.height * k * 0.97 / 5) * 5)} mm`); }
-  const layers = { line: [], shade: [], colour: [], cut: [] };
-  for (const p of sheet) { const f = q => [q[0] + p.at[0], q[1] + p.at[1]]; for (const k of ["line", "shade", "colour", "fold"]) for (const l of p.ink[k]) layers[k === "fold" ? "line" : k].push([l.map(f), false]); layers.cut.push([p.outline.map(f), true]); for (const w of p.windows || []) layers.cut.push([w.map(f), true]); for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]); }
+  const layers = { line: [], shade: [], colour: [], outline: [], cut: [] };
+  for (const p of sheet) { const f = q => [q[0] + p.at[0], q[1] + p.at[1]]; for (const k of ["line", "shade", "colour", "fold"]) for (const l of p.ink[k]) layers[k === "fold" ? "line" : k].push([l.map(f), false]); layers.cut.push([p.outline.map(f), true]); if (o.outlines === "on") for (const l of outlineOf(p, o.outlinein, p.Gd || p.G)) layers.outline.push([l.map(f), true]); for (const w of p.windows || []) layers.cut.push([w.map(f), true]); for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]); }
   layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
   // ---------------- gates ----------------
   let gapMin = INF; for (let i = 0; i < sheet.length; i++) for (let j = i + 1; j < sheet.length; j++) { const a = sheet[i], b = sheet[j], A = [a.box[0] + a.at[0], a.box[1] + a.at[1], a.box[2] + a.at[0], a.box[3] + a.at[1]], B = [b.box[0] + b.at[0], b.box[1] + b.at[1], b.box[2] + b.at[0], b.box[3] + b.at[1]]; gapMin = min(gapMin, max(B[0] - A[2], A[0] - B[2], B[1] - A[3], A[1] - B[3])); }
@@ -714,20 +718,20 @@ function draw(r, pose) {
       for (const Hh of p.holes) if (Hh.kind === "pin") { const [x, y] = g(Hh.c); c.beginPath(); c.arc(x, y, 1.6, 0, TAU); c.fillStyle = "#b8902f"; c.fill(); }
     }
   } else {
-    for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
+    for (const key of ["shade", "colour", "line", "outline"]) { c.strokeStyle = key === "outline" ? "#1d3a8a" : COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
     c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(q, cl); c.stroke(); c.setLineDash([]);
   }
   const lenm = L => L.reduce((a, [q]) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + s; }, 0) / 1000;
   const pinned = r.garments.filter(g => g.pins.length).length, tabbed = r.garments.filter(g => g.tabs).length;
   $("stats").innerHTML = `wardrobe: <b>${r.garments.length}</b> pieces (${pinned} pinned at the joints, ${tabbed} with fold tabs), <b>${r.sheet.length}</b> on this sheet · thickest joint ${r.thickest[0]}: ${r.thickest[1]} layers of card on one pin · ${r.ms.toFixed(0)} ms<br>`
-    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · cut: <b>${r.cutm.toFixed(1)} m</b><br>`
+    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · ${r.layers.outline.length ? `outline pen: <b>${lenm(r.layers.outline).toFixed(1)} m</b> · ` : ""}cut: <b>${r.cutm.toFixed(1)} m</b><br>`
     + (r.skirtish ? `<span class="note">with a skirt, dress or coat, pin the legs behind the body</span><br>` : "")
     + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
     + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
 }
 const penLayers = r => [
   { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade },
-  { name: "colour", colour: r.o.inkcol || "b0126b", w: 0.4, paths: r.layers.colour }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+  { name: "colour", colour: r.o.inkcol || "b0126b", w: 0.4, paths: r.layers.colour }, { name: "outline", colour: "1d3a8a", w: 0.4, paths: r.layers.outline }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
 ].filter(L => L.paths.length);
 // Pen files carry four corner ticks at 1 mm. The cut layer carries its own closed trim rectangle at 1 mm, so its box matches, and never gets ticks (they would slice the card).
 const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
@@ -738,7 +742,7 @@ function toSVG(r, only = null, ticks = false) {
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["height", "stock", "joints", "neck", "top", "toppat", "bottom", "botpat", "shoes", "hair", "hat", "lhand", "rhand", "face", "neckwear", "inkcol", "sheet", "doll", "stitch", "letters", "detail", "view", "arms", "legs", "bend", "tilt", "page", "margin"];
+const IDS = ["height", "stock", "joints", "neck", "top", "toppat", "bottom", "botpat", "shoes", "hair", "hat", "lhand", "rhand", "face", "neckwear", "inkcol", "sheet", "doll", "stitch", "letters", "outlines", "outlinein", "detail", "view", "arms", "legs", "bend", "tilt", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
@@ -754,7 +758,7 @@ $("wiggle").onclick = () => {
   anim = requestAnimationFrame(step);
 };
 
-const BASE = { height: 300, stock: 1, joints: "full", neck: "pinned", top: "tee", toppat: "stripes", bottom: "trousers", botpat: "plain", shoes: "shoes", hair: "bob", hat: "none", lhand: "none", rhand: "none", face: "none", neckwear: "none", inkcol: "b0126b", sheet: "all", doll: "off", stitch: "on", letters: "on", detail: 1, view: "dressed", arms: 35, legs: 10, bend: 20, tilt: 0, page: "280x280", margin: 10 };
+const BASE = { height: 300, stock: 1, joints: "full", neck: "pinned", top: "tee", toppat: "stripes", bottom: "trousers", botpat: "plain", shoes: "shoes", hair: "bob", hat: "none", lhand: "none", rhand: "none", face: "none", neckwear: "none", inkcol: "b0126b", sheet: "all", doll: "off", stitch: "on", letters: "on", outlines: "off", outlinein: 0.6, detail: 1, view: "dressed", arms: 35, legs: 10, bend: 20, tilt: 0, page: "280x280", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   everyday: P({}),
