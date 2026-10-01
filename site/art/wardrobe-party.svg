@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="280mm" height="280mm" viewBox="0 0 280 280">
 <title>PLG paper doll wardrobe</title>
-<desc id="plg-settings">{"height":300,"stock":1,"joints":"full","neck":"pinned","top":"dress","toppat":"dots","bottom":"none","botpat":"plain","shoes":"shoes","hair":"long","hat":"none","inkcol":"d7263d","sheet":"all","doll":"off","stitch":"on","letters":"on","detail":1,"view":"dressed","arms":35,"legs":10,"bend":20,"tilt":0,"page":"280x280","margin":10}</desc>
+<desc id="plg-settings">{"height":300,"stock":1,"joints":"full","neck":"pinned","top":"dress","toppat":"dots","bottom":"none","botpat":"plain","shoes":"shoes","hair":"long","hat":"none","lhand":"none","rhand":"none","face":"none","neckwear":"none","inkcol":"d7263d","sheet":"all","doll":"off","stitch":"on","letters":"on","detail":1,"view":"dressed","arms":35,"legs":10,"bend":20,"tilt":0,"page":"280x280","margin":10}</desc>
 <g id="pen-line" stroke="#000000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M40.136,11.554 L39.620,11.671" fill="none"/>
 <path d="M39.007,11.869 L38.492,12.054" fill="none"/>

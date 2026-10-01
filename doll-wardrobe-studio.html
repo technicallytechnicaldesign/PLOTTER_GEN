@@ -136,12 +136,12 @@ aside fieldset.dock-folded { padding-bottom:0; }
 <body>
 <header>
   <h1>Paper doll wardrobe</h1>
-  <p class="sub">Clothes, hair and hats for the plain doll from the jointed figure studio. Each piece of clothing sits on one part of the doll and moves with it: where it covers a joint it has a pin hole at exactly that joint and goes on the same split pin, and where it does not, it has fold tabs that wrap behind the doll. Set the doll's size and joints to match the doll you cut, or load that doll's SVG.</p>
+  <p class="sub">Clothes, hair, hats and things to carry for the plain doll from the jointed figure studio. Each piece of clothing sits on one part of the doll and moves with it: where it covers a joint it has a pin hole at exactly that joint and goes on the same split pin, and where it does not, it has fold tabs that wrap behind the doll. Set the doll's size and joints to match the doll you cut, or load that doll's SVG.</p>
 </header>
 <div class="wrap">
 <aside>
   <fieldset><legend>Presets</legend>
-    <div class="row"><button data-preset="everyday">Everyday</button><button data-preset="party">Party dress</button><button data-preset="explorer">Explorer</button><button data-preset="winter">Winter</button><button data-preset="sporty">Sporty</button><button data-preset="royal">Royal</button><button data-preset="school">School</button><button data-preset="hairhats">Hair and hats sheet</button><button data-preset="dollkit">Doll and outfit on one sheet</button></div>
+    <div class="row"><button data-preset="everyday">Everyday</button><button data-preset="party">Party dress</button><button data-preset="explorer">Explorer</button><button data-preset="winter">Winter</button><button data-preset="sporty">Sporty</button><button data-preset="royal">Royal</button><button data-preset="school">School</button><button data-preset="hairhats">Hair and hats sheet</button><button data-preset="dollkit">Doll and outfit on one sheet</button><button data-preset="picnic">Picnic</button><button data-preset="rainy">Rainy day</button><button data-preset="birthday">Birthday</button><button data-preset="magic">Magic</button><button data-preset="accessories">Accessories sheet</button></div>
   </fieldset>
   <fieldset><legend>Match your doll</legend>
     <label>Height (mm) <output id="o-height"></output><input type="range" id="height" min="110" max="420" step="5" value="300"></label>
@@ -158,10 +158,14 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Shoes <select id="shoes"><option value="shoes">shoes</option><option value="boots">boots</option><option value="none">none</option></select></label>
     <label>Hair <select id="hair"><option value="bob">bob</option><option value="crop">short crop</option><option value="long">long</option><option value="ponytail">ponytail</option><option value="bun">bun</option><option value="curly">curly</option><option value="pigtails">pigtails</option><option value="none">none</option></select></label>
     <label>Hat <select id="hat"><option value="none">none</option><option value="beanie">bobble beanie</option><option value="crown">crown</option><option value="sunhat">sun hat</option></select></label>
+    <label>Left hand holds <select id="lhand"><option value="none">nothing</option><option value="bag">bag</option><option value="teddy">teddy bear</option><option value="balloon">balloon</option><option value="flowers">flowers</option><option value="umbrella">umbrella</option><option value="icecream">ice cream</option><option value="wand">magic wand</option></select></label>
+    <label>Right hand holds <select id="rhand"><option value="none">nothing</option><option value="bag">bag</option><option value="teddy">teddy bear</option><option value="balloon">balloon</option><option value="flowers">flowers</option><option value="umbrella">umbrella</option><option value="icecream">ice cream</option><option value="wand">magic wand</option></select></label>
+    <label>Face <select id="face"><option value="none">nothing</option><option value="glasses">glasses</option><option value="sunglasses">sunglasses</option></select></label>
+    <label>Neck <select id="neckwear"><option value="none">nothing</option><option value="scarf">scarf</option><option value="bowtie">bow tie</option></select></label>
     <label>Colour pen (preview) <select id="inkcol"><option value="b0126b">magenta</option><option value="d7263d">red</option><option value="0078bf">blue</option><option value="1d3a8a">navy</option><option value="2e7d32">green</option><option value="7b2d8b">purple</option><option value="c8920a">gold</option></select></label>
   </fieldset>
   <fieldset><legend>Sheet</legend>
-    <label>Sheet holds <select id="sheet"><option value="all">the whole outfit</option><option value="top">tops, hair and hats</option><option value="bottom">bottoms and shoes</option></select></label>
+    <label>Sheet holds <select id="sheet"><option value="all">the whole outfit</option><option value="top">tops, hair, hats and accessories</option><option value="acc">accessories only</option><option value="bottom">bottoms and shoes</option></select></label>
     <label>The doll too <select id="doll"><option value="off">no, clothes only</option><option value="on">yes, doll parts on this sheet</option></select></label>
     <label>Stitching along the edges <select id="stitch"><option value="on">on</option><option value="off">off</option></select></label>
     <label>Assembly letters at the pin holes <select id="letters"><option value="on">on</option><option value="off">off</option></select></label>
@@ -492,6 +496,45 @@ function wardrobe(o, R) {
   };
   const hatLow = { beanie: -0.48, crown: -0.8, sunhat: -0.55 }; // the middle of each hat's band, always inside the hat
   if (o.hat !== "none") add({ name: `hat, ${o.hat}`, group: "hat", on: head, pattern: "plain", ang: 0, sdf: hats[o.hat], box: [hc[0] - 2.1 * Rh, hc[1] - 2.2 * Rh, hc[0] + 2.1 * Rh, hc[1] + 0.2 * Rh], tabAxis: { at: [hc[0], hc[1] + hatLow[o.hat] * Rh], dirs: [[0, 1], [0, 1]], offs: [-0.5 * Rh, 0.5 * Rh], len: 0.55 * Rh }, hatStyle: o.hat });
+
+  // ---- accessories held in a hand: each hangs off a wrist band with fold tabs, so it moves with the forearm
+  const hand = side => {
+    const p = byName((full ? "forearm " : "upper arm ") + side), A = axis(p), out0 = side === "L" ? -1 : 1;
+    let n = [A.d[1], -A.d[0]]; if (n[0] * out0 < 0) n = [-n[0], -n[1]];
+    const end = [A.a[0] + A.d[0] * A.L, A.a[1] + A.d[1] * A.L], H = [end[0], end[1] + 0.1 * u];
+    return { p, A, n, d: A.d, H, P: (a, b) => [H[0] + A.d[0] * a * u + n[0] * b * u, H[1] + A.d[1] * a * u + n[1] * b * u], ang: atan2(n[1], n[0]) };
+  };
+  const C = (q, r) => (x, y) => hypot(x - q[0], y - q[1]) - r;
+  const K = (a, ra, b, rb) => (x, y) => primDist(Limb(a[0], a[1], ra, b[0], b[1], rb), x, y);
+  const U = fs => (x, y) => { let d = INF; for (const f of fs) d = min(d, f(x, y)); return d; };
+  const star = (c, r, pts = 5) => (x, y) => polySDF(Array.from({ length: 2 * pts }, (_, i) => { const a = -PI / 2 + PI * i / pts, rr = i % 2 ? r * 0.45 : r; return [c[0] + rr * cos(a), c[1] + rr * sin(a)]; }))(x, y) - 1;
+  const HELD = {
+    bag: h => U([K(h.P(0, 0), 2.6, h.P(0.55, -0.3), 2.6), K(h.P(0, 0), 2.6, h.P(0.55, 0.3), 2.6), (x, y) => primDist(Box(...h.P(0.85, 0), 0.44 * u, 0.3 * u, 0.08 * u, h.ang), x, y)]),
+    teddy: h => U([K(h.P(0, 0), 0.1 * u, h.P(0.55, 0.15), 0.12 * u), C(h.P(0.8, 0.15), 0.32 * u), C(h.P(0.32, 0.32), 0.22 * u), C(h.P(0.18, 0.18), 0.09 * u), C(h.P(0.18, 0.47), 0.09 * u), K(h.P(1.0, -0.05), 0.1 * u, h.P(1.12, -0.12), 0.1 * u), K(h.P(1.0, 0.35), 0.1 * u, h.P(1.12, 0.42), 0.1 * u)]),
+    balloon: h => U([K(h.P(0, 0), 2.6, h.P(-1.3, 0.6), 2.6), C(h.P(-1.85, 0.8), 0.45 * u), C(h.P(-1.38, 0.62), 0.09 * u)]),
+    flowers: h => U([K(h.P(0.15, 0), 0.1 * u, h.P(-0.7, 0.12), 0.14 * u), C(h.P(-0.92, -0.05), 0.18 * u), C(h.P(-0.85, 0.36), 0.18 * u), C(h.P(-1.12, 0.18), 0.18 * u)]),
+    umbrella: h => U([K(h.P(0.12, 0), 2.6, h.P(-1.55, 0.15), 2.6), (x, y) => { const c = h.P(-1.55, 0.15); return max(hypot(x - c[0], y - c[1]) - 0.8 * u, (x - c[0]) * h.d[0] + (y - c[1]) * h.d[1]); }, K(h.P(-2.35, 0.15), 2.6, h.P(-2.5, 0.15), 2.6)]),
+    icecream: h => U([(x, y) => polySDF([h.P(0.25, 0), h.P(-0.4, -0.17), h.P(-0.4, 0.17)])(x, y) - 1, C(h.P(-0.5, 0), 0.2 * u), C(h.P(-0.78, 0.02), 0.17 * u)]),
+    wand: h => U([K(h.P(0.1, 0), 2.6, h.P(-1.18, 0.37), 2.6), star(h.P(-1.18, 0.37), 0.3 * u)]),
+  };
+  const REACH = { bag: [-0.1, 1.25, -0.55, 0.55], teddy: [-0.15, 1.25, -0.2, 0.62], balloon: [-2.4, 0.15, -0.15, 1.3], flowers: [-1.4, 0.3, -0.3, 0.6], umbrella: [-2.65, 0.3, -0.75, 1.05], icecream: [-1.0, 0.35, -0.3, 0.3], wand: [-1.55, 0.2, -0.1, 0.75] };
+  const reachBox = (h, k) => { const [a0, a1, b0, b1] = REACH[k], c = [h.P(a0, b0), h.P(a0, b1), h.P(a1, b0), h.P(a1, b1)]; return [min(...c.map(q => q[0])) - 2, min(...c.map(q => q[1])) - 2, max(...c.map(q => q[0])) + 2, max(...c.map(q => q[1])) + 2]; };
+  for (const side of ["L", "R"]) {
+    const kind = o[side === "L" ? "lhand" : "rhand"];
+    if (!kind || kind === "none") continue;
+    const h = hand(side), item = HELD[kind](h), base = sdfOf(h.p), s0 = h.A.L - 0.75 * u, s1 = h.A.L - 0.12 * u, band = slab(h.p, s0 / h.A.L, s1 / h.A.L), mid = (s0 + s1) / 2;
+    const conn = K([h.A.a[0] + h.d[0] * mid, h.A.a[1] + h.d[1] * mid], 0.18 * u, h.H, 0.18 * u);
+    add({ name: `${kind}, ${side === "L" ? "left" : "right"} hand`, group: "acc", on: h.p, pattern: "plain", ang: 0, accKind: kind, accFrame: h,
+      sdf: (x, y) => min(max(base(x, y) - EASE, band(x, y)), conn(x, y), item(x, y)), box: join(grow([h.A.a[0] + h.d[0] * s0, h.A.a[1] + h.d[1] * s0, h.A.a[0] + h.d[0] * s0, h.A.a[1] + h.d[1] * s0], 1.2 * u), reachBox(h, kind)),
+      tabAxis: { at: [h.A.a[0] + h.d[0] * mid, h.A.a[1] + h.d[1] * mid], dirs: [[-h.d[1], h.d[0]], [h.d[1], -h.d[0]]], base } });
+  }
+  // ---- on the face and at the neck
+  if (o.face !== "none") { const ey = hc[1] - 0.05 * u, lens = 0.17 * u;
+    add({ name: o.face, group: "acc", on: head, pattern: "plain", ang: 0, accKind: o.face, sdf: U([C([hc[0] - 0.2 * u, ey], lens), C([hc[0] + 0.2 * u, ey], lens), K([hc[0] - 0.2 * u, ey], 2.6, [hc[0] + 0.2 * u, ey], 2.6), K([hc[0] - 0.3 * u, ey], 2.6, [hc[0] - Rh - 1, ey], 2.6), K([hc[0] + 0.3 * u, ey], 2.6, [hc[0] + Rh + 1, ey], 2.6)]), box: [hc[0] - 1.8 * Rh, ey - Rh, hc[0] + 1.8 * Rh, ey + Rh], tabAxis: { at: [hc[0], ey], from: 0.95 * Rh, dirs: [[-1, 0], [1, 0]], len: 0.9 * Rh } }); }
+  if (o.neckwear !== "none") { const y0 = -T + 0.08 * u;
+    const shape = o.neckwear === "scarf" ? U([(x, y) => primDist(Box(0, y0, 0.62 * u * st, 0.17 * u, 0.1 * u), x, y), K([0.25 * u, y0], 0.15 * u, [0.42 * u, y0 + 0.95 * u], 0.17 * u)])
+      : U([(x, y) => polySDF([[0, y0], [-0.38 * u, y0 - 0.22 * u], [-0.38 * u, y0 + 0.22 * u]])(x, y) - 1, (x, y) => polySDF([[0, y0], [0.38 * u, y0 + 0.22 * u], [0.38 * u, y0 - 0.22 * u]])(x, y) - 1, C([0, y0], 0.11 * u)]);
+    add({ name: o.neckwear, group: "acc", on: torso, pattern: "plain", ang: 0, accKind: o.neckwear, sdf: shape, box: [-1.2 * u, y0 - 0.8 * u, 1.2 * u, y0 + 1.4 * u], tabAxis: { at: [0, y0], from: 0.3 * u, dirs: [[-1, 0], [1, 0]], len: 0.5 * u } }); }
   return out;
 }
 
@@ -524,7 +567,10 @@ function makePiece(g, o, h) {
   const big = G0 => contours(G0, 0).filter(l => abs(loopArea(l)) > 1).sort((p, q) => abs(loopArea(q)) - abs(loopArea(p)));
   const loops = big(G), dl = tabs.length ? big(Gd) : loops;
   const tidy = l => l ? rdp([...smooth(l, 1), l[0]], 0.02).slice(0, -1) : [];
-  return { ...g, G, Gd, holes: pins, pins, tabs: tabs.length, folds, outline: tidy(loops[0]), dressedOutline: tidy(dl[0]), pieces: loops.length };
+  const inPoly = (pt, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; } return c; };
+  const rest = loops.slice(1), inner = rest.filter(l => loops[0] && inPoly(l[0], loops[0]));
+  const windows = inner.filter(l => abs(loopArea(l)) >= 25).map(tidy); // ASSUMED: a window under 25 mm2 is left solid rather than cut as a scrap
+  return { ...g, G, Gd, holes: pins, pins, tabs: tabs.length, folds, windows, outline: tidy(loops[0]), dressedOutline: tidy(dl[0]), pieces: 1 + rest.length - inner.length };
 }
 
 // ---------------- what each garment draws ----------------
@@ -564,6 +610,19 @@ function details(pc, o, R) {
   const Co = [];
   if (pc.hatStyle === "crown") for (const x of [-0.475, 0, 0.475]) Co.push(circle(hc[0] + x * Rh, hc[1] - 0.8 * Rh, 0.1 * Rh));
   if (pc.hatStyle === "sunhat") Co.push([[hc[0] - 0.75 * Rh, hc[1] - 0.82 * Rh], [hc[0] + 0.75 * Rh, hc[1] - 0.82 * Rh]], [[hc[0] - 0.75 * Rh, hc[1] - 0.9 * Rh], [hc[0] + 0.75 * Rh, hc[1] - 0.9 * Rh]]);
+  if (pc.accKind) { const k = pc.accKind, h = pc.accFrame, P = h ? h.P : null;
+    if (h) L.push(circle(h.H[0], h.H[1], 0.27 * u)); // the doll's hand, drawn on the band that covers it
+    if (k === "bag") { L.push([P(0.62, -0.42), P(0.78, 0), P(0.62, 0.42)]); Co.push(circle(...P(0.78, 0), 0.06 * u)); }
+    if (k === "teddy") { L.push(circle(...P(0.27, 0.25), 0.03 * u, 8), circle(...P(0.27, 0.39), 0.03 * u, 8), circle(...P(0.4, 0.32), 0.05 * u, 8), circle(...P(0.85, 0.15), 0.17 * u)); Co.push(circle(...P(0.18, 0.18), 0.045 * u, 8), circle(...P(0.18, 0.47), 0.045 * u, 8)); }
+    if (k === "balloon") { Co.push(arc(...P(-1.85, 0.8), 0.3 * u, 0.3 * u, 200, 250, 10)); L.push([P(-0.2, 0.08), P(-1.2, 0.56)]); }
+    if (k === "flowers") { for (const c of [[-0.92, -0.05], [-0.85, 0.36], [-1.12, 0.18]]) { const q = P(...c); L.push(circle(q[0], q[1], 0.06 * u, 10)); for (let a = 0; a < 360; a += 60) Co.push(circle(q[0] + 0.11 * u * cos(a * D2R), q[1] + 0.11 * u * sin(a * D2R), 0.04 * u, 8)); } }
+    if (k === "umbrella") { const c = P(-1.55, 0.15); for (let a = -80; a <= 80; a += 40) { const v = [-h.d[0] * cos(a * D2R) + h.n[0] * sin(a * D2R), -h.d[1] * cos(a * D2R) + h.n[1] * sin(a * D2R)]; L.push([c, [c[0] + v[0] * 0.78 * u, c[1] + v[1] * 0.78 * u]]); } }
+    if (k === "icecream") { const a = P(0.2, 0), b1 = P(-0.38, -0.15), b2 = P(-0.38, 0.15); for (let t = 0.25; t < 1; t += 0.25) { L.push([[a[0] + (b1[0] - a[0]) * t, a[1] + (b1[1] - a[1]) * t], [b2[0] + (a[0] - b2[0]) * (1 - t), b2[1] + (a[1] - b2[1]) * (1 - t)]]); L.push([[a[0] + (b2[0] - a[0]) * t, a[1] + (b2[1] - a[1]) * t], [b1[0] + (a[0] - b1[0]) * (1 - t), b1[1] + (a[1] - b1[1]) * (1 - t)]]); } const sc = P(-0.78, 0.02); Co.push(circle(sc[0], sc[1], 0.1 * u, 16)); }
+    if (k === "wand") { const c = P(-1.18, 0.37); Co.push(...contours(pc.Gd, -2).map(l => [...l, l[0]]).filter(l => l.every(([x, y]) => hypot(x - c[0], y - c[1]) < 0.4 * u))); }
+    if (k === "glasses" || k === "sunglasses") { const ey = hc[1] - 0.05 * u; for (const sx of [-1, 1]) { L.push(circle(hc[0] + sx * 0.2 * u, ey, 0.17 * u - 1.2)); if (k === "glasses") L.push(circle(hc[0] + sx * 0.18 * u, ey, 0.05 * u)); } if (k === "sunglasses") Sh.push(...hatch({ G: pc.Gd }, 0.9, -PI / 4, (x, y) => [-1, 1].some(sx => hypot(x - hc[0] - sx * 0.2 * u, y - ey) < 0.17 * u - 1.4))); }
+    if (k === "scarf") { for (let x = -0.55; x <= 0.56; x += 0.18) Co.push([[x * u, -T - 0.04 * u], [x * u, -T + 0.2 * u]]); for (let i = -2; i <= 2; i++) L.push([[0.42 * u + i * 0.05 * u, -T + 0.95 * u], [0.42 * u + i * 0.05 * u, -T + 1.15 * u]]); }
+    if (k === "bowtie") L.push(circle(0, -T + 0.08 * u, 0.06 * u, 10));
+  }
   return { line: L, shade: Sh, colour: Co };
 }
 const dollFace = (R) => { const u = R.u, hc = R.hc; return [circle(hc[0] - 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), circle(hc[0] + 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), arc(hc[0], hc[1] + 0.05 * u, 0.22 * u, 0.2 * u, 30, 150)]; };
@@ -573,7 +632,7 @@ function build(o) {
   const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [];
   const R = rig({ ...o, style: "plain", kind: "doll" }), h = max(0.25, o.height / 800);
   for (const p of R.parts) p.G = partField(p, h);
-  const specs = wardrobe(o, R), want = o.sheet === "all" ? null : o.sheet === "top" ? ["top", "hair", "hat"] : ["bottom", "shoes"];
+  const specs = wardrobe(o, R), want = o.sheet === "all" ? null : o.sheet === "top" ? ["top", "hair", "hat", "acc"] : o.sheet === "acc" ? ["acc"] : ["bottom", "shoes"];
   const garments = specs.map(g => makePiece(g, o, h));
   const onSheet = garments.filter(g => !want || want.includes(g.group));
   for (const g of garments) {
@@ -596,7 +655,7 @@ function build(o) {
   if (!sheet.length) notes.push("nothing chosen for this sheet");
   if (!fits) { const need = y + rowH - m, k = (H - 2 * m) / need; notes.push(`the pieces do not all fit: split them over two sheets (Sheet holds), or try a height of about ${max(110, floor(o.height * k * 0.97 / 5) * 5)} mm`); }
   const layers = { line: [], shade: [], colour: [], cut: [] };
-  for (const p of sheet) { const f = q => [q[0] + p.at[0], q[1] + p.at[1]]; for (const k of ["line", "shade", "colour", "fold"]) for (const l of p.ink[k]) layers[k === "fold" ? "line" : k].push([l.map(f), false]); layers.cut.push([p.outline.map(f), true]); for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]); }
+  for (const p of sheet) { const f = q => [q[0] + p.at[0], q[1] + p.at[1]]; for (const k of ["line", "shade", "colour", "fold"]) for (const l of p.ink[k]) layers[k === "fold" ? "line" : k].push([l.map(f), false]); layers.cut.push([p.outline.map(f), true]); for (const w of p.windows || []) layers.cut.push([w.map(f), true]); for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]); }
   layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
   // ---------------- gates ----------------
   let gapMin = INF; for (let i = 0; i < sheet.length; i++) for (let j = i + 1; j < sheet.length; j++) { const a = sheet[i], b = sheet[j], A = [a.box[0] + a.at[0], a.box[1] + a.at[1], a.box[2] + a.at[0], a.box[3] + a.at[1]], B = [b.box[0] + b.at[0], b.box[1] + b.at[1], b.box[2] + b.at[0], b.box[3] + b.at[1]]; gapMin = min(gapMin, max(B[0] - A[2], A[0] - B[2], B[1] - A[3], A[1] - B[3])); }
@@ -641,7 +700,7 @@ function draw(r, pose) {
     const P = r.R.parts, rest = P.flatMap(p => p.outline || []), ys = r.dollParts.flatMap(p => p.outline.map(q => q[1]));
     const top = min(...ys) - 0.9 * r.R.u, bot = max(...ys), sc = min(1, (r.H - 2 * r.o.margin) / (bot - top) * 0.86), ox = r.W / 2, oy = r.H / 2 - sc * (top + bot) / 2;
     // each doll part is followed by the clothes pinned or folded onto it, bottom layer first
-    const rank = { shoes: 0, bottom: 1, top: 2, hair: 3, hat: 4 }, legs = p => /thigh|shin/.test(p.name);
+    const rank = { shoes: 0, bottom: 1, top: 2, hair: 3, hat: 4, acc: 5 }, legs = p => /thigh|shin/.test(p.name);
     let dp = [...r.dollParts]; const tor = dp.filter(p => p.kind === "torso"), hd = dp.filter(p => p.kind === "head"), up = dp.filter(p => /upper|thigh/.test(p.name)), lo = dp.filter(p => /forearm|shin/.test(p.name));
     dp = r.skirtish ? [...up.filter(legs), ...lo.filter(legs), ...tor, ...hd, ...up.filter(p => !legs(p)), ...lo.filter(p => !legs(p))] : [...tor, ...hd, ...up, ...lo];
     for (const p of dp) {
@@ -679,7 +738,7 @@ function toSVG(r, only = null, ticks = false) {
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["height", "stock", "joints", "neck", "top", "toppat", "bottom", "botpat", "shoes", "hair", "hat", "inkcol", "sheet", "doll", "stitch", "letters", "detail", "view", "arms", "legs", "bend", "tilt", "page", "margin"];
+const IDS = ["height", "stock", "joints", "neck", "top", "toppat", "bottom", "botpat", "shoes", "hair", "hat", "lhand", "rhand", "face", "neckwear", "inkcol", "sheet", "doll", "stitch", "letters", "detail", "view", "arms", "legs", "bend", "tilt", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
@@ -695,7 +754,7 @@ $("wiggle").onclick = () => {
   anim = requestAnimationFrame(step);
 };
 
-const BASE = { height: 300, stock: 1, joints: "full", neck: "pinned", top: "tee", toppat: "stripes", bottom: "trousers", botpat: "plain", shoes: "shoes", hair: "bob", hat: "none", inkcol: "b0126b", sheet: "all", doll: "off", stitch: "on", letters: "on", detail: 1, view: "dressed", arms: 35, legs: 10, bend: 20, tilt: 0, page: "280x280", margin: 10 };
+const BASE = { height: 300, stock: 1, joints: "full", neck: "pinned", top: "tee", toppat: "stripes", bottom: "trousers", botpat: "plain", shoes: "shoes", hair: "bob", hat: "none", lhand: "none", rhand: "none", face: "none", neckwear: "none", inkcol: "b0126b", sheet: "all", doll: "off", stitch: "on", letters: "on", detail: 1, view: "dressed", arms: 35, legs: 10, bend: 20, tilt: 0, page: "280x280", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   everyday: P({}),
@@ -707,11 +766,16 @@ const PRESETS = {
   school: P({ top: "jumper", toppat: "plain", bottom: "skirt", botpat: "check", shoes: "shoes", hair: "pigtails", inkcol: "7b2d8b" }),
   hairhats: P({ top: "none", bottom: "none", shoes: "none", hair: "curly", hat: "crown", sheet: "top", view: "sheet" }),
   dollkit: P({ height: 220, top: "tee", toppat: "dots", bottom: "skirt", botpat: "plain", shoes: "shoes", hair: "bob", doll: "on", view: "sheet" }),
+  picnic: P({ top: "tee", toppat: "dots", bottom: "skirt", botpat: "check", hair: "pigtails", hat: "sunhat", lhand: "teddy", rhand: "bag", inkcol: "d7263d" }),
+  rainy: P({ top: "coat", toppat: "plain", bottom: "trousers", shoes: "boots", hair: "bob", rhand: "umbrella", neckwear: "scarf", inkcol: "0078bf", sheet: "top" }),
+  birthday: P({ top: "shirt", toppat: "stripes", bottom: "shorts", hair: "curly", lhand: "balloon", rhand: "icecream", neckwear: "bowtie", face: "glasses", inkcol: "7b2d8b" }),
+  magic: P({ top: "dress", toppat: "dots", bottom: "none", hair: "long", hat: "crown", rhand: "wand", lhand: "flowers", inkcol: "c8920a" }),
+  accessories: P({ top: "none", bottom: "none", shoes: "none", hair: "none", lhand: "teddy", rhand: "umbrella", face: "sunglasses", neckwear: "scarf", sheet: "acc", view: "sheet" }),
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
 IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-const stem = r => `wardrobe-h${r.o.height}-${[r.o.top, r.o.bottom, r.o.shoes, r.o.hair, r.o.hat].filter(v => v !== "none").join("-")}-${r.o.sheet}`;
+const stem = r => `wardrobe-h${r.o.height}-${[r.o.top, r.o.bottom, r.o.shoes, r.o.hair, r.o.hat, r.o.lhand, r.o.rhand, r.o.face, r.o.neckwear].filter(v => v !== "none").join("-")}-${r.o.sheet}`;
 $("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
 $("split").onclick = () => {
   if (!last) return;
