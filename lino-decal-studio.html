@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lino decal studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Lino decal studio</h1>
+  <p class="sub">Ravens, crows and skulls carved like a lino block, then cut from one colour of vinyl. Every mark is a gouge: V-cuts for feathers, U-cups for coverts, a halo cut round each figure so it stands off the frame, and a wobble so the edges look hand-cut. The blade follows one filled outline, so what you see is what stays on the backing.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="raven">Raven on a branch</button><button data-preset="calling">Calling at the moon</button><button data-preset="crow">Crow in flight</button><button data-preset="bat">Bat at the moon</button><button data-preset="batup">Bat, wings up</button><button data-preset="colony">A colony of bats</button><button data-preset="murder">A murder of crows</button><button data-preset="hunched">Hunched raven</button><button data-preset="ragged">Ragged raven</button><button data-preset="skull">Skull</button><button data-preset="gaunt">Gaunt skull</button><button data-preset="scream">Screaming skull</button><button data-preset="solid">Solid skull</button><button data-preset="bones">Skull and bones</button><button data-preset="perched">Raven on a skull</button><button data-preset="sheet">Sticker sheet</button><button data-preset="sheetsr">Skulls and ravens sheet</button></div>
+  </fieldset>
+  <fieldset><legend>The block</legend>
+    <label>Motif <select id="comp"><option value="raven">raven on a branch</option><option value="calling">raven calling</option><option value="crow">crow in flight</option><option value="murder">a murder of crows</option><option value="bat">a bat</option><option value="colony">a colony of bats</option><option value="skull">skull</option><option value="bones">skull and crossbones</option><option value="perched">raven on a skull</option><option value="mix">a mix (sheets)</option><option value="mixsr">skulls and ravens (sheets)</option></select></label>
+    <label>Raven <select id="ravenv"><option value="seed">the seed decides</option><option value="perched">perched</option><option value="hunched">hunched</option><option value="ragged">ragged</option><option value="calling">calling</option></select></label>
+    <label>Bat <select id="batv"><option value="seed">the seed decides</option><option value="spread">wings spread</option><option value="raised">wings raised</option></select></label>
+    <label>Skull drawn as <select id="skulllook"><option value="line">lines on bare bone</option><option value="solid">a solid carved block</option></select></label>
+    <label>Skull <select id="skullv"><option value="seed">the seed decides</option><option value="classic">classic</option><option value="gaunt">gaunt</option><option value="scream">screaming</option></select></label>
+    <label>Frame <select id="frame"><option value="none">none, die-cut</option><option value="moon">full moon behind</option><option value="crescent">crescent moon behind</option><option value="border">square border</option><option value="bcircle">carved block, round</option><option value="bsquare">carved block, square</option><option value="barch">carved block, arch</option></select></label>
+    <label>Skull eyes <select id="eyes"><option value="hollow">hollow</option><option value="lit">something looking out</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="13"></label>
+    <div class="row"><button id="reroll">New seed</button></div>
+  </fieldset>
+  <fieldset><legend>Carving</legend>
+    <label>Cut style <select id="style"><option value="engraved">engraved: tonal hatching</option><option value="rough">rough: all of it, heavy</option><option value="knife">knife: facets, V-cuts, chips</option><option value="clean">clean: smooth gouges</option></select></label>
+    <label>Cut density <output id="o-density"></output><input type="range" id="density" min="0.4" max="1.6" step="0.05" value="1"></label>
+    <label>Gouge width <output id="o-gouge"></output><input type="range" id="gouge" min="0.6" max="1.6" step="0.05" value="1"></label>
+    <label>Hand wobble (mm) <output id="o-wobble"></output><input type="range" id="wobble" min="0" max="0.8" step="0.05" value="0.25"></label>
+    <label>Halo cut round figures (mm) <output id="o-halo"></output><input type="range" id="halo" min="0.8" max="4" step="0.1" value="1.4"></label>
+    <label>Scraps left round the edges <output id="o-scraps"></output><input type="range" id="scraps" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Frame band (mm) <output id="o-band"></output><input type="range" id="band" min="1.5" max="8" step="0.25" value="3"></label>
+    <label>Chatter in carved blocks <output id="o-chatter"></output><input type="range" id="chatter" min="0" max="1" step="0.05" value="0.5"></label>
+  </fieldset>
+  <fieldset><legend>Decal</legend>
+    <label>Size, longest side (mm) <output id="o-size"></output><input type="range" id="size" min="40" max="260" step="5" value="140"></label>
+    <label>Layout <select id="layout"><option value="single">one decal</option><option value="sheet">a sheet of copies</option></select></label>
+    <label>Copies on a sheet <output id="o-copies"></output><input type="range" id="copies" min="2" max="16" step="1" value="6"></label>
+    <label>Vinyl <select id="vinyl"><option value="adhesive">adhesive (as seen)</option><option value="iron">iron-on (cut mirrored)</option></select></label>
+    <label>Weeding box <select id="weed"><option value="on">on, own layer</option><option value="off">off</option></select></label>
+    <label>Weeding box margin (mm) <output id="o-weedm"></output><input type="range" id="weedm" min="1" max="10" step="0.5" value="3"></label>
+  </fieldset>
+  <fieldset><legend>Vinyl rules</legend>
+    <label>Thinnest vinyl (mm) <output id="o-minw"></output><input type="range" id="minw" min="0.4" max="2" step="0.05" value="0.8"></label>
+    <label>Thinnest weeded gap (mm) <output id="o-mingap"></output><input type="range" id="mingap" min="0.3" max="1.5" step="0.05" value="0.6"></label>
+    <label>Smallest vinyl piece (mm&sup2;) <output id="o-minisle"></output><input type="range" id="minisle" min="0.5" max="10" step="0.5" value="2"></label>
+    <label>Smallest weeded hole (mm&sup2;) <output id="o-minhole"></output><input type="range" id="minhole" min="0.3" max="6" step="0.1" value="1"></label>
+    <p class="hint">Anything thinner, narrower or smaller is cleaned away before the outline is traced, so tips of gouges blunt and specks drop out. These sizes are guesses until a weeding test is cut.</p>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="vinyl">the decal, applied</option><option value="cut">the cut lines</option></select></label>
+    <label>Vinyl colour <select id="colour"><option value="black">black</option><option value="white">white</option><option value="bone">bone</option><option value="red">blood red</option><option value="gold">gold</option></select></label>
+    <label>On <select id="surface"><option value="backing">the backing sheet</option><option value="glass">a dark window</option><option value="laptop">a laptop lid</option><option value="kraft">kraft card</option></select></label>
+  </fieldset>
+  <fieldset><legend>Mat and export</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="300x600">300 x 600 (12 x 24 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <div class="row"><button class="go" id="export">Export SVG</button><button id="split">Export decal and box separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">The decal is one filled path with holes (even-odd), so Design Space reads it as one cut image. The weeding box sits in its own group; in Design Space select both and Attach so they cut together.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: each figure is drawn as a few hand-placed curves filled black, then carved: the gouge marks are tapered slivers laid along the feathers, bone and bark, and a halo of clear space is cut round every figure before it is laid over a frame or another figure. Carved blocks flip it: the block is solid vinyl and the figure is cut out of it, so its carving comes back as fine vinyl lines. The whole decal is drawn into a fine grid, cleaned to the vinyl rules (gaps closed, slivers opened, specks and pinholes dropped), and traced back into one smooth outline, which is what the blade cuts. All vinyl sizes are ASSUMED until a weeding test is cut. Same seed, same carving.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, pow } = Math, INF = Infinity, imul = Math.imul;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = imul(s ^ s >>> 15, 1 | s); t = t + imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------------- noise (the hand wobble) ----------------
+function hash2(i, j, s) { let n = imul(i, 374761393) + imul(j, 668265263) + imul(s, 1442695041) | 0; n = imul(n ^ n >>> 13, 1274126177); n ^= n >>> 16; return (n >>> 0) / 4294967296; }
+function vnoise(x, y, s) {
+  const ix = floor(x), iy = floor(y), fx = x - ix, fy = y - iy, ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+  const a = hash2(ix, iy, s), b = hash2(ix + 1, iy, s), c = hash2(ix, iy + 1, s), d = hash2(ix + 1, iy + 1, s);
+  return (a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy) * 2 - 1;
+}
+const fbm = (x, y, s) => vnoise(x, y, s) * 0.65 + vnoise(x * 2.3 + 5.1, y * 2.3 - 3.7, s + 7) * 0.35;
+
+// ---------------- drawing kit (motif units, about 100 to a figure, y down) ----------------
+// Catmull-Rom through points; [x, y, 1] marks a hard corner (beak tips, tail corners, hackle spikes).
+function curve(pts, closed = true, step = 0.7) {
+  const n = pts.length, out = [], P = i => pts[(i % n + n) % n];
+  const segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const p1 = P(i), p2 = P(i + 1);
+    const p0 = (!closed && i === 0) || p1[2] ? p1 : P(i - 1);
+    const p3 = (!closed && i + 1 === n - 1) || p2[2] ? p2 : P(i + 2);
+    const k = max(2, ceil(hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let s = 0; s < k; s++) {
+      const t = s / k, t2 = t * t, t3 = t2 * t;
+      out.push([0, 1].map(c => 0.5 * (2 * p1[c] + (-p0[c] + p2[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t2 + (-p0[c] + 3 * p1[c] - 3 * p2[c] + p3[c]) * t3)));
+    }
+  }
+  if (!closed) out.push([P(n - 1)[0], P(n - 1)[1]]);
+  return out;
+}
+// Width profiles along a stroke, 0 at the start to 1 at the end.
+const PROF = {
+  lens: t => pow(max(0, sin(PI * t)), 0.55),                              // V-gouge: in at a point, out at a point
+  nib: t => pow(min(1, t / 0.35), 0.6) * (t > 0.8 ? sqrt(max(0, 1 - ((t - 0.8) / 0.2) ** 2)) : 1), // pushed in, lifted out round
+  even: () => 1,
+  taper: t => 1 - 0.6 * t,
+  finger: t => 1 - 0.5 * pow(t, 1.3),
+  spike: t => pow(max(0, 1 - t), 0.6),   // a ridge of lino left standing: thick at its root, running out to nothing
+  wedge: t => t < 0.7 ? pow(t / 0.7, 0.85) : pow((1 - t) / 0.3, 0.6),   // V-tool: opens as it goes, then the chip breaks off
+};
+function stroke(line, w, prof = "lens") {
+  const n = line.length; if (n < 2) return [];
+  const L = [0]; for (let i = 1; i < n; i++) L.push(L[i - 1] + hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]));
+  const tot = L[n - 1] || 1e-9, f = PROF[TEX.knife && prof === "lens" ? "wedge" : prof], lf = [], rt = [];
+  for (let i = 0; i < n; i++) {
+    const a = line[max(0, i - 1)], b = line[min(n - 1, i + 1)];
+    let dx = b[0] - a[0], dy = b[1] - a[1]; const l = hypot(dx, dy) || 1; dx /= l; dy /= l;
+    const hw = w / 2 * f(L[i] / tot);
+    lf.push([line[i][0] - dy * hw, line[i][1] + dx * hw]); rt.push([line[i][0] + dy * hw, line[i][1] - dx * hw]);
+  }
+  return lf.concat(rt.reverse());
+}
+const quad = (a, c, b, n = 18) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, u = 1 - t; return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]; });
+// a single cut from (x0, y0) to (x1, y1), bowed sideways by bend x its length
+function gouge(x0, y0, x1, y1, w, bend = 0, prof = "lens") {
+  const dx = x1 - x0, dy = y1 - y0;
+  return stroke(quad([x0, y0], [(x0 + x1) / 2 - dy * bend, (y0 + y1) / 2 + dx * bend], [x1, y1]), w, prof);
+}
+function ell(cx, cy, rx, ry = rx, rot = 0, n = 0) {
+  n = n || max(16, ceil(TAU * max(rx, ry) / 0.6));
+  const c = cos(rot), s = sin(rot);
+  return Array.from({ length: n }, (_, i) => { const a = TAU * i / n, x = rx * cos(a), y = ry * sin(a); return [cx + x * c - y * s, cy + x * s + y * c]; });
+}
+// a U-gouge scallop: an arc of radius r round (cx, cy), bulging toward angle ang (degrees)
+function cup(cx, cy, r, ang, w, span = 150) {
+  const n = 14, a0 = (ang - span / 2) * D2R, a1 = (ang + span / 2) * D2R;
+  return stroke(Array.from({ length: n + 1 }, (_, i) => { const a = lerp(a0, a1, i / n); return [cx + r * cos(a), cy + r * sin(a)]; }), w, "lens");
+}
+// a round-ended bar (legs, toes, bones)
+function bar(line, w, prof = "even") { const f = PROF[prof]; return [stroke(line, w, prof), ell(line[0][0], line[0][1], w / 2 * f(0)), ell(line.at(-1)[0], line.at(-1)[1], w / 2 * f(1))]; }
+function inside(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+const along = (line, t) => { // a point a fraction t of the way along a polyline
+  const L = [0]; for (let i = 1; i < line.length; i++) L.push(L[i - 1] + hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]));
+  const want = t * L.at(-1); let i = 1; while (i < line.length - 1 && L[i] < want) i++;
+  const u = (want - L[i - 1]) / ((L[i] - L[i - 1]) || 1);
+  return [lerp(line[i - 1][0], line[i][0], u), lerp(line[i - 1][1], line[i][1], u)];
+};
+const mirrorPts = pts => pts.map(([x, y, k]) => [100 - x, y, k]);
+// half outline from top centre to bottom centre (right side) -> whole symmetric outline
+const sym = half => half.concat(mirrorPts(half.slice(1, -1)).reverse());
+
+// A figure is a list of ops (ink fills black, carve clears) plus its silhouette (for the halo).
+// polys: accepts single polygons and lists of polygons in any mix
+const polys = ps => { const out = []; const walk = x => { if (!x || !x.length) return; if (typeof x[0][0] === "number") { if (x.length > 2) out.push(x); } else x.forEach(walk); }; ps.forEach(walk); return out; };
+class Art {
+  constructor() { this.ops = []; this.sil = []; }
+  ink(...ps) { const q = polys(ps); this.ops.push(["ink", q]); this.sil.push(...q); return this; }
+  carve(...ps) { const q = polys(ps); this.ops.push(["carve", q]); return this; }
+  map(f) { const a = new Art(); a.ops = this.ops.map(([k, ps]) => [k, ps.map(p => p.map(f))]); a.sil = this.sil.map(p => p.map(f)); return a; }
+  add(b) { this.ops.push(...b.ops); this.sil.push(...b.sil); return this; }
+}
+const xform = (s, tx, ty, rot = 0, cx = 50, cy = 50, flip = false) => { const c = cos(rot * D2R), sn = sin(rot * D2R); return ([x, y]) => { let dx = (flip ? cx - (x - cx) : x) - cx, dy = y - cy; return [tx + s * (dx * c - dy * sn), ty + s * (dx * sn + dy * c)]; }; };
+
+// ---------------- lino technique: knife facets, feather fringe, edge chips, tonal hatching ----------------
+// The cut style is set once per decal; motifs read it while they are drawn.
+const STYLES = {
+  clean: { knife: false, hatch: false, chips: 0, fringe: 0, facet: 0 },
+  knife: { knife: true, hatch: false, chips: 1, fringe: 1, facet: 1 },
+  engraved: { knife: true, hatch: true, chips: 0.5, fringe: 0.7, facet: 0.6 },
+  rough: { knife: true, hatch: true, chips: 1.6, fringe: 1.4, facet: 1.4 },
+};
+let TEX = STYLES.clean;
+const segLens = (p, closed) => { const n = p.length, L = [0]; for (let i = 1; i < n + (closed ? 1 : 0); i++) { const a = p[i - 1], b = p[i % n]; L.push(L[i - 1] + hypot(b[0] - a[0], b[1] - a[1])); } return L; };
+// point and unit tangent at arc length s
+function atLen(p, L, s, closed) {
+  const n = p.length; let lo = 0, hi = L.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (L[m] <= s) lo = m; else hi = m; }
+  const a = p[lo], b = p[closed ? hi % n : min(hi, n - 1)], d = (L[hi] - L[lo]) || 1e-9, u = clamp((s - L[lo]) / d, 0, 1), tx = (b[0] - a[0]) / d, ty = (b[1] - a[1]) / d;
+  return [[lerp(a[0], b[0], u), lerp(a[1], b[1], u)], tx, ty];
+}
+function resample(p, step, closed = false) {
+  const L = segLens(p, closed), tot = L.at(-1), n = max(2, ceil(tot / step)), out = [];
+  for (let i = 0; i < (closed ? n : n + 1); i++) out.push(atLen(p, L, tot * i / n, closed)[0]);
+  return out;
+}
+// which side of a closed outline is outside: +1 if the left normal (-ty, tx) points out
+function outSide(poly) { let a = 0; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) a += (poly[j][0] - poly[i][0]) * (poly[j][1] + poly[i][1]); return a > 0 ? -1 : 1; }
+// a knife cannot follow a smooth curve: walk the outline in straight cuts of uneven length, keeping the sharp corners
+function facet(poly, rnd, amt) {
+  if (amt <= 0) return poly;
+  const n = poly.length, L = segLens(poly, true), tot = L[n], keep = [];
+  for (let i = 0; i < n; i++) {
+    const a = poly[(i - 1 + n) % n], b = poly[i], c = poly[(i + 1) % n];
+    const t = abs(atan2((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]), (b[0] - a[0]) * (c[0] - b[0]) + (b[1] - a[1]) * (c[1] - b[1])));
+    if (t > 0.7) keep.push(L[i]);
+  }
+  const lo = 0.9 + 1.2 * amt, hi = 1.8 + 2.6 * amt, pos = keep.map(s => [s, true]);
+  for (let s = rnd() * lo; s < tot; s += lo + rnd() * (hi - lo)) if (!keep.some(k => abs(k - s) < lo * 0.45)) pos.push([s, false]);
+  pos.sort((a, b) => a[0] - b[0]);
+  return pos.map(([s, corner]) => { const [[x, y], tx, ty] = atLen(poly, L, s, true), d = corner ? 0 : (rnd() - 0.5) * 0.6 * amt; return [x - ty * d, y + tx * d]; });
+}
+// feather fringe: a sawtooth of points swept back along the outline where sel(x, y) says so
+function fringe(poly, rnd, sel, period, depth, lean = 0.6) {
+  if (depth <= 0) return poly;
+  const side = outSide(poly), pts = resample(poly, period / 2, true), n = pts.length, out = [];
+  for (let i = 0; i < n; i++) {
+    const p = pts[i], q = pts[(i + 1) % n], r = pts[(i - 1 + n) % n], dx = q[0] - r[0], dy = q[1] - r[1], l = hypot(dx, dy) || 1, tx = dx / l, ty = dy / l;
+    if (i % 2 === 0 && sel(p[0], p[1])) { const d = depth * (0.5 + rnd() * 0.9); out.push([p[0] - ty * d * side + tx * d * lean, p[1] + tx * d * side + ty * d * lean, 1]); }
+    else out.push([p[0], p[1]]);
+  }
+  return out;
+}
+// chips: little triangular nicks the knife takes out of an edge
+function chips(poly, rnd, count, size, sel = () => true) {
+  const side = outSide(poly), L = segLens(poly, true), out = [];
+  for (let k = 0, tries = 0; k < count && tries < count * 8; tries++) {
+    const [[x, y], tx, ty] = atLen(poly, L, rnd() * L.at(-1), true);
+    if (!sel(x, y)) continue;
+    k++;
+    const nx = -ty * side, ny = tx * side, b = size * (0.35 + 0.35 * rnd()), d = size * (0.8 + 0.9 * rnd()), sk = (rnd() - 0.5) * b * 1.4;
+    out.push([[x + tx * b + nx * 0.5, y + ty * b + ny * 0.5], [x - tx * b + nx * 0.5, y - ty * b + ny * 0.5], [x - nx * d + tx * sk, y - ny * d + ty * sk]]);
+  }
+  return out;
+}
+const distEdge = (poly, x, y) => {
+  let d = INF;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [ax, ay] = poly[j], [bx, by] = poly[i], dx = bx - ax, dy = by - ay, t = clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1e-9), 0, 1);
+    const e = hypot(x - ax - t * dx, y - ay - t * dy); if (e < d) d = e;
+  }
+  return d;
+};
+// stroke with a width per point
+function strokeW(line, ws) {
+  const n = line.length, lf = [], rt = [];
+  for (let i = 0; i < n; i++) {
+    const a = line[max(0, i - 1)], b = line[min(n - 1, i + 1)];
+    let dx = b[0] - a[0], dy = b[1] - a[1]; const l = hypot(dx, dy) || 1; dx /= l; dy /= l;
+    const hw = ws[i] / 2;
+    lf.push([line[i][0] - dy * hw, line[i][1] + dx * hw]); rt.push([line[i][0] + dy * hw, line[i][1] - dx * hw]);
+  }
+  return lf.concat(rt.reverse());
+}
+// light from the upper left, falling on an ellipsoid: 0 in shadow, 1 full on
+const LIGHT = (() => { const v = [-0.62, -0.68, 0.42], l = hypot(...v); return v.map(x => x / l); })();
+function dome(cx, cy, rx, ry, rot = 0, lo = 0.3, hi = 0.92) {
+  const c = cos(-rot * D2R), s = sin(-rot * D2R), Lx = LIGHT[0] * cos(rot * D2R) + LIGHT[1] * sin(rot * D2R), Ly = -LIGHT[0] * sin(rot * D2R) + LIGHT[1] * cos(rot * D2R);
+  return (x, y) => {
+    const u = ((x - cx) * c - (y - cy) * s) / rx, v = ((x - cx) * s + (y - cy) * c) / ry, z = sqrt(max(0, 1 - u * u - v * v));
+    return clamp(((u * Lx + v * Ly + z * LIGHT[2]) - lo) / (hi - lo), 0, 1);
+  };
+}
+// families of hatch lines
+const ringLines = (cx, cy, r0, r1, sp, ratio = 1, rot = 0) => { const out = []; for (let r = r0; r <= r1; r += sp) { const pts = ell(cx, cy, r, r * ratio, rot * D2R, max(24, ceil(TAU * r / 0.6))); pts.push(pts[0]); out.push(pts); } return out; };
+const flowLines = (guide, sp, n) => {
+  const g = resample(guide, 0.6), out = [];
+  for (let k = -n; k <= n; k++) out.push(g.map((p, i) => { const a = g[max(0, i - 1)], b = g[min(g.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1; return [p[0] - dy / l * k * sp, p[1] + dx / l * k * sp]; }));
+  return out;
+};
+const parLines = (ang, sp, box, wave = 0) => {
+  const [x0, y0, x1, y1] = box, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, R = hypot(x1 - x0, y1 - y0) / 2, c = cos(ang * D2R), s = sin(ang * D2R), out = [];
+  for (let d = -R; d <= R; d += sp) { const pts = []; for (let t = -R; t <= R; t += 0.6) { const w = wave * sin(t / 7 + d / 5); pts.push([cx + t * c - (d + w) * s, cy + t * s + (d + w) * c]); } out.push(pts); }
+  return out;
+};
+// Tonal hatching: cuts whose width follows the light, so the lit side carves open and the shadow stays solid.
+// h: { lines, tone(x, y), wmax, gamma, inset, exclude: [polys], dash: [period, gap] }
+function hatch(c, region, h) {
+  const out = [], fl = c.floorU, ex = h.exclude || [], inset = h.inset ?? 1.2, rnd = c.rnd, ns = floor(rnd() * 1e4), jit = h.jitter ?? 0.22;
+  for (const line of h.lines) {
+    // each line gives out at its own place: a per-line nudge plus a slow noise on the light
+    const pts = resample(line, 0.45), off = rnd(), nudge = (rnd() - 0.5) * jit;
+    let run = [], ws = [];
+    const flush = () => {
+      if (run.length >= 5) { const k = run.length, m = min(7, k / 2); for (let i = 0; i < k; i++) ws[i] *= pow(min(1, (i + 0.5) / m, (k - i - 0.5) / m), 0.7); out.push(strokeW(run, ws)); }
+      run = []; ws = [];
+    };
+    let s = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const [x, y] = pts[i]; if (i) s += hypot(x - pts[i - 1][0], y - pts[i - 1][1]);
+      let w = 0;
+      if (inside(region, x, y) && !ex.some(e => inside(e, x, y)) && distEdge(region, x, y) > inset) {
+        w = h.wmax * pow(clamp(h.tone(x, y) + nudge + jit * fbm(x / 7, y / 7, ns), 0, 1), h.gamma ?? 1);
+        if (h.dash && ((s / h.dash[0] + off) % 1) > 1 - h.dash[1]) w = 0;
+      }
+      if (w >= fl) { run.push([x, y]); ws.push(w); } else flush();
+    }
+    flush();
+  }
+  return out;
+}
+// line spacing that keeps a strip of vinyl at least the strip rule wide between two full-width cuts
+const pitch = (c, wmax, want) => max(want, wmax + c.minwU * 1.25);
+const scalePoly = (p, s, cx, cy) => p.map(([x, y]) => [cx + (x - cx) * s, cy + (y - cy) * s]);
+const centroid = p => [p.reduce((a, q) => a + q[0], 0) / p.length, p.reduce((a, q) => a + q[1], 0) / p.length];
+// short V-tool flicks fanned out from a rim (eye sockets, the eye): the gouge's exit marks
+function rimFlicks(c, rim, from, count, len, w, lit = () => 1) {
+  const { rnd } = c, out = [], [cx, cy] = from, L = segLens(rim, true);
+  for (let k = 0; k < count; k++) {
+    const [[x, y]] = atLen(rim, L, (k + rnd() * 0.6) / count * L.at(-1), true), dx = x - cx, dy = y - cy, l = hypot(dx, dy) || 1;
+    if (rnd() > 0.35 + 0.65 * lit(x, y)) continue;
+    const e = len * (0.5 + rnd() * 0.8), a = (rnd() - 0.5) * 0.4, ux = dx / l * cos(a) - dy / l * sin(a), uy = dx / l * sin(a) + dy / l * cos(a);
+    out.push(gouge(x - ux * 0.8, y - uy * 0.8, x + ux * e, y + uy * e, w, (rnd() - 0.5) * 0.1, "wedge"));
+  }
+  return out;
+}
+
+// ---------------- the raven, perched, facing left ----------------
+// What makes it a raven and not any black bird: a massive beak as long as the head, deep at the base, hooked, with bristles
+// over its base; a long flat crown; a shaggy beard of pointed throat hackles; a small eye near the beak; sleek elsewhere.
+// The body is laid out on a side-view photo (01_RESEARCH/lino-references/raven-photo-side-view.jpg): a long diagonal
+// teardrop, breast pushed forward, wings along the side nearly to the tail, long legs out of shaggy thighs under the middle.
+// pose: perched, hunched, ragged (hackles up, crown raised), calling, or seed (the seed picks one of the first three)
+function raven(c, pose, perch) {
+  const { rnd, cw, iw, dens } = c, j = (v, a = 0.6) => v + (rnd() - 0.5) * a;
+  if (pose === "seed") pose = ["perched", "hunched", "ragged"][floor(rnd() * 3)];
+  const calling = pose === "calling", hunched = pose === "hunched", ragged = pose === "ragged";
+  const beakL = j(1.02, 0.18), tailL = j(1, 0.16), hack = (ragged || calling ? 1.45 : 1) * j(1, 0.25);
+  // the head is drawn big in its own frame for the detail, then scaled onto the neck at a raven's proportion and angle
+  const hs = j(0.72, 0.04), tilt = ((calling ? 14 : hunched ? -10 : 0) + 12 + (rnd() - 0.5) * 10) * D2R, ct = cos(tilt), st = sin(tilt);
+  const Q = hunched ? [38.5, 21.5] : [36.3, 18.1];
+  const H = (x, y, k) => { if (x < 25) x = 25 - (25 - x) * beakL; const dx = (x - 53) * hs, dy = (y - 31) * hs; return [Q[0] + dx * ct - dy * st, Q[1] + dx * st + dy * ct, k]; };
+  const T = ([x, y, k]) => x > 84 ? [84 + (x - 84) * tailL, 72 + (y - 72) * tailL, k] : [x, y, k];
+  const gape = [23, 28.6], gapeRot = calling ? -19 * D2R : 0;
+  const Lm = ([x, y, k]) => { const dx = x - gape[0], dy = y - gape[1], c2 = cos(gapeRot), s2 = sin(gapeRot); return H(gape[0] + dx * c2 - dy * s2, gape[1] + dx * s2 + dy * c2, k); };
+  const bill = [H(2.5, 28.8, 1), H(5.4, 24.9), H(10.5, 22.1), H(16.5, 20.3), H(22, 19.5)];
+  const crown = ragged ? [H(28, 18.6), H(33.5, 16.4), H(39, 14.8, 1), H(41, 16.4), H(44.5, 14.6, 1), H(47.5, 17.6), H(51.5, 19.6)] : [H(28, 18.8), H(34, 16.9), H(40.5, 16.2), H(46.5, 17.2), H(51.5, 19.8)];
+  const nape = [H(55.5, 24.2)];
+  const hb = hunched ? 2.5 : 0;
+  // back: a long straight run from the nape down to the tail tip
+  const back = [[43.5, 16.5 + hb], [50, 22 + hb * 0.6], [57, 28.6], [64, 35.6], [71, 43.4], [77.5, 51.4], [83.5, 60], [88.6, 68.6], [93, 77], [96.6, 85], [99.4, 92.4, 1], [96.4, 93.4], [91.6, 89.2], [86.4, 84], [81, 79.6]].map(T);
+  // under the tail, the shaggy thighs, the belly, then the breast pushed forward under the throat
+  // the front is planes, not curves: a straight drop from the throat to a breast corner, then one straight line back to the thighs
+  const under = [[74.5, 77], [67.5, 75.4], [61.5, 74.6], [57.5, 76.6, 1], [55, 74.4], [52.6, 76.8, 1], [50.4, 74.2], [47.6, 75.8, 1], [45.6, 72.6, 1], [38.6, 64.4], [31.6, 56.2], [24.6, 48, 1], [23.2, 40.8], [22.8, 33.6], [23.8, 27.2, 1]];
+  const hk = [], nH = 5 + (ragged ? 1 : 0);
+  for (let i = 0; i < nH; i++) {
+    const t = i / (nH - 1), bx = lerp(39.5, 27, t), by = lerp(42.5, 31.6, t), len = (2.2 + 2.6 * sin(PI * (0.25 + 0.6 * t))) * hack * j(1, 0.3);
+    hk.push(H(bx + 1.1, by + 0.5), H(bx - len * 0.45, by + len * 0.95, 1));
+  }
+  const lower = calling ? [Lm([25.5, 33]), Lm([18, 32.8]), Lm([11.5, 31.8]), Lm([6, 30.2, 1]), Lm([11, 29.4]), Lm([17.5, 29.1]), H(gape[0], gape[1], 1), H(16, 28.7), H(8.5, 28.5)]
+    : [H(25.5, 33), H(18, 32.8), H(11.5, 31.8), H(6, 30.2, 1)];
+  const outline = curve([...bill, ...crown, ...nape, ...back, ...under, ...hk, ...lower]);
+  const body = facet(outline, rnd, TEX.facet * 0.8);
+  const A = new Art().ink(body);
+  const wing = [[40, 22], [38.6, 33], [42.6, 45], [50.6, 55], [60.6, 62.4], [71, 67.6], [82, 72.6], [88.6, 76.4], [85, 66], [78, 55.6], [70, 45.4], [61, 35.4], [51, 26.4]].map(T);
+  const inBody = (x, y) => inside(body, x, y), inWing = (x, y) => inside(wing, x, y);
+  const cuts = [], h = (x, y) => H(x, y).slice(0, 2);
+  // bill: a glint under the ridge, the gape, bristles combed forward over the base
+  cuts.push(gouge(...h(6, 25.8), ...h(19.5, 21.9), cw(1.0), -0.05));
+  if (!calling) cuts.push(gouge(...h(4.4, 28.9), ...h(22.6, 28.7), cw(0.9), 0.02, "nib"));
+  for (let i = 0; i < 3; i++) cuts.push(gouge(...h(29 + i * 0.6, 22.2 + i * 2), ...h(22.6 + i * 1.2 + j(0, 0.6), 22.4 + i * 1.7), cw(0.75), 0.05));
+  // eye: small, close to the bill, under a hard brow
+  const eye = h(32.6, 24.4);
+  cuts.push(ell(eye[0], eye[1], 1.85 * hs / 0.72));
+  cuts.push(gouge(...h(30.2, 21.4), ...h(38.6, 21.9), cw(0.8), -0.08));
+  for (let i = 0; i < 3; i++) cuts.push(stroke(curve([h(38 + i * 1.5, 20 + i * 2.6), h(45 + i * 1.4, 20.6 + i * 2.5), h(52 + i, 24 + i * 2.2)], false), cw(1.0), "lens"));
+  for (let i = 0; i < nH; i++) { const t = i / (nH - 1), bx = lerp(39.5, 27, t), by = lerp(42.5, 31.6, t), len = (2.2 + 2.6 * sin(PI * (0.25 + 0.6 * t))) * hack; cuts.push(gouge(...h(bx + 3, by - 2.4), ...h(bx - len * 0.3, by + len * 0.7), cw(0.85), 0.04)); }
+  // breast and belly: long flowing strokes in rows down the front, broken where a feather ends
+  const guide = curve([[25, 31], [25.4, 42], [29, 51], [36, 59.4], [43.5, 67]], false), gl = segLens(guide, false);
+  for (let k = 1; k <= round(4 * sqrt(dens)); k++) {
+    const off = k * 2.8;
+    for (let s = rnd() * 4; s < gl.at(-1); ) {
+      const run = 5 + rnd() * 7, seg = [];
+      for (let t = s; t < min(gl.at(-1), s + run); t += 0.7) { const [[x, y], tx, ty] = atLen(guide, gl, t, false); seg.push([x + ty * off + j(0, 0.2), y - tx * off]); }
+      if (seg.length > 3 && seg.every(([x, y]) => inBody(x, y) && !inWing(x, y))) cuts.push(stroke(seg, cw(1.1), "lens"));
+      s += run + 1.6 + rnd() * 2;
+    }
+  }
+  // the thighs: a few shaggy strokes hanging down
+  for (let i = 0; i < 4; i++) { const x = 46.5 + i * 3.2 + j(0, 0.8); if (inBody(x, 68)) cuts.push(gouge(x, 66.6, x - 0.6, 73.4, cw(0.9), 0.05)); }
+  // wing: its lower edge, three rows of coverts, then long flight feathers running toward the tail
+  // the wing edge is cut in straight runs, and its trailing feathers end in steps
+  const wedge = [[40.2, 24, 1], [39.2, 35, 1], [44.4, 46.6, 1], [55.6, 57.4, 1], [70.6, 67.2, 1], [89, 77.6, 1]].map(T);
+  // the edge is one cut in straight runs; the trailing feathers are a few long chisel slashes angled down and back to it
+  const wl = segLens(wedge, false), run = [];
+  for (let t = 0; t <= wl.at(-1) * 0.9; t += 0.6) run.push(atLen(wedge, wl, t, false)[0]);
+  cuts.push(stroke(run, cw(1.6), "nib"));
+  const wingMarks = [...run];   // the scoops keep clear of the edge and the slashes, so no two marks overlap
+  const nS = 3 + (rnd() < 0.5 ? 1 : 0);
+  for (let k = 0; k < nS; k++) {
+    const t0 = (0.3 + 0.36 * k / (nS - 1) + j(0, 0.02)) * wl.at(-1), [[ex, ey], tx, ty] = atLen(wedge, wl, min(wl.at(-1), t0 + 13 + rnd() * 4), false), [[sx, sy]] = atLen(wedge, wl, t0, false);
+    const lift = 4 + rnd() * 2.5;   // how far up into the wing the chisel went in: shallow, so the slash runs long along the wing
+    cuts.push(gouge(sx + ty * lift, sy - tx * lift, ex + tx * 0.8, ey + ty * 0.8, cw(1.35), j(0, 0.06), "nib"));
+    for (let q = 0; q <= 10; q++) wingMarks.push([lerp(sx + ty * lift, ex, q / 10), lerp(sy - tx * lift, ey, q / 10)]);
+  }
+  const band = curve([[43.5, 28], [45.6, 38.6], [51, 47], [58.4, 53.6]], false), u = [0.7, -0.71];
+  for (let row = 0; row < 3; row++) for (let t = 0.03 + (row % 2) * 0.07; t < 0.98; t += 0.14 / sqrt(dens)) {
+    const [x, y] = along(band, t), ox = x + row * 3.1 * u[0] + j(0, 0.4), oy = y + row * 3.1 * u[1] + j(0, 0.4);
+    if (inBody(ox, oy) && inWing(ox, oy) && wingMarks.every(([mx2, my2]) => hypot(mx2 - ox, my2 - oy) > 3.4)) cuts.push(cup(ox, oy, (2.4 - row * 0.3) * j(1, 0.2), 50 + j(0, 14), cw(0.95), 130));
+  }
+  // the wingtip: the edge cut runs on to a point, and one straight cut goes back up from it, leaving plain black round it
+  const wtip = T([88.4, 77]), wback = T([82.6, 63.4]);
+  cuts.push(gouge(...atLen(wedge, wl, wl.at(-1) * 0.9, false)[0], wtip[0], wtip[1], cw(1.4), 0, "nib"));
+  cuts.push(gouge(wtip[0], wtip[1], wback[0], wback[1], cw(1.3), 0.03, "lens"));
+  // mantle above the wing, and the wedge tail drawn in toward its point
+  for (let k = 0; k < 3; k++) cuts.push(gouge(45.5 + k * 3, 22 + k * 3.2, 54 + k * 3.4, 29.4 + k * 3.4, cw(0.95), -0.05));
+  if (TEX.chips) cuts.push(...chips(body, rnd, round(6 * TEX.chips), 1.9, (x, y) => x > 50 && y < 70 && !inWing(x, y)));
+  A.carve(cuts);
+  A.ink(ell(eye[0], eye[1], 1.05 * hs / 0.72));
+  // the perch, then long legs out of the thighs and big feet gripping it
+  const fy = 88.6, feet = [[43.6, fy], [50.6, fy + 0.4]];
+  if (perch === "branch") {
+    const br = curve([[0, 96], [24, 93.6], [50, 91.6], [76, 90.6], [100, 90.4]], false);
+    const twig = curve([[24, 93.6], [17, 88.5], [10.5, 84.6], [7, 83.8]], false);
+    const bp = facet(stroke(br, iw(6.4), "taper"), rnd, TEX.facet * 0.8);
+    A.carve(stroke(br, iw(6.4) + 2 * c.floorU * 1.2, "taper"));   // the branch passes in front of the tail: a hairline of clear space round it
+    A.ink(bp, stroke(twig, iw(2.6), "taper"), ell(7, 83.8, iw(0.9)));
+    const bark = [];
+    for (let k = 0; k < 7 * dens; k++) { const t = rnd() * 0.85, [x, y] = along(br, t), L = 6 + rnd() * 9, dy = (rnd() - 0.5) * 2.6 * (1 - 0.4 * t); bark.push(gouge(x, y + dy, x + L, y + dy - L * 0.03, cw(0.9), (rnd() - 0.5) * 0.04)); }
+    A.carve(bark);
+  }
+  const legs = [], scutes = [], toeGaps = [], toes = [];
+  feet.forEach(([x, y], i) => {
+    const top = [x + (i ? 4.4 : 5.6), 74.4], lw = iw(i ? 2.3 : 2.6);
+    legs.push(...bar([top, [x, y]], lw));
+    for (let k = 1; k < 5; k++) { const yy = lerp(top[1], y, k / 5.2), xx = lerp(top[0], x, k / 5.2); scutes.push(gouge(xx - lw * 0.5, yy, xx + lw * 0.05, yy + 0.5, cw(0.7), 0)); }
+    // long toes with hooked claws curl over the perch, with a hairline of clear space round them so they read against the bark
+    for (const [dx, dy, w] of [[-8.4, 2.4, 1.5], [-6.6, 4.6, 1.45], [-3, 5.6, 1.4], [5, 3, 1.4]]) {
+      const q = quad([x, y], [x + dx * 0.7, y + dy * 0.1], [x + dx, y + dy], 8);
+      toes.push(...bar(q, iw(w), "taper")); toeGaps.push(...bar(q.slice(2), iw(w) + 2 * c.floorU * 1.1, "taper"));
+    }
+  });
+  A.ink(legs);
+  if (perch === "branch") A.carve(toeGaps);
+  A.ink(toes);
+  A.carve(scutes);
+  return A;
+}
+
+// ---------------- the crow in flight, seen from below, head up ----------------
+function crow(c) {
+  const { rnd, cw, iw, dens } = c, j = (v, a = 0.6) => v + (rnd() - 0.5) * a;
+  const flap = (rnd() - 0.5) * 34 + 6;
+  const half = [[50, 3.5, 1], [51.5, 7.5], [53.2, 11.5], [55, 14.8], [55.6, 18.2], [54.6, 21.6], [56.6, 26], [58.2, 34], [57.6, 42], [55.6, 50], [54.2, 55.5], [57.6, 60.5], [61, 67.5], [63, 74.5], [j(62.4), 80.5, 1], [57, 83], [50, 84.2]];
+  const body = curve(sym(half));
+  // the right wing, built level and then swung about the shoulder
+  const W = new Art(), wcuts = [];
+  const wingPoly = curve([[54, 23.5], [62, 20.2], [70, 17.8], [78, 16.4], [86, 15.6], [90.5, 17.2], [92.5, 22.2], [91.6, 28.6], [86, 32.6], [78, 36.3], [69, 39.2], [61, 42.3], [55.5, 44]]);
+  const fingers = [];
+  const L = [11.5, 13.8, 14.2, 13, 10.6];
+  for (let i = 0; i < 5; i++) {
+    const t = i / 4, bx = lerp(88.6, 90.6, t), by = lerp(17, 29, t), a = lerp(-30, 22, t) * D2R + (rnd() - 0.5) * 0.08, len = L[i] * (0.92 + rnd() * 0.16);
+    const tx = bx + cos(a) * len, ty = by + sin(a) * len, mx = (bx + tx) / 2 - sin(a) * len * 0.06, my = (by + ty) / 2 - cos(a) * len * 0.06 * -1;
+    const line = quad([bx - cos(a) * 3, by - sin(a) * 3], [mx, my], [tx, ty], 14);
+    fingers.push(stroke(line, iw(3.5), "finger"), ell(tx, ty, iw(3.5) * 0.25));
+    wcuts.push(stroke(quad(along(line, 0.3), [mx, my], along(line, 0.9), 8), cw(0.7), "lens"));
+  }
+  W.ink(wingPoly, fingers);
+  const trail = [[59.5, 42.8], [69, 39.4], [78, 36.5], [86.5, 32.6]];
+  const nSec = round(7 * sqrt(dens));
+  for (let k = 0; k < nSec; k++) { const [x, y] = along(trail, (k + 0.5) / nSec); wcuts.push(gouge(x + 0.3, y + 0.6, x - 0.8 + j(0, 0.6), y - 6.2 - rnd() * 1.6, cw(1.0), j(0, 0.06))); }
+  const cov = curve([[58, 28.6], [66, 25.4], [74, 23.2], [82, 21.6], [87.5, 21.6]], false);
+  wcuts.push(stroke(cov, cw(1.15), "lens"));
+  for (let t = 0.05; t < 0.95; t += 0.11 / sqrt(dens)) { const [x, y] = along(cov, t); wcuts.push(cup(x + j(0, 0.4), y - 1.9, 1.4, 90, cw(0.85), 150)); }
+  W.carve(wcuts);
+  const sw = xform(1, 56, 26, -flap, 56, 26);
+  const right = W.map(sw), left = W.map(sw).map(([x, y]) => [100 - x, y]);
+  const A = new Art().ink(body).add(right).add(left);
+  // body: wing roots, breast chevrons, tail feathers, beak line
+  const cuts = [];
+  for (const s of [1, -1]) {
+    const X = x => 50 + s * (x - 50);
+    cuts.push(gouge(X(56.4), 24.5, X(57.4), 43, cw(1.0), s * 0.06));
+    for (const [a, b] of [[54.5, 79.8], [58.8, 77.2]]) cuts.push(gouge(X(51.2), 61, X(a), b, cw(0.9), s * -0.03));
+  }
+  cuts.push(gouge(50, 61.5, 50, 81.5, cw(0.9)));
+  for (let y = 27; y < 55; y += 3.4 / sqrt(dens)) { const w = y < 50 ? 4 : 2.6; for (const s of [1, -1]) cuts.push(gouge(50 + s * 0.8, y + 2.3, 50 + s * w, y + j(0, 0.4), cw(0.95), s * 0.05)); }
+  cuts.push(gouge(50, 5, 50, 11.2, cw(0.75)));
+  A.carve(cuts);
+  return A;
+}
+
+// ---------------- the bat, front on, wings out ----------------
+// What makes it a bat: skin stretched over long finger bones fanning from the wrist, a scalloped trailing edge between the
+// fingertips, a hooked thumb at the wrist, big pointed ears on a small head, a small furred body, tiny feet with skin between.
+// Cut the raven's way: one straight chisel cut per bone, a single slash in each panel of skin, no two cuts touching.
+// pose: spread, raised (wings swung up), or seed; plain: a shadow with no cuts at all (the small bats in a colony)
+function bat(c, pose, plain = false) {
+  const { rnd, cw, iw, dens } = c, j = (v, a = 0.6) => v + (rnd() - 0.5) * a;
+  if (!pose || pose === "seed") pose = rnd() < 0.5 ? "spread" : "raised";
+  const A = new Art(), cuts = [], inks = [];
+  const S = [54.5, 26];
+  const wing = s => {
+    // right wing laid out level, then swung about the shoulder; the left one is its mirror with its own jitter
+    const up = (pose === "raised" ? 16 : 0) + j(0, 8), ca = cos(-up * D2R), sa = sin(-up * D2R);
+    const R = ([x, y, k]) => { const dx = x - S[0], dy = y - S[1], X = S[0] + dx * ca - dy * sa, Y = S[1] + dx * sa + dy * ca; return [s > 0 ? X : 100 - X, Y, k]; };
+    const E = [65, j(19.5)], W = [76.5, j(13.5)], T3 = [99, j(21, 2)], T4 = [j(93.5), j(39, 2)], T5 = [j(78.5), j(47, 2)], hip = [55.5, 43.5];
+    const bow = (a, b, d) => { const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; return [mx + (W[0] - mx) * d, my + (W[1] - my) * d]; };
+    const sc = j(0.17, 0.05);
+    const mem = [[...S, 1], [60, 21.8], E, [71, 15.8], [...W, 1], [88, 15.2], [...T3, 1], bow(T3, T4, sc), [...T4, 1], bow(T4, T5, sc), [...T5, 1], bow(T5, hip, sc * 0.8), [...hip, 1], [55, 35]].map(R);
+    inks.push(facet(curve(mem), rnd, TEX.facet * 0.7));
+    // the thumb, a little hook at the wrist
+    const w = R(W);
+    inks.push(stroke(quad(w, R([W[0] - 0.5, W[1] - 2.6]), R([W[0] - 2.2, W[1] - 4.6]), 8), iw(1.8), "taper"));
+    // bones: upper arm, forearm, three fingers; each cut stops short of the joints so none of them touch
+    const bone = (a, b, ga, gb, wd) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = hypot(dx, dy); cuts.push(gouge(...R([a[0] + dx * ga / L, a[1] + dy * ga / L]).slice(0, 2), ...R([b[0] - dx * gb / L, b[1] - dy * gb / L]).slice(0, 2), cw(wd), 0.02 * s, "nib")); };
+    bone(S, E, 2.6, 2.2, 1.1); bone(E, W, 2.2, 2.6, 1.2);
+    for (const T of [T3, T4, T5]) bone(W, T, 3, 3.4, 1.15);
+    // one slash down the middle of each panel of skin, running out from the wrist, short of both bones and the edge
+    for (const [a, b] of [[T3, T4], [T4, T5]]) {
+      const m = bow(a, b, sc), dx = m[0] - W[0], dy = m[1] - W[1];
+      cuts.push(gouge(...R([W[0] + dx * 0.42, W[1] + dy * 0.42]).slice(0, 2), ...R([W[0] + dx * 0.78, W[1] + dy * 0.78]).slice(0, 2), cw(1.0), j(0, 0.06), "nib"));
+    }
+    const pm = [(E[0] + T5[0]) / 2, (E[1] + T5[1] + 18) / 2];
+    cuts.push(gouge(...R([pm[0] - 3, pm[1] - 4]).slice(0, 2), ...R([pm[0] + 1, pm[1] + 5]).slice(0, 2), cw(1.0), j(0, 0.06), "nib"));
+  };
+  wing(1); wing(-1);
+  // body, head, ears, the skin between the feet
+  const eh = j(1, 0.2);
+  inks.push(ell(50, 34.6, 7.6, 11.2), ell(50, 21.4, 7, 6));
+  for (const s of [1, -1]) {
+    const X = x => 50 + s * (x - 50);
+    inks.push(curve([[X(51.4), 17.4], [X(55.2), 11.4 - 3 * (eh - 1)], [X(60.4), 6.4 - 5 * (eh - 1), 1], [X(60.2), 12.6], [X(57.6), 20.6]]));
+    cuts.push(gouge(X(55.6), 16.2, X(58.6), 10.2 - 3.5 * (eh - 1), cw(0.9), 0, "lens"));
+    inks.push(...bar(quad([X(52.4), 44.6], [X(53.2), 46.4], [X(53.4), 48], 6), iw(1.1), "taper"));
+  }
+  inks.push(curve([[45.2, 42.4], [54.8, 42.4], [52.2, 47.4], [50, 51.6, 1], [47.8, 47.4]]));
+  A.ink(inks);
+  // face: small hard eyes under a scowl, and the fur on the chest in a few short flicks
+  for (const s of [1, -1]) {
+    const X = x => 50 + s * (x - 50);
+    cuts.push(ell(X(52.5), 21, 1.05));
+    cuts.push(gouge(X(55), 17.8, X(51.6), 19.2, cw(0.8), 0, "nib"));
+  }
+  if (!plain) A.carve(cuts);
+  return A;
+}
+
+// ---------------- the skull, front on ----------------
+// variant: classic, gaunt (pinched temples, sharp cheekbones, long jaw), scream (jaw dropped), or seed (the seed picks)
+function skull(c, eyes, variant) {
+  const { rnd, cw, iw, dens } = c, j = (v, a = 0.6) => v + (rnd() - 0.5) * a;
+  if (!variant || variant === "seed") { const r = rnd(); variant = r < 0.4 ? "classic" : r < 0.75 ? "gaunt" : "scream"; }
+  const gaunt = variant === "gaunt", scream = variant === "scream";
+  const sx = gaunt ? j(0.92, 0.06) : j(1, 0.1), tall = j(gaunt ? 2 : 0, 4);
+  const X = ([x, y, k]) => [50 + (x - 50) * sx, y < 42 ? y - tall * (42 - y) / 42 : y, k];
+  const classic = [[50, 4.8], [60, 5.8], [69, 9.4], [76.5, 15.4], [81.6, 23.4], [84.2, 33], [84.2, 42], [82.4, 49.6], [80, 54], [81.4, 58.6], [80.4, 63.6], [76, 67.2], [72.2, 69.4], [70.4, 73]];
+  const lean = [[50, 3], [60, 3.9], [68.5, 7.8], [75, 14.2], [78.8, 22.6], [80.2, 32], [79, 41], [76.2, 47.6, 1], [78, 52.6], [82.2, 57.4, 1], [78.4, 62.8], [72.6, 66.2], [68.8, 70], [67.6, 74.4]];
+  let half;
+  if (scream) half = [...classic, [67, 76.6], [58, 77.8], [50, 78]];
+  else if (gaunt) half = [...lean, [68.6, 80.2], [67.2, 88], [62.4, 95.6], [55.6, 100.6], [50, 101.8, 1]];
+  else half = [...classic, [71.8, 77.6], [71.2, 84.4], [67.2, 91], [60, 96], [50, 97.6]];
+  half = half.map(X).map(([x, y, k]) => [j(x, 0.9), j(y, 0.9), k]);
+  const heads = [facet(curve(sym(half)), rnd, TEX.facet)];
+  // the dropped jaw: a U hung from the hinges, with the mouth open between
+  const drop = scream ? j(14, 5) : 0;
+  if (scream) heads.push(facet(curve(sym([[50, 95.6 + drop], [57, 95 + drop], [62, 92.5 + drop], [66, 85 + drop * 0.6], [67.4, 77.6, 1], [71.2, 74.4, 1], [72.4, 84 + drop * 0.5], [71, 94 + drop], [67, 102.5 + drop], [60, 108 + drop], [50, 109.4 + drop]].map(X))), rnd, TEX.facet));
+  const A = new Art().ink(heads), head = heads[0], cuts = [];
+  // sockets: size, tilt and corners vary with the seed; a gaunt skull's droop outward
+  const sz = j(gaunt ? 1.1 : 1, 0.22), tl = j(gaunt ? 12 : 0, 16) * D2R, angular = gaunt || (TEX.knife && rnd() < 0.45);
+  const base = [[26.5, 46.5], [29.5, 41.4, angular ? 1 : 0], [36, 39.4], [42.6, 41], [46.2, 46, angular ? 1 : 0], [45.6, 52.6], [41.6, 57], [35, 58.2, angular ? 1 : 0], [29, 56.2], [26, 51.6]];
+  const sock = s => { const cx = 50 + s * (36 - 50) * sx, cy = 49 + (gaunt ? 1 : 0); return curve(base.map(([x, y, k]) => { const dx = s * (x - 36) * sz, dy = (y - 49) * sz, a = -s * tl; return [cx - s * 0 + dx * cos(a) - dy * sin(a), cy + dx * sin(a) + dy * cos(a), k]; }).map(([x, y, k]) => [j(x, 0.7), j(y, 0.7), k])); };
+  const sockets = [facet(sock(-1), rnd, TEX.facet * 0.6), facet(sock(1), rnd, TEX.facet * 0.6)];
+  cuts.push(...sockets);
+  // brow ridges, cheekbones, jaw hinges
+  for (const s of [1, -1]) {
+    const Xs = x => 50 + s * (x - 50) * sx;
+    cuts.push(stroke(curve([[Xs(27.5), 38.2 - (sz - 1) * 9], [Xs(35), 35.4 - (sz - 1) * 9], [Xs(43.4), 37.6 - (sz - 1) * 9]], false), cw(1.1), "lens"));
+    cuts.push(stroke(curve([[Xs(25.5), 61.2], [Xs(31), 63.4 + (gaunt ? 1.5 : 0)], [Xs(38.5), 62.6]], false), cw(1.0), "lens"));
+    if (!scream) cuts.push(gouge(Xs(71.2 - (gaunt ? 3 : 0)), 70.4, Xs(68.6 - (gaunt ? 2 : 0)), 81, cw(1.0), s * 0.05));
+    if (gaunt) cuts.push(gouge(Xs(77.2), 44, Xs(74), 55, cw(1.1), s * -0.08));
+  }
+  // nose: an upside-down heart, a triangle, or two slits
+  const nose = floor(rnd() * 3), nk = TEX.knife ? 1 : 0;
+  const noses = nose === 0 ? [curve([[50, 58.4, 1], [52.8, 62.6], [54.6, 67], [53.2, 70.4], [51, 70], [50, 68.8, 1], [49, 70], [46.8, 70.4], [45.4, 67], [47.2, 62.6]])]
+    : nose === 1 ? [curve([[50, 57.6, 1], [52.2, 63, nk], [54.6, 69.6, 1], [50, 68, 1], [45.4, 69.6, 1], [47.8, 63, nk]])]
+      : [curve([[49.1, 58.6, 1], [48.8, 69, 1], [45, 70.2, 1], [46.4, 64]]), curve([[50.9, 58.6, 1], [53.6, 64], [55, 70.2, 1], [51.2, 69, 1]])];
+  cuts.push(...noses);
+  // teeth: a seeded count, sometimes one gone
+  const nT = 6 + floor(rnd() * 4), gone = rnd() < 0.55 ? floor(rnd() * nT) : -1, gone2 = rnd() < 0.35 ? floor(rnd() * nT) : -1;
+  if (scream) {
+    const teeth = [], m = rnd() < 0.5;
+    for (let i = 0; i < nT; i++) {
+      const x0 = lerp(39, 61, i / nT) + 0.65, x1 = lerp(39, 61, (i + 1) / nT) - 0.65, d = 6.6 + j(0, 1.8) - abs(i - nT / 2 + 0.5) * 0.4;
+      if (i !== gone) teeth.push(curve([[x0, 76.5, 1], [x1, 76.5, 1], [x1 - 0.2, 77.6 + d * 0.8], [(x0 + x1) / 2, 77.6 + d], [x0 + 0.2, 77.6 + d * 0.8]]));
+      const y = 95.4 + drop;
+      if (i !== gone2 && i > 0 && i < nT - 1) teeth.push(curve([[x0 + 0.3, y + 0.8, 1], [x1 - 0.3, y + 0.8, 1], [x1 - 0.4, y - 3.2 - (m ? 1 : 0)], [(x0 + x1) / 2, y - 4.4 - (m ? 1 : 0)], [x0 + 0.4, y - 3.2 - (m ? 1 : 0)]]));
+    }
+    A.ink(teeth);
+    // gum line over the top teeth and a cut round the inside of the jaw, so the open mouth reads as a mouth
+    cuts.push(stroke(curve([[38.5, 75.4], [50, 76.4], [61.5, 75.4]], false), cw(1.0), "lens"));
+    cuts.push(stroke(curve([[64.6, 80 + drop * 0.5], [63, 90 + drop * 0.8], [57, 98.4 + drop], [50, 99.2 + drop], [43, 98.4 + drop], [37, 90 + drop * 0.8], [35.4, 80 + drop * 0.5]], false), cw(1.1), "lens"));
+  } else {
+    const g = gaunt ? 70.2 : 72.2, b = gaunt ? 79.6 : 79.8, jl = gaunt ? 89 : 86.6, xa = gaunt ? 40 : 37, xb = gaunt ? 60 : 63;
+    cuts.push(stroke(curve([[xa - 0.5, g], [50, g + 1.6], [xb + 0.5, g]], false), cw(1.0), "lens"));
+    cuts.push(stroke(curve([[xa - 1.5, b], [50, b + 1], [xb + 1.5, b]], false), cw(1.5), "lens"));
+    cuts.push(stroke(curve([[xa + 1, jl], [50, jl + 1.6], [xb - 1, jl]], false), cw(1.0), "lens"));
+    for (let i = 1; i < nT; i++) { const x = lerp(xa, xb, i / nT); cuts.push(gouge(x, g + 1.4, x + j(0, 0.5), b, cw(0.9), 0.04)); cuts.push(gouge(x + (xb - xa) / nT / 2, b + 1.2, x + (xb - xa) / nT / 2 + j(0, 0.5), jl, cw(0.9), -0.04)); }
+    // a chipped tooth: a wedge broken off its biting edge
+    for (const [k, y1, d] of [[gone, b, -1], [gone2, b + 0.8, 1]]) if (k >= 0) { const x0 = lerp(xa, xb, k / nT) + 0.2, x1 = lerp(xa, xb, (k + 1) / nT) - 0.2, h = 2.6 + rnd() * 2; cuts.push(rnd() < 0.5 ? [[x0, y1], [x1, y1], [x1, y1 + d * h]] : [[x0, y1], [x1, y1], [x0, y1 + d * h]]); }
+  }
+  // light from the upper left
+  if (TEX.hatch) {
+    // engraved: contour lines arc round the cranium and cut open where it catches the light; the face gets slanted lines
+    const wmax = 1.6 * c.o.gouge, sp = pitch(c, wmax, 2.25 / sqrt(dens));
+    const ex = [...sockets.map(p => scalePoly(p, 1.22, ...centroid(p))), ...noses.map(p => scalePoly(p, 1.5, ...centroid(p))), [[33, scream ? 72 : 70], [67, scream ? 72 : 70], [67, 120], [33, 120]]];
+    const rings = ringLines(60 + j(0, 6), 52 + j(0, 6), 6, 64, sp * 1.12, 1.06).map(l => l.map(([x, y]) => [x + 0.7 * sin(y / 4.3), y + 0.7 * sin(x / 5.1)]));
+    cuts.push(...hatch(c, head, { lines: rings, tone: dome(50, 40, 36 * sx, 40, 0, 0.36, 0.95), wmax, gamma: 0.85, inset: 1.6, exclude: ex, jitter: 0.32 }));
+    cuts.push(...hatch(c, head, { lines: parLines(-28, sp, [15, 54, 85, 100], 1.2).filter(l => true), tone: (x, y) => y < 56 ? 0 : dome(50, 68, 30 * sx, 22, 0, 0.35, 0.95)(x, y), wmax: wmax * 0.9, inset: 1.6, exclude: ex }));
+  } else {
+    const nArc = round(5 * dens);
+    for (let k = 0; k < nArc; k++) {
+      const r = 31 - k * 2.5, a0 = 196 + k * 3 + rnd() * 4, a1 = 246 + k * 5 + rnd() * 6;
+      cuts.push(stroke(Array.from({ length: 19 }, (_, i) => { const a = lerp(a0, a1, i / 18) * D2R; return [50 + r * sx * cos(a), 40 + r * 1.02 * sin(a)]; }), cw(1.05), "lens"));
+    }
+    for (let k = 0; k < round(3 * dens); k++) { const r = 30 - k * 2.6, a0 = 300 + k * 4, a1 = 326 + rnd() * 6; cuts.push(stroke(Array.from({ length: 13 }, (_, i) => { const a = lerp(a0, a1, i / 12) * D2R; return [50 + r * sx * cos(a), 40 + r * sin(a)]; }), cw(0.9), "lens")); }
+    for (let k = 0; k < 3; k++) cuts.push(gouge(50 - 30 * sx + k * 1.6, 46 + k * 3.2, 50 - 26.6 * sx + k * 1.4, 53 + k * 3, cw(0.9), 0.05));
+  }
+  // the knife round the sockets: short flicks fanning out of each rim, more where the light falls
+  if (TEX.knife) for (const p of sockets) cuts.push(...rimFlicks(c, p, centroid(p), round(16 * dens), 3.2, cw(0.95), dome(50, 45, 34, 40, 0, 0.1, 0.8)));
+  // cracks: one to three, wandering in from the crown
+  const nc = 1 + floor(rnd() * (TEX.knife ? 3 : 2));
+  for (let k = 0; k < nc; k++) {
+    let a = (-90 + (rnd() - 0.5) * 110) * D2R, x = 50 + cos(a) * 33 * sx, y = 41 + sin(a) * 37 - tall;
+    const pts = [[x, y]], dir = atan2(41 - y, 50 - x);
+    for (let i = 0; i < 4 + floor(rnd() * 3); i++) { const d = dir + (i % 2 ? 0.7 : -0.7) * (0.6 + rnd() * 0.6); x += cos(d) * (3 + rnd() * 3); y += sin(d) * (3 + rnd() * 3); pts.push([x, y]); }
+    cuts.push(stroke(pts, cw(1.0), "nib"));
+  }
+  if (TEX.chips) cuts.push(...chips(head, rnd, round(12 * TEX.chips), 2.3, (x, y) => y < 70));
+  A.carve(cuts);
+  if (eyes === "lit") for (const p of sockets) { const [x, y] = centroid(p); A.ink(TEX.knife ? [[x - 2.6, y], [x, y - 1.6], [x + 2.6, y], [x, y + 1.6]] : ell(x, y + 0.6, 2.4)); }
+  return A;
+}
+// ---------------- the skull drawn as a keyline block: bone left as paper, black lines, dark sockets, outlined teeth ----------------
+// A line cut with a V-tool from both sides: its width swells and pinches along its length, thinning at the ends.
+function inkLine(c, pts, w, closed = false, taper = true) {
+  const line = resample(closed ? [...pts, pts[0]] : pts, 0.45), n = line.length, ns = floor(c.rnd() * 9973), ws = [];
+  let s = 0;
+  for (let i = 0; i < n; i++) {
+    if (i) s += hypot(line[i][0] - line[i - 1][0], line[i][1] - line[i - 1][1]);
+    const t = i / (n - 1);
+    let f = 0.78 + 0.48 * fbm(s / 4.2, 1.7, ns);
+    if (taper && !closed) f *= 0.4 + 0.6 * min(1, t / 0.14, (1 - t) / 0.14);
+    ws.push(max(c.minwU * 1.15, w * f));
+  }
+  return strokeW(line, ws);
+}
+// a long cut is never one stroke: break it into runs that stop short or overlap where the hand restarted
+function brokenLine(c, pts, w, closed = true) {
+  const { rnd } = c, L = segLens(pts, closed), tot = L.at(-1), out = [];
+  let s = rnd() * 10;
+  const end = s + (closed ? tot : tot - s);
+  while (s < end - 2) {
+    const run = min(end - s, 18 + rnd() * 34), seg = [];
+    for (let t = s; t <= s + run; t += 0.7) seg.push(atLen(pts, L, ((t % tot) + tot) % tot, closed)[0]);
+    const off = (rnd() - 0.5) * 0.9;
+    if (seg.length > 3) out.push(inkLine(c, seg.map((p, i) => { const q = seg[min(seg.length - 1, i + 1)], r = seg[max(0, i - 1)], dx = q[0] - r[0], dy = q[1] - r[1], l = hypot(dx, dy) || 1; return [p[0] - dy / l * off, p[1] + dx / l * off]; }), w));
+    s += run + (rnd() < 0.45 ? 1.4 + rnd() * 1.8 : -(1 + rnd() * 2));
+  }
+  return out;
+}
+function skullLine(c, eyes, variant) {
+  const { rnd, dens } = c, j = (v, a = 0.6) => v + (rnd() - 0.5) * a, lw = c.o.gouge;
+  if (!variant || variant === "seed") { const r = rnd(); variant = r < 0.4 ? "classic" : r < 0.75 ? "gaunt" : "scream"; }
+  const gaunt = variant === "gaunt", scream = variant === "scream";
+  const sx = gaunt ? j(0.9, 0.06) : j(1, 0.08), jx = gaunt ? j(0.8, 0.06) : j(0.9, 0.08), jl = gaunt ? j(1.18, 0.08) : j(1, 0.1), D = scream ? j(11, 4) : 0;
+  // one place to bend every point: cranium width above, jaw width and length below, the dropped jaw for a scream
+  const P = ([x, y, k], side = 1) => {
+    const ax = y < 62 ? sx : y > 72 ? jx : lerp(sx, jx, (y - 62) / 10), yy = y > 72 ? 72 + (y - 72) * jl + (y > 86 ? D : D * (y - 72) / 14) : y;
+    return [50 + (x - 50) * ax, yy, k];
+  };
+  const both = (pts, f) => { for (const s of [1, -1]) f(pts.map(([x, y, k]) => P([50 + s * (x - 50) + (s < 0 ? j(0, 0.8) : 0), y + (s < 0 ? j(0, 0.8) : 0), k])), s); };
+  const R = [[50, 5], [62, 6.4], [73, 11.5], [81.5, 20], [86.5, 31], [88, 43], [87, 53], [84.4, 58.6, 1], [89, 62.6], [88.6, 68.4], [82.4, 71.8, 1], [80.6, 79], [78.4, 88], [73.4, 96.6], [65, 102.6], [56, 105.6], [50, 106]];
+  const outline = curve([...R.map(p => P(p)), ...R.slice(1, -1).reverse().map(([x, y, k]) => P([100 - x + j(0, 0.8), y + j(0, 0.8), k]))].map(([x, y, k]) => [j(x, 0.6), j(y, 0.6), k]));
+  const A = new Art(), lines = [], fills = [], cuts = [];
+  A.carve([outline]); A.sil.push(outline);   // the bone is paper: clear it, and let the halo go round all of it
+  lines.push(...brokenLine(c, outline, 2.5 * lw));
+  // temporal lines arcing down the sides of the cranium, one longer than the other
+  both([[70, 13.5], [77.5, 22], [80.6, 32], [80, 41]], (p, s) => { if (s > 0 || rnd() < 0.4) lines.push(inkLine(c, curve(p.slice(s > 0 ? 0 : 1 + floor(rnd() * 2)), false), 1.15 * lw)); });
+  // sockets: dark, a little skewed, a rim line over each
+  const ss = j(gaunt ? 1.1 : 1, 0.2), tl = j(gaunt ? 8 : 2, 10) * D2R, sockets = [];
+  both([[56.2, 48.2], [60.5, 45.6, 1], [69, 45.2], [76.6, 46.6, 1], [79.4, 52], [78.6, 60, 1], [71, 61.6], [63, 61.2], [57.6, 58.4], [56, 53]], (p, s) => {
+    const cx = 50 + s * 17 * sx, cy = 53.5, q = curve(p.map(([x, y]) => { const dx = (x - cx) * ss, dy = (y - cy) * ss, a = s * tl; return [cx + dx * cos(a) - dy * sin(a) + j(0, 0.9), cy + dx * sin(a) + dy * cos(a) + j(0, 0.9)]; }));
+    sockets.push(q); fills.push(facet(q, rnd, 0.5));
+    for (let k = 0; k < 1 + floor(rnd() * 3); k++) { const [x, y] = centroid(q), a = (rnd() - 0.5) * 1.2 + (rnd() < 0.5 ? 0 : PI), L = 3 + rnd() * 4; cuts.push(gouge(x - cos(a) * L / 2 + j(0, 3), y - sin(a) * L / 2 + j(0, 3), x + cos(a) * L / 2, y + sin(a) * L / 2, c.floorU * 1.25, (rnd() - 0.5) * 0.2)); }
+  });
+  both([[54.5, 45.5 - (ss - 1) * 8], [60, 41.8 - (ss - 1) * 8], [69, 40.6 - (ss - 1) * 8], [77, 43 - (ss - 1) * 8], [81.5, 48.5]], p => lines.push(inkLine(c, curve(p, false), 1.6 * lw)));
+  // nose: two teardrops, outlined or dark, and the nasal bones over them
+  const darkNose = rnd() < 0.4;
+  both([[51.3, 60, 1], [53.3, 64.5], [55, 69.5], [53.8, 73.2], [51.6, 72.8], [50.9, 68]], p => { const q = curve(p); if (darkNose) fills.push(q); else lines.push(inkLine(c, q, 1.05 * lw, true)); });
+  both([[53.6, 47.5], [52.4, 53], [51.6, 58]], p => lines.push(inkLine(c, curve(p, false), 0.95 * lw)));
+  // cheekbones jutting out, with the shadow hatched in under them
+  both([[69, 64.5], [76.5, 66.6], [82.5, 64.2], [86.2, 60.6]], p => lines.push(inkLine(c, curve(p, false), 1.5 * lw)));
+  both([[72, 69.4], [78.5, 71.6]], p => lines.push(inkLine(c, curve(p, false), 1.1 * lw)));
+  for (let i = 0; i < round(4 * dens); i++) both([[71 + i * 2.6 + j(0, 0.8), 68.2], [67.6 + i * 2.6, 74 + rnd() * 4]], (p, s) => { if (s > 0 || i < 2) lines.push(inkLine(c, p, 1.05 * lw)); });
+  if (gaunt) both([[84, 56], [81, 50], [79.5, 44]], p => lines.push(inkLine(c, curve(p, false), 1.2 * lw)));
+  both([[56.5, 75.2], [62.5, 76.2]], p => lines.push(inkLine(c, curve(p, false), 1.25 * lw)));
+  // teeth: each one outlined, narrower toward the corners; a missing one is a dark gap
+  const f = u => u * 1.3 - 0.3 * u * u * u, half = 16, gum = x => 79.6 + 0.016 * (x - 50) ** 2, bite = x => 86.6 + 0.013 * (x - 50) ** 2 - 0.0001 * (x - 50) ** 4, low = x => bite(x) + 5.8 - 0.006 * (x - 50) ** 2;
+  const row = (n, top, bot, drop, upper) => {
+    const gone = rnd() < 0.5 ? floor(rnd() * n) : -1;
+    for (let i = 0; i < n; i++) {
+      const xa = 50 + half * jx * f(-1 + 2 * i / n) + j(0, 0.3), xb = 50 + half * jx * f(-1 + 2 * (i + 1) / n) + j(0, 0.3), xm = (xa + xb) / 2, t = top(xm) + drop, b = bot(xm) + drop + j(0, 0.7), r = min((xb - xa) * 0.45, 1.6);
+      const q = upper ? [[xa, t, 1], [xb, t, 1], [xb, b - r], [xm, b + 0.3], [xa, b - r]] : [[xa, b, 1], [xa, t + r], [xm, t - 0.3], [xb, t + r], [xb, b, 1]];
+      if (i === gone) fills.push(curve(q)); else lines.push(inkLine(c, curve(q), 0.7 * lw, true, false));
+    }
+  };
+  const nU = 11 + floor(rnd() * 4), nL = nU - 1 - floor(rnd() * 2);
+  row(nU, gum, bite, 0, true);
+  row(nL, x => bite(x) + 0.5, low, D, false);
+  const span = n => Array.from({ length: 13 }, (_, i) => 50 + (half + 1.5) * jx * (-1 + i / 6));
+  lines.push(inkLine(c, span().map(x => [x, gum(x) - 0.4]), 1.4 * lw));
+  lines.push(inkLine(c, span().map(x => [x, low(x) + D + 0.3]), 1.3 * lw));
+  if (scream) fills.push([...span().map(x => [x, bite(x)]), ...span().reverse().map(x => [x, bite(x) + 0.5 + D])]);
+  else lines.push(inkLine(c, span().map(x => [x, bite(x) + 0.2]), 1.5 * lw));
+  // the jaw: its inner line, the notch where it meets the cheek, the chin
+  const jaw = [[75.6, 77.5], [74.6, 87.5], [70, 95], [62, 99.6], [50, 101.4]];
+  lines.push(inkLine(c, curve([...jaw.map(p => P(p)), ...jaw.slice(0, -1).reverse().map(([x, y]) => P([100 - x, y]))], false), 1.2 * lw));
+  both([[83, 73.6], [80, 77.6]], p => lines.push(inkLine(c, p, 1.1 * lw)));
+  lines.push(inkLine(c, [[46, 101.4], [50, 99.8], [54, 101.4]].map(p => P(p)), 1.0 * lw));
+  // shadow side: short strokes following the cranium, then flecks the cutter left in the bone, thicker away from the light
+  const tone = dome(50, 42, 38 * sx, 40, 0, 0.2, 0.9), Lo = segLens(outline, true);
+  for (let k = 0; k < round(10 * dens); k++) {
+    const s0 = (0.08 + rnd() * 0.3) * Lo.at(-1), seg = [], d = 3 + rnd() * 4;
+    for (let s = s0; s < s0 + 4 + rnd() * 6; s += 0.8) { const [[x, y], tx, ty] = atLen(outline, Lo, s, true); seg.push([x + ty * d * -outSide(outline), y - tx * d * -outSide(outline)]); }
+    if (seg.length > 2 && tone(...seg[0]) < 0.6 && inside(outline, ...seg[0])) lines.push(inkLine(c, seg, 1.0 * lw));
+  }
+  const keepOut = [...sockets.map(p => scalePoly(p, 1.3, ...centroid(p)))];
+  for (let k = 0, tries = 0; k < round(42 * dens) && tries < 900; tries++) {
+    const x = 18 + rnd() * 64, y = 9 + rnd() * 62;
+    if (!inside(outline, x, y) || keepOut.some(p => inside(p, x, y)) || (abs(x - 50) < 7 && y > 56)) continue;
+    if (rnd() > 0.3 + 0.7 * (1 - tone(x, y))) continue;
+    k++;
+    const a = atan2(y - 46, x - 50) + PI / 2 + (rnd() - 0.5) * 0.7, L = 1.4 + rnd() * 3.8;
+    lines.push(stroke([[x - cos(a) * L / 2, y - sin(a) * L / 2], [x, y], [x + cos(a) * L / 2, y + sin(a) * L / 2]].flatMap((p, i, a2) => i ? [[(p[0] + a2[i - 1][0]) / 2, (p[1] + a2[i - 1][1]) / 2], p] : [p]), max(c.minwU * 1.3, 0.9 + rnd() * 0.6), "lens"));
+  }
+  A.ink(lines, fills);
+  A.carve(cuts);
+  if (eyes === "lit") for (const p of sockets) { const [x, y] = centroid(p); A.carve(ell(x + (x < 50 ? 1.6 : -1.6), y + 1.2, max(1.0, c.floorU * 0.9))); }
+  return A;
+}
+
+function bone(c, a, b) {
+  const { cw, iw } = c, dx = b[0] - a[0], dy = b[1] - a[1], L = hypot(dx, dy), ux = dx / L, uy = dy / L, w = iw(6.2);
+  const knobs = [];
+  for (const [p, s] of [[a, -1], [b, 1]]) for (const side of [-1, 1]) knobs.push(ell(p[0] + s * ux * 1.4 - uy * side * w * 0.4, p[1] + s * uy * 1.4 + ux * side * w * 0.4, w * 0.56));
+  const B = new Art().ink(bar([a, b], w), knobs);
+  B.carve(gouge(a[0] + ux * 7 - uy * w * 0.18, a[1] + uy * 7 + ux * w * 0.18, b[0] - ux * 7 - uy * w * 0.18, b[1] - uy * 7 + ux * w * 0.18, cw(1.1), 0));
+  return B;
+}
+
+// ---------------- compositions: back to front, each figure with its own halo ----------------
+const COMPS = {
+  raven: c => [raven(c, c.o.ravenv, "branch")],
+  calling: c => [raven(c, "calling", "branch")],
+  crow: c => [crow(c)],
+  murder: c => [[0.62, 50, 52, -6], [0.3, 17, 14, 16], [0.27, 84, 15, -18], [0.25, 82, 88, 12], [0.22, 19, 86, -8]].map(([s, x, y, r]) => crow(c).map(xform(s, x, y, r))),
+  bat: c => [bat(c, c.o.batv).map(xform(1, 50, 30, (c.rnd() - 0.5) * 12, 50, 30))],
+  colony: c => [[0.6, 50, 44, -6], [0.3, 16, 14, 14], [0.27, 84, 15, -16], [0.24, 82, 84, 12], [0.22, 18, 82, -10]].map(([sc, x, y, r], i) => bat(c, "seed", i > 0).map(xform(sc, x, y, r, 50, 30))),
+  skull: c => [SK(c)(c, c.o.eyes, c.o.skullv)],
+  bones: c => [bone(c, [8, 60], [92, 112]), bone(c, [92, 60], [8, 112]), SK(c)(c, c.o.eyes, c.o.skullv === "scream" ? "classic" : c.o.skullv)],
+  perched: c => { const s = SK(c)(c, c.o.eyes, c.o.skullv === "scream" ? "classic" : c.o.skullv), r = raven(c, c.o.ravenv === "seed" && rnd01(c) < 0.3 ? "calling" : c.o.ravenv, "none"); return [s, r.map(xform(0.62, 51, 4.6, 0, 48.5, 93))]; },
+};
+const rnd01 = c => c.rnd();
+const SK = c => c.o.skulllook === "solid" ? skull : skullLine;
+const MIX = ["raven", "bat", "crow", "skull", "perched", "calling", "bones", "murder"], MIXSR = ["skull", "raven"];
+
+// ---------------- the grid: fill, morphology, cleaning, tracing ----------------
+function fillPoly(G, m, poly, val) {
+  const { gw, gh, cell, ox, oy } = G, n = poly.length;
+  if (n < 3) return;
+  const X = new Float64Array(n), Y = new Float64Array(n);
+  let y0 = INF, y1 = -INF;
+  for (let i = 0; i < n; i++) { X[i] = (poly[i][0] - ox) / cell - 0.5; Y[i] = (poly[i][1] - oy) / cell - 0.5; if (Y[i] < y0) y0 = Y[i]; if (Y[i] > y1) y1 = Y[i]; }
+  const j0 = max(0, ceil(y0)), j1 = min(gh - 1, floor(y1));
+  if (j1 < j0) return;
+  const rows = Array.from({ length: j1 - j0 + 1 }, () => []);
+  for (let i = 0; i < n; i++) {
+    const k = i + 1 === n ? 0 : i + 1, ya = Y[i], yb = Y[k];
+    if (ya === yb) continue;
+    const d = yb > ya ? 1 : -1, lo = min(ya, yb), hi = max(ya, yb);
+    for (let r = max(j0, ceil(lo)); r < hi && r <= j1; r++) rows[r - j0].push(X[i] + (r - ya) / (yb - ya) * (X[k] - X[i]), d);
+  }
+  for (let r = 0; r < rows.length; r++) {
+    const R = rows[r]; if (!R.length) continue;
+    const idx = []; for (let i = 0; i < R.length; i += 2) idx.push(i);
+    idx.sort((a, b) => R[a] - R[b]);
+    let wind = 0, start = 0; const base = (r + j0) * gw;
+    for (const i of idx) {
+      const before = wind; wind += R[i + 1];
+      if (before === 0 && wind !== 0) start = R[i];
+      else if (before !== 0 && wind === 0) { const a = max(0, ceil(start)), b = min(gw - 1, ceil(R[i]) - 1); for (let x = a; x <= b; x++) m[base + x] = val; }
+    }
+  }
+}
+// exact squared Euclidean distance transform (Felzenszwalb), distance in cells to the nearest pixel equal to want
+function edt(m, gw, gh, want) {
+  const N = gw * gh, d = new Float32Array(N), BIG = 1e20, n = max(gw, gh);
+  const f = new Float64Array(n), o = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1);
+  const dt = len => {
+    let k = 0; v[0] = 0; z[0] = -BIG; z[1] = BIG;
+    for (let q = 1; q < len; q++) {
+      let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = BIG;
+    }
+    k = 0;
+    for (let q = 0; q < len; q++) { while (z[k + 1] < q) k++; const p = v[k]; o[q] = (q - p) * (q - p) + f[p]; }
+  };
+  for (let x = 0; x < gw; x++) { for (let y = 0; y < gh; y++) f[y] = m[y * gw + x] === want ? 0 : BIG; dt(gh); for (let y = 0; y < gh; y++) d[y * gw + x] = o[y]; }
+  for (let y = 0; y < gh; y++) { const b = y * gw; for (let x = 0; x < gw; x++) f[x] = d[b + x]; dt(gw); for (let x = 0; x < gw; x++) d[b + x] = o[x]; }
+  return d;
+}
+const dil = (m, G, r) => { const d = edt(m, G.gw, G.gh, 1), o = new Uint8Array(m.length), r2 = r * r; for (let i = 0; i < m.length; i++) o[i] = d[i] <= r2 ? 1 : 0; return o; };
+const ero = (m, G, r) => { const d = edt(m, G.gw, G.gh, 0), o = new Uint8Array(m.length), r2 = r * r; for (let i = 0; i < m.length; i++) o[i] = d[i] > r2 ? 1 : 0; return o; };
+// 4-connected regions of value val: sizes, and whether each touches the grid edge
+function regions(m, G, val) {
+  const { gw, gh } = G, N = gw * gh, lab = new Int32Array(N).fill(-1), sizes = [], edge = [], stack = new Int32Array(N);
+  for (let s = 0; s < N; s++) {
+    if (m[s] !== val || lab[s] >= 0) continue;
+    const id = sizes.length; let sp = 0, cnt = 0, e = false; stack[sp++] = s; lab[s] = id;
+    while (sp) {
+      const i = stack[--sp], x = i % gw, y = (i - x) / gw; cnt++;
+      if (x === 0 || y === 0 || x === gw - 1 || y === gh - 1) e = true;
+      if (x > 0 && m[i - 1] === val && lab[i - 1] < 0) { lab[i - 1] = id; stack[sp++] = i - 1; }
+      if (x < gw - 1 && m[i + 1] === val && lab[i + 1] < 0) { lab[i + 1] = id; stack[sp++] = i + 1; }
+      if (y > 0 && m[i - gw] === val && lab[i - gw] < 0) { lab[i - gw] = id; stack[sp++] = i - gw; }
+      if (y < gh - 1 && m[i + gw] === val && lab[i + gw] < 0) { lab[i + gw] = id; stack[sp++] = i + gw; }
+    }
+    sizes.push(cnt); edge.push(e);
+  }
+  return { lab, sizes, edge };
+}
+// the vinyl rules: close gaps the weeding hook cannot get into, open strips the blade would tear, drop specks and pinholes
+function vinylClean(m, G, o) {
+  const a = G.cell * G.cell, rg = o.mingap / 2 / G.cell, rf = o.minw / 2 / G.cell;
+  for (let pass = 0; pass < 2; pass++) { m = ero(dil(m, G, rg), G, rg); m = dil(ero(m, G, rf), G, rf); }
+  m = ero(dil(m, G, rg), G, rg);   // last word to the weeding hook
+  const B = regions(m, G, 1);
+  for (let i = 0; i < m.length; i++) if (B.lab[i] >= 0 && B.sizes[B.lab[i]] * a < o.minisle) m[i] = 0;
+  const Wr = regions(m, G, 0);
+  for (let i = 0; i < m.length; i++) if (Wr.lab[i] >= 0 && !Wr.edge[Wr.lab[i]] && Wr.sizes[Wr.lab[i]] * a < o.minhole) m[i] = 1;
+  return m;
+}
+// marching squares on a lightly blurred mask, linked into closed loops, in decal mm
+function trace(m, G) {
+  const { gw, gh, cell, ox, oy } = G, N = gw * gh, t = new Float32Array(N), f = new Float32Array(N);
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const i = y * gw + x; t[i] = ((x > 0 ? m[i - 1] : 0) + m[i] + (x < gw - 1 ? m[i + 1] : 0)) / 3; }
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const i = y * gw + x; f[i] = ((y > 0 ? t[i - gw] : 0) + t[i] + (y < gh - 1 ? t[i + gw] : 0)) / 3; }
+  const nb = new Map();
+  const link = (a, b) => { const A = nb.get(a); if (A) A.push(b); else nb.set(a, [b]); const B = nb.get(b); if (B) B.push(a); else nb.set(b, [a]); };
+  for (let y = 0; y < gh - 1; y++) for (let x = 0; x < gw - 1; x++) {
+    const i = y * gw + x, a = f[i], b = f[i + 1], c = f[i + gw + 1], d = f[i + gw];
+    const code = (a > 0.5 ? 8 : 0) | (b > 0.5 ? 4 : 0) | (c > 0.5 ? 2 : 0) | (d > 0.5 ? 1 : 0);
+    if (code === 0 || code === 15) continue;
+    const T = i * 2, B = (i + gw) * 2, L = i * 2 + 1, R = (i + 1) * 2 + 1, mid = (a + b + c + d) / 4 > 0.5;
+    switch (code) {
+      case 1: case 14: link(L, B); break;
+      case 2: case 13: link(B, R); break;
+      case 3: case 12: link(L, R); break;
+      case 4: case 11: link(T, R); break;
+      case 6: case 9: link(T, B); break;
+      case 7: case 8: link(T, L); break;
+      case 5: if (mid) { link(T, L); link(B, R); } else { link(T, R); link(L, B); } break;
+      case 10: if (mid) { link(T, R); link(L, B); } else { link(T, L); link(B, R); } break;
+    }
+  }
+  const pt = e => {
+    const idx = e >> 1, x = idx % gw, y = (idx - x) / gw;
+    if (e & 1) { const va = f[idx], vb = f[idx + gw], u = (0.5 - va) / (vb - va); return [ox + (x + 0.5) * cell, oy + (y + u + 0.5) * cell]; }
+    const va = f[idx], vb = f[idx + 1], u = (0.5 - va) / (vb - va); return [ox + (x + u + 0.5) * cell, oy + (y + 0.5) * cell];
+  };
+  const seen = new Set(), loops = [];
+  for (const e0 of nb.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, guard = 0;
+    do { seen.add(cur); loop.push(pt(cur)); const ns = nb.get(cur); const nx = ns[0] !== prev ? ns[0] : ns[1]; prev = cur; cur = nx; } while (cur !== e0 && cur !== undefined && ++guard < 4e6);
+    if (loop.length > 3) loops.push(rdp(loop, cell * 0.22));
+  }
+  return loops;
+}
+function rdp(p, eps) {
+  if (p.length < 5) return p;
+  const keep = new Uint8Array(p.length); keep[0] = 1; keep[p.length - 1] = 1;
+  const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [a, b] = st.pop(); let dm = 0, k = -1;
+    const [ax, ay] = p[a], [bx, by] = p[b], dx = bx - ax, dy = by - ay, L = hypot(dx, dy) || 1e-9;
+    for (let i = a + 1; i < b; i++) { const d = abs((p[i][0] - ax) * dy - (p[i][1] - ay) * dx) / L; if (d > dm) { dm = d; k = i; } }
+    if (dm > eps && k > 0) { keep[k] = 1; st.push([a, k], [k, b]); }
+  }
+  return p.filter((_, i) => keep[i]);
+}
+const areaOf = p => { let s = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++) s += (p[j][0] + p[i][0]) * (p[j][1] - p[i][1]); return s / 2; };
+
+// ---------------- frames ----------------
+function roundRect(x0, y0, x1, y1, r) {
+  const pts = [], q = (cx, cy, a0) => { for (let i = 0; i <= 8; i++) { const a = (a0 + 90 * i / 8) * D2R; pts.push([cx + r * cos(a), cy + r * sin(a)]); } };
+  q(x1 - r, y0 + r, 270); q(x1 - r, y1 - r, 0); q(x0 + r, y1 - r, 90); q(x0 + r, y0 + r, 180);
+  return pts;
+}
+function archPoly(x0, y0, x1, y1) { const r = (x1 - x0) / 2, cx = (x0 + x1) / 2, pts = [[x0, y1], [x1, y1]]; for (let i = 0; i <= 40; i++) { const a = (0 - 180 * i / 40) * D2R; pts.push([cx + r * cos(a), y0 + r + r * sin(a)]); } return pts; }
+// a disc cut by hand: the radius wanders, the knife cuts it in short flats
+function roughDisc(cx, cy, R, rnd) {
+  const n = max(48, ceil(TAU * R / 0.8)), sd = floor(rnd() * 9973), pts = [];
+  for (let i = 0; i < n; i++) { const a = TAU * i / n, r = R * (1 + 0.024 * fbm(cos(a) * 2.2 + 5, sin(a) * 2.2 + 5, sd)); pts.push([cx + r * cos(a), cy + r * sin(a)]); }
+  return facet(pts, rnd, 1);
+}
+// scraps of lino the gouge left standing just off an edge: short slivers lying along it (side 1 outside the disc, -1 inside)
+function discScraps(cx, cy, R, rnd, n, w, side = 1, keep = () => true) {
+  const out = [];
+  for (let i = 0, t = 0; i < n && t < n * 10; t++) {
+    const a = rnd() * TAU, d = R + side * (w * 1.6 + rnd() * R * 0.09), L = R * (0.03 + rnd() * 0.08), da = L / 2 / d;
+    const pts = Array.from({ length: 9 }, (_, k) => { const b = a - da + 2 * da * k / 8, dd = d + (rnd() - 0.5) * w * 0.3; return [cx + dd * cos(b), cy + dd * sin(b)]; });
+    if (!pts.every(([x, y]) => keep(x, y))) continue;
+    i++; out.push(stroke(pts, w * (1 + rnd() * 0.6), "lens"));
+  }
+  return out;
+}
+// wobble: split every edge to about 0.5 mm and push each point along a smooth noise field
+function wob(poly, amp, seed) {
+  if (amp <= 0) return poly;
+  const out = [], n = poly.length;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i], b = poly[(i + 1) % n], k = max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.5));
+    for (let s = 0; s < k; s++) out.push([lerp(a[0], b[0], s / k), lerp(a[1], b[1], s / k)]);
+  }
+  return out.map(([x, y]) => [x + amp * fbm(x / 2.6, y / 2.6, seed), y + amp * fbm(x / 2.6 + 41, y / 2.6 - 17, seed + 3)]);
+}
+const bboxOf = polys => { let b = [INF, INF, -INF, -INF]; for (const p of polys) for (const [x, y] of p) { if (x < b[0]) b[0] = x; if (y < b[1]) b[1] = y; if (x > b[2]) b[2] = x; if (y > b[3]) b[3] = y; } return b; };
+
+// ---------------- one decal ----------------
+function decal(o, comp, seed, S) {
+  // in a carved block the cuts come back as vinyl lines, so they must clear the strip rule, not the gap rule
+  const cutFloor = o.frame[0] === "b" && o.frame !== "border" ? o.minw * 1.3 : o.mingap * 1.25;
+  TEX = STYLES[o.style] || STYLES.clean;
+  // the seed is hashed so neighbouring seeds do not start alike
+  const make = k => { const rnd = mulberry(floor(hash2(seed, 7, 13) * 4294967296)); return COMPS[comp]({ rnd, o, floorU: cutFloor / k, minwU: o.minw / k, cw: u => max(u * o.gouge, cutFloor / k), iw: u => max(u, o.minw * 1.4 / k), dens: o.density }); };
+  const bb0 = bboxOf(make(1).flatMap(a => a.sil)), bw = bb0[2] - bb0[0], bh = bb0[3] - bb0[1];
+  const fr = o.frame, neg = fr[0] === "b" && fr !== "border", band = o.band;
+  // fit the figures: k is mm per motif unit, (mx, my) where the figure box's corner lands
+  let k, w, h, mx, my, frameInk = [], frameCarve = [], frameScraps = [], block = null;
+  const moonish = fr === "moon" || fr === "crescent";
+  if (fr === "none" || moonish) {
+    k = S / max(bw, bh) * (moonish ? 0.92 : 1); mx = 0; my = 0; w = bw * k; h = bh * k;
+    if (moonish) {
+      const R = 0.37 * max(w, h), cx = w * 0.5 + w * 0.06, cy = h * 0.42;
+      const x0 = min(0, cx - R), y0 = min(0, cy - R); mx -= x0; my -= y0; w = max(w, cx + R) - x0; h = max(h, cy + R) - y0;
+      const mcx = cx - x0, mcy = cy - y0, rnd = mulberry(seed * 31 + 5);
+      const wc = max(o.mingap * 1.3, R * 0.022), wi = max(o.minw * 1.35, R * 0.02), disc = roughDisc(mcx, mcy, R, rnd);
+      frameInk.push(disc);
+      frameCarve.push(...chips(disc, rnd, 9, R * 0.07));
+      let lit = () => true;
+      if (fr === "crescent") {
+        // the dark of the moon is a second, slightly smaller disc cut away on the bird's side, so the lit crescent faces out to the right
+        const ix = mcx - R * 0.42, iy = mcy - R * 0.12, iR = R * 0.84, hollow = roughDisc(ix, iy, iR, rnd);
+        frameCarve.push(hollow);
+        lit = (x, y) => hypot(x - ix, y - iy) > iR + R * 0.08;
+        frameScraps.push(...discScraps(ix, iy, iR, rnd, round(11 * o.scraps + 3), wi, -1, (x, y) => hypot(x - mcx, y - mcy) < R - wi * 2));
+      }
+      for (let i = 0, t = 0; i < 6 && t < 60; t++) { const a = rnd() * TAU, d = sqrt(rnd()) * R * 0.8, r = R * (0.05 + rnd() * 0.09), x = mcx + d * cos(a), y = mcy + d * sin(a); if (!lit(x, y) || !lit(x + r, y) || !lit(x - r, y)) continue; i++; frameCarve.push(cup(x, y, r, 200 + rnd() * 60, wc, 200)); }
+      for (let i = 0, t = 0; i < 10 * o.density && t < 100; t++) { const a = rnd() * TAU, d = sqrt(rnd()) * R * 0.85, x = mcx + d * cos(a), y = mcy + d * sin(a), l = R * (0.06 + rnd() * 0.1); if (!lit(x, y) || !lit(x + l * 0.8, y + l * 0.5)) continue; i++; frameCarve.push(gouge(x, y, x + l * 0.8, y + l * 0.5, wc, 0.08)); }
+      frameScraps.push(...discScraps(mcx, mcy, R, rnd, round(18 * o.scraps + 4), wi, 1));
+    }
+  } else {
+    const isArch = fr === "barch", W0 = isArch ? S * 0.76 : S, H0 = S;
+    w = W0; h = H0;
+    const inner = fr === "ring" || fr === "bcircle" ? S * (fr === "ring" ? 0.62 : 0.6) : (isArch ? W0 * 0.8 : (S - 2 * band) * (neg ? 0.78 : 0.84));
+    k = inner / max(bw, bh);
+    mx = (W0 - bw * k) / 2; my = (H0 - bh * k) / 2 + (isArch ? H0 * 0.07 : 0);
+    if (fr === "ring") frameInk.push(ell(S / 2, S / 2, S / 2));
+    if (fr === "border") frameInk.push(roundRect(0, 0, S, S, S * 0.06));
+    if (fr === "ring") frameCarve.push(ell(S / 2, S / 2, S / 2 - band));
+    if (fr === "border") frameCarve.push(roundRect(band, band, S - band, S - band, max(0.5, S * 0.06 - band)));
+    if (fr === "bcircle") block = ell(S / 2, S / 2, S / 2);
+    if (fr === "bsquare") block = roundRect(0, 0, S, S, S * 0.03);
+    if (fr === "barch") block = archPoly(0, 0, W0, H0);
+  }
+  const items = make(k), place = ([x, y]) => [mx + (x - bb0[0]) * k, my + (y - bb0[1]) * k];
+  const wa = o.wobble, ws = seed * 13 + 1;
+  const its = items.map(a => { const b = a.map(place); return { ops: b.ops.map(([kd, ps]) => [kd, ps.map(p => wob(p, kd === "ink" ? wa : wa * 0.5, ws))]), sil: b.sil.map(p => wob(p, wa, ws)) }; });
+  // grid
+  const pad = 2 + o.halo, cell = clamp(S / (o.layout === "sheet" ? 650 : 900), 0.05, min(0.2, o.minw / 4, o.mingap / 3));
+  const G = { cell, ox: -pad, oy: -pad, gw: ceil((w + 2 * pad) / cell), gh: ceil((h + 2 * pad) / cell) };
+  const N = G.gw * G.gh, paint = (mk, ps, v) => { for (const p of ps) fillPoly(G, mk, p, v); };
+  const render = mk => {
+    for (const it of its) {
+      if (o.halo > 0) { const s = new Uint8Array(N); paint(s, it.sil, 1); const d = dil(s, G, o.halo / cell); for (let i = 0; i < N; i++) if (d[i]) mk[i] = 0; }
+      for (const [kd, ps] of it.ops) paint(mk, ps, kd === "ink" ? 1 : 0);
+    }
+  };
+  let m = new Uint8Array(N);
+  if (block) {
+    const blk = wob(block, wa * 1.4, ws + 9);
+    paint(m, [blk], 1);
+    const fig = new Uint8Array(N); render(fig);
+    for (let i = 0; i < N; i++) if (fig[i]) m[i] = 0;
+    // chatter: the gouge marks left when the background was cleared, kept off the figure and off the block edge
+    if (o.chatter > 0) {
+      const sil = new Uint8Array(N); for (const it of its) paint(sil, it.sil, 1);
+      const keep = dil(sil, G, (o.halo + 1.6) / cell), bmask = new Uint8Array(N); paint(bmask, [blk], 1);
+      const core = ero(bmask, G, max(band, 2.2) / cell), rnd = mulberry(seed * 977 + 3), at = (x, y, mk) => { const gx = floor((x - G.ox) / cell), gy = floor((y - G.oy) / cell); return gx >= 0 && gy >= 0 && gx < G.gw && gy < G.gh && mk[gy * G.gw + gx]; };
+      const n = round(o.chatter * w * h / 26), cx = w / 2, cy = h / 2, cuts = [];
+      for (let i = 0; i < n; i++) {
+        const x = rnd() * w, y = rnd() * h, L = S * (0.03 + rnd() * 0.06);
+        const a = fr === "bcircle" ? atan2(y - cy, x - cx) + PI / 2 + (rnd() - 0.5) * 0.3 : (rnd() - 0.5) * 0.35 + (fr === "barch" && y < w / 2 ? atan2(y - w / 2, x - cx) + PI / 2 : 0);
+        const ex = x + L * cos(a), ey = y + L * sin(a), qx = (x + ex) / 2, qy = (y + ey) / 2;
+        if (![[x, y], [qx, qy], [ex, ey]].every(([u, v]) => at(u, v, core) && !at(u, v, keep))) continue;
+        cuts.push(wob(gouge(x, y, ex, ey, max(o.mingap * 1.35, S * 0.0065) * o.gouge, (rnd() - 0.5) * 0.12), wa * 0.4, ws));
+      }
+      paint(m, cuts, 0);
+    }
+  } else {
+    paint(m, frameInk.map(p => wob(p, wa * 1.4, ws + 9)), 1);
+    paint(m, frameCarve.map(p => wob(p, wa, ws + 11)), 0);
+    paint(m, frameScraps.map(p => wob(p, wa * 0.5, ws + 13)), 1);
+    if ((fr === "border" || fr === "ring") && o.chatter > 0) {
+      // chatter: ridges of lino the gouge left standing as the background was cleared, growing in from the frame
+      const rnd = mulberry(seed * 613 + 7), inn = fr === "ring" ? S / 2 - band : S - band, streaks = [];
+      const ok = (x, y) => fr === "ring" ? hypot(x - S / 2, y - S / 2) < inn - 0.3 : x > band + 0.3 && x < S - band - 0.3 && y > band + 0.3 && y < S - band - 0.3;
+      for (let i = 0, n = round(o.chatter * S * 0.5); i < n; i++) {
+        const x = band + 0.8 + rnd() * (S - 2 * band - 1.6), fromTop = rnd() < 0.5, mid = rnd() < 0.18, dir = fromTop ? 1 : -1, ang = (rnd() - 0.5) * 0.14;
+        let y0 = fromTop ? band : S - band;
+        if (fr === "ring") { const dy = sqrt(max(0, inn * inn - (x - S / 2) ** 2)); y0 = S / 2 - dir * dy; }
+        if (mid) y0 = band + 4 + rnd() * (S - 2 * band - 8);
+        const L = S * (0.03 + rnd() * rnd() * 0.32), pts = [];
+        for (let t = 0; t <= L; t += 0.6) { const px = x + sin(ang) * t * dir, py = y0 + dir * t * cos(ang); if (t > 0.7 && !ok(px, py)) break; pts.push([px, py]); }
+        if (pts.length < 4) continue;
+        streaks.push(wob(stroke(pts, max(o.minw * 1.35, S * 0.0065) * (0.8 + rnd() * 0.8), mid ? "lens" : "spike"), wa * 0.5, ws));
+      }
+      paint(m, streaks, 1);
+    }
+    render(m);
+    if (o.scraps > 0 && fr !== "border") {
+      // scraps round the figure: bits of lino left standing where the background was cleared, lying along its outline
+      const sil = new Uint8Array(N); for (const it of its) paint(sil, it.sil, 1);
+      const dd = edt(sil, G.gw, G.gh, 1), rnd = mulberry(seed * 389 + 11), bits = [];
+      const D = (x, y) => { const gx = clamp(round((x - G.ox) / cell - 0.5), 0, G.gw - 1), gy = clamp(round((y - G.oy) / cell - 0.5), 0, G.gh - 1); return sqrt(dd[gy * G.gw + gx]) * cell; };
+      const lo = o.halo + 1.2, hi = o.halo + 2 + 5 * o.scraps;
+      for (let i = 0, t = 0; i < round(o.scraps * S * 0.3) && t < 6000; t++) {
+        const x = rnd() * w, y = rnd() * h, d0 = D(x, y);
+        if (d0 < lo || d0 > hi || rnd() < (d0 - lo) / (hi - lo) * 0.7) continue;
+        const a = atan2(D(x, y + 0.5) - D(x, y - 0.5), D(x + 0.5, y) - D(x - 0.5, y)) + PI / 2 + (rnd() - 0.5) * 0.5, L = (1.4 + rnd() * 3.4) * S / 140, ex = cos(a) * L / 2, ey = sin(a) * L / 2;
+        if (D(x + ex, y + ey) < lo || D(x - ex, y - ey) < lo) continue;
+        i++; bits.push(wob(gouge(x - ex, y - ey, x + ex, y + ey, max(o.minw * 1.4, 0.9 + rnd() * 0.6), (rnd() - 0.5) * 0.2, "lens"), wa * 0.4, ws));
+      }
+      paint(m, bits, 1);
+    }
+  }
+  const raw = m.reduce((s, v) => s + v, 0);
+  m = vinylClean(m, G, o);
+  // measured after cleaning: what one more opening or closing at the rule size would still change (should be next to nothing)
+  const a = cell * cell, rf = o.minw / 2 / cell, rg = o.mingap / 2 / cell;
+  const op = dil(ero(m, G, rf), G, rf), cl = ero(dil(m, G, rg), G, rg);
+  let thin = 0, gap = 0, ink = 0; for (let i = 0; i < N; i++) { ink += m[i]; if (m[i] && !op[i]) thin++; if (cl[i] && !m[i]) gap++; }
+  const B = regions(m, G, 1), Wr = regions(m, G, 0);
+  const holes = Wr.sizes.filter((s, i) => !Wr.edge[i]);
+  const loops = trace(m, G);
+  return { w, h, loops, G, mask: m, stats: { areaMm2: w * h, thinMm2: thin * a, gapMm2: gap * a, inkMm2: ink * a, lostMm2: max(0, raw - ink) * a, pieces: B.sizes.length, minPiece: B.sizes.length ? min(...B.sizes) * a : 0, holes: holes.length, minHole: holes.length ? min(...holes) * a : INF, cell } };
+}
+
+// ---------------- the page ----------------
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), mg = o.margin, gapD = max(4, o.weedm * 2 + 2);
+  const n = o.layout === "sheet" ? o.copies : 1;
+  let cols = 1, rows = 1, S = o.size;
+  if (n > 1) {
+    let best = 0;
+    for (let c = 1; c <= n; c++) { const r = ceil(n / c), s = min((W - 2 * mg - (c - 1) * gapD) / c, (H - 2 * mg - (r - 1) * gapD) / r); if (s > best) { best = s; cols = c; rows = r; } }
+    S = min(o.size, best);
+  } else S = min(o.size, W - 2 * mg - 2 * o.weedm, H - 2 * mg - 2 * o.weedm);
+  const decals = [], notes = [];
+  if (S < o.size - 0.5) notes.push(`size capped to ${S.toFixed(0)} mm to fit the page`);
+  for (let i = 0; i < n; i++) {
+    const comp = o.comp === "mix" ? MIX[(i + o.seed) % MIX.length] : o.comp === "mixsr" ? MIXSR[i % 2] : o.comp, seed = o.seed + i * 101;
+    const d = decal(o, comp, seed, S);
+    const col = i % cols, row = floor(i / cols);
+    const cx = n > 1 ? mg + S / 2 + col * (S + gapD) + (W - 2 * mg - cols * S - (cols - 1) * gapD) / 2 : W / 2;
+    const cy = n > 1 ? mg + S / 2 + row * (S + gapD) + (H - 2 * mg - rows * S - (rows - 1) * gapD) / 2 : H / 2;
+    d.x = cx - d.w / 2; d.y = cy - d.h / 2; d.comp = comp; d.seed = seed;
+    decals.push(d);
+  }
+  const mir = o.vinyl === "iron", X = x => mir ? W - x : x;
+  const cut = [], weed = [];
+  for (const d of decals) {
+    for (const l of d.loops) cut.push([l.map(([x, y]) => [X(d.x + x), d.y + y]), true]);
+    if (o.weed === "on") { const e = o.weedm, x0 = X(d.x - e), x1 = X(d.x + d.w + e); weed.push([[[min(x0, x1), d.y - e], [max(x0, x1), d.y - e], [max(x0, x1), d.y + d.h + e], [min(x0, x1), d.y + d.h + e]], true]); }
+  }
+  const ms = performance.now() - t0;
+  // gates
+  const st = decals.map(d => d.stats), sum = k => st.reduce((s, v) => s + v[k], 0), tol = sum("areaMm2") * 2e-4 + 0.5 * decals.length;
+  let off = 0; for (const L of [cut, weed]) for (const [p] of L) for (const [x, y] of p) if (!(x >= 0 && y >= 0 && x <= W && y <= H)) off++;
+  let overlap = false;
+  for (let i = 0; i < decals.length; i++) for (let k = i + 1; k < decals.length; k++) { const a = decals[i], b = decals[k], e = o.weed === "on" ? o.weedm : 0; if (a.x - e < b.x + b.w + e && b.x - e < a.x + a.w + e && a.y - e < b.y + b.h + e && b.y - e < a.y + a.h + e) overlap = true; }
+  const gates = [
+    ["every cut is a closed loop on the mat", off === 0 && cut.length > 0, `${cut.length} loops, ${off} points off`],
+    [`no vinyl strip thinner than ${o.minw} mm (residue under 0.02% of the decal)`, sum("thinMm2") < tol, `${sum("thinMm2").toFixed(2)} mm² would still thin away`],
+    [`no weeded gap narrower than ${o.mingap} mm (residue under 0.02% of the decal)`, sum("gapMm2") < tol, `${sum("gapMm2").toFixed(2)} mm² would still close up`],
+    [`no vinyl piece under ${o.minisle} mm²`, st.every(s => s.minPiece >= o.minisle - 1e-9), `smallest ${min(...st.map(s => s.minPiece)).toFixed(2)} mm²`],
+    [`no weeded hole under ${o.minhole} mm²`, st.every(s => s.minHole >= o.minhole - 1e-9), st.some(s => s.holes) ? `smallest ${min(...st.map(s => s.minHole)).toFixed(2)} mm²` : "no holes"],
+    ["decals and their weeding boxes keep apart", !overlap, overlap ? "overlap" : `${decals.length} decal${decals.length > 1 ? "s" : ""}`],
+    ["the carving survives the cleaning (under 15% of the ink lost)", st.every(s => s.lostMm2 / (s.inkMm2 + s.lostMm2) < 0.15), `${(100 * sum("lostMm2") / (sum("inkMm2") + sum("lostMm2"))).toFixed(1)}% lost`],
+  ];
+  let cutL = 0; for (const [p] of cut) for (let i = 0; i < p.length; i++) { const q = p[(i + 1) % p.length]; cutL += hypot(q[0] - p[i][0], q[1] - p[i][1]); }
+  return { o, W, H, S, decals, cut, weed, gates, notes, ms, cutm: cutL / 1000, mirrored: mir };
+}
+
+// ---------------- preview ----------------
+const VINYL = { black: "#141312", white: "#f5f3ee", bone: "#e6dcc2", red: "#8a1a17", gold: "#b8953f" };
+const SURF = { backing: ["#f3efe4", "#e6dfcf"], glass: ["#25303a", "#11171d"], laptop: ["#cfd2d6", "#a9adb3"], kraft: ["#bf9a66", "#a9844f"] };
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), box = cv.parentElement.clientWidth - 26, sc = min(760, max(240, box)) / max(r.W, r.H);
+  cv.width = round(r.W * sc); cv.height = round(r.H * sc);
+  const vinylView = r.o.view === "vinyl", X = x => r.mirrored && vinylView ? r.W - x : x;
+  const pathOf = L => { const p = new Path2D(); for (const [q] of L) { p.moveTo(X(q[0][0]) * sc, q[0][1] * sc); for (let i = 1; i < q.length; i++) p.lineTo(X(q[i][0]) * sc, q[i][1] * sc); p.closePath(); } return p; };
+  const cutP = pathOf(r.cut);
+  if (vinylView) {
+    const [s0, s1] = SURF[r.o.surface], g = c.createLinearGradient(0, 0, cv.width, cv.height); g.addColorStop(0, s0); g.addColorStop(1, s1);
+    c.fillStyle = g; c.fillRect(0, 0, cv.width, cv.height);
+    if (r.o.surface === "backing") { c.strokeStyle = "rgba(60,50,30,0.08)"; c.lineWidth = 1; for (let x = 0; x <= r.W; x += 10) { c.beginPath(); c.moveTo(x * sc, 0); c.lineTo(x * sc, cv.height); c.stroke(); } for (let y = 0; y <= r.H; y += 10) { c.beginPath(); c.moveTo(0, y * sc); c.lineTo(cv.width, y * sc); c.stroke(); } }
+    c.save(); c.shadowColor = "rgba(0,0,0,0.25)"; c.shadowBlur = 2; c.shadowOffsetY = 1; c.fillStyle = VINYL[r.o.colour]; c.fill(cutP, "evenodd"); c.restore();
+    if (r.o.surface === "glass") { const sh = c.createLinearGradient(0, 0, cv.width, cv.height * 0.6); sh.addColorStop(0, "rgba(255,255,255,0.10)"); sh.addColorStop(0.5, "rgba(255,255,255,0)"); c.fillStyle = sh; c.fillRect(0, 0, cv.width, cv.height); }
+  } else {
+    c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, cv.width, cv.height);
+    c.fillStyle = "rgba(38,32,15,0.12)"; c.fill(cutP, "evenodd");
+    c.strokeStyle = "#d0271c"; c.lineWidth = 0.8; c.stroke(cutP);
+    c.setLineDash([5, 4]); c.strokeStyle = "#1d3a8a"; c.stroke(pathOf(r.weed)); c.setLineDash([]);
+  }
+  const st = r.decals.map(d => d.stats), sum = k => st.reduce((s, v) => s + v[k], 0);
+  $("stats").innerHTML = `${r.decals.length > 1 ? r.decals.length + " decals, each" : r.decals[0].comp.replace(/^./, ch => ch.toUpperCase())}: <b>${r.decals[0].w.toFixed(0)} x ${r.decals[0].h.toFixed(0)} mm</b>${r.mirrored ? " · cut mirrored for iron-on" : ""} · ${r.ms.toFixed(0)} ms<br>`
+    + `cut: <b>${r.cutm.toFixed(2)} m</b> in ${r.cut.length} loops · vinyl kept: <b>${(sum("inkMm2") / 100).toFixed(1)} cm²</b> in ${sum("pieces")} piece${sum("pieces") === 1 ? "" : "s"} · ${sum("holes")} holes to weed · grid ${st[0].cell.toFixed(3)} mm<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "decal", colour: "000000", paths: r.cut, fill: true },
+  { name: "weed", colour: "1d3a8a", paths: r.weed },
+].filter(L => L.paths.length);
+function toSVG(r, only = null) {
+  const f = v => v.toFixed(2), d = L => L.map(([p]) => `M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")} Z`).join(" ");
+  const group = L => L.fill
+    ? `<g id="decal"><path d="${d(L.paths)}" fill="#${L.colour}" fill-rule="evenodd" stroke="none"/></g>`
+    : `<g id="weed-box" fill="none" stroke="#${L.colour}" stroke-width="0.25">\n${L.paths.map(q => `<path d="${d([q])}"/>`).join("\n")}\n</g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG lino decal studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["comp", "batv", "ravenv", "skullv", "skulllook", "style", "frame", "eyes", "seed", "density", "gouge", "wobble", "halo", "scraps", "band", "chatter", "size", "layout", "copies", "vinyl", "weed", "weedm", "minw", "mingap", "minisle", "minhole", "view", "colour", "surface", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+const VIEW_ONLY = new Set(["view", "colour", "surface"]);
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "carving"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { comp: "raven", batv: "seed", ravenv: "seed", skullv: "seed", skulllook: "line", style: "engraved", frame: "none", eyes: "hollow", seed: 13, density: 1, gouge: 1, wobble: 0.25, halo: 1.4, scraps: 0.5, band: 3, chatter: 0.5, size: 140, layout: "single", copies: 6, vinyl: "adhesive", weed: "on", weedm: 3, minw: 0.8, mingap: 0.6, minisle: 2, minhole: 1, view: "vinyl", colour: "black", surface: "backing", page: "280x280", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  raven: P({ ravenv: "perched" }),
+  hunched: P({ ravenv: "hunched", style: "rough", frame: "crescent", seed: 7, size: 150, colour: "bone", surface: "glass" }),
+  ragged: P({ ravenv: "ragged", style: "knife", seed: 58, colour: "red", surface: "kraft" }),
+  calling: P({ comp: "calling", frame: "moon", seed: 31, colour: "bone", surface: "glass" }),
+  crow: P({ comp: "crow", seed: 5 }),
+  bat: P({ comp: "bat", batv: "spread", frame: "moon", seed: 6, size: 150 }),
+  batup: P({ comp: "bat", batv: "raised", seed: 12, size: 140 }),
+  colony: P({ comp: "colony", frame: "crescent", seed: 21, size: 170, colour: "bone", surface: "glass" }),
+  murder: P({ comp: "murder", frame: "moon", seed: 8, size: 170, colour: "white", surface: "glass" }),
+  skull: P({ comp: "skull", skullv: "classic", frame: "border", chatter: 0.6, seed: 3, size: 140 }),
+  gaunt: P({ comp: "skull", skullv: "gaunt", eyes: "lit", frame: "border", chatter: 0.5, seed: 17, size: 140, colour: "bone", surface: "glass" }),
+  scream: P({ comp: "skull", skullv: "scream", frame: "bsquare", seed: 9, size: 150 }),
+  solid: P({ comp: "skull", skulllook: "solid", skullv: "classic", style: "rough", seed: 3, size: 120 }),
+  bones: P({ comp: "bones", frame: "border", seed: 21, size: 150, colour: "white", surface: "glass" }),
+  perched: P({ comp: "perched", frame: "barch", seed: 44, size: 180, colour: "red", surface: "laptop" }),
+  sheet: P({ comp: "mix", layout: "sheet", copies: 6, size: 80, seed: 2, gouge: 1.1 }),
+  sheetsr: P({ comp: "mixsr", layout: "sheet", copies: 6, size: 90, seed: 4, style: "rough", page: "300x600" }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+$("reroll").onclick = () => { $("seed").value = 1 + floor(Math.random() * 999); run(); };
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `lino-${r.o.comp}-${r.o.frame}-s${r.o.seed}-${round(r.S)}mm${r.mirrored ? "-mirrored" : ""}`;
+$("export").onclick = () => { if (last) save(toSVG(last), stem(last) + ".svg"); };
+$("split").onclick = () => { if (!last) return; penLayers(last).forEach((L, i) => setTimeout(() => save(toSVG(last, L.name), `${stem(last)}-${L.name}.svg`), i * 500)); };
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
