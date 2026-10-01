@@ -897,7 +897,10 @@ const COMPS = {
 };
 const rnd01 = c => c.rnd();
 const SK = c => c.o.skulllook === "solid" ? skull : skullLine;
-const MIX = ["raven", "bat", "crow", "skull", "perched", "calling", "bones", "murder"], MIXSR = ["skull", "raven"];
+// The skulls are work in progress, on hold for art direction: hidden on the public page unless the address carries ?wip.
+const WIP = typeof location !== "undefined" && /[?&]wip\b/.test(location.search || "");
+const SKULLY = new Set(["skull", "bones", "perched", "mixsr"]);
+const MIX = ["raven", "bat", "crow", "skull", "perched", "calling", "bones", "murder"].filter(m => WIP || !SKULLY.has(m)), MIXSR = ["skull", "raven"];
 
 // ---------------- the grid: fill, morphology, cleaning, tracing ----------------
 function fillPoly(G, m, poly, val) {
@@ -1323,6 +1326,11 @@ $("loadsvg").onchange = async e => {
   run();
 };
 addEventListener("resize", () => last && draw(last));
+if (!WIP && typeof document.querySelector === "function") {
+  for (const op of [...$("comp").options]) if (SKULLY.has(op.value)) op.remove();
+  for (const id of ["skulllook", "skullv", "eyes"]) $(id).closest("label").style.display = "none";
+  for (const b of document.querySelectorAll("[data-preset]")) if (["skull", "gaunt", "scream", "solid", "bones", "perched", "sheetsr"].includes(b.dataset.preset)) b.remove();
+}
 window.__studio = { build, read, PRESETS, penLayers, toSVG };
 run();
 </script>
