@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="280mm" height="280mm" viewBox="0 0 280 280">
 <title>PLG jointed animal studio</title>
-<desc id="plg-settings">{"animal":"horse","joints":"hips","markings":"stripes","length":240,"stock":1,"seed":11,"detail":1,"shade":"contour","fur":"on","accent":"on","letters":"on","view":"sheet","front":15,"back":10,"bend":0,"nod":0,"wag":0,"page":"280x280","margin":10}</desc>
+<desc id="plg-settings">{"animal":"horse","joints":"hips","markings":"stripes","length":240,"stock":1,"seed":11,"detail":1,"shade":"contour","fur":"on","accent":"on","letters":"on","outlines":"off","outlinein":0.6,"view":"sheet","front":15,"back":10,"bend":0,"nod":0,"wag":0,"page":"280x280","margin":10}</desc>
 <g id="pen-line" stroke="#000000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M177.189,158.049 L177.513,160.587 L177.906,163.312 L178.443,166.610 L179.115,170.184 L179.916,173.735 L180.836,176.966 L181.869,179.578 L183.019,181.535 L184.518,183.587 L186.210,185.624 L187.942,187.536 L189.558,189.214 L192.166,191.746" fill="none"/>
 <path d="M103.242,205.787 L100.859,201.980 L99.385,199.530 L97.808,196.809 L96.270,194.009 L94.914,191.322 L93.882,188.938 L93.125,186.644 L92.421,183.998 L91.784,181.204 L91.231,178.463 L90.775,175.978 L90.138,172.089" fill="none"/>
