@@ -1,0 +1,33 @@
+{
+  "studio": "jointed-animal-studio.html",
+  "id": "animals-rabbit",
+  "title": "Rabbit",
+  "preset": "rabbit",
+  "settings": {
+    "length": "240",
+    "stock": "1",
+    "seed": "7",
+    "detail": "1",
+    "front": "15",
+    "back": "10",
+    "bend": "0",
+    "nod": "0",
+    "wag": "0",
+    "margin": "10",
+    "animal": "rabbit",
+    "joints": "hips",
+    "markings": "none",
+    "shade": "rim",
+    "fur": "on",
+    "accent": "on",
+    "letters": "on",
+    "view": "sheet",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "34686721fb2920b1bbcca1510976c74430caa91fe24927e71bb83f99bf0b4aad",
+  "svg": "site/art/animals-rabbit.svg",
+  "image": "site/art/animals-rabbit.webp",
+  "page": "280x280",
+  "seed": 7
+}

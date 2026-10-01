@@ -1,0 +1,33 @@
+{
+  "studio": "jointed-animal-studio.html",
+  "id": "animals-zebra",
+  "title": "Zebra",
+  "preset": "zebra",
+  "settings": {
+    "length": "240",
+    "stock": "1",
+    "seed": "11",
+    "detail": "1",
+    "front": "15",
+    "back": "10",
+    "bend": "0",
+    "nod": "0",
+    "wag": "0",
+    "margin": "10",
+    "animal": "horse",
+    "joints": "hips",
+    "markings": "stripes",
+    "shade": "rim",
+    "fur": "off",
+    "accent": "on",
+    "letters": "on",
+    "view": "sheet",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "34686721fb2920b1bbcca1510976c74430caa91fe24927e71bb83f99bf0b4aad",
+  "svg": "site/art/animals-zebra.svg",
+  "image": "site/art/animals-zebra.webp",
+  "page": "280x280",
+  "seed": 11
+}
