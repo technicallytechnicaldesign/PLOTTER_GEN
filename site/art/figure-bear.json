@@ -1,0 +1,32 @@
+{
+  "studio": "jointed-figure-studio.html",
+  "id": "figure-bear",
+  "title": "Bear",
+  "preset": "bear",
+  "settings": {
+    "height": "280",
+    "stock": "1.15",
+    "seed": "7",
+    "detail": "1",
+    "arms": "35",
+    "legs": "10",
+    "bend": "20",
+    "tilt": "0",
+    "margin": "10",
+    "style": "bear",
+    "kind": "doll",
+    "joints": "full",
+    "neck": "pinned",
+    "shade": "rim",
+    "accent": "on",
+    "letters": "on",
+    "view": "sheet",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "b322d40a69b2cf91e65fbc974468292a176324d0f13f2eeb53ae866c394ea7d5",
+  "svg": "site/art/figure-bear.svg",
+  "image": "site/art/figure-bear.webp",
+  "page": "280x280",
+  "seed": 7
+}
