@@ -24,12 +24,12 @@ export async function buildSite({repo,here,pages}) {
     const sourceHash=crypto.createHash('sha256').update(source.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n')).digest('hex');
     const ranges=new Map([...source.matchAll(/<input[^>]*type="range"[^>]*id="([^"]+)"[^>]*>/g)].map(m=>[m[1],m[0]]));
     const specimens=[];
-    for(const [preset,title] of collection.samples){
+    for(const [preset,title,content={}] of collection.samples){
       const id=collection.id+'-'+(preset||'default'), record=path.join(assets,id+'.json');
       if(fs.existsSync(record)&&fs.existsSync(path.join(assets,id+'.svg'))&&fs.existsSync(path.join(assets,id+'.webp'))){
         const cached=JSON.parse(fs.readFileSync(record,'utf8'));
         const normalized=[...ranges].every(([key,markup])=>Number(cached.settings[key])===Number(normalizeRange(cached.settings[key],markup)));
-        if(cached.sourceHash===sourceHash&&cached.title===title&&normalized){const {studio,...specimen}=cached;specimens.push(specimen);continue}
+        if(cached.sourceHash===sourceHash&&cached.title===title&&normalized){const {studio,...specimen}=cached;specimen.content=content;specimens.push(specimen);continue}
       }
       const els=new Map();
       const el=(id,type,value)=>els.set(id,{id,type,value:String(value??''),textContent:'',innerHTML:'',style:{},dataset:{},addEventListener(){},insertAdjacentHTML(){},scrollIntoView(){},parentElement:{clientWidth:800},getContext:()=>createCanvas(800,1000).getContext('2d')});
@@ -51,7 +51,7 @@ export async function buildSite({repo,here,pages}) {
       fs.writeFileSync(path.join(assets,id+'.svg'),svg);
       await sharp(Buffer.from(svg),{density:96,limitInputPixels:50000000}).resize({width:760,height:880,fit:'inside'}).flatten({background:'#ffffff'}).webp({quality:86}).toFile(path.join(assets,id+'.webp'));
       const settings=Object.fromEntries([...els].filter(([,e])=>['range','text','select-one'].includes(e.type)).map(([id,e])=>[id,e.value]));
-      const specimen={id,title,preset,settings,sourceHash,svg:`site/art/${id}.svg`,image:`site/art/${id}.webp`,page:controls.page||`${result.W}x${result.H}`,seed:controls.seed??null};
+      const specimen={id,title,preset,content,settings,sourceHash,svg:`site/art/${id}.svg`,image:`site/art/${id}.webp`,page:controls.page||`${result.W}x${result.H}`,seed:controls.seed??null};
       fs.writeFileSync(path.join(assets,id+'.json'),JSON.stringify({studio:collection.page,...specimen},null,2));
       specimens.push(specimen);
     }
@@ -64,7 +64,8 @@ export async function buildSite({repo,here,pages}) {
   for(const [page,family,name,description] of pages){if(page==='plot-decoder.html'||catalogue.some(c=>c.page===page))continue;const presets=new Set([...fs.readFileSync(path.join(repo,page),'utf8').matchAll(/data-preset="([^"]+)"/g)].map(m=>m[1])).size;catalogue.push({id:page.replace('.html',''),page,name,description,subtitle:description,family,tags:'',lesson:'Open the studio to explore its methods.',presets,samples:[]})}
   bakePuppets({catalogue,repo,here});
   fs.writeFileSync(path.join(out,'catalogue.json'),JSON.stringify(catalogue));
-  for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
+  for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','exhibit.js','gallery.js','gallery-world.js','print-gallery.json','gallery.css','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
+  fs.copyFileSync(path.join(here,'site/gallery.html'),path.join(out,'gallery.html'));
   const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
   const fallback=pages.map(([p,,t,d])=>`<li><a href="${escape(p)}">${escape(t)}</a> — ${escape(d)}</li>`).join('\n');
   const revision=name=>crypto.createHash('sha256').update(fs.readFileSync(path.join(out,name))).digest('hex').slice(0,12);

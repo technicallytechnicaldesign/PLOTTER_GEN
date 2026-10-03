@@ -1,0 +1,389 @@
+{
+  "version": 1,
+  "prints": [
+    {
+      "id": "marks-01",
+      "room": "marks",
+      "title": "Print photograph 01",
+      "photo": null,
+      "frame": {
+        "width": 220,
+        "height": 330
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "marks-02",
+      "room": "marks",
+      "title": "Print photograph 02",
+      "photo": null,
+      "frame": {
+        "width": 330,
+        "height": 200
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "marks-03",
+      "room": "marks",
+      "title": "Print photograph 03",
+      "photo": null,
+      "frame": {
+        "width": 190,
+        "height": 190
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "marks-04",
+      "room": "marks",
+      "title": "Print photograph 04",
+      "photo": null,
+      "frame": {
+        "width": 150,
+        "height": 235
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "scenes-01",
+      "room": "scenes",
+      "title": "Print photograph 05",
+      "photo": null,
+      "frame": {
+        "width": 330,
+        "height": 200
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "scenes-02",
+      "room": "scenes",
+      "title": "Print photograph 06",
+      "photo": null,
+      "frame": {
+        "width": 190,
+        "height": 190
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "scenes-03",
+      "room": "scenes",
+      "title": "Print photograph 07",
+      "photo": null,
+      "frame": {
+        "width": 150,
+        "height": 235
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "scenes-04",
+      "room": "scenes",
+      "title": "Print photograph 08",
+      "photo": null,
+      "frame": {
+        "width": 220,
+        "height": 330
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "hidden-01",
+      "room": "hidden",
+      "title": "Print photograph 09",
+      "photo": null,
+      "frame": {
+        "width": 190,
+        "height": 190
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "hidden-02",
+      "room": "hidden",
+      "title": "Print photograph 10",
+      "photo": null,
+      "frame": {
+        "width": 150,
+        "height": 235
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "hidden-03",
+      "room": "hidden",
+      "title": "Print photograph 11",
+      "photo": null,
+      "frame": {
+        "width": 220,
+        "height": 330
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "hidden-04",
+      "room": "hidden",
+      "title": "Print photograph 12",
+      "photo": null,
+      "frame": {
+        "width": 330,
+        "height": 200
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "mechanical-01",
+      "room": "mechanical",
+      "title": "Print photograph 13",
+      "photo": null,
+      "frame": {
+        "width": 150,
+        "height": 235
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "mechanical-02",
+      "room": "mechanical",
+      "title": "Print photograph 14",
+      "photo": null,
+      "frame": {
+        "width": 220,
+        "height": 330
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "mechanical-03",
+      "room": "mechanical",
+      "title": "Print photograph 15",
+      "photo": null,
+      "frame": {
+        "width": 330,
+        "height": 200
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "mechanical-04",
+      "room": "mechanical",
+      "title": "Print photograph 16",
+      "photo": null,
+      "frame": {
+        "width": 190,
+        "height": 190
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-01",
+      "room": "paper",
+      "title": "Print photograph 17",
+      "photo": null,
+      "frame": {
+        "width": 220,
+        "height": 330
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-02",
+      "room": "paper",
+      "title": "Print photograph 18",
+      "photo": null,
+      "frame": {
+        "width": 330,
+        "height": 200
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-03",
+      "room": "paper",
+      "title": "Print photograph 19",
+      "photo": null,
+      "frame": {
+        "width": 190,
+        "height": 190
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-04",
+      "room": "paper",
+      "title": "Print photograph 20",
+      "photo": null,
+      "frame": {
+        "width": 150,
+        "height": 235
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "collected-01",
+      "room": "collected",
+      "title": "Print photograph 21",
+      "photo": null,
+      "frame": {
+        "width": 330,
+        "height": 200
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "collected-02",
+      "room": "collected",
+      "title": "Print photograph 22",
+      "photo": null,
+      "frame": {
+        "width": 190,
+        "height": 190
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "collected-03",
+      "room": "collected",
+      "title": "Print photograph 23",
+      "photo": null,
+      "frame": {
+        "width": 150,
+        "height": 235
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "collected-04",
+      "room": "collected",
+      "title": "Print photograph 24",
+      "photo": null,
+      "frame": {
+        "width": 220,
+        "height": 330
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    }
+  ]
+}

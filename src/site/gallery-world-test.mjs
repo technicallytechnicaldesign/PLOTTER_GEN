@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {rooms,FLOOR,DOOR_HEIGHT,advance,canWalk,destination,locationAt} from './gallery-world.js';
+const run=hz=>{const p={...destination('corridor'),vf:0,vs:0,vturn:0};for(let i=0;i<hz;i++)advance(p,{forward:1,strafe:0,turn:0},1/hz);return p};
+const [a,b,c]=[30,60,144].map(run);
+assert(Math.max(a.z,b.z,c.z)-Math.min(a.z,b.z,c.z)<5,'Walking depends materially on frame rate');
+assert(b.z<310&&b.z>270,'Held movement did not advance at the intended walking speed');
+assert(canWalk(0,-450)&&canWalk(280,-450)&&canWalk(700,-450),'Door passage is disconnected');
+assert(!canWalk(280,0)&&!canWalk(280,-850),'A solid corridor wall is walkable');
+assert(!canWalk(0,-2950)&&!canWalk(1500,-450),'Exterior boundary is open');
+for(const r of rooms){const p=destination(r.id);assert(canWalk(p.x,p.z));assert.equal(locationAt(p.x,p.z),r.id)}
+const p={x:230,z:0,yaw:90,vf:0,vs:0,vturn:0};for(let i=0;i<180;i++)advance(p,{forward:1,strafe:0,turn:0},1/60);assert(p.x<=235,'Movement crossed a wall');
+for(let i=0;i<120;i++)advance(b,{forward:0,strafe:0,turn:0},1/60);assert(Math.abs(b.vf)<.001,'Released keys did not stop');
+assert.equal(FLOOR-DOOR_HEIGHT/2+DOOR_HEIGHT/2,FLOOR,'Door does not meet floor');
+const manifest=JSON.parse(fs.readFileSync(new URL('./print-gallery.json',import.meta.url)));
+assert.equal(manifest.prints.length,24);assert(manifest.prints.every(s=>s.photo===null&&!s.studio&&!s.decoder),'Placeholder gallery contains fabricated print photos');
+assert(new Set(manifest.prints.map(s=>s.frame.width+'x'+s.frame.height)).size>=4,'Frames lack size and aspect variety');
+const script=fs.readFileSync(new URL('./gallery.js',import.meta.url),'utf8');assert(!script.includes("fetch('catalogue.json'"),'Gallery still loads generated specimens');
+assert.equal((script.match(/\$\('scene'\)\.innerHTML=/g)||[]).length,1,'Scene is replaced during navigation');
+console.log('PASS 6 fixed rooms, 24 photo placeholders, varied frames, floor-level doors, connected passages, wall collisions, key release and 30/60/144 Hz walking parity.');
