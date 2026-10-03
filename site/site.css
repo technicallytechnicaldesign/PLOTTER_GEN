@@ -4,3 +4,15 @@
 .preset-tag{margin-left:auto;flex:none;font:10px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--ink);padding:4px 7px;white-space:nowrap}
 .world-label .preset-tag+.plus{margin-left:0}
 .world-label>div{min-width:0}
+
+/* Shared workspace skeleton, distinct blade desk. */
+.generator-tabs{display:flex;gap:0;padding:0 5%;border-bottom:1px solid var(--ink);background:var(--surface)}
+.generator-tabs button{flex:1;max-width:320px;text-align:left;border:0;border-right:1px solid var(--grid);background:transparent;padding:13px 18px;font:700 13px var(--font-mono);min-height:60px}
+.generator-tabs button span{display:block;font-size:10px;font-weight:400;color:var(--muted)}
+.generator-tabs button[aria-pressed="true"]{background:var(--ink);color:white}.generator-tabs button[aria-pressed="true"] span{color:#d6d9df}
+body[data-mode="cutter"]{--yellow:#e8d5b5}body[data-mode="cutter"] .bench.hero{background:#f6efe3}body[data-mode="cutter"] .bench-art:after{border-color:#6c503f25}
+.generator-tabs~main .bench.hero{height:calc(100svh - 136px)}
+[hidden]{display:none!important}
+@media(max-width:760px){.generator-tabs{padding:0}.generator-tabs button{max-width:none;font-size:12px;padding:11px 18px}.generator-tabs~main .bench.hero{height:calc(100svh - 126px)}}
+
+html{scroll-padding-top:150px}.generator-tabs{position:sticky;top:76px;z-index:19}.scrolled .generator-tabs{top:60px}@media(max-width:760px){.generator-tabs{top:66px}.scrolled .generator-tabs{top:60px}}

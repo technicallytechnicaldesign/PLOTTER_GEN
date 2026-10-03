@@ -6,6 +6,10 @@ import {fileURLToPath} from 'node:url';
 const project=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const repo=path.join(project,'PLOTTER_GEN');
 const catalogue=JSON.parse(fs.readFileSync(path.join(repo,'site/catalogue.json'),'utf8'));
+const cutters=catalogue.filter(c=>c.mode==='cutter');
+assert(cutters.length>0,'Missing cutter collection');
+assert(cutters.some(c=>c.page==='lino-decal-studio.html'&&c.samples.length>=4),'Missing lino specimens');
+assert(catalogue.some(c=>!c.mode&&c.samples.length),'Missing plotter specimens');
 const ids=new Set();let specimens=0,totalWebp=0;
 for(const c of catalogue){
  const source=fs.readFileSync(path.join(repo,c.page),'utf8');

@@ -55,3 +55,9 @@ Scene launch checks: open scene-launch-check.html through the shared preview; al
 Every `04_DOCS/*-studio.html` carries one shared block in `<head>` between `studio-dock:start` and `studio-dock:end` markers, written by `node 02_WORK/site/studio-dock.mjs` (plg-stego/build.mjs re-injects it on every rebuild).
 Desktop: the controls column scrolls on its own and the drawing fits the window. Phone: the drawing comes first and stays pinned (Image S/M/L/Unpinned button), controls below it, stats after. Every control group folds from its legend; folds and image size are remembered per studio in localStorage.
 The block is a `<script id=...>` in the head, so the headless harnesses, which slice the page's last bare `<script>` tag, never run it. Studio hashes change when it is re-injected, so publish in full afterwards.
+
+## Doll rig parity
+The paper doll wardrobe carries a copy of the jointed figure studio's `rig()`, so its pin holes land on the doll's joints. After changing the doll in either studio, copy the rig across and run `node 02_WORK/site/rig-parity-check.mjs`: it must report every setting as identical (60 of 60 on 2026-10-01).
+
+## Plotter / Cutter workspaces
+The shared homepage switches between PLOTTER GEN and CUTTER GEN via ?gen=cutter (drawing remains the default). Catalogue entries use mode: 'cutter' for blade-only studios; unmarked entries belong to Plotter. Gallery filters, random sheets, desk previews, field notes and launcher return links follow the selected workspace. Lino cut previews show the finished filled silhouette without pen playback; exported SVGs remain exact.
