@@ -14,7 +14,7 @@ function normalizeRange(value,markup){
   return String(Number(n.toFixed(10)));
 }
 export async function buildSite({repo,here,pages}) {
-  const sharp=dependency('sharp'), {createCanvas}=dependency('@napi-rs/canvas'), out=path.join(repo,'site'), assets=path.join(out,'art');
+  const sharp=dependency('sharp'), {createCanvas,Path2D}=dependency('@napi-rs/canvas'), out=path.join(repo,'site'), assets=path.join(out,'art');
   fs.mkdirSync(assets,{recursive:true});
   const catalogue=[];
   for(const collection of collections){
@@ -31,11 +31,11 @@ export async function buildSite({repo,here,pages}) {
         if(cached.sourceHash===sourceHash&&cached.title===title&&normalized){const {studio,...specimen}=cached;specimens.push(specimen);continue}
       }
       const els=new Map();
-      const el=(id,type,value)=>els.set(id,{id,type,value:String(value??''),textContent:'',innerHTML:'',style:{},dataset:{},addEventListener(){},insertAdjacentHTML(){},scrollIntoView(){},parentElement:{clientWidth:800},getContext:()=>new Proxy({},{get:()=>()=>({data:[]})})});
+      const el=(id,type,value)=>els.set(id,{id,type,value:String(value??''),textContent:'',innerHTML:'',style:{},dataset:{},addEventListener(){},insertAdjacentHTML(){},scrollIntoView(){},parentElement:{clientWidth:800},getContext:()=>createCanvas(800,1000).getContext('2d')});
       for(const m of source.matchAll(/<input[^>]*type="(range|text)"[^>]*id="([^"]+)"[^>]*value="([^"]*)"/g))el(m[2],m[1],m[3]);
       for(const m of source.matchAll(/<select id="([^"]+)">\s*<option value="([^"]*)"/g))el(m[1],'select-one',m[2]);
       const document={getElementById:id=>els.get(id)||(el(id,'div',''),els.get(id)),querySelectorAll:()=>[],createElement:tag=>tag==='canvas'?createCanvas(800,1000):els.get('cv')};
-      const ctx={document,performance,console,Math,JSON,Map,Set,Float32Array,Float64Array,Int32Array,Uint8Array,Array,Object,Number,String,Blob:class{},URL:{},setTimeout:()=>0,clearTimeout(){},addEventListener(){},cancelAnimationFrame(){},requestAnimationFrame:()=>0,innerHeight:1000,devicePixelRatio:1};ctx.window=ctx;
+      const ctx={Path2D,document,performance,console,Math,JSON,Map,Set,Float32Array,Float64Array,Int32Array,Uint8Array,Array,Object,Number,String,Blob:class{},URL:{},setTimeout:()=>0,clearTimeout(){},addEventListener(){},cancelAnimationFrame(){},requestAnimationFrame:()=>0,innerHeight:1000,devicePixelRatio:1};ctx.window=ctx;
       vm.runInNewContext(source.slice(source.lastIndexOf('<script>')+8,source.lastIndexOf('</script>')),ctx,{timeout:30000});
       const S=ctx.__studio;if(!S)throw Error(`No studio interface: ${collection.page}`);
       if(preset){if(!S.PRESETS?.[preset])throw Error(`Missing preset ${collection.id}/${preset}`);for(const [k,v] of Object.entries(S.PRESETS[preset])){if(!els.has(k))throw Error(`Missing control ${k}`);els.get(k).value=String(v)}}
@@ -54,11 +54,13 @@ export async function buildSite({repo,here,pages}) {
       fs.writeFileSync(path.join(assets,id+'.json'),JSON.stringify({studio:collection.page,...specimen},null,2));
       specimens.push(specimen);
     }
-    catalogue.push({...collection,samples:specimens});
+    // Built-in presets are the studio's own preset buttons.
+    const presets=new Set([...source.matchAll(/data-preset="([^"]+)"/g)].map(m=>m[1]).filter(id=>!collection.hiddenPresets?.includes(id))).size;
+    catalogue.push({...collection,presets,samples:specimens});
     console.log(`site: ${collection.name}, ${specimens.length} real specimens`);
   }
   // Preserve navigation for future published pages even before editorial specimens exist.
-  for(const [page,family,name,description] of pages){if(page==='plot-decoder.html'||catalogue.some(c=>c.page===page))continue;catalogue.push({id:page.replace('.html',''),page,name,description,subtitle:description,family,tags:'',lesson:'Open the studio to explore its methods.',samples:[]})}
+  for(const [page,family,name,description] of pages){if(page==='plot-decoder.html'||catalogue.some(c=>c.page===page))continue;const presets=new Set([...fs.readFileSync(path.join(repo,page),'utf8').matchAll(/data-preset="([^"]+)"/g)].map(m=>m[1])).size;catalogue.push({id:page.replace('.html',''),page,name,description,subtitle:description,family,tags:'',lesson:'Open the studio to explore its methods.',presets,samples:[]})}
   fs.writeFileSync(path.join(out,'catalogue.json'),JSON.stringify(catalogue));
   for(const name of ['site.css','bench.css','plot-animation.js','site.js','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
   const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
@@ -68,7 +70,10 @@ export async function buildSite({repo,here,pages}) {
   fs.writeFileSync(path.join(out,'site.js'),app);
   const launcher=fs.readFileSync(path.join(out,'launch.html'),'utf8').replace('src="launch.js"','src="launch.js?v='+revision('launch.js')+'"');
   fs.writeFileSync(path.join(out,'launch.html'),launcher);
-  const html=fs.readFileSync(path.join(here,'site-index.template.html'),'utf8').replace('<!--@@FALLBACK@@-->',fallback).replace('src="site/site.js"','src="site/site.js?v='+revision('site.js')+'"');
+  // The opening sheet is picked at random per visit; its SVG is preloaded before the catalogue arrives.
+  const heroPools=Object.fromEntries(['plotter','cutter'].map(mode=>[mode,catalogue.filter(c=>(c.mode||'plotter')===mode).flatMap(c=>c.samples.map(s=>s.id))]));
+  const heroScript=`<script>(()=>{const pools=${JSON.stringify(heroPools)},p=pools[new URLSearchParams(location.search).get('gen')==='cutter'?'cutter':'plotter'],id=p[Math.floor(Math.random()*p.length)],l=document.createElement('link');window.__plgHero=id;l.rel='preload';l.as='fetch';l.crossOrigin='anonymous';l.href='site/art/'+id+'.svg';document.head.appendChild(l)})()</script>`;
+  const html=fs.readFileSync(path.join(here,'site-index.template.html'),'utf8').replace('<!--@@FALLBACK@@-->',fallback).replace('<!--@@HERO@@-->',heroScript).replace('src="site/site.js"','src="site/site.js?v='+revision('site.js')+'"');
   fs.writeFileSync(path.join(repo,'index.html'),html);
   console.log(`site: ${catalogue.length} studios, ${catalogue.reduce((n,c)=>n+c.samples.length,0)} specimens`);
 }
