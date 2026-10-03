@@ -12,6 +12,10 @@ assert(cutters.some(c=>c.page==='lino-decal-studio.html'&&c.samples.length>=4),'
 assert(catalogue.some(c=>!c.mode&&c.samples.length),'Missing plotter specimens');
 const ids=new Set();let specimens=0,totalWebp=0;
 for(const c of catalogue){
+ for(const s of c.samples){
+  const kind=c.mode==='cutter'?'weeding':['figure','animals'].includes(c.id)?'motion':null;
+  if(kind){assert(s[kind], 'Missing '+kind+' asset '+s.id);const asset=JSON.parse(fs.readFileSync(path.join(repo,s[kind]),'utf8'));assert.equal(asset.sourceHash,s.sourceHash,'Stale motion '+s.id);if(kind==='motion')assert(asset.parts.length>0&&asset.order.length===asset.parts.length,'Incomplete rig '+s.id);else assert(asset.loops.length>0,'Empty weeding '+s.id)}
+ }
  const source=fs.readFileSync(path.join(repo,c.page),'utf8');
  const hash=crypto.createHash('sha256').update(source.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n')).digest('hex');
  for(const s of c.samples){

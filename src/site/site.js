@@ -1,4 +1,5 @@
 import {createDrawing,drawProgress} from './plot-animation.js';
+import {createWeeding,weedProgress,createPuppet,puppetProgress} from './hero-motion.js';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let catalogue=[], all=[], expanded=null, selected=null, filter='all', heroId=null, userPaused=false, inView=true, drawing=null, frame=0, lastTime=0;
@@ -48,13 +49,14 @@ function setMode(next,updateURL=true){
  document.body.dataset.mode=mode;
  const cutting=mode==='cutter',name=cutting?'CUTTER GEN':'PLOTTER GEN';
  wholeSheet=cutting;$('fit').textContent=wholeSheet?'Back to detail ↗':'Show whole sheet ↗';$('fit').setAttribute('aria-pressed',String(wholeSheet));
- $('hero-art').setAttribute('aria-label',cutting?'Finished vinyl cut preview':'Animated real generator output');
+ $('hero-art').setAttribute('aria-label',cutting?'Animated lino weeding preview':'Animated real generator output');
  document.querySelectorAll('#generator-tabs button[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
  document.querySelectorAll('.wordmark').forEach(a=>{a.innerHTML=(cutting?'C/G':'P/G')+'<span class="wordmark-full"> — '+name+'</span>';a.setAttribute('aria-label',name+' home')});
  $('hero-title').innerHTML=name.replace(' ','_')+' / <span>'+(cutting?'on the cutting mat':'on the bed')+'</span>';
  document.querySelector('.hero-minimized p').textContent=name;
  $('restore').textContent=cutting?'Unfold the cut +':'Unfold the drawing +';
- document.querySelector('.transport').hidden=cutting;
+ document.querySelector('.transport').hidden=false;
+ $('replay').setAttribute('aria-label',cutting?'Replay weeding':'Replay drawing');document.querySelector('label[for="transport"]').textContent=cutting?'Weeding progress':'Drawing and assembly progress';
  $('learn-title').textContent=cutting?'Before you feed the cutter.':'Before you feed the plotter.';
  $('learn-title').closest('.section-heading').querySelector('p').textContent=cutting?'Vinyl, blades, and things worth checking.':'Paper, pens, and things worth checking.';
  $('plotter-notes').hidden=cutting;$('cutter-notes').hidden=!cutting;
@@ -67,7 +69,7 @@ function setMode(next,updateURL=true){
  document.title=name+' — '+(cutting?'blade, vinyl, machinery':'pen, paper, machinery');
  if(updateURL)history.pushState(null,'',cutting?'?gen=cutter#explore':'?gen=plotter#explore');
  render();
- const pool=activeSamples(),initial=pool.find(s=>s.id===window.__plgHero)||pool[0];if(initial)showHero(initial);
+ const pool=activeSamples(),initial=pool.find(s=>s.id===new URLSearchParams(location.search).get('sheet'))||pool.find(s=>s.id===window.__plgHero)||pool[0];if(initial)showHero(initial);
 }
 $('generator-tabs').onclick=e=>{const b=e.target.closest('button[data-mode]');if(b)setMode(b.dataset.mode)};
 function expand(id,focus){
@@ -84,23 +86,33 @@ $('reset').onclick=()=>{filter='all';$('search').value='';document.querySelector
 function surprise(){const pool=activeSamples();if(pool.length)openSpecimen(pool[Math.floor(Math.random()*pool.length)])}
 $('surprise-nav').onclick=surprise;$('surprise-bottom').onclick=surprise;
 function stopFrame(){cancelAnimationFrame(frame);frame=0;lastTime=0}
-function syncAnimation(){stopFrame();if(drawing&&!drawing.complete&&!userPaused&&inView&&!document.hidden&&!reduced.matches){lastTime=performance.now();frame=requestAnimationFrame(animate)}}
-function setProgress(progress){if(!drawing)return;progress=Math.max(0,Math.min(1,progress));drawProgress(drawing,progress);$('transport').value=String(progress*100);$('progress').textContent=Math.round(progress*100)+'%'}
-function animate(t){if(!drawing)return;const elapsed=drawing.elapsed+(lastTime?Math.min(t-lastTime,60):0);lastTime=t;setProgress(elapsed/12000);if(!drawing.complete)frame=requestAnimationFrame(animate);else frame=0}
+function syncAnimation(){stopFrame();if(drawing&&(drawing.loop||!drawing.complete)&&!userPaused&&inView&&!document.hidden&&!reduced.matches){lastTime=performance.now();frame=requestAnimationFrame(animate)}}
+function setProgress(progress,elapsed){
+ if(!drawing)return;progress=Math.max(0,Math.min(1,progress));const duration=drawing.duration||12000;
+ drawing.elapsed=elapsed??progress*duration;
+ if(drawing.kind==='weed')weedProgress(drawing,progress);
+ else if(drawing.kind==='puppet')puppetProgress(drawing,progress,drawing.elapsed,drawProgress);
+ else drawProgress(drawing,progress);
+ $('transport').value=String(progress*100);$('progress').textContent=Math.round(progress*100)+'%';
+}
+function animate(t){if(!drawing)return;const elapsed=drawing.elapsed+(lastTime?Math.min(t-lastTime,60):0);lastTime=t;setProgress(elapsed/(drawing.duration||12000),elapsed);if(drawing.loop||!drawing.complete)frame=requestAnimationFrame(animate);else frame=0}
 let heroRequest=0,wholeSheet=false,recent=[],nextPlot=null;
 const plotCache=new Map();
-function loadPlot(url){if(!plotCache.has(url))plotCache.set(url,fetch(url).then(r=>{if(!r.ok)throw Error('Preview unavailable');return r.text()}).catch(error=>{plotCache.delete(url);throw error}));return plotCache.get(url)}
+function loadPlot(url){if(!plotCache.has(url))plotCache.set(url,fetch(url,{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('Preview unavailable');return r.text()}).catch(error=>{plotCache.delete(url);throw error}));return plotCache.get(url)}
 // Start the first SVG request alongside the catalogue; cache upcoming sheets.
 if(window.__plgHero)loadPlot(`site/art/${window.__plgHero}.svg`).catch(()=>{});
 function warmNextPlots(){const candidates=activeSamples().filter(s=>s.id!==heroId);nextPlot=candidates[Math.floor(Math.random()*candidates.length)];if(nextPlot)loadPlot(nextPlot.svg).catch(()=>{});$('scrap-rack').querySelectorAll('[data-sheet]').forEach(b=>{const s=specimenById(b.dataset.sheet);if(s)loadPlot(s.svg).catch(()=>{})})}
 
 function renderScraps(){const ids=[...new Set([...recent,...activeSamples().map(s=>s.id)])].filter(id=>id!==heroId&&activeSamples().some(s=>s.id===id)).slice(0,3);$('scrap-rack').innerHTML=ids.map(id=>{const s=specimenById(id);return s?`<button data-sheet="${esc(id)}" aria-label="Put ${esc(s.title)} on the ${mode==='cutter'?'cutting mat':'drawing bed'}"><img src="${s.image}" alt="" width="100" height="100"></button>`:''}).join('');$('scrap-rack').querySelectorAll('button').forEach(b=>b.onclick=()=>showHero(specimenById(b.dataset.sheet)))}
 async function showHero(s){
+ if(s.motion){wholeSheet=true;$('fit').textContent='Back to detail ↗';$('fit').setAttribute('aria-pressed','true')}
  const request=++heroRequest;if(heroId)recent=[heroId,...recent].slice(0,6);heroId=s.id;stopFrame();drawing=null;userPaused=false;updatePause();renderScraps();$('hero-name').textContent=s.title;$('hero-family').textContent=s.collection.name.toUpperCase();$('hero-meta').textContent=`${s.page.replace('x',' × ')} mm${s.seed===null?'':` / seed ${s.seed}`} / ${wholeSheet?'whole sheet':'cropped detail'}`;$('hero-make').href=launch(s);$('hero-make').setAttribute('aria-label',`Open ${s.title} in the studio`);$('hero-art').replaceChildren();$('transport').value='0';$('progress').textContent='0%';
- try{const text=await loadPlot(s.svg);if(request!==heroRequest)return;
+ try{const [text,motion,weeding]=await Promise.all([loadPlot(s.svg),s.motion?loadPlot(s.motion).then(JSON.parse):null,s.weeding?loadPlot(s.weeding).then(JSON.parse):null]);if(request!==heroRequest)return;
  const doc=new DOMParser().parseFromString(text,'image/svg+xml');const svg=doc.documentElement;if(svg.tagName!=='svg')throw Error('Invalid drawing');svg.querySelectorAll('script,foreignObject').forEach(n=>n.remove());
  svg.removeAttribute('width');svg.removeAttribute('height');svg.setAttribute('aria-hidden','true');svg.setAttribute('preserveAspectRatio',wholeSheet?'xMidYMid meet':'xMidYMid slice');$('hero-art').replaceChildren(document.importNode(svg,true));const mounted=$('hero-art').firstElementChild;
- if(mode==='cutter'){mounted.querySelector('#weed-box')?.remove();$('progress').textContent='CUT';}else{drawing=createDrawing(mounted);setProgress(reduced.matches?1:0);syncAnimation();}
+ drawing=mode==='cutter'?createWeeding(mounted,weeding):createDrawing(mounted);
+ if(motion){mounted.setAttribute('preserveAspectRatio','xMidYMid meet');drawing=createPuppet(mounted,motion,drawing);}
+ setProgress(reduced.matches?1:0);syncAnimation();
  warmNextPlots();
  }catch{if(request===heroRequest){$('progress').textContent='—';$('hero-art').textContent='Drawing unavailable. Try another sheet.'}}
 }

@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSite } from "./site/build.mjs";
+import { stripLocal, assertStripped } from "./site/local-only.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const proj = path.resolve(here, "..");
@@ -26,11 +27,16 @@ export const PAGES = [
   ["underground-studio.html", "Scenes", "Underground studio", "A cut-away slice of the earth: roots, mycelium, burrows, strata and a buried fossil."],
   ["archaeology-studio.html", "Scenes", "Archaeology studio", "Trench sections, site plans with findspots, a finds sieve and a pottery refit, drawn to excavation conventions."],
   ["flint-studio.html", "Scenes", "Flint studio", "Stones knapped into handaxes, blade cores, Levallois flakes, arrowheads and scrapers, drawn as lithic illustration plates."],
+  ["jointed-figure-studio.html", "Scenes", "Jointed figure studio", "Cut-out dolls and jumping jacks: the pen draws each part, the blade cuts them out with pin holes, split pins put them together. Cut sizes untested."],
+  ["doll-wardrobe-studio.html", "Scenes", "Paper doll wardrobe", "Clothes, hair and hats for the jointed paper doll: pinned at the joints or folded on with tabs. Cut sizes untested."],
+  ["jointed-animal-studio.html", "Scenes", "Jointed animal studio", "Cut-out rabbits, horses, dogs, cats, elephants and pigs with legs, heads and tails on split pins; spots, stripes or patches. Cut sizes untested."],
   ["pottery-puzzle-studio.html", "Scenes", "Pottery puzzle", "A decorated pot drawn in pen and broken into sherds on the cut layer, with a board sheet to rebuild it on. Cut sizes untested."],
+  ["lino-decal-studio.html", "Vinyl", "Lino decals", "Ravens, crows and skulls carved like a lino block and cut from one colour of vinyl, as die-cut figures, moons, rings or carved blocks. Vinyl sizes untested."],
   ["gear-3d-studio.html", "Gears", "Gear 3D studio", "3D gears under a perspective lens on floors of rays, rings, ripples and Truchet ribbons."],
   ["gear-bam-studio.html", "Gears", "Gear BAM studio", "Comic 3D gears with crosshatched walls, riso halftone tops and extruded sound effects."],
   ["gear-weave-studio.html", "Gears", "Gear weave studio", "Hundreds of overlapping gears woven over and under like chainmail."],
   ["gear-reverb-studio.html", "Gears", "Gear reverb studio", "A meshing gear train wrapped in reverb rings, tilted under a camera."],
+  ["spirograph-studio.html", "Art", "Spirograph studio", "A wheel rolls round the outline of letters or a shape and a pen in its hole draws the loops: rings, laps and up to four pens."],
 ];
 export const SOURCES = ["plg-stego/core.js", "plg-stego/marks.js", "plg-stego/studio.js", "plg-stego/cipher-core.js", "plg-stego/cipher.js", "plg-stego/overlay.js", "plg-stego/signals.js", "plg-stego/signals-core.js", "plg-stego/decoder-core.js", "plg-stego/decoder.js",
   "plg-stego/build.mjs", "plg-stego/decoder-test.mjs", "plg-stego/decoder-debug.mjs", "plg-stego/synth_photo.py", "plg-stego/export-all.sh", "studio_export.mjs",
@@ -38,9 +44,9 @@ export const SOURCES = ["plg-stego/core.js", "plg-stego/marks.js", "plg-stego/st
   "plg-stego/decoder-template.html", "plg-stego/overlay-template.html", "plg-stego/signals-template.html",
   "plg-stego/anchor-test.mjs", "plg-stego/settings-test.mjs", "plg-stego/studio-vm.mjs", "plg-stego/README.md",
   "publish-site.mjs", "site-index.template.html", "site-public-readme.md",
-  "site/build.mjs", "site/catalogue.mjs", "site/verify.mjs", "site/verify-sync.mjs", "site/README.md",
+  "site/build.mjs", "site/local-only.mjs", "site/catalogue.mjs", "site/verify.mjs", "site/verify-sync.mjs", "site/README.md",
   "site/package.json", "site/package-lock.json", "site/site.js", "site/site.css", "site/bench.css",
-  "site/plot-animation.js", "site/launch.html", "site/launch.js", "site/studio-dock.mjs"];
+  "site/plot-animation.js", "site/hero-motion.js", "site/hero-motion-test.mjs", "site/puppet-assets.mjs", "site/launch.html", "site/launch.js", "site/studio-dock.mjs"];
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   if (!fs.existsSync(repo)) throw new Error(`no repo at ${repo}`);
@@ -52,7 +58,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   if(selected)for(const page of selected)if(!PAGES.some(([p])=>p===page)||!fs.existsSync(path.join(docs,page)))throw Error('Unknown or missing studio: '+page);
   const live = PAGES.filter(([p]) => fs.existsSync(path.join(homepageOnly || (selected&&!selected.has(p)) ? repo : docs, p)));
   if (!homepageOnly) {
-    for (const [p] of live.filter(([p])=>!selected||selected.has(p))) fs.copyFileSync(path.join(docs, p), path.join(repo, p));
+    // pages go out with their local-only fences stripped (see site/local-only.mjs)
+    for (const [p] of live.filter(([p])=>!selected||selected.has(p))) fs.writeFileSync(path.join(repo, p), assertStripped(p, stripLocal(fs.readFileSync(path.join(docs, p), "utf8"))));
     fs.mkdirSync(path.join(repo, "src/plg-stego"), { recursive: true });
     for (const s of selected?[]:SOURCES) {
       if(!fs.existsSync(path.join(here,s)))throw Error('Missing public source: '+s);
