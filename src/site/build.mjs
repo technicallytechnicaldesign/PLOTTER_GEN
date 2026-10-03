@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import crypto from 'node:crypto';
 import {createRequire} from 'node:module';
 import {collections} from './catalogue.mjs';
+import {bakePuppets} from './puppet-assets.mjs';
 const require=createRequire(import.meta.url);
 function dependency(name){try{return require(name)}catch{return require(path.join(process.env.PLG_NODE_MODULES || '', name))}}
 function normalizeRange(value,markup){
@@ -61,12 +62,13 @@ export async function buildSite({repo,here,pages}) {
   }
   // Preserve navigation for future published pages even before editorial specimens exist.
   for(const [page,family,name,description] of pages){if(page==='plot-decoder.html'||catalogue.some(c=>c.page===page))continue;const presets=new Set([...fs.readFileSync(path.join(repo,page),'utf8').matchAll(/data-preset="([^"]+)"/g)].map(m=>m[1])).size;catalogue.push({id:page.replace('.html',''),page,name,description,subtitle:description,family,tags:'',lesson:'Open the studio to explore its methods.',presets,samples:[]})}
+  bakePuppets({catalogue,repo,here});
   fs.writeFileSync(path.join(out,'catalogue.json'),JSON.stringify(catalogue));
-  for(const name of ['site.css','bench.css','plot-animation.js','site.js','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
+  for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
   const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
   const fallback=pages.map(([p,,t,d])=>`<li><a href="${escape(p)}">${escape(t)}</a> — ${escape(d)}</li>`).join('\n');
   const revision=name=>crypto.createHash('sha256').update(fs.readFileSync(path.join(out,name))).digest('hex').slice(0,12);
-  const app=fs.readFileSync(path.join(out,'site.js'),'utf8').replace('./plot-animation.js', './plot-animation.js?v='+revision('plot-animation.js'));
+  const app=fs.readFileSync(path.join(out,'site.js'),'utf8').replace('./plot-animation.js', './plot-animation.js?v='+revision('plot-animation.js')).replace('./hero-motion.js','./hero-motion.js?v='+revision('hero-motion.js'));
   fs.writeFileSync(path.join(out,'site.js'),app);
   const launcher=fs.readFileSync(path.join(out,'launch.html'),'utf8').replace('src="launch.js"','src="launch.js?v='+revision('launch.js')+'"');
   fs.writeFileSync(path.join(out,'launch.html'),launcher);

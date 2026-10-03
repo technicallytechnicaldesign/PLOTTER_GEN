@@ -60,4 +60,9 @@ The block is a `<script id=...>` in the head, so the headless harnesses, which s
 The paper doll wardrobe carries a copy of the jointed figure studio's `rig()`, so its pin holes land on the doll's joints. After changing the doll in either studio, copy the rig across and run `node 02_WORK/site/rig-parity-check.mjs`: it must report every setting as identical (60 of 60 on 2026-10-01).
 
 ## Plotter / Cutter workspaces
-The shared homepage switches between PLOTTER GEN and CUTTER GEN via ?gen=cutter (drawing remains the default). Catalogue entries use mode: 'cutter' for blade-only studios; unmarked entries belong to Plotter. Gallery filters, random sheets, desk previews, field notes and launcher return links follow the selected workspace. Lino cut previews show the finished filled silhouette without pen playback; exported SVGs remain exact.
+The shared homepage switches between PLOTTER GEN and CUTTER GEN via ?gen=cutter (drawing remains the default). Catalogue entries use mode: 'cutter' for blade-only studios; unmarked entries belong to Plotter. Gallery filters, random sheets, desk previews, field notes and launcher return links follow the selected workspace. Lino cut previews animate from the uncarved silhouette to the finished vinyl; exported SVGs remain exact.
+
+## Header motion
+Lino playback begins with the studio’s true uncarved silhouette, including cuts open to the outside; it lifts away patches derived from the uncarved mask minus the final vinyl; its final view is the exact exported geometry. Figure and animal specimens carry motion assets built from their public studio rigs and saved controls: draw for 12 seconds, assemble for 4, then repeat the studio wiggle/walk poses. Replay and scrub return to the sheet; Pause, folding, visibility and reduced motion apply to every phase. Optional ?sheet=figure-skeleton or ?gen=cutter&sheet=lino-raven selects a repeatable header.
+
+Run node 02_WORK/site/hero-motion-test.mjs to compare 1,206 point poses against the original studio functions and raster-check the final lino view against its exported SVG.
