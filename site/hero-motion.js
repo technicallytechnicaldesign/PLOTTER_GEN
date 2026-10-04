@@ -58,3 +58,30 @@ export function puppetProgress(d,progress,elapsed,drawProgress){
  for(let i=0;i<data.parts.length;i++){const p=data.parts[i],assembled=multiply(target,matrices[i]),laid=[1,0,0,1,...p.at],m=laid.map((v,k)=>v+(assembled[k]-v)*amount);d.groups[i].setAttribute('transform',`matrix(${m.join(' ')})`);d.outlineGroups[i].setAttribute('fill-opacity',String(amount));}
  svg.dataset.stage=assembly<1?'assembling':'wiggling';
 }
+// Garland: the sheet is drawn, the charms lift off it and hang on one string, then sway about their hanging holes.
+const CARD={pumpkin:'#ee8a2a',ghost:'#fcfdfe',bat:'#4a4352'};
+export function createGarland(svg,data,drawing){
+ const sheet=node('g',{'data-garland':'sheet'});for(const child of [...svg.children])if(!['title','desc'].includes(child.tagName)&&!child.classList.contains('pen-marker'))sheet.append(child);svg.prepend(sheet);
+ const hung=node('g',{'data-garland':'charms',visibility:'hidden'}),string=node('path',{d:data.string,fill:'none',stroke:'#7a6a4a','stroke-width':.6});hung.append(string);
+ const groups=data.charms.map(c=>{const g=node('g',{'data-charm':c.kind});
+  if(c.anchor[1]!==c.knot[1])hung.append(node('path',{'data-thread':'',d:'',fill:'none',stroke:'#7a6a4a','stroke-width':.4}));
+  g.append(node('path',{d:c.outline,fill:CARD[c.kind]||'#fcfdfe','fill-rule':'evenodd',stroke:'#26200f','stroke-width':.3,'stroke-linejoin':'round'}));
+  for(const [key,col] of [['shade',c.kind==='bat'?'#17131c':'#4d463a'],['colour',data.colour],['line',c.kind==='bat'?'#17131c':'#26200f']])if(c.ink[key])g.append(node('path',{d:c.ink[key],fill:'none',stroke:col,'stroke-width':key==='shade'?.22:.32,'stroke-linecap':'round','stroke-linejoin':'round'}));
+  for(const h of c.holes)g.append(node('circle',{cx:h.center[0],cy:h.center[1],r:h.radius,fill:'#fff',stroke:'#26200f','stroke-width':.2}));
+  hung.append(g);return g});
+ svg.append(hung);svg.dataset.animation='garland';
+ return {kind:'garland',svg,data,sheet,hung,string,groups,threads:[...hung.querySelectorAll('[data-thread]')],plot:drawing,elapsed:0,complete:false,duration:16000,loop:true};
+}
+export function garlandProgress(d,progress,elapsed,drawProgress){
+ const {svg,data,sheet,hung}=d,drawEnd=.75,amount=ease(clamp((progress-drawEnd)/(1-drawEnd)));
+ if(progress<drawEnd){sheet.style.display='';hung.style.visibility='hidden';drawProgress(d.plot,progress/drawEnd);svg.dataset.stage='drawing';return}
+ drawProgress(d.plot,1);d.plot.marker.style.display='none';sheet.style.display='none';hung.style.visibility='visible';d.string.style.opacity=String(amount);
+ const seconds=Math.max(0,(elapsed-d.duration)/1000),blend=ease(seconds/.8);let t=0;
+ data.charms.forEach((c,i)=>{
+  const a=blend*6*Math.sin(seconds*2.1+i*.9)*Math.PI/180,k=data.scale,co=Math.cos(a)*k,si=Math.sin(a)*k,[hx,hy]=c.hang,[ax,ay]=c.anchor;
+  const hangM=[co,si,-si,co,ax-co*hx+si*hy,ay-si*hx-co*hy],laid=[1,0,0,1,...c.at],m=laid.map((v,j)=>v+(hangM[j]-v)*amount);
+  d.groups[i].setAttribute('transform',`matrix(${m.join(' ')})`);
+  if(c.anchor[1]!==c.knot[1]){const th=d.threads[t++];th.setAttribute('d',`M${c.knot[0]},${c.knot[1]} L${ax},${ay}`);th.style.opacity=String(amount)}
+ });
+ svg.dataset.stage=amount<1?'stringing':'swaying';
+}
