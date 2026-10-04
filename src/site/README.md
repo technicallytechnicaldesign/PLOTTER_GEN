@@ -66,3 +66,16 @@ The shared homepage switches between PLOTTER GEN and CUTTER GEN via ?gen=cutter 
 Lino playback begins with the studio’s true uncarved silhouette, including cuts open to the outside; it lifts away patches derived from the uncarved mask minus the final vinyl; its final view is the exact exported geometry. Figure and animal specimens carry motion assets built from their public studio rigs and saved controls: draw for 12 seconds, assemble for 4, then repeat the studio wiggle/walk poses. Replay and scrub return to the sheet; Pause, folding, visibility and reduced motion apply to every phase. Optional ?sheet=figure-skeleton or ?gen=cutter&sheet=lino-raven selects a repeatable header.
 
 Run node 02_WORK/site/hero-motion-test.mjs to compare 1,206 point poses against the original studio functions and raster-check the final lino view against its exported SVG.
+
+## Shared print exhibition
+The gallery is a photo exhibition of physical prints, separate from the generated specimens on the studio entrance.
+Author the photo list in `02_WORK/site/print-gallery.json`: `photo: null` is a visibly empty placeholder; supply a photo URL, title, description, room, frame width/height, optional studio/decoder links and explicit content flags for a real print.
+No generated SVG or specimen thumbnail is used as gallery artwork.
+Six fixed rooms open onto one entrance corridor; geometry and exhibited slots stay mounted while walking, turning, using the map and applying filters.
+`gallery-world.js` owns dimensions, walkable bounds, destinations and frame-rate-based keyboard integration; doors start exactly at the floor and open sightlines remain unobstructed.
+Hold W/A/S/D or touch movement buttons to walk, hold arrow keys to turn, drag to look, and use the live floor plan or room selector for direct travel.
+NSFW and swearing are excluded by default; photo entries carry editorial content flags, and swearing also checks titles.
+Simplify mode shows the same physical-print photo list and empty slots without the rooms; its preference is remembered.
+Header cryptography movement and studio crossfades still use generated specimens outside this gallery.
+
+Run `node 02_WORK/site/gallery-world-test.mjs` to check collision boundaries, door connectivity, frame-rate parity, key release and photo-placeholder invariants.

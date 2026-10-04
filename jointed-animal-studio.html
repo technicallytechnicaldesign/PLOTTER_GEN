@@ -142,7 +142,9 @@ aside fieldset.dock-folded { padding-bottom:0; }
 <aside>
   <fieldset><legend>Presets</legend>
     <div class="row"><button data-preset="rabbit">Rabbit</button><button data-preset="horse">Horse</button><button data-preset="zebra">Zebra</button><button data-preset="dog">Dog</button><button data-preset="dalmatian">Dalmatian</button><button data-preset="cat">Tabby cat</button><button data-preset="elephant">Elephant</button><button data-preset="pig">Pig</button><button data-preset="mini">Mini bunny</button></div>
+
   </fieldset>
+
   <fieldset><legend>The animal</legend>
     <label>Animal <select id="animal"><option value="dog">dog</option><option value="rabbit">rabbit</option><option value="horse">horse</option><option value="cat">cat</option><option value="elephant">elephant</option><option value="pig">pig</option></select></label>
     <label>Joints <select id="joints"><option value="hips">shoulders and hips</option><option value="knees">plus knees</option></select></label>
@@ -604,6 +606,7 @@ function decorate(p, o, R, rnd) {
 // the pen outline of a part, d mm inside its cut line (or on it at 0), from the part's own distance field
 const outlineOf = (p, d, G = p.G) => d < 0.05 ? [p.outline] : contours(G, -d).filter(l => abs(loopArea(l)) > 1).map(l => smooth(l, 1));
 
+
 // ---------------- build ----------------
 function build(o) {
   const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [], rnd = mulberry(o.seed * 101 + 7);
@@ -628,10 +631,22 @@ function build(o) {
       if (best) p.ink.line.push(...clip(p, letter(Hh.joint, best[0], best[1], sz)));
     }
   }
+  // the outfit: the accessories chosen (worn in the preview) and, for the wardrobe sheet, every one of them
+  const outfitOn = typeof outfitKeys === "function", keys = outfitOn ? outfitKeys(o, WARDROBE_SHEETS[o.sheet]) : []; // the public copy has the outfit stripped out
+  const acc = keys.length ? outfitSpecs(o, R, keys).map(g => accPiece(g, R, max(h, 0.25))) : [];
+  for (const g of acc) {
+    const d = accInk(g, o, R), q = { G: g.Gd, holes: [] };
+    g.ink = { line: clip(q, d.line), shade: clip(q, d.shade), colour: clip(q, d.colour), fold: clip({ G: g.G, holes: [] }, g.folds) }; // fold lines: plotted, hidden in the preview
+    g.box = ptsBox(g.outline);
+  }
+  // the preview always wears the chosen outfit, whichever sheet is being cut
+  const wornKeys = new Set((outfitOn ? outfitKeys(o, null) : []).map(([sl, k]) => sl + ":" + k)), worn = acc.filter(g => wornKeys.has(g.key));
+  const sheet = [...(o.sheet === "animal" || o.sheet === "both" ? R.parts : []), ...(o.sheet === "animal" ? [] : acc)];
+  if (!sheet.length) notes.push("no accessories chosen for this sheet: pick some in the Outfit controls");
   // lay the parts out in shelves; try a few ways (as drawn, all lying long side across, all standing) and keep the first that fits
   const rbox = (b, rot) => rot ? [-b[3], b[0], -b[1], b[2]] : b;
   const shelf = rotOf => {
-    const items = R.parts.map(p => ({ p, rot: rotOf(p), b: rbox(p.box, rotOf(p)) })).sort((a, c) => (c.b[3] - c.b[1]) - (a.b[3] - a.b[1]));
+    const items = sheet.map(p => ({ p, rot: rotOf(p), b: rbox(p.box, rotOf(p)) })).sort((a, c) => (c.b[3] - c.b[1]) - (a.b[3] - a.b[1]));
     let x = m, y = m, rowH = 0, ok = true;
     for (const it of items) { const w = it.b[2] - it.b[0], hh = it.b[3] - it.b[1]; if (x + w > W - m + 1e-6) { x = m; y += rowH + PART_GAP; rowH = 0; } if (y + hh > H - m + 1e-6 || w > W - 2 * m) ok = false; it.at = [x - it.b[0], y - it.b[1]]; x += w + PART_GAP; rowH = max(rowH, hh); }
     return { items, ok, need: y + rowH - m };
@@ -639,26 +654,28 @@ function build(o) {
   const tries = [p => 0, p => (p.box[3] - p.box[1] > p.box[2] - p.box[0] ? 1 : 0), p => (p.box[2] - p.box[0] > p.box[3] - p.box[1] ? 1 : 0), p => (p.kind === "limb" ? 1 : 0)].map(shelf);
   const best = tries.find(t => t.ok) || tries.reduce((a, c) => (c.need < a.need ? c : a));
   for (const it of best.items) { it.p.rot = it.rot; it.p.rb = it.b; it.p.at = it.at; }
-  const fits = best.ok;
-  if (!fits) notes.push(`the parts do not all fit on this page: try a length of about ${max(120, floor(o.length * min(1, (H - 2 * m) / best.need) * 0.95 / 5) * 5)} mm, or a bigger page`);
+  const fits = best.ok || !sheet.length;
+  if (!fits && WARDROBE_SHEETS[o.sheet]) notes.push("the whole wardrobe does not fit on this page at this length: try the 280 x 280 page, a shorter animal, or the outfit sheet a few pieces at a time");
+  else if (!fits) notes.push(`the parts do not all fit on this page: try a length of about ${max(120, floor(o.length * min(1, (H - 2 * m) / best.need) * 0.95 / 5) * 5)} mm, or a bigger page`);
   const mv = p => q => { const [x, y] = p.rot ? [-q[1], q[0]] : q; return [x + p.at[0], y + p.at[1]]; };
   const layers = { line: [], shade: [], colour: [], outline: [], cut: [] };
-  for (const p of R.parts) {
+  for (const p of sheet) {
     const f = mv(p);
-    for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) layers[k].push([l.map(f), false]);
+    for (const k of ["line", "shade", "colour", "fold"]) for (const l of p.ink[k] || []) layers[k === "fold" ? "line" : k].push([l.map(f), false]);
     layers.cut.push([p.outline.map(f), true]);
+    for (const w of p.windows || []) layers.cut.push([w.map(f), true]); // holes inside an accessory, like a basket's handle
     if (o.outlines === "on") for (const l of outlineOf(p, o.outlinein)) layers.outline.push([l.map(f), true]);
     for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]);
   }
   layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
   // ---------------- gates ----------------
   let gapMin = INF;
-  for (let i = 0; i < R.parts.length; i++) for (let j = i + 1; j < R.parts.length; j++) {
-    const a = R.parts[i], b = R.parts[j], A = [a.rb[0] + a.at[0], a.rb[1] + a.at[1], a.rb[2] + a.at[0], a.rb[3] + a.at[1]], B = [b.rb[0] + b.at[0], b.rb[1] + b.at[1], b.rb[2] + b.at[0], b.rb[3] + b.at[1]];
+  for (let i = 0; i < sheet.length; i++) for (let j = i + 1; j < sheet.length; j++) {
+    const a = sheet[i], b = sheet[j], A = [a.rb[0] + a.at[0], a.rb[1] + a.at[1], a.rb[2] + a.at[0], a.rb[3] + a.at[1]], B = [b.rb[0] + b.at[0], b.rb[1] + b.at[1], b.rb[2] + b.at[0], b.rb[3] + b.at[1]];
     gapMin = min(gapMin, max(B[0] - A[2], A[0] - B[2], B[1] - A[3], A[1] - B[3]));
   }
   let inkBad = 0, inkN = 0;
-  for (const p of R.parts) for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) for (const [x, y] of l) { inkN++; if (inkRoom(p, x, y) < INK_GAP - 0.05) inkBad++; }
+  for (const p of sheet) for (const k of ["line", "shade", "colour", "fold"]) for (const l of p.ink[k] || []) for (const [x, y] of l) { inkN++; if (inkRoom(p, x, y) < INK_GAP - 0.05) inkBad++; }
   const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
   const pen = ["line", "shade", "colour"].reduce((a, k) => a + layers[k].reduce((s, [q, cl]) => s + plen(q, cl), 0), 0) / 1000, cutm = layers.cut.reduce((s, [q, cl]) => s + plen(q, cl), 0) / 1000;
   const pts = Object.values(layers).reduce((a, L) => a + L.reduce((s, [q]) => s + q.length, 0), 0);
@@ -673,11 +690,18 @@ function build(o) {
   const thin = R.parts.filter(p => contours(p.G, -MIN_HALF).filter(l => abs(loopArea(l)) > 0.5).length !== 1).map(p => p.name);
   if (thin.length) notes.push(`at this size the ${thin.join(", ")} get thinner than 5 mm: make the animal longer`);
   gates.push([`no part has a neck thinner than ${2 * MIN_HALF} mm (assumed)`, thin.length === 0 && minR >= MIN_HALF - 1e-9, thin.length ? `too thin: ${thin.join(", ")}` : "every part holds together"]);
-  gates.push([`parts at least ${PART_GAP} mm apart and inside the margin`, fits && inside && gapMin >= PART_GAP - 0.01, `closest ${gapMin.toFixed(1)} mm`]);
+  gates.push([`parts at least ${PART_GAP} mm apart and inside the margin`, fits && inside && (gapMin >= PART_GAP - 0.01 || sheet.length < 2), sheet.length < 2 ? "one piece" : `closest ${gapMin.toFixed(1)} mm`]);
+  if (acc.length) {
+    const pinsAll = R.parts.flatMap(p => p.holes).map(Hh => Hh.c), pinGap = min(INF, ...acc.filter(g => !g.scene).map(g => min(...pinsAll.map(c => sampleF(g.G, c[0], c[1])))));
+    gates.push(["every accessory is one piece with one closed outline", acc.every(g => g.pieces === 1), `${acc.filter(g => g.pieces === 1).length} of ${acc.length}`]);
+    gates.push(["every accessory has two fold tabs or more, each clear of the piece so it folds", acc.every(g => g.tabsN >= 2 && g.tabsClear === g.tabsN), acc.filter(g => !(g.tabsN >= 2 && g.tabsClear === g.tabsN)).map(g => g.name).join(", ") || `${acc.reduce((a, g) => a + g.tabsN, 0)} tabs`]);
+    gates.push([`no accessory has a neck thinner than ${2 * MIN_HALF} mm (assumed)`, acc.every(g => !g.thin), acc.filter(g => g.thin).map(g => g.name).join(", ") || "every accessory holds together"]);
+    gates.push([`accessories keep ${PIN_CLEAR} mm from every pin centre, so they never need a pin (assumed)`, pinGap >= PIN_CLEAR - 0.5, pinGap === INF ? "no pinned parts nearby" : `closest ${pinGap.toFixed(1)} mm from a pin edge`]);
+  }
   gates.push([`no ink within ${INK_GAP} mm of a cut line or hole (assumed)`, inkBad === 0, `${inkBad} of ${inkN} points`]);
   const penBox = [[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET]].map(p => p.map(v => v.toFixed(2)).join(",")).join(",");
   gates.push(["trim frame and pen corner ticks have the same bounding box", bbox([layers.cut.at(-1)]) === penBox, bbox([layers.cut.at(-1)])]);
-  return { W, H, o, ms, R, layers, gates, notes, pen, cutm, pins };
+  return { W, H, o, ms, R, layers, gates, notes, pen, cutm, pins, acc, worn, sheet };
 }
 
 // ---------------- draw + export ----------------
@@ -697,24 +721,35 @@ function draw(r, pose) {
   const COL = { line: "#26200f", shade: "#6b6356", colour: "#b0126b" };
   if (r.o.view === "built") {
     pose = pose || animalPose(r.o);
-    const P = r.R.parts, by = P.flatMap(p => p.outline), xs = by.map(q => q[0]), ys = by.map(q => q[1]), mg = r.o.margin;
+    const scene = (r.worn || []).filter(a => a.scene), P = r.R.parts, by = [...P.flatMap(p => p.outline), ...scene.flatMap(a => a.dressedOutline)], xs = by.map(q => q[0]), ys = by.map(q => q[1]), mg = r.o.margin;
     const top = min(...ys), bot = max(...ys), lft = min(...xs), rgt = max(...xs), sc = min(1, (r.H - 2 * mg) / (bot - top) * 0.85, (r.W - 2 * mg) / (rgt - lft) * 0.85), ox = r.W / 2 - sc * (lft + rgt) / 2, oy = r.H / 2 - sc * (top + bot) / 2;
     // far legs and the tail sit behind the body; near legs in front, and the head on top so an ear or a mane can hang over the shoulder
     const leg = (far, lower) => P.filter(p => p.kind === "limb" && !!p.far === far && !!p.lower === lower);
     const ordered = [...leg(true, false), ...leg(true, true), ...P.filter(p => p.kind === "tail"), ...P.filter(p => p.kind === "torso"), ...leg(false, false), ...leg(false, true), ...P.filter(p => p.kind === "head")];
-    for (const p of ordered) {
+    for (const p of [...ordered, ...ordered.filter(p => (r.worn || []).some(a => a.on === p && a.slot === "paw")).map(p => ({ ...p, heldOnly: true }))]) {
       const f = poseXf(p, pose), g = q => { const [x, y] = f(q); return [ox + sc * x, oy + sc * y]; };
+      if (p.heldOnly) { for (const a of r.worn.filter(a => a.slot === "paw")) { c.beginPath(); path(a.dressedOutline.map(g), true); c.fillStyle = "#fffdf6"; c.fill(); c.strokeStyle = "#26200f"; c.lineWidth = 0.35; c.stroke(); for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.35; c.beginPath(); for (const l of a.ink[key]) path(l.map(g), false); c.stroke(); } } continue; }
       c.beginPath(); path(p.outline.map(g), true); c.fillStyle = "#fbf7ec"; c.fill(); c.strokeStyle = "#26200f"; c.lineWidth = 0.35; c.setLineDash([]); c.stroke();
       for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.35; c.beginPath(); for (const l of p.ink[key]) path(l.map(g), false); c.stroke(); }
       for (const Hh of p.holes) { const [x, y] = g(Hh.c); c.beginPath(); c.arc(x, y, Hh.kind === "pin" ? 1.6 : Hh.r, 0, TAU); c.fillStyle = Hh.kind === "pin" ? "#b8902f" : "#d9cdb0"; c.fill(); }
+      for (const a of (r.worn || []).filter(a => a.on === p && a.slot !== "paw")) {
+        c.beginPath(); path(a.dressedOutline.map(g), true); c.fillStyle = "#fffdf6"; c.fill(); c.strokeStyle = "#26200f"; c.lineWidth = 0.35; c.stroke();
+        for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.35; c.beginPath(); for (const l of a.ink[key]) path(l.map(g), false); c.stroke(); }
+      }
     }
+    for (const a of scene) { // scenery stands on the table: no pose, feet folded away
+      const g = q => [ox + sc * q[0], oy + sc * q[1]];
+      c.beginPath(); path(a.dressedOutline.map(g), true); for (const w of a.windows || []) path(w.map(g), true); c.fillStyle = "#fffdf6"; c.fill("evenodd"); c.strokeStyle = "#26200f"; c.lineWidth = 0.35; c.stroke();
+      for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.35; c.beginPath(); for (const l of a.ink[key]) path(l.map(g), false); c.stroke(); }
+    }
+    if (scene.length) { const gy = oy + sc * max(...P.flatMap(p => p.outline).map(q => q[1])); c.strokeStyle = "#b9ad90"; c.lineWidth = 0.3; c.beginPath(); c.moveTo(r.o.margin, gy + 0.4); c.lineTo(r.W - r.o.margin, gy + 0.4); c.stroke(); }
     if (r.R.jack) { c.strokeStyle = "rgba(122,92,0,0.6)"; c.lineWidth = 0.3; }
   } else {
     for (const key of ["shade", "colour", "line", "outline"]) { c.strokeStyle = key === "outline" ? "#1d3a8a" : COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
     c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(q, cl); c.stroke(); c.setLineDash([]);
   }
   const lenm = L => L.reduce((a, [q, cl]) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + s; }, 0) / 1000;
-  $("stats").innerHTML = `${r.o.animal}${r.o.markings !== "none" ? " with " + r.o.markings : ""}: <b>${r.R.parts.length}</b> parts, <b>${r.pins}</b> split pins (three layers of card on the shoulder and hip pins) · ${r.ms.toFixed(0)} ms<br>`
+  $("stats").innerHTML = (r.acc.length ? `outfit: <b>${r.acc.length}</b> accessories with fold tabs (${r.acc.map(a => a.name).join(", ")})<br>` : "") + `${r.o.animal}${r.o.markings !== "none" ? " with " + r.o.markings : ""}: <b>${r.R.parts.length}</b> parts, <b>${r.pins}</b> split pins (three layers of card on the shoulder and hip pins) · ${r.ms.toFixed(0)} ms<br>`
     + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · ${r.layers.outline.length ? `outline pen: <b>${lenm(r.layers.outline).toFixed(1)} m</b> · ` : ""}cut: <b>${r.cutm.toFixed(1)} m</b>, ${r.layers.cut.length} paths<br>`
     + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
     + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
@@ -732,10 +767,10 @@ function toSVG(r, only = null, ticks = false) {
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["animal", "joints", "markings", "length", "stock", "seed", "detail", "shade", "fur", "accent", "letters", "outlines", "outlinein", "view", "front", "back", "bend", "nod", "wag", "page", "margin"];
-const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+const IDS = ["animal", "joints", "markings", "length", "stock", "seed", "detail", "shade", "fur", "accent", "letters", "outlines", "outlinein", "view", "front", "back", "bend", "nod", "wag", "page", "margin", "hat", "earbow", "specs", "neck", "cape", "capestyle", "paw", "sheet", "sballoons", "sflowers", "sbasket", "sball"];
+const read = () => Object.fromEntries(IDS.map(k => [k, !$(k) ? BASE[k] : $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
-function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out && $(k)) out.textContent = $(k).value; } }
 let pending = 0;
 const POSE_ONLY = new Set(["front", "back", "bend", "nod", "wag", "view"]);
 function run(k) { sync(); stopWiggle(); if (last && POSE_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
@@ -750,8 +785,9 @@ $("wiggle").onclick = () => {
   anim = requestAnimationFrame(step);
 };
 
-const BASE = { animal: "dog", joints: "hips", markings: "none", length: 240, stock: 1, seed: 7, detail: 1, shade: "contour", fur: "on", accent: "on", letters: "on", outlines: "off", outlinein: 0.6, view: "sheet", front: 15, back: 10, bend: 0, nod: 0, wag: 0, page: "280x280", margin: 10 };
+const BASE = { animal: "dog", joints: "hips", markings: "none", length: 240, stock: 1, seed: 7, detail: 1, shade: "contour", fur: "on", accent: "on", letters: "on", outlines: "off", outlinein: 0.6, view: "sheet", front: 15, back: 10, bend: 0, nod: 0, wag: 0, page: "280x280", margin: 10, hat: "none", earbow: "none", specs: "none", neck: "none", cape: "none", capestyle: "stars", paw: "none", sheet: "animal", sballoons: "none", sflowers: "none", sbasket: "none", sball: "none" };
 const P = o => ({ ...BASE, ...o });
+
 const PRESETS = {
   rabbit: P({ animal: "rabbit", fur: "on", length: 200 }),
   horse: P({ animal: "horse", joints: "knees", length: 240 }),
@@ -762,9 +798,10 @@ const PRESETS = {
   elephant: P({ animal: "elephant", length: 220 }),
   pig: P({ animal: "pig", markings: "patches", seed: 15, length: 250 }),
   mini: P({ animal: "rabbit", length: 150, page: "190x250", detail: 0.8 }),
+
 };
-document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
-IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) if ($(k)) $(k).value = v; run(); });
+IDS.forEach(k => $(k) && $(k).addEventListener("input", () => run(k)));
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 const stem = r => `animal-${r.o.animal}-${r.o.markings}-l${r.o.length}`;
 $("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };

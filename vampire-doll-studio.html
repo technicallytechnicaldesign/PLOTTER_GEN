@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vampire paper doll</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Vampire paper doll</h1>
+  <p class="sub">A jointed cut-out vampire for spooky season: fangs, a widow's peak, pointed ears, a tailcoat with a bow tie and a medallion, and a cape with a tall collar that rides on the shoulder pins behind the body. The pen draws each part, the blade cuts them out with a pin hole at every joint, and brass split pins put it together. The body is the same doll as the jointed figure studio, so the paper doll wardrobe's clothes fit it too.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="count">The Count</button><button data-preset="kid">Little vampire</button><button data-preset="nosferatu">Nosferatu</button><button data-preset="colour">Colour me in</button><button data-preset="jack">Vampire jumping jack</button><button data-preset="capesheet">Cape on its own sheet</button><button data-preset="mini">Mini count (A4)</button></div>
+  </fieldset>
+  <fieldset><legend>The vampire</legend>
+    <label>Face <select id="face"><option value="count">the Count: slicked hair, sharp brows</option><option value="kid">little vampire: big eyes, small fangs</option><option value="nosferatu">Nosferatu: bald, long ears, rat teeth</option></select></label>
+    <label>Fang length <output id="o-fang"></output><input type="range" id="fang" min="0.5" max="1.6" step="0.1" value="1"></label>
+    <label>Drop of blood on a fang <select id="blood"><option value="on">yes, in the colour pen</option><option value="off">no</option></select></label>
+    <label>Coat <select id="coat"><option value="hatched">tailcoat, hatched dark</option><option value="outline">tailcoat, lines only (colour it in)</option></select></label>
+    <label>Medallion <select id="medal"><option value="on">on a chain</option><option value="off">none, a frilly shirt front</option></select></label>
+    <label>Kind <select id="kind"><option value="doll">doll, posed by hand</option><option value="jack">jumping jack, pulled by a string</option></select></label>
+    <label>Joints (doll) <select id="joints"><option value="full">shoulders, hips, elbows and knees</option><option value="simple">shoulders and hips only</option></select></label>
+    <label>Head (doll) <select id="neck"><option value="pinned">pinned, it nods</option><option value="fixed">fixed to the body</option></select></label>
+    <label>Height (mm) <output id="o-height"></output><input type="range" id="height" min="110" max="420" step="5" value="230"></label>
+    <label>Build <output id="o-stock"></output><input type="range" id="stock" min="0.75" max="1.35" step="0.05" value="0.95"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="13"></label>
+  </fieldset>
+  <fieldset><legend>The cape</legend>
+    <label>Cape <select id="cape"><option value="on">on, pinned at the shoulders behind the body</option><option value="off">no cape</option></select></label>
+    <label>Hem <select id="hem"><option value="bat">bat-wing scallops</option><option value="points">sharp points</option><option value="tatty">tattered</option><option value="straight">straight</option></select></label>
+    <label>Collar <select id="collar"><option value="tall">tall, framing the head</option><option value="low">low and wide</option></select></label>
+    <label>Length <output id="o-capelen"></output><input type="range" id="capelen" min="0.6" max="1.15" step="0.05" value="0.9"></label>
+    <label>Outside <select id="capeink"><option value="hatched">hatched dark</option><option value="folds">folds only</option></select></label>
+    <label>Lining in the colour pen <select id="lining"><option value="on">on, the collar shows red</option><option value="off">off</option></select></label>
+    <label>Sheet holds <select id="sheet"><option value="all">the doll and the cape</option><option value="doll">the doll only</option><option value="cape">the cape only</option></select></label>
+  </fieldset>
+<fieldset><legend>Drawing</legend>
+    <label>Detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
+    <label>Shading <select id="shade"><option value="off">off</option><option value="rim">hatched along the lower edges</option></select></label>
+    <label>Accents in the colour pen <select id="accent"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Draw the outlines with a pen <select id="outlines"><option value="off">off</option><option value="on">on, their own layer</option></select></label>
+    <label>Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.6"></label>
+    <label>Assembly letters at the joints <select id="letters"><option value="on">on</option><option value="off">off</option></select></label>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="built">put together</option><option value="sheet">the sheet, as cut</option></select></label>
+    <label>Arms (degrees) <output id="o-arms"></output><input type="range" id="arms" min="-20" max="170" step="5" value="35"></label>
+    <label>Legs (degrees) <output id="o-legs"></output><input type="range" id="legs" min="-10" max="80" step="5" value="10"></label>
+    <label>Elbows and knees (degrees) <output id="o-bend"></output><input type="range" id="bend" min="0" max="120" step="5" value="20"></label>
+    <label>Head (degrees) <output id="o-tilt"></output><input type="range" id="tilt" min="-30" max="30" step="5" value="0"></label>
+    <div class="row"><button id="wiggle">Wiggle it</button></div>
+    <p class="hint">Preview only. The export is always the flat sheet of parts.</p>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per layer in job order: the pen layers, then the cut. The pen files carry four corner ticks at 1 mm and the cut file carries a trim rectangle at 1 mm, so every file lands in the same place in Design Space.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it goes together: each part is drawn as a set of rounded shapes merged into one outline, and every joint is a disc of card round a pin hole that sits at exactly the same point on both parts, so a brass split pin goes through both. The cape is cut with three holes that line up with the shoulder pins (A and B) and the neck pin (N): stack the cape at the back, then the body, then the arms and head in front, and push each pin through everything. The arms then swing in front of the cape while it hangs still. The assembly letters say which holes meet. For a jumping jack, the arms and legs go behind the body and in front of the cape, and one thread ties across the four small string holes. Cut sizes (pin holes, the 3 mm of card round them, the 5 mm narrowest part) are assumed until the cut calibration sheet is measured.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------------- cut sizes (ASSUMED until the cut calibration sheet is read) ----------------
+const PIN_HOLE_D = 2.4;     // ASSUMED: hole for a standard brass paper fastener (shank about 2 mm), cut-cal row A
+const STRING_HOLE_D = 1.6;  // ASSUMED: hole a thread can be pushed through
+const JOINT_MARGIN = 3.0;   // ASSUMED: card left round every hole, so the pin does not tear out
+const MIN_HALF = 2.5;       // ASSUMED: no part narrower than 5 mm
+const PART_GAP = 3.0;       // ASSUMED: space between parts on the sheet
+const INK_GAP = 0.4;        // ASSUMED: clear space between ink and any cut line
+const TRIM_INSET = 1.0;     // trim rectangle, mm from every page edge (the pen corner ticks sit at the same 1 mm)
+const JR = PIN_HOLE_D / 2 + JOINT_MARGIN + 0.8; // joint disc radius round each pin hole
+
+// ---------------- small stroke font for the assembly letters (cap height 6, y down) ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.75,3.9 L3.25,3.9", B: "M0,3 L2.3,3 A2.3,1.5,1.5,1.5,90,-90 L0,0 L0,6 L2.4,6 A2.4,4.5,1.6,1.5,90,-90 L2.3,3",
+  C: "A2.1,3,2.1,3,-50,-310", D: "M0,0 L0,6 L1.6,6 A1.6,3,2.4,3,90,-90 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2.1,3,2.1,3,-50,-320 L4.2,3.3 L2.4,3.3", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", J: "M3,0 L3,4.5 A1.5,4.5,1.5,1.5,0,170", K: "M0,0 L0,6 M3.8,0 L0,3.8 M1.3,2.5 L4,6",
+  N: "M0,6 L0,0 L4,6 L4,0",
+};
+function glyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+const letter = (ch, cx, cy, size) => (GLYPHS[ch] || []).map(s => s.map(([x, y]) => [cx + (x - 2) * size / 6, cy + (y - 3) * size / 6]));
+
+// ---------------- shapes: signed distance primitives ----------------
+const Circ = (x, y, r) => ({ t: "c", x, y, r: max(r, MIN_HALF) });
+const Limb = (ax, ay, ra, bx, by, rb) => ({ t: "k", ax, ay, ra: max(ra, MIN_HALF), bx, by, rb: max(rb, MIN_HALF) });
+const Box = (x, y, hw, hh, r, ang = 0) => ({ t: "b", x, y, hw: max(hw, MIN_HALF), hh: max(hh, MIN_HALF), r: min(max(r, 0.5), min(hw, hh)), ang });
+function primDist(p, x, y) {
+  if (p.t === "c") return hypot(x - p.x, y - p.y) - p.r;
+  if (p.t === "k") { const dx = p.bx - p.ax, dy = p.by - p.ay, L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - p.ax) * dx + (y - p.ay) * dy) / L2, 0, 1); return hypot(x - p.ax - t * dx, y - p.ay - t * dy) - (p.ra + (p.rb - p.ra) * t); }
+  const c = cos(-p.ang), s = sin(-p.ang), lx = (x - p.x) * c - (y - p.y) * s, ly = (x - p.x) * s + (y - p.y) * c;
+  const qx = abs(lx) - p.hw + p.r, qy = abs(ly) - p.hh + p.r;
+  return hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - p.r;
+}
+const smin = (a, b, k) => { if (k <= 0) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+const primBox = p => p.t === "c" ? [p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r] : p.t === "k" ? [min(p.ax - p.ra, p.bx - p.rb), min(p.ay - p.ra, p.by - p.rb), max(p.ax + p.ra, p.bx + p.rb), max(p.ay + p.ra, p.by + p.rb)] : [p.x - hypot(p.hw, p.hh), p.y - hypot(p.hw, p.hh), p.x + hypot(p.hw, p.hh), p.y + hypot(p.hw, p.hh)];
+
+// ---------------- iso-lines (marching squares) ----------------
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+const loopArea = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+function smooth(l, passes = 2) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
+// ---------------- the rig: parts, pivots and holes, in the standing pose (mm, y down, hips at 0,0) ----------------
+function rig(o) {
+  const u = o.height / 8.1, st = o.stock, S = o.style, jack = o.kind === "jack", full = !jack && o.joints === "full", pinHead = !jack && o.neck === "pinned";
+  const bear = S === "bear", bones = S === "skeleton", bot = S === "robot", knight = S === "knight";
+  const T = 2.7 * u, Rh = (bear ? 0.72 : bot ? 0.58 : 0.55) * u, hc = [0, -T - 0.2 * u - Rh], N = [0, -T + 0.3 * u];
+  const sw = (bear ? 0.95 : 0.88) * u * st, S0 = [-(sw - 0.2 * u), -T + 0.42 * u], H0 = [-0.42 * u * st, -0.18 * u];
+  const armR = (bones ? 0.13 : bot ? 0.22 : bear ? 0.3 : 0.24) * u * st, legR = (bones ? 0.15 : bot ? 0.26 : bear ? 0.36 : 0.3) * u * st;
+  const smoothK = bear ? 0.3 * u : bones ? 0.06 * u : bot ? 0 : 0.12 * u;
+  const parts = [];
+  const add = (name, prims, extra = {}) => { const p = { name, prims, holes: [], smooth: smoothK, ...extra }; parts.push(p); return p; };
+  // torso
+  let torso;
+  if (bones) torso = [Circ(0, -T + 0.95 * u, 0.78 * u * st), Circ(0, -T + 1.5 * u, 0.68 * u * st), Limb(0, -T + 1.6 * u, 0.16 * u, 0, -0.45 * u, 0.16 * u), Box(0, -0.25 * u, 0.62 * u * st, 0.3 * u, 0.2 * u)];
+  else if (bot) torso = [Box(0, -T / 2 - 0.05 * u, 0.86 * u * st, T / 2 + 0.05 * u, 0.15 * u), Box(0, -T - 0.08 * u, 0.25 * u, 0.2 * u, 0.06 * u)];
+  else if (bear) torso = [Circ(0, -0.95 * u, 1.05 * u * st), Circ(0, -2.0 * u, 0.86 * u * st)];
+  else torso = [Box(0, -T / 2 + 0.05 * u, 0.8 * u * st, T / 2 + 0.05 * u, 0.42 * u), ...(knight ? [Box(0, -T + 0.35 * u, 0.98 * u * st, 0.3 * u, 0.28 * u)] : [])];
+  const head = bones ? [Circ(hc[0], hc[1] - 0.05 * u, 0.52 * u), Box(hc[0], hc[1] + 0.38 * u, 0.32 * u, 0.2 * u, 0.12 * u)]
+    : bot ? [Box(hc[0], hc[1], 0.58 * u, 0.5 * u, 0.1 * u), Limb(hc[0], hc[1] - 0.45 * u, 0.1 * u, hc[0], hc[1] - 0.85 * u, 0.1 * u), Circ(hc[0], hc[1] - 0.92 * u, 0.15 * u)]
+    : bear ? [Circ(hc[0], hc[1], Rh), Circ(hc[0] - 0.58 * u, hc[1] - 0.52 * u, 0.27 * u), Circ(hc[0] + 0.58 * u, hc[1] - 0.52 * u, 0.27 * u), Circ(hc[0], hc[1] + 0.32 * u, 0.36 * u)]
+    : knight ? [Circ(hc[0], hc[1], Rh), Box(hc[0], hc[1] + 0.12 * u, 0.56 * u, 0.48 * u, 0.24 * u)]
+    : [Circ(hc[0], hc[1], Rh)];
+  const T_ = add("body", [...torso, ...(pinHead ? [] : [...head, Limb(0, hc[1], 0.22 * u, 0, -T + 0.2 * u, 0.22 * u)])], { kind: "torso" });
+  if (jack) T_.holes.push({ c: [hc[0], hc[1] - (bot ? 0.5 * u : Rh) + JR * 0.9], r: STRING_HOLE_D / 2, kind: "hang" });
+  if (pinHead) {
+    const Hd = add("head", [...head, Limb(hc[0], hc[1], 0.2 * u, N[0], N[1], JR)], { kind: "head", parent: T_, pivot: N, key: "tilt", sign: 1, joint: "N" });
+    T_.prims.push(Circ(N[0], N[1], JR)); Hd.holes.push({ c: N, r: PIN_HOLE_D / 2, kind: "pin", joint: "N" }); T_.holes.push({ c: N, r: PIN_HOLE_D / 2, kind: "pin", joint: "N" });
+  }
+  const letters = { armL: "A", armR: "B", foreL: "C", foreR: "D", legL: "E", legR: "F", shinL: "G", shinR: "H" };
+  for (const side of [-1, 1]) {
+    const sx = side < 0 ? 1 : -1; // left side of the page is x < 0
+    const sh = [S0[0] * sx, S0[1]], hp = [H0[0] * sx, H0[1]], adir = [-sx * sin(8 * D2R), cos(8 * D2R)];
+    const sideName = sx > 0 ? "L" : "R";
+    const limb = (base, dir, len1, len2, r, handOrFoot, keys, names, letterKeys) => {
+      const mid = [base[0] + dir[0] * len1, base[1] + dir[1] * len1], end = [base[0] + dir[0] * (len1 + len2), base[1] + dir[1] * (len1 + len2)];
+      const ext = handOrFoot(end), parent = T_;
+      T_.prims.push(Circ(base[0], base[1], JR));
+      const j1 = letters[letterKeys[0] + sideName];
+      if (full) {
+        const up = add(names[0] + " " + sideName, [Circ(base[0], base[1], JR), Limb(base[0], base[1], r * 1.08, mid[0], mid[1], r), Circ(mid[0], mid[1], JR)], { kind: "limb", parent, pivot: base, key: keys[0], sign: sx, joint: j1 });
+        const j2 = letters[letterKeys[1] + sideName];
+        const lo = add(names[1] + " " + sideName, [Circ(mid[0], mid[1], JR), Limb(mid[0], mid[1], r, end[0], end[1], r * 0.9), ...ext], { kind: "limb", parent: up, pivot: mid, key: keys[1], sign: sx * (keys[1] === "knee" ? -0.7 : 1), joint: j2 });
+        up.holes.push({ c: base, r: PIN_HOLE_D / 2, kind: "pin", joint: j1 }, { c: mid, r: PIN_HOLE_D / 2, kind: "pin", joint: j2 }); lo.holes.push({ c: mid, r: PIN_HOLE_D / 2, kind: "pin", joint: j2 });
+      } else {
+        const prims = [Circ(base[0], base[1], JR), Limb(base[0], base[1], r * 1.08, end[0], end[1], r * 0.9), ...ext];
+        const p = add(names[0] + " " + sideName, prims, { kind: "limb", parent, pivot: base, key: keys[0], sign: sx, joint: j1 });
+        p.holes.push({ c: base, r: PIN_HOLE_D / 2, kind: "pin", joint: j1 });
+        if (jack) { // a tab past the pivot, towards the middle of the body, with the string hole at its end
+          const td = [sx, -0.35], tl = hypot(...td), tip = [base[0] + td[0] / tl * JR * 1.5, base[1] + td[1] / tl * JR * 1.5];
+          p.prims.push(Limb(base[0], base[1], JR, tip[0], tip[1], STRING_HOLE_D / 2 + JOINT_MARGIN + 0.6)); p.holes.push({ c: tip, r: STRING_HOLE_D / 2, kind: "string" });
+        }
+      }
+      T_.holes.push({ c: base, r: PIN_HOLE_D / 2, kind: "pin", joint: j1 });
+    };
+    const hand = e => bones ? [Circ(e[0], e[1] + 0.12 * u, 0.22 * u), Limb(e[0], e[1] + 0.12 * u, 0.12 * u, e[0] - sx * 0.05 * u, e[1] + 0.45 * u, 0.1 * u)] : bot ? [Box(e[0], e[1] + 0.15 * u, 0.22 * u, 0.2 * u, 0.06 * u)] : [Circ(e[0], e[1] + 0.1 * u, (bear ? 0.36 : 0.28) * u)];
+    const foot = e => bones ? [Limb(e[0], e[1], 0.16 * u, e[0] - sx * 0.42 * u, e[1] + 0.12 * u, 0.12 * u)] : bot ? [Box(e[0] - sx * 0.15 * u, e[1] + 0.1 * u, 0.36 * u, 0.18 * u, 0.06 * u)] : bear ? [Circ(e[0] - sx * 0.08 * u, e[1] + 0.12 * u, 0.4 * u)] : [Limb(e[0], e[1], 0.24 * u, e[0] - sx * 0.38 * u, e[1] + 0.1 * u, 0.2 * u)];
+    limb(sh, adir, 1.45 * u, 1.35 * u, armR, hand, ["arm", "elbow"], ["upper arm", "forearm"], ["arm", "fore"]);
+    limb(hp, [0, 1], 1.85 * u, 1.75 * u, legR, foot, ["leg", "knee"], ["thigh", "shin"], ["leg", "shin"]);
+  }
+  return { parts, u, hc, T, jack };
+}
+
+// ---------------- fields per part ----------------
+function partField(p, h) {
+  let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF;
+  for (const q of p.prims) { const b = primBox(q); bx0 = min(bx0, b[0]); by0 = min(by0, b[1]); bx1 = max(bx1, b[2]); by1 = max(by1, b[3]); }
+  const pad = 3 + p.smooth, x0 = bx0 - pad, y0 = by0 - pad, nx = ceil((bx1 - bx0 + 2 * pad) / h) + 1, ny = ceil((by1 - by0 + 2 * pad) / h) + 1, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const x = x0 + i * h, y = y0 + j * h; let d = INF; for (const q of p.prims) d = smin(d === INF ? 1e6 : d, primDist(q, x, y), p.smooth); F[j * nx + i] = d; }
+  return { F, nx, ny, h, x0, y0 };
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+// ink may go where the card is at least INK_GAP inside the outline and INK_GAP clear of every hole
+const inkRoom = (p, x, y) => { let d = -sampleF(p.G, x, y); for (const H of p.holes) d = min(d, hypot(x - H.c[0], y - H.c[1]) - H.r); return d; };
+function clip(p, lines) {
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)) : 1;
+      for (let k = 0; k < n; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n;
+        if (inkRoom(p, x, y) > INK_GAP + 0.02) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; }
+      }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.02));
+}
+
+// ---------------- drawing helpers ----------------
+const circle = (x, y, r, n = 0) => { n = n || max(12, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+const arc = (x, y, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [x + rx * cos(a), y + ry * sin(a)]; });
+const rect = (x, y, hw, hh) => [[x - hw, y - hh], [x + hw, y - hh], [x + hw, y + hh], [x - hw, y + hh], [x - hw, y - hh]];
+function hatch(p, gap, ang, filter) { // parallel lines over the part's box, kept where filter(x, y) holds
+  const G = p.G, c = cos(ang), s = sin(ang), cx = G.x0 + G.nx * G.h / 2, cy = G.y0 + G.ny * G.h / 2, R = hypot(G.nx, G.ny) * G.h / 2, out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.3) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (filter(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } } if (run.length > 1) out.push(run); }
+  return out;
+}
+function grad(G, x, y) { const e = G.h; return [sampleF(G, x + e, y) - sampleF(G, x - e, y), sampleF(G, x, y + e) - sampleF(G, x, y - e)]; }
+// the line where the card is d mm in from the outline (an inner outline)
+const inset = (p, d) => contours(p.G, -d).map(l => { const q = smooth(l, 2); return [...q, q[0]]; });
+const axisOf = p => { const k = p.prims.find(q => q.t === "k"); return k ? [k.ax, k.ay, k.bx, k.by] : null; };
+
+// ---------------- the vampire: pointed ears on the head, and a cape that rides on the shoulder pins ----------------
+// rig() above is the jointed figure studio's own, unchanged, so the wardrobe's clothes and pin holes fit this doll too.
+const EAR = { count: [0.24, 0.15], kid: [0.14, 0.07], nosferatu: [0.38, 0.32] }; // tip, out past the head and up, in u
+const polySDF = pts => { // signed distance to a closed polygon (negative inside); typed arrays and no destructuring, it runs millions of times
+  const n = pts.length, X = new Float64Array(n), Y = new Float64Array(n);
+  for (let i = 0; i < n; i++) { X[i] = pts[i][0]; Y[i] = pts[i][1]; }
+  return (x, y) => {
+    let d = INF, s = 1;
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+      const ax = X[j], ay = Y[j], by = Y[i], ex = X[i] - ax, ey = by - ay, wx = x - ax, wy = y - ay, L2 = ex * ex + ey * ey;
+      let t = L2 > 1e-12 ? (wx * ex + wy * ey) / L2 : 0; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const dx = wx - ex * t, dy = wy - ey * t, dd = dx * dx + dy * dy; if (dd < d) d = dd;
+      const c1 = y >= ay, c2 = y < by, c3 = ex * wy > ey * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * sqrt(d);
+  };
+};
+function fieldOf(sdf, B, h) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[j * nx + i] = sdf(x0 + i * h, y0 + j * h);
+  return { F, nx, ny, h, x0, y0 };
+}
+function vampire(R, o) {
+  const u = R.u, hc = R.hc, T = R.T, st = o.stock;
+  const head = R.parts.find(p => p.kind === "head") || R.parts.find(p => p.kind === "torso");
+  const [eo, eu] = EAR[o.face];
+  for (const s of [-1, 1]) head.prims.push(Limb(s * 0.44 * u, hc[1] + 0.12 * u, 0.13 * u, s * (0.55 + eo) * u, hc[1] - eu * u, 0));
+  if (o.cape !== "on") return;
+  // the cape: a collar either side of the head, flaring from the shoulders to a shaped hem, pin holes at both shoulders and the neck
+  const torso = R.parts.find(p => p.kind === "torso"), sw = 0.88 * u * st, Lc = o.capelen, hemY = (-0.2 + 2.9 * Lc) * u, tall = o.collar === "tall";
+  const xr = (1.25 + 0.55 * Lc) * u * st;
+  const half = [[0, hc[1] + (tall ? 0.45 : 0.78) * u], tall ? [0.98 * u, hc[1] - 0.4 * u] : [1.02 * u, hc[1] + 0.38 * u],
+    tall ? [1.06 * u, hc[1] + 0.2 * u] : [1.12 * u, hc[1] + 0.62 * u], [sw + 0.14 * u, -T + 0.42 * u], [xr, hemY]];
+  const rnd = mulberry(o.seed * 31 + 5), hem = [], waves = 5, n = o.hem === "tatty" ? 26 : 80;
+  for (let i = 0; i <= n; i++) {
+    const t = i / n; let y = hemY + 0.14 * u * (1 - (2 * t - 1) ** 2);
+    if (o.hem === "bat") y -= 0.34 * u * Math.pow(abs(sin(PI * waves * t)), 0.7);
+    else if (o.hem === "points") { const f = waves * t % 1; y -= 0.36 * u * (1 - abs(2 * f - 1)); }
+    else if (o.hem === "tatty" && i % 2 && i < n) y -= (0.12 + 0.3 * rnd()) * u;
+    hem.push([xr * (1 - 2 * t), y]);
+  }
+  const poly = [...half, ...hem.slice(1, -1), ...half.slice().reverse().map(([x, y]) => [-x, y])].slice(0, -1);
+  let B = [INF, INF, -INF, -INF]; for (const [x, y] of poly) B = [min(B[0], x), min(B[1], y), max(B[2], x), max(B[3], y)];
+  const holes = torso.holes.filter(H => H.kind === "pin" && ["A", "B", "N"].includes(H.joint)).map(H => ({ ...H }));
+  R.parts.push({ name: "cape", kind: "cape", prims: [], sdf: polySDF(poly), sdfBox: [B[0] - 3, B[1] - 3, B[2] + 3, B[3] + 3], holes, smooth: 0, hemY, xr });
+}
+
+// ---------------- what the vampire draws ----------------
+function decorate(p, o, R, rnd) {
+  const u = R.u, det = o.detail, L = [], Sh = [], Co = [], hc = R.hc, T = R.T, st = o.stock, F = o.face, darkOn = o.coat === "hatched";
+  const head = p.kind === "head" || (p.kind === "torso" && (o.neck !== "pinned" || R.jack));
+  const torso = p.kind === "torso", limb = p.kind === "limb", cape = p.kind === "cape";
+  const X = (dx, dy) => [hc[0] + dx * u, hc[1] + dy * u]; // head-relative, in u
+  const pl = pts => pts.map(([a, b]) => X(a, b));
+  const fill = (gap, ang, f, to = Sh) => to.push(...hatch(p, gap / det, ang, (x, y) => sampleF(p.G, x, y) < -INK_GAP && f(x, y)));
+  const nearHole = (x, y, e) => p.holes.some(H => hypot(x - H.c[0], y - H.c[1]) < H.r + e);
+  if (head) {
+    const [eo, eu] = EAR[F];
+    for (const s of [-1, 1]) L.push([X(s * 0.52, 0.1), X(s * (0.55 + eo * 0.72), -eu * 0.6)]); // the fold inside each ear
+    if (F !== "nosferatu") { // a widow's peak, the hair combed straight back from it
+      const hp = pl(F === "kid" ? [[-0.53, -0.02], [-0.32, -0.26], [-0.1, -0.31], [0, -0.2], [0.1, -0.31], [0.32, -0.26], [0.53, -0.02]]
+        : [[-0.53, 0.04], [-0.38, -0.22], [-0.15, -0.31], [0, -0.1], [0.15, -0.31], [0.38, -0.22], [0.53, 0.04]]);
+      L.push(hp);
+      const hy = x => { if (x <= hp[0][0]) return hp[0][1]; for (let i = 1; i < hp.length; i++) if (x <= hp[i][0]) { const a = hp[i - 1], b = hp[i]; return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return hp.at(-1)[1]; };
+      const inHair = (x, y) => y < hy(x) && hypot(x - hc[0], y - hc[1]) < 0.56 * u;
+      const nS = round(22 * det);
+      for (let i = 0; i <= nS; i++) {
+        const x = hp[0][0] + (hp.at(-1)[0] - hp[0][0]) * i / nS, y = hy(x), cx = hc[0] + (x - hc[0]) * 0.3, cy = hc[1] - 0.8 * u, s = [[x, y]];
+        for (let k = 1; k <= 14; k++) { const f = k / 14, px = x + (cx - x) * f + (x - hc[0]) * 0.3 * sin(PI * f), py = y + (cy - y) * f; if (!inHair(px, py)) break; s.push([px, py]); }
+        if (s.length > 1) L.push(s);
+      }
+      if (darkOn) fill(0.75, PI / 3, inHair);
+    } else for (let i = 0; i < 3; i++) L.push(arc(hc[0], hc[1] + (-0.2 - i * 0.075) * u, (0.2 - i * 0.03) * u, 0.06 * u, 200, 340, 16)); // a bald, wrinkled brow
+    // brows, eyes and nose
+    for (const s of [-1, 1]) {
+      const e = X(s * 0.2, -0.01);
+      if (F === "count") {
+        L.push([X(s * 0.06, -0.09), X(s * 0.34, -0.21)], [X(s * 0.07, -0.07), X(s * 0.33, -0.18)]);
+        L.push(arc(e[0], e[1] + 0.05 * u, 0.12 * u, 0.09 * u, 200, 340, 14), arc(e[0], e[1] - 0.045 * u, 0.12 * u, 0.06 * u, 25, 155, 12));
+        Co.push(circle(e[0], e[1] + 0.005 * u, 0.035 * u), circle(e[0], e[1] + 0.005 * u, 0.015 * u));
+        Sh.push([X(s * 0.34, 0.1), X(s * 0.25, 0.22)]); // cheekbones
+      } else if (F === "kid") {
+        L.push(arc(e[0], e[1] - 0.17 * u, 0.1 * u, 0.04 * u, 200, 340, 12), circle(e[0], e[1], 0.11 * u), circle(e[0], e[1] + 0.025 * u, 0.06 * u), circle(e[0], e[1] + 0.025 * u, 0.035 * u));
+        L.push(circle(e[0] - 0.035 * u, e[1] - 0.025 * u, 0.018 * u));
+        const ck = X(s * 0.31, 0.19); Co.push(circle(ck[0], ck[1], 0.06 * u), circle(ck[0], ck[1], 0.03 * u));
+      } else {
+        L.push([X(s * 0.05, -0.06), X(s * 0.2, -0.13), X(s * 0.34, -0.1)], [X(s * 0.06, -0.04), X(s * 0.2, -0.1)]);
+        L.push(circle(e[0], e[1], 0.05 * u)); Co.push(circle(e[0], e[1], 0.022 * u));
+        Sh.push(arc(e[0], e[1] + 0.02 * u, 0.1 * u, 0.08 * u, 20, 160, 12), arc(e[0], e[1] + 0.03 * u, 0.11 * u, 0.11 * u, 30, 150, 12));
+      }
+    }
+    L.push(F === "kid" ? arc(hc[0], hc[1] + 0.11 * u, 0.03 * u, 0.025 * u, 20, 160, 8) : F === "count" ? pl([[0, 0], [-0.05, 0.17], [0.02, 0.19]]) : pl([[0, -0.04], [-0.07, 0.22], [0.02, 0.25], [0.05, 0.2]]));
+    // the mouth and the fangs, each fang its own closed shape so it reads at a glance
+    const ym = hc[1] + (F === "kid" ? 0.3 : 0.33) * u, fl = (F === "kid" ? 0.07 : 0.11) * u * o.fang;
+    const my = F === "kid" ? x => ym - 0.07 * u + 0.07 * u * sqrt(max(0, 1 - (x / (0.15 * u)) ** 2)) : x => ym - 0.025 * u * (x / (0.2 * u)) ** 2;
+    const mw = F === "kid" ? 0.15 : 0.2, mouth = []; for (let i = 0; i <= 16; i++) { const x = (-mw + 2 * mw * i / 16) * u; mouth.push([hc[0] + x, my(x)]); }
+    L.push(mouth);
+    const tips = [];
+    if (F === "nosferatu") for (const s of [-1, 1]) { const x = s * 0.026 * u, w = 0.022 * u; L.push([[hc[0] + x - w, my(x)], [hc[0] + x - w, my(x) + fl * 0.8], [hc[0] + x, my(x) + fl], [hc[0] + x + w, my(x) + fl * 0.8], [hc[0] + x + w, my(x)]]); tips.push([hc[0] + x, my(x) + fl]); }
+    else for (const s of [-1, 1]) { const x = s * (F === "kid" ? 0.07 : 0.09) * u, w = 0.032 * u; L.push([[hc[0] + x - w, my(x - w)], [hc[0] + x, my(x) + fl], [hc[0] + x + w, my(x + w)]]); tips.push([hc[0] + x, my(x) + fl]); }
+    if (o.blood === "on") { const [bx, by] = tips[F === "nosferatu" ? 0 : 1], r = 0.028 * u, cy = by + 0.07 * u; Co.push([[bx, cy - 2.3 * r], ...arc(bx, cy, r, r, -50, 230, 14), [bx, cy - 2.3 * r]]); }
+  }
+  if (torso) {
+    const A = (x, y) => [x * u, -T + y * u]; // in u, x from the middle, y down from the top of the body
+    const Vt = 0.08, Vb = 1.45, vw = 0.42 * st;
+    // the neck pin and the head's neck cover the top of the body, so the shirt front starts below them
+    L.push([A(-vw, Vt), A(0, Vb), A(vw, Vt)]);
+    const lapel = s => [A(s * vw, Vt), A(s * 0.68 * st, 0.62), A(s * 0.44 * st, 0.8), A(0, Vb)];
+    for (const s of [-1, 1]) L.push(lapel(s));
+    const inV = (x, y) => { const d = (y + T) / u; if (d < Vt || d > Vb) return false; return abs(x) / u < vw * (Vb - d) / (Vb - Vt); };
+    const lapSD = [polySDF(lapel(-1)), polySDF(lapel(1))];
+    const by = 0.7;
+    for (const s of [-1, 1]) L.push([A(0, by), A(s * 0.16, by - 0.08), A(s * 0.16, by + 0.08), A(0, by)]);
+    L.push(circle(...A(0, by), 0.035 * u));
+    const buttons = [1.68, 1.98].flatMap(y => [-1, 1].map(s => A(s * 0.2, y)));
+    for (const b of buttons) L.push(circle(b[0], b[1], 0.045 * u));
+    if (o.medal === "on") {
+      for (const s of [-1, 1]) for (let t = 0.04; t < 0.93; t += 0.075) { const [x, y] = A(s * 0.34 * (1 - t), 0.5 + 0.5 * t * t); Co.push(circle(x, y, 0.016 * u, 8)); }
+      const [mx, my] = A(0, 1.12); Co.push(circle(mx, my, 0.13 * u), circle(mx, my, 0.1 * u));
+      const star = []; for (let i = 0; i <= 10; i++) { const a = -PI / 2 + i * PI / 5, r = (i % 2 ? 0.035 : 0.085) * u; star.push([mx + r * cos(a), my + r * sin(a)]); } Co.push(star);
+    } else for (const s of [-1, 0, 1]) { const zz = []; for (let k = 0, y = by + 0.12; y < Vb - 0.12; y += 0.06, k++) zz.push(A(s * 0.07 + (k % 2 ? 0.035 : -0.035), y)); L.push(zz); }
+    if (darkOn) {
+      fill(0.95, -PI / 4, (x, y) => !inV(x, y) && lapSD[0](x, y) > 0.3 && lapSD[1](x, y) > 0.3 && !buttons.some(b => hypot(x - b[0], y - b[1]) < 0.045 * u + 0.6) && !nearHole(x, y, 1.6));
+      fill(0.6, PI / 4, (x, y) => lapSD[0](x, y) < -0.3 || lapSD[1](x, y) < -0.3); // satin lapels
+    }
+  }
+  if (limb) {
+    const k = p.prims.find(q => q.t === "k"), len = hypot(k.bx - k.ax, k.by - k.ay), d = [(k.bx - k.ax) / len, (k.by - k.ay) / len], nn = [-d[1], d[0]];
+    const tAt = (x, y) => (x - k.ax) * d[0] + (y - k.ay) * d[1], at = (t, w) => [k.ax + d[0] * t + nn[0] * w, k.ay + d[1] * t + nn[1] * w];
+    const arm = /arm/.test(p.name), hasEnd = !R.parts.some(q => q.name.startsWith("forearm")) || /forearm|shin/.test(p.name), r = k.rb + 1;
+    if (arm) {
+      const cuff = hasEnd ? len - 0.12 * u : INF;
+      if (hasEnd) {
+        const zz = []; for (let i = 0; i <= 10; i++) zz.push(at(cuff + (i % 2 ? 0.07 * u : 0.02 * u), -r + 2 * r * i / 10)); L.push(zz, [at(cuff, -r), at(cuff, r)]);
+        { const hand = p.prims.filter(q => q.t === "c").at(-1); for (const i of [-1, 0, 1]) L.push([[hand.x + i * 0.08 * u, hand.y + 0.06 * u], [hand.x + i * 0.11 * u, hand.y + 0.3 * u]]); }
+      }
+      if (darkOn) fill(0.95, -PI / 4, (x, y) => tAt(x, y) < cuff - 0.6 && !nearHole(x, y, 1.6));
+    } else {
+      const boot = hasEnd ? (/shin/.test(p.name) ? len * 0.5 : len * 0.76) : INF;
+      L.push(Array.from({ length: 12 }, (_, i) => at(0.15 * u + (min(boot, len) - 0.2 * u) * i / 11, 0)));
+      if (hasEnd) L.push([at(boot, -r), at(boot, r)], [at(boot + 0.08 * u, -r), at(boot + 0.08 * u, r)]);
+      if (darkOn) { fill(1.25, -PI / 4, (x, y) => tAt(x, y) < boot - 0.6 && abs((x - k.ax) * nn[0] + (y - k.ay) * nn[1]) > 0.9 && !nearHole(x, y, 1.6)); if (hasEnd) fill(0.6, PI / 4, (x, y) => tAt(x, y) > boot + 0.08 * u + 0.6); }
+    }
+  }
+  if (cape) {
+    const shoulderY = -T + 0.42 * u, top = shoulderY + 0.3 * u, hem = p.hemY;
+    L.push(...inset(p, 1.8)); // a trim line all round
+    for (let i = 0; i < 8; i++) {
+      const f = ((i + 0.5) / 8) * 2 - 1, x0 = f * 0.75 * u * st, x1 = f * p.xr * 0.9, s = [];
+      for (let k = 0; k <= 24; k++) { const t = k / 24; s.push([x0 + (x1 - x0) * t + 0.06 * u * sin(t * PI * 2 + i * 1.7) * t, top + (hem - top) * t]); }
+      L.push(s);
+    }
+    const collar = (x, y) => y < shoulderY - 0.05 * u && !nearHole(x, y, 3.5) && sampleF(p.G, x, y) < -2.6;
+    if (o.lining === "on") fill(1.0, PI / 2.6, collar, Co); else if (darkOn) fill(1.1, PI / 2.6, collar);
+    if (o.capeink === "hatched") fill(1.3, PI * 0.44, (x, y) => y >= shoulderY - 0.05 * u && !nearHole(x, y, 4) && sampleF(p.G, x, y) < -2.6);
+  }
+  if (o.shade === "rim") Sh.push(...hatch(p, 0.9 / det, -PI / 4, (x, y) => { const f = sampleF(p.G, x, y); if (f > -INK_GAP || f < -2.4) return false; const [gx, gy] = grad(p.G, x, y); return (gx + gy) / (hypot(gx, gy) || 1) > 0.35; }));
+  return { line: L, shade: Sh, colour: o.accent === "on" ? Co : [] };
+}
+
+// the pen outline of a part, d mm inside its cut line (or on it at 0), from the part's own distance field
+const outlineOf = (p, d, G = p.G) => d < 0.05 ? [p.outline] : contours(G, -d).filter(l => abs(loopArea(l)) > 1).map(l => smooth(l, 1));
+// ---------------- build ----------------
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [], rnd = mulberry(o.seed * 101 + 7);
+  const R = rig(o), h = max(0.2, o.height / 900);
+  vampire(R, o);
+  if (o.sheet === "doll") R.parts = R.parts.filter(p => p.kind !== "cape"); else if (o.sheet === "cape" && o.cape === "on") R.parts = R.parts.filter(p => p.kind === "cape");
+  let onePiece = 0, minMargin = INF, minR = INF;
+  for (const p of R.parts) {
+    p.G = p.sdf ? fieldOf(p.sdf, p.sdfBox, h) : partField(p, h);
+    const loops = contours(p.G, 0).filter(l => abs(loopArea(l)) > 1);
+    if (loops.length === 1) onePiece++;
+    loops.sort((a, b) => abs(loopArea(b)) - abs(loopArea(a)));
+    p.outline = rdp([...smooth(loops[0] || [], 1), (loops[0] || [[0, 0]])[0]], 0.02).slice(0, -1);
+    for (const H of p.holes) minMargin = min(minMargin, -sampleF(p.G, H.c[0], H.c[1]) - H.r);
+    for (const q of p.prims) minR = min(minR, q.t === "c" ? q.r : q.t === "k" ? min(q.ra, q.rb) : min(q.hw, q.hh));
+    let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF; for (const [x, y] of p.outline) { bx0 = min(bx0, x); by0 = min(by0, y); bx1 = max(bx1, x); by1 = max(by1, y); }
+    p.box = [bx0, by0, bx1, by1];
+    const d = decorate(p, o, R, rnd);
+    p.ink = { line: clip(p, d.line), shade: clip(p, d.shade), colour: clip(p, d.colour) };
+    if (o.letters === "on") for (const Hh of p.holes) if (Hh.joint && !(p.kind === "torso" && Hh.joint === "N")) {
+      const cx = (bx0 + bx1) / 2, cy = (by0 + by1) / 2, dx = cx - Hh.c[0], dy = cy - Hh.c[1], l = hypot(dx, dy) || 1, sz = 2.6;
+      let best = null; for (let k = 0; k < 24 && !best; k++) { const t = JR + 1.2 + k * 0.5, x = Hh.c[0] + dx / l * t, y = Hh.c[1] + dy / l * t; if ([[-1.5, -1.8], [1.5, -1.8], [-1.5, 1.8], [1.5, 1.8], [0, 0]].every(([ex, ey]) => inkRoom(p, x + ex, y + ey) > INK_GAP + 0.3)) best = [x, y]; }
+      if (best) p.ink.line.push(...clip(p, letter(Hh.joint, best[0], best[1], sz)));
+    }
+  }
+  // lay the parts out on the sheet in shelves, tallest first
+  const order = [...R.parts].sort((a, b) => (b.box[3] - b.box[1]) - (a.box[3] - a.box[1]));
+  let x = m, y = m, rowH = 0, fits = true;
+  for (const p of order) {
+    const w = p.box[2] - p.box[0], hh = p.box[3] - p.box[1];
+    if (x + w > W - m + 1e-6) { x = m; y += rowH + PART_GAP; rowH = 0; }
+    if (y + hh > H - m + 1e-6 || w > W - 2 * m) fits = false;
+    p.at = [x - p.box[0], y - p.box[1]]; x += w + PART_GAP; rowH = max(rowH, hh);
+  }
+  if (!fits) { // the layout grows about in step with the height, so scale the height by the overflow
+    const need = y + rowH - m, room = H - 2 * m, wide = max(...R.parts.map(p => p.box[2] - p.box[0])), k = min(room / need, (W - 2 * m) / wide);
+    notes.push(`the parts do not all fit on this page: try a height of about ${max(110, floor(o.height * k * 0.97 / 5) * 5)} mm, or a bigger page`); }
+  const mv = p => q => [q[0] + p.at[0], q[1] + p.at[1]];
+  const layers = { line: [], shade: [], colour: [], outline: [], cut: [] };
+  for (const p of R.parts) {
+    const f = mv(p);
+    for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) layers[k].push([l.map(f), false]);
+    layers.cut.push([p.outline.map(f), true]);
+    if (o.outlines === "on") for (const l of outlineOf(p, o.outlinein)) layers.outline.push([l.map(f), true]);
+    for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]);
+  }
+  layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
+  // ---------------- gates ----------------
+  let gapMin = INF;
+  for (let i = 0; i < R.parts.length; i++) for (let j = i + 1; j < R.parts.length; j++) {
+    const a = R.parts[i], b = R.parts[j], A = [a.box[0] + a.at[0], a.box[1] + a.at[1], a.box[2] + a.at[0], a.box[3] + a.at[1]], B = [b.box[0] + b.at[0], b.box[1] + b.at[1], b.box[2] + b.at[0], b.box[3] + b.at[1]];
+    gapMin = min(gapMin, max(B[0] - A[2], A[0] - B[2], B[1] - A[3], A[1] - B[3]));
+  }
+  let inkBad = 0, inkN = 0;
+  for (const p of R.parts) for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) for (const [x, y] of l) { inkN++; if (inkRoom(p, x, y) < INK_GAP - 0.05) inkBad++; }
+  const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
+  const pen = ["line", "shade", "colour"].reduce((a, k) => a + layers[k].reduce((s, [q, cl]) => s + plen(q, cl), 0), 0) / 1000, cutm = layers.cut.reduce((s, [q, cl]) => s + plen(q, cl), 0) / 1000;
+  const pts = Object.values(layers).reduce((a, L) => a + L.reduce((s, [q]) => s + q.length, 0), 0);
+  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py] of q) if (px < m - 0.01 || py < m - 0.01 || px > W - m + 0.01 || py > H - m + 0.01) inside = false;
+  const bbox = L => { let a = INF, b = INF, c = -INF, d = -INF; for (const [q] of L) for (const [px, py] of q) { a = min(a, px); b = min(b, py); c = max(c, px); d = max(d, py); } return [a, b, c, d].map(v => v.toFixed(2)).join(","); };
+  const ms = performance.now() - t0, pins = R.parts.filter(p => p.kind !== "cape").reduce((n, p) => n + p.holes.filter(Hh => Hh.kind === "pin").length, 0) / 2; // the cape rides on the doll's own pins
+  if (R.parts.some(p => p.kind === "cape")) notes.push("the cape has no pins of its own: it goes on the shoulder pins (A, B) and the neck pin (N), behind the body");
+  gates.push(["build time under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`]);
+  gates.push(["total pen length under 150 m (about 45 minutes of plotting, assumed)", pen < 150, `${pen.toFixed(1)} m`]);
+  gates.push(["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]);
+  gates.push(["every part is one piece with one closed outline", onePiece === R.parts.length, `${onePiece} of ${R.parts.length}`]);
+  gates.push([`every hole has at least ${JOINT_MARGIN} mm of card round it (assumed)`, minMargin >= JOINT_MARGIN - 0.1, `least ${minMargin.toFixed(2)} mm`]);
+  gates.push([`no part narrower than ${2 * MIN_HALF} mm (assumed)`, minR >= MIN_HALF - 1e-9, `narrowest ${(2 * minR).toFixed(1)} mm`]);
+  gates.push([`parts at least ${PART_GAP} mm apart and inside the margin`, fits && inside && gapMin >= PART_GAP - 0.01, `closest ${gapMin.toFixed(1)} mm`]);
+  gates.push([`no ink within ${INK_GAP} mm of a cut line or hole (assumed)`, inkBad === 0, `${inkBad} of ${inkN} points`]);
+  const penBox = [[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET]].map(p => p.map(v => v.toFixed(2)).join(",")).join(",");
+  gates.push(["trim frame and pen corner ticks have the same bounding box", bbox([layers.cut.at(-1)]) === penBox, bbox([layers.cut.at(-1)])]);
+  return { W, H, o, ms, R, layers, gates, notes, pen, cutm, pins };
+}
+
+// ---------------- draw + export ----------------
+let anim = 0, phase = 0;
+function poseXf(p, pose) {
+  if (!p.parent) return q => q;
+  const up = poseXf(p.parent, pose), a = (pose[p.key] || 0) * D2R * p.sign, c = cos(a), s = sin(a), [px, py] = p.pivot;
+  return q => up([px + (q[0] - px) * c - (q[1] - py) * s, py + (q[0] - px) * s + (q[1] - py) * c]);
+}
+function draw(r, pose) {
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const path = (q, cl) => { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); };
+  const COL = { line: "#26200f", shade: "#6b6356", colour: "#b0126b" };
+  if (r.o.view === "built") {
+    pose = pose || { arm: r.o.arms, elbow: r.o.bend, leg: r.o.legs, knee: r.o.bend, tilt: r.o.tilt };
+    const P = r.R.parts, by = P.flatMap(p => p.outline.map(poseXf(p, { arm: 0, leg: 0, elbow: 0, knee: 0, tilt: 0 }))), ys = by.map(q => q[1]);
+    const top = min(...ys), bot = max(...ys), sc = min(1, (r.H - 2 * r.o.margin) / (bot - top) * 0.82), ox = r.W / 2, oy = r.H / 2 - sc * (top + bot) / 2;
+    // jumping jack limbs hang behind the body; a doll's limbs sit in front
+    const back = P.filter(p => p.kind === "limb" && r.R.jack), front = P.filter(p => p.kind !== "cape" && !(p.kind === "limb" && r.R.jack));
+    const ordered = [...P.filter(p => p.kind === "cape"), ...back, ...front.filter(p => p.kind === "torso"), ...front.filter(p => p.kind === "head"), ...front.filter(p => p.kind === "limb" && /upper|thigh/.test(p.name)), ...front.filter(p => p.kind === "limb" && !/upper|thigh/.test(p.name))];
+    for (const p of ordered) {
+      const f = poseXf(p, pose), g = q => { const [x, y] = f(q); return [ox + sc * x, oy + sc * y]; };
+      c.beginPath(); path(p.outline.map(g), true); c.fillStyle = "#fbf7ec"; c.fill(); c.strokeStyle = "#26200f"; c.lineWidth = 0.35; c.setLineDash([]); c.stroke();
+      for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.35; c.beginPath(); for (const l of p.ink[key]) path(l.map(g), false); c.stroke(); }
+      for (const Hh of p.holes) { const [x, y] = g(Hh.c); c.beginPath(); c.arc(x, y, Hh.kind === "pin" ? 1.6 : Hh.r, 0, TAU); c.fillStyle = Hh.kind === "pin" ? "#b8902f" : "#d9cdb0"; c.fill(); }
+    }
+    if (r.R.jack) { c.strokeStyle = "rgba(122,92,0,0.6)"; c.lineWidth = 0.3; }
+  } else {
+    for (const key of ["shade", "colour", "line", "outline"]) { c.strokeStyle = key === "outline" ? "#1d3a8a" : COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
+    c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(q, cl); c.stroke(); c.setLineDash([]);
+  }
+  const lenm = L => L.reduce((a, [q, cl]) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + s; }, 0) / 1000;
+  $("stats").innerHTML = `vampire ${r.R.jack ? "jumping jack" : "doll"}: <b>${r.R.parts.length}</b> parts, <b>${r.pins}</b> split pins${r.R.jack ? ", 4 string holes and a hanging hole" : ""} · ${r.ms.toFixed(0)} ms<br>`
+    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · ${r.layers.outline.length ? `outline pen: <b>${lenm(r.layers.outline).toFixed(1)} m</b> · ` : ""}cut: <b>${r.cutm.toFixed(1)} m</b>, ${r.layers.cut.length} paths<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade },
+  { name: "colour", colour: "b0126b", w: 0.4, paths: r.layers.colour }, { name: "outline", colour: "1d3a8a", w: 0.4, paths: r.layers.outline }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length);
+// Pen files carry four corner ticks at 1 mm. The cut layer carries its own closed trim rectangle at 1 mm, so its box matches, and never gets ticks (they would slice the card).
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG vampire paper doll${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["face", "fang", "blood", "coat", "medal", "cape", "hem", "collar", "capelen", "capeink", "lining", "sheet", "kind", "joints", "neck", "height", "stock", "seed", "detail", "shade", "accent", "letters", "outlines", "outlinein", "view", "arms", "legs", "bend", "tilt", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+const POSE_ONLY = new Set(["arms", "legs", "bend", "tilt", "view"]);
+function run(k) { sync(); stopWiggle(); if (last && POSE_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+function stopWiggle() { if (anim) cancelAnimationFrame(anim); anim = 0; $("wiggle").textContent = "Wiggle it"; }
+$("wiggle").onclick = () => {
+  if (anim) { stopWiggle(); return; }
+  if (!last) return;
+  $("view").value = "built"; last.o.view = "built"; $("wiggle").textContent = "Stop";
+  const step = () => { phase += 0.06; const s = (1 - cos(phase)) / 2, jack = last.R.jack;
+    draw(last, jack ? { arm: 12 + 135 * s, leg: 5 + 45 * s, elbow: 0, knee: 0, tilt: 0 } : { arm: 20 + 120 * s, leg: 5 + 30 * (1 - s), elbow: 10 + 70 * s, knee: 10 + 40 * (1 - s), tilt: 15 * sin(phase * 0.5) });
+    anim = requestAnimationFrame(step); };
+  anim = requestAnimationFrame(step);
+};
+
+const BASE = { face: "count", fang: 1, blood: "on", coat: "hatched", medal: "on", cape: "on", hem: "bat", collar: "tall", capelen: 0.9, capeink: "hatched", lining: "on", sheet: "all",
+  kind: "doll", joints: "full", neck: "pinned", height: 230, stock: 0.95, seed: 13, detail: 1, shade: "off", accent: "on", letters: "on", outlines: "off", outlinein: 0.6, view: "built", arms: 35, legs: 10, bend: 20, tilt: 0, page: "280x280", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  count: P({}),
+  kid: P({ face: "kid", medal: "off", hem: "points", collar: "low", capelen: 0.8, capeink: "folds", stock: 1.05, height: 220 }),
+  nosferatu: P({ face: "nosferatu", blood: "off", medal: "off", hem: "tatty", collar: "low", capelen: 1.05, stock: 0.8, height: 240 }),
+  colour: P({ coat: "outline", capeink: "folds", lining: "off", accent: "off", blood: "off" }),
+  jack: P({ kind: "jack", height: 205, capelen: 0.8 }),
+  capesheet: P({ height: 300, sheet: "cape" }),
+  mini: P({ height: 150, page: "190x250", joints: "simple", detail: 0.8, capelen: 0.8 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `vampire-${r.o.face}-${r.o.kind}-h${r.o.height}${r.o.sheet === "all" ? "" : "-" + r.o.sheet}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, rig };
+run();
+</script>
+</body>
+</html>

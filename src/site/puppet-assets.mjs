@@ -8,10 +8,10 @@ const VERSION=3;
 const pathData=(points,closed=false)=>'M'+points.map(p=>p.map(v=>Number(v.toFixed(3))).join(',')).join(' L')+(closed?' Z':'');
 export function bakePuppets({catalogue,repo,here}){
  const require=createRequire(path.join(here,'site/package.json')), {createCanvas,Path2D}=require('@napi-rs/canvas');
- for(const collection of catalogue.filter(c=>['figure','animals','lino'].includes(c.id))){
+ for(const collection of catalogue.filter(c=>['figure','animals','lino','overlay'].includes(c.id))){
   const source=fs.readFileSync(path.join(repo,collection.page),'utf8');
   for(const s of collection.samples){
-   const lino=collection.id==='lino',property=lino?'weeding':'motion',url=`site/art/${s.id}-${property}.json`,file=path.join(repo,url);
+   const lino=collection.id==='lino',property=collection.id==='overlay'?'reveal':lino?'weeding':'motion',url=`site/art/${s.id}-${property}.json`,file=path.join(repo,url);
    const key=crypto.createHash('sha256').update(JSON.stringify([VERSION,s.sourceHash,s.settings])).digest('hex');
    if(fs.existsSync(file)&&JSON.parse(fs.readFileSync(file,'utf8')).key===key){s[property]=url;continue}
    const els=new Map();
@@ -32,6 +32,10 @@ export function bakePuppets({catalogue,repo,here}){
    for(const [id,value] of Object.entries(s.settings)){if(!els.has(id))throw Error('Unknown puppet control '+id);els.get(id).value=value}
    const r=ctx.__studio.build(ctx.__studio.read());
    if(r.error||r.gates.some(g=>!g[1]))throw Error('Puppet build gate failed: '+s.id);
+   if(collection.id==='overlay'){
+    const data={key,sourceHash:s.sourceHash,method:r.o.method,pitch:r.o.pitch,cell:r.o.cell,pivot:r.res.pivot,cut:r.res.cut,positions:r.res.positions||4,reads:r.res.reads};
+    fs.writeFileSync(file,JSON.stringify(data));s.reveal=url;console.log('reveal: '+s.id);continue;
+   }
    if(lino){
     const X=x=>r.mirrored?r.W-x:x;
     const loops=r.decals.flatMap(d=>d.wasteLoops.map(q=>q.map(([x,y])=>[X(x+d.x),y+d.y])));

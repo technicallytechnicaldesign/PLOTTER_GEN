@@ -3,6 +3,7 @@
   "id": "animals-zebra",
   "title": "Zebra",
   "preset": "zebra",
+  "content": {},
   "settings": {
     "length": "240",
     "stock": "1",
@@ -27,7 +28,7 @@
     "page": "280x280",
     "ticks": "split"
   },
-  "sourceHash": "2814a9cbf2cc393f969377451cad2de5c79c9ab1403c7fd098233a0e3c5567b6",
+  "sourceHash": "d111e7c62e67d5f9c526ddb695ed3eeb7c1545fe613b2831d1ad756b6e725a4b",
   "svg": "site/art/animals-zebra.svg",
   "image": "site/art/animals-zebra.webp",
   "page": "280x280",
