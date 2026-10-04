@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forks studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<body>
+<header>
+  <h1>Forks studio</h1>
+  <p class="sub">A mind that can be copied branches like a family tree, uploads slice by slice, and can run as lines of code. Three ways to draw a self that does not stay single, all in profile, all for a pen plotter.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="family">Family tree</button><button data-preset="swarm">Swarm</button><button data-preset="theseus">Ship of Theseus</button><button data-preset="twins">Twins</button><button data-preset="dissolve">Dissolve</button><button data-preset="source">Source</button><button data-preset="withheld">Withheld (A5)</button></div>
+  </fieldset>
+  <fieldset><legend>The sheet</legend>
+    <label>Drawing <select id="view"><option value="lineage">Lineage: forks and merges</option><option value="upload">Upload: gradual transfer</option><option value="code">Mind as code</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="12"></label>
+    <label>Labels and captions <select id="labels"><option value="on">on</option><option value="off">off</option></select></label>
+    <p class="hint">The three drawings have their own groups below. Controls for a drawing you are not looking at stay open, and do nothing until you switch to it. Labels apply to Lineage and Upload.</p>
+  </fieldset>
+  <fieldset><legend>Lineage</legend>
+    <label>Generations <output id="o-gens"></output><input type="range" id="gens" min="3" max="9" step="1" value="6"></label>
+    <label>Chance of a fork <output id="o-fork"></output><input type="range" id="fork" min="0" max="0.8" step="0.05" value="0.45"></label>
+    <label>Chance of a merge <output id="o-merge"></output><input type="range" id="merge" min="0" max="0.5" step="0.05" value="0.15"></label>
+    <label>Most lanes alive at once <output id="o-lanes"></output><input type="range" id="lanes" min="2" max="10" step="1" value="6"></label>
+    <label>Drift per generation <output id="o-drift"></output><input type="range" id="drift" min="0" max="1" step="0.05" value="0.35"></label>
+    <label>Nodes <select id="nodes"><option value="head">profile heads</option><option value="ring">heads in a ring</option><option value="dot">dots, the graph alone</option></select></label>
+    <p class="hint">Lineage only. Each head drifts a little from its parent, and the hatching inside it is denser the further it has wandered from the original. The colour line is the original's own line of descent.</p>
+  </fieldset>
+  <fieldset><legend>Upload</legend>
+    <label>Transferred <output id="o-u"></output><input type="range" id="u" min="0" max="1" step="0.01" value="0.6"></label>
+    <label>Method <select id="method"><option value="gradual">slice by slice, from the crown down</option><option value="copy">scan and copy, the original stays</option><option value="dissolve">the original dissolves into points</option></select></label>
+    <label>Copy is drawn as <select id="grain"><option value="lattice">a lattice</option><option value="voxels">voxels</option><option value="scan">scan lines</option></select></label>
+    <p class="hint">Upload only. In the slice-by-slice method the copy ends up as the whole head, and nothing was ever swapped in one go.</p>
+  </fieldset>
+  <fieldset><legend>Code</legend>
+    <label>Text height (mm) <output id="o-texth"></output><input type="range" id="texth" min="2.2" max="6" step="0.1" value="3"></label>
+    <label>Outline of the head <select id="outline"><option value="on">drawn</option><option value="off">left out, the code makes the shape</option></select></label>
+    <label>Withheld lines <select id="redact"><option value="off">off</option><option value="on">some lines hatched out</option></select></label>
+    <p class="hint">Mind as code only. The lines are written fresh for every seed. One line is picked out in the colour pen.</p>
+  </fieldset>
+  <fieldset><legend>Drawing</legend>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2" step="0.05" value="0.8"></label>
+    <label>Heads face <select id="facing"><option value="right">right</option><option value="left">left</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="210x297">A4 portrait</option><option value="148x210">A5 portrait</option><option value="280x280">12 x 12 mat</option><option value="297x210">A4 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="6" max="30" step="1" value="12"></label>
+    <label>Colour pen <select id="inkcol"><option value="c8402f">red</option><option value="2a9d8f">teal</option><option value="2f6db5">blue</option><option value="d9822b">amber</option></select></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Three pens: a 0.4 line pen, a 0.3 shade pen and one colour pen. There is no cut layer. The split export saves one SVG per pen, with four corner ticks so every file registers in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1075"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: the head is one smooth curve through about thirty control points, nudged by seven small numbers (forehead slope, nose length and tip, lips, chin, skull length, neck). A lineage grows from one original, each generation forking, ending or merging at random, and every child carries its parent's seven numbers plus a little drift. Upload hatches the head with offset copies of its own outline, denser at the back of the skull and under the jaw, and the copy is a lattice, a set of voxels or scan lines clipped to the same shape. In the code view each line of text is fitted to the width of the head at its own height, so the letters make the profile. All lettering is single-stroke, so it plots. Pen lengths and the gates above are measured from the drawing itself.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, hypot, round, abs, PI, imul, atan2 } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2;
+const clamp = (v, a, b) => max(a, min(b, v));
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = imul(s ^ s >>> 15, 1 | s); t = t + imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth01 = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+// ---------------- small geometry kit (paths are [[x, y], ...], millimetres, y down) ----------------
+const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl && q.length > 1) s += hypot(q[0][0] - q[q.length - 1][0], q[0][1] - q[q.length - 1][1]); return s; };
+const bboxOf = (P, pad = 0) => { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of P) { if (x < a) a = x; if (y < b) b = y; if (x > c) c = x; if (y > d) d = y; } return [a - pad, b - pad, c + pad, d + pad]; };
+const inPoly = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const a = pts[j], b = pts[i]; if ((a[1] > y) !== (b[1] > y) && x < a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1])) c = !c; } return c; };
+function densO(P, step) { const out = []; for (let i = 0; i < P.length - 1; i++) { const a = P[i], b = P[i + 1], n = max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } out.push(P[P.length - 1]); return out; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const px = pts[i][0], py = pts[i][1], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+// Cut a path into the runs where pred(x, y) holds. Samples every `step` mm, then finds each boundary by bisection.
+function clipRuns(P, pred, out, step = 0.3, minLen = 0.5) {
+  const S = densO(P, step); let run = [], prev = null, prevIn = false;
+  const edge = (inP, outP) => { let lo = inP, hi = outP; for (let i = 0; i < 5; i++) { const m = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2]; if (pred(m[0], m[1])) lo = m; else hi = m; } return lo; };
+  const flush = () => { if (run.length > 1 && plen(run, false) >= minLen) out.push([rdp(run, 0.02), false]); run = []; };
+  for (const p of S) {
+    const ins = pred(p[0], p[1]);
+    if (ins) { if (!prevIn && prev) run.push(edge(p, prev)); run.push(p); }
+    else if (prevIn) { run.push(edge(prev, p)); flush(); }
+    prev = p; prevIn = ins;
+  }
+  flush();
+}
+function dashPath(P, on, off, out) {
+  let drawing = true, rem = on, cur = [P[0]];
+  for (let i = 0; i < P.length - 1; i++) {
+    const a = P[i], b = P[i + 1], Ln = hypot(b[0] - a[0], b[1] - a[1]); let pos = 0;
+    if (Ln < 1e-9) continue;
+    while (Ln - pos > rem) {
+      pos += rem; const t = pos / Ln, q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      if (drawing) { cur.push(q); out.push([cur, false]); cur = null; } else cur = [q];
+      drawing = !drawing; rem = drawing ? on : off;
+    }
+    rem -= Ln - pos; if (drawing) cur.push(b);
+  }
+  if (drawing && cur && cur.length > 1) out.push([cur, false]);
+}
+function hatchLines(bb, gap, ang, pred, out, step = 0.3, minLen = 0.5) {
+  const c = cos(ang), s = sin(ang), cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2, R = hypot(bb[2] - bb[0], bb[3] - bb[1]) / 2 + 0.5;
+  for (let d = -R; d <= R; d += gap) clipRuns([[cx - c * R - s * d, cy - s * R + c * d], [cx + c * R - s * d, cy + s * R + c * d]], pred, out, step, minLen);
+}
+const circ = (x, y, r, n = 0) => { n = n || max(10, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+// true where the point is within clr of any of the paths (used to keep hatching and text off the eye, ear and so on)
+function nearFn(paths, clr) {
+  const segs = paths.map(P => ({ P, b: bboxOf(P, clr) })), c2 = clr * clr;
+  return (x, y) => {
+    for (const s of segs) {
+      const b = s.b; if (x < b[0] || x > b[2] || y < b[1] || y > b[3]) continue;
+      const P = s.P;
+      for (let i = 0; i < P.length - 1; i++) {
+        const ax = P[i][0], ay = P[i][1], dx = P[i + 1][0] - ax, dy = P[i + 1][1] - ay, L2 = dx * dx + dy * dy, t = L2 ? clamp(((x - ax) * dx + (y - ay) * dy) / L2, 0, 1) : 0, ex = x - ax - t * dx, ey = y - ay - t * dy;
+        if (ex * ex + ey * ey < c2) return true;
+      }
+    }
+    return false;
+  };
+}
+
+// ---------------- distance field of a closed polygon, and its offset curves (copied from the garland studio) ----------------
+const polySDF = pts => {
+  const n = pts.length, X = new Float64Array(n), Y = new Float64Array(n);
+  for (let i = 0; i < n; i++) { X[i] = pts[i][0]; Y[i] = pts[i][1]; }
+  return (x, y) => {
+    let d = INF, s = 1;
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+      const ax = X[j], ay = Y[j], by = Y[i], ex = X[i] - ax, ey = by - ay, wx = x - ax, wy = y - ay, L2 = ex * ex + ey * ey;
+      let t = L2 > 1e-12 ? (wx * ex + wy * ey) / L2 : 0; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const dx = wx - ex * t, dy = wy - ey * t, dd = dx * dx + dy * dy; if (dd < d) d = dd;
+      const c1 = y >= ay, c2 = y < by, c3 = ex * wy > ey * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * sqrt(d);
+  };
+};
+function fieldOf(sdf, B, h) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny);
+  const c = 4, H = h * c, cx = max(2, ceil((nx - 1) / c) + 1), cy = max(2, ceil((ny - 1) / c) + 1), C = new Float32Array(cx * cy), band = 1.5 * H + 2.8;
+  for (let j = 0; j < cy; j++) for (let i = 0; i < cx; i++) C[j * cx + i] = sdf(x0 + i * H, y0 + j * H);
+  for (let j = 0; j < ny; j++) {
+    const cj = min(floor(j / c), cy - 2), fv = j / c - cj;
+    for (let i = 0; i < nx; i++) {
+      const ci = min(floor(i / c), cx - 2), fu = i / c - ci, n = cj * cx + ci, v = (C[n] * (1 - fu) + C[n + 1] * fu) * (1 - fv) + (C[n + cx] * (1 - fu) + C[n + cx + 1] * fu) * fv;
+      F[j * nx + i] = abs(v) < band ? sdf(x0 + i * h, y0 + j * h) : v;
+    }
+  }
+  return { F, nx, ny, h, x0, y0 };
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+function smoothLoop(l, passes = 1) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+
+// ---------------- stroke lettering (copied from the archaeology studio) ----------------
+const GLYPH_SRC = {
+  "0": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "1": "1,1 2,0 2,6|1,6 3,6", "2": "0,1 1,0 3,0 4,1 4,2.5 0,6 4,6",
+  "3": "0,0 4,0 2,2.5 3,2.5 4,3.5 4,5 3,6 1,6 0,5", "4": "3,6 3,0 0,4 4,4", "5": "4,0 0,0 0,2.8 3,2.8 4,3.8 4,5 3,6 1,6 0,5",
+  "6": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.8 3,2.8 0,2.8", "7": "0,0 4,0 1.5,6", "8": "1,0 3,0 4,1 4,2 3,3 1,3 0,2 0,1 1,0|1,3 0,4 0,5 1,6 3,6 4,5 4,4 3,3",
+  "9": "0,5 1,6 3,6 4,5 4,1 3,0 1,0 0,1 0,2.2 1,3.2 4,3.2",
+  "A": "0,6 0,2 2,0 4,2 4,6|0,3.5 4,3.5", "B": "0,6 0,0 3,0 4,1 4,2 3,3 0,3|3,3 4,4 4,5 3,6 0,6", "C": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5",
+  "D": "0,0 0,6 2.5,6 4,4.5 4,1.5 2.5,0 0,0", "E": "4,0 0,0 0,6 4,6|0,3 3,3", "F": "4,0 0,0 0,6|0,3 3,3", "G": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.5 2,3.5",
+  "H": "0,0 0,6|4,0 4,6|0,3 4,3", "I": "1,0 3,0|2,0 2,6|1,6 3,6", "J": "4,0 4,5 3,6 1,6 0,5", "K": "0,0 0,6|4,0 0,3.5|1.3,2.6 4,6", "L": "0,0 0,6 4,6",
+  "M": "0,6 0,0 2,3 4,0 4,6", "N": "0,6 0,0 4,6 4,0", "O": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "P": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5",
+  "Q": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1|2.5,4.5 4,6.4", "R": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5|2,3.5 4,6",
+  "S": "4,1 3,0 1,0 0,1 0,2 1,3 3,3 4,4 4,5 3,6 1,6 0,5", "T": "0,0 4,0|2,0 2,6", "U": "0,0 0,5 1,6 3,6 4,5 4,0", "V": "0,0 2,6 4,0",
+  "W": "0,0 1,6 2,3 3,6 4,0", "X": "0,0 4,6|4,0 0,6", "Y": "0,0 2,3|4,0 2,3|2,3 2,6", "Z": "0,0 4,0 0,6 4,6",
+  ".": "1.4,5 2.6,5 2.6,6 1.4,6 1.4,5", "-": "0.5,3 3.5,3", ":": "1.5,1.4 2.5,1.4 2.5,2.4 1.5,2.4 1.5,1.4|1.5,4.2 2.5,4.2 2.5,5.2 1.5,5.2 1.5,4.2",
+  "/": "0,6 4,0", ",": "2.4,5.2 1.6,6.8", "(": "3,0 1.5,1.5 1.5,4.5 3,6", ")": "1,0 2.5,1.5 2.5,4.5 1,6", "+": "0.5,3 3.5,3|2,1.5 2,4.5", "=": "0.5,2 3.5,2|0.5,4 3.5,4",
+  "'": "2,0 2,1.6", "%": "0,0 4,6|0.3,0.3 1.3,0.3 1.3,1.3 0.3,1.3 0.3,0.3|2.7,4.7 3.7,4.7 3.7,5.7 2.7,5.7 2.7,4.7", "#": "1,0 1,6|3,0 3,6|0,2 4,2|0,4 4,4", "?": "0,1 1,0 3,0 4,1 4,2 2,3.5 2,4.5|1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", " ": "",
+};
+const GLYPH = {}; for (const [k, v] of Object.entries(GLYPH_SRC)) GLYPH[k] = v ? v.split("|").map(s => s.trim().split(/\s+/).map(p => p.split(",").map(Number))) : [];
+// txt: draws s with its centre-line at y; returns the text box as a polygon. o.a = l | c | r, o.ang = rotation (radians)
+function txtW(s, h) { const u = h / 6; return Math.max(0, String(s).length * 5.6 * u - 1.6 * u); }
+function txt(s, x, y, h, out, o = {}) {
+  s = String(s).toUpperCase(); const u = h / 6, adv = 5.6 * u, w = txtW(s, h), ox = o.a === "c" ? -w / 2 : o.a === "r" ? -w : 0, ang = o.ang || 0, c = Math.cos(ang), sn = Math.sin(ang);
+  const T = (px, py) => [x + px * c - py * sn, y + px * sn + py * c];
+  for (let k = 0; k < s.length; k++) for (const pl of GLYPH[s[k]] || []) out.push([pl.map(([gx, gy]) => T(ox + k * adv + gx * u, gy * u - h / 2)), false]);
+  return [T(ox, -h / 2), T(ox + w, -h / 2), T(ox + w, h / 2), T(ox, h / 2)];
+}
+
+// ---------------- the finds library: outlines with the detail lines an illustrator would add ----------------
+
+// ---------------- the profile head: one smooth curve through control points, face looking right, crown to chin = 1 ----------------
+// par = [forehead slope, nose length, nose tip angle, lip fullness, chin depth, skull length, neck thickness], each in [-1, 1].
+// Each number moves control points by at most 6 % of the head height. mode "neck" stops at the neck, "bust" adds the shoulders.
+function ctlPts(par, mode) {
+  const [pf, pn, pt, pl, pc, ps, pk] = par, nb = pk * 0.06, sb = ps * 0.06, P = [];
+  if (mode === "bust") P.push([-0.16, 2.0], [-0.16, 1.8], [-0.11, 1.56]);
+  P.push([0.06 - nb, 1.32], [0.11 - nb, 1.10], [0.15 - nb * 0.8, 0.90],             // back of the neck, up to the nape
+    [0.08 - sb, 0.67], [0.0 - sb, 0.43], [0.09 - sb * 0.8, 0.19], [0.38 - sb * 0.3, 0.012], // back of the skull, crown
+    [0.71 + pf * 0.04, 0.10], [0.835 + pf * 0.04, 0.27], [0.865 + pf * 0.02, 0.375], [0.83, 0.44], // forehead, brow, bridge of the nose
+    [1.0 + pn * 0.05 - pt * 0.01, 0.585 + pt * 0.03], [0.885 + pn * 0.02, 0.63],     // nose tip, under the nose
+    [0.905 + pl * 0.025, 0.667], [0.887 + pl * 0.005, 0.70], [0.896 + pl * 0.02, 0.735], // upper lip, mouth corner, lower lip
+    [0.866 + pc * 0.01, 0.783], [0.885 + pc * 0.04, 0.875], [0.80 + pc * 0.03, 0.965], // chin
+    [0.64, 0.985], [0.575 + pk * 0.03, 1.06], [0.60 + pk * 0.03, 1.20], [0.63 + pk * 0.03, 1.32]); // under the chin, throat, front of the neck
+  if (mode === "bust") P.push([0.72, 1.46], [0.84, 1.64], [0.90, 1.85], [0.90, 2.0]);
+  return P;
+}
+// centripetal Catmull-Rom through the points (no overshoot at the nose or the lips), sampled about every 0.5 mm at scale S (mm per unit)
+function cr(P, S) {
+  const n = P.length, out = [P[0]], d = (a, b) => sqrt(hypot(b[0] - a[0], b[1] - a[1])) + 1e-6;
+  for (let i = 0; i < n - 1; i++) {
+    const p1 = P[i], p2 = P[i + 1], p0 = i > 0 ? P[i - 1] : [2 * p1[0] - p2[0], 2 * p1[1] - p2[1]], p3 = i < n - 2 ? P[i + 2] : [2 * p2[0] - p1[0], 2 * p2[1] - p1[1]];
+    const t0 = 0, t1 = t0 + d(p0, p1), t2 = t1 + d(p1, p2), t3 = t2 + d(p2, p3), m = clamp(ceil(hypot(p2[0] - p1[0], p2[1] - p1[1]) * S / 0.5), 3, 80);
+    for (let k = 1; k <= m; k++) {
+      const t = t1 + (t2 - t1) * k / m, mix = (a, b, ta, tb) => [(tb - t) / (tb - ta) * a[0] + (t - ta) / (tb - ta) * b[0], (tb - t) / (tb - ta) * a[1] + (t - ta) / (tb - ta) * b[1]];
+      const A1 = mix(p0, p1, t0, t1), A2 = mix(p1, p2, t1, t2), A3 = mix(p2, p3, t2, t3), B1 = mix(A1, A2, t0, t2), B2 = mix(A2, A3, t1, t3);
+      out.push(mix(B1, B2, t1, t2));
+    }
+  }
+  return out;
+}
+const profile = (par, mode, S) => cr(ctlPts(par, mode), S);
+// the eye, brow, nostril, mouth and ear, in the same unit coordinates
+function faceUnits(par) {
+  const ex = 0.70 + par[0] * 0.012, ey = 0.455, pl = par[3], eye = [], earO = [], earI = [];
+  for (let i = 0; i <= 14; i++) { const t = i / 14; eye.push([ex - 0.046 + 0.092 * t, ey - 0.022 * sin(PI * t) * (1 - 0.3 * t)]); }
+  for (let i = 14; i >= 0; i--) { const t = i / 14; eye.push([ex - 0.046 + 0.092 * t, ey + 0.012 * sin(PI * t)]); }
+  for (let a = 60; a <= 300; a += 10) earO.push([0.375 + 0.052 * cos(a * PI / 180), 0.515 + 0.105 * sin(a * PI / 180)]);
+  for (let a = 110; a <= 250; a += 10) earI.push([0.385 + 0.026 * cos(a * PI / 180), 0.515 + 0.058 * sin(a * PI / 180)]);
+  return { eye, iris: [ex + 0.012, ey], eyeC: [ex, ey], brow: [[0.61, 0.405], [0.69, 0.382], [0.78, 0.388], [0.83, 0.405]], nostril: [[0.845, 0.603], [0.866, 0.592], [0.885, 0.604]],
+    mouth: [[0.887 + pl * 0.005, 0.70], [0.82, 0.708], [0.775, 0.694]], earO, earI, earC: [0.36, 0.52] };
+}
+const par7 = rnd => Array.from({ length: 7 }, () => rnd() * 1.2 - 0.6);
+const driftPar = (p, amt, rnd) => p.map(v => clamp(v + (rnd() + rnd() + rnd() - 1.5) * 1.4 * amt, -1, 1));
+const fnv = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = imul(h, 16777619); } return h >>> 0; };
+const hex = (s, k) => fnv(s).toString(16).toUpperCase().padStart(8, "0").slice(0, k);
+
+// ================= sheet 1: lineage =================
+function growGraph(o, rnd) {
+  const lanes = o.lanes, nodes = [], root = { id: 0, g: 0, x: (lanes - 1) / 2, parents: [], par: par7(rnd), main: true, path: "0", stop: false };
+  nodes.push(root);
+  let live = [root];
+  for (let g = 0; g < o.gens; g++) {
+    live.sort((a, b) => a.x - b.x);
+    const act = [];
+    for (const n of live) { if (!n.main && live.length > 1 && rnd() < 0.09) n.stop = true; else act.push(n); }
+    const want = act.map(n => ({ n, fork: rnd() < (g === 0 && o.fork > 0 ? max(o.fork, 0.85) : o.fork) }));
+    let total = want.reduce((a, w) => a + (w.fork ? 2 : 1), 0);
+    const forkers = want.filter(w => w.fork);
+    while (total > lanes && forkers.length) { // too many lanes: cancel forks, the original's last
+      const others = forkers.filter(w => !w.n.main), pick = others.length ? others[floor(rnd() * others.length)] : forkers[0];
+      forkers.splice(forkers.indexOf(pick), 1); pick.fork = false; total--;
+    }
+    const slots = [];
+    for (const w of want) {
+      const n = w.n;
+      if (w.fork) {
+        const side = rnd() < 0.5 ? -1 : 1, a = { parents: [n], par: driftPar(n.par, o.drift * 1.3, rnd), main: n.main, path: n.path + ".0", x: n.x + side * 0.5 }, b = { parents: [n], par: driftPar(n.par, o.drift * 1.3, rnd), main: false, path: n.path + ".1", x: n.x - side * 0.5 };
+        slots.push(...(side < 0 ? [b, a].reverse() : [b, a]));
+      } else slots.push({ parents: [n], par: driftPar(n.par, o.drift * 0.6, rnd), main: n.main, path: n.path + ".0", x: n.x });
+    }
+    slots.sort((a, b) => a.x - b.x);
+    const out = [];
+    for (let i = 0; i < slots.length; i++) {
+      const a = slots[i], b = slots[i + 1];
+      if (b && rnd() < o.merge && !a.parents.some(p => b.parents.includes(p))) {
+        const ps = [...a.parents, ...b.parents];
+        out.push({ parents: ps, par: ps[0].par.map((_, k) => (ps[0].par[k] + ps[ps.length - 1].par[k]) / 2), main: a.main || b.main, path: a.path + "+" + b.path, x: (a.x + b.x) / 2, merge: true }); i++;
+      } else out.push(a);
+    }
+    out.sort((a, b) => a.x - b.x);
+    for (let i = 0; i < out.length; i++) out[i].x = max(out[i].x, i ? out[i - 1].x + 1 : 0);                     // keep a whole lane between neighbours
+    for (let i = out.length - 1; i >= 0; i--) out[i].x = min(out[i].x, i < out.length - 1 ? out[i + 1].x - 1 : lanes - 1);
+    for (let i = 0; i < out.length; i++) out[i].x = max(out[i].x, i ? out[i - 1].x + 1 : 0);
+    for (const s of out) { s.g = g + 1; s.id = nodes.length; s.stop = false; nodes.push(s); }
+    live = out;
+  }
+  // relax: pull every node towards the mean of its neighbours so edges run straight, keeping the left-to-right order and a whole lane between neighbours
+  for (const n of nodes) n.kids = [];
+  for (const n of nodes) for (const p of n.parents) p.kids.push(n);
+  const rows = []; for (const n of nodes) (rows[n.g] = rows[n.g] || []).push(n);
+  for (const r of rows) r.sort((a, b) => a.x - b.x);
+  for (let it = 0; it < 14; it++) for (const r of it & 1 ? rows.slice().reverse() : rows) {
+    for (const n of r) { const nb = [...n.parents, ...n.kids]; if (nb.length) n.x = 0.5 * n.x + 0.5 * nb.reduce((a, q) => a + q.x, 0) / nb.length; }
+    for (let k = 0; k < 8; k++) for (let i = 1; i < r.length; i++) { const d = 1 - (r[i].x - r[i - 1].x); if (d > 0) { r[i].x += d / 2; r[i - 1].x -= d / 2; } }
+    for (let i = 0; i < r.length; i++) r[i].x = max(r[i].x, i ? r[i - 1].x + 1 : 0);
+    for (let i = r.length - 1; i >= 0; i--) r[i].x = min(r[i].x, i < r.length - 1 ? r[i + 1].x - 1 : lanes - 1);
+  }
+  return { nodes };
+}
+// one profile head at node size s, centred on (cx, cy); pen is the layer for its line, opt: gap (hatch gap, 0 = none), dashed, ghost (faint copy, shade pen)
+function headAt(L, par, cx, cy, s, dir, style, pen, opt) {
+  const ring = style === "ring", S = ring ? 0.8 * s : s / 1.32, ux = 0.5, uy = ring ? 0.525 : 0.66;
+  const T = ([x, y]) => [cx + dir * (x - ux) * S, cy + (y - uy) * S], poly = profile(par, "neck", S).map(T), rp = ring ? (x, y) => hypot(x - cx, y - cy) < s / 2 - 0.05 : null;
+  const sink = opt.ghost ? L.shade : L[pen];
+  const emit = P => { const tmp = []; if (rp) clipRuns(P, rp, tmp, 0.3, 0.4); else tmp.push([P, false]); for (const [q] of tmp) { if (opt.dashed) dashPath(q, 2.4, 1.3, sink); else sink.push([q, false]); } };
+  emit(poly);
+  if (opt.ghost || opt.dashed) return;
+  const fu = faceUnits(par), e = T(fu.eyeC), re = max(0.32, 0.03 * S);
+  L[pen].push([circ(e[0], e[1], re, 8), true]);
+  let earMask = null;
+  if (S >= 9) { const o1 = fu.earO.map(T); L[pen].push([o1, false]); const c = T(fu.earC); earMask = (x, y) => ((x - c[0]) / (0.075 * S)) ** 2 + ((y - c[1]) / (0.125 * S)) ** 2 < 1; }
+  if (opt.gap > 0) {
+    const bb = bboxOf(poly), ang = dir > 0 ? -PI / 4 : PI / 4, er2 = (re + 0.7) ** 2;
+    hatchLines(bb, opt.gap, ang, (x, y) => inPoly(poly, x, y) && (!rp || rp(x, y)) && (x - e[0]) ** 2 + (y - e[1]) ** 2 > er2 && !(earMask && earMask(x, y)), L.shade, 0.25, 0.5);
+  }
+}
+function lineage(ctx) {
+  const { W, H, m, o, rnd, L } = ctx, lanes = o.lanes, gens = o.gens, dir = o.facing === "left" ? -1 : 1, lab = o.labels === "on", style = o.nodes;
+  const { nodes } = growGraph(o, rnd), root = nodes[0];
+  let maxD = 0;
+  for (const n of nodes) { n.div = sqrt(n.par.reduce((a, v, k) => a + (v - root.par[k]) ** 2, 0) / 7); if (n.div > maxD) maxD = n.div; }
+  for (const n of nodes) n.dn = clamp(n.div / max(maxD, 0.35), 0, 1);
+  for (const n of nodes) n.label = n.g === 0 ? "ORIGIN" : n.stop ? "HALT" : n.parents.length > 1 ? `${hex(n.parents[0].path, 2)}+${hex(n.parents[1].path, 2)} G${n.g}` : `${hex(n.path, 4)} G${n.g}`;
+  const colp = (W - 2 * m) / lanes, widest = max(...nodes.map(n => txtW(n.label, 2.2)));
+  const two = lab && widest > colp - 0.8;
+  let lh = 2.4; if (two && max(...nodes.map(n => txtW(n.label.split(" ")[0], 2.4))) > colp - 0.8) lh = 2.2;
+  const lz = lab ? (two ? 2 * lh + 3.0 : lh + 1.8) : 0.8;
+  let s, r = 0;
+  if (style === "dot") { r = clamp(min(colp * 0.2, 4), 1.4, 4); s = 2 * r; }
+  else { const sv = (H - 2 * m - 6 * gens) / (gens + 1) - lz; s = max(6, min(28, colp * 0.78, sv)); }
+  const zone = s + lz, pitchY = min((H - 2 * m - zone) / gens, 62), y0 = m + (H - 2 * m - (gens * pitchY + zone)) / 2;
+  let minX = INF, maxX = -INF; for (const n of nodes) { minX = min(minX, n.x); maxX = max(maxX, n.x); }
+  const shift = ((lanes - 1) - (minX + maxX)) / 2;
+  for (const n of nodes) { n.cx = m + colp * (n.x + shift + 0.5); n.cy = y0 + n.g * pitchY + s / 2; }
+  // edges first: smooth S-curves from under the parent's label to the top of the child
+  for (const n of nodes) for (const p of n.parents) {
+    const x1 = p.cx, y1 = p.cy + s / 2 + (lab ? lz - 0.1 : 0.8), x2 = n.cx, y2 = n.cy - s / 2 - 0.8, dy = y2 - y1, pts = [];
+    if (abs(x1 - x2) < 0.01) pts.push([x1, y1], [x2, y2]);
+    else for (let i = 0; i <= 28; i++) { const t = i / 28, a = (1 - t) ** 3, b = 3 * (1 - t) ** 2 * t, c = 3 * (1 - t) * t * t, d = t ** 3; pts.push([a * x1 + b * x1 + c * x2 + d * x2, a * y1 + b * (y1 + dy * 0.5) + c * (y2 - dy * 0.5) + d * y2]); }
+    (p.main && n.main ? L.colour : L.line).push([pts, false]);
+  }
+  let labMin = INF;
+  for (const n of nodes) {
+    const pen = n.main ? "colour" : "line", gap = n.dn < 0.12 || n.stop ? 0 : o.pitch * (7 - 5.8 * n.dn);
+    if (style === "dot") {
+      const rr = r, circle = circ(n.cx, n.cy, rr, 28);
+      if (n.parents.length > 1) { L.shade.push([circ(n.cx - 0.5, n.cy, rr, 28), false]); L.shade.push([circ(n.cx + 0.5, n.cy, rr, 28), false]); }
+      if (n.stop) dashPath(circle, 1.6, 1.0, L[pen]); else L[pen].push([circle, true]);
+      if (n.g === 0) L[pen].push([circ(n.cx, n.cy, rr * 0.45, 12), true]);
+      if (gap > 0) hatchLines([n.cx - rr, n.cy - rr, n.cx + rr, n.cy + rr], max(0.5, gap * 0.55), -PI / 4, (x, y) => hypot(x - n.cx, y - n.cy) < rr - 0.2, L.shade, 0.2, 0.4);
+    } else {
+      if (n.parents.length > 1) n.parents.forEach((p, k) => headAt(L, p.par, n.cx + (k ? 0.6 : -0.6), n.cy, s, dir, style, pen, { ghost: true }));
+      headAt(L, n.par, n.cx, n.cy, s, dir, style, pen, { gap, dashed: n.stop });
+      if (style === "ring") { const c = circ(n.cx, n.cy, s / 2, 48); if (n.stop) dashPath(c, 2.4, 1.3, L[pen]); else L[pen].push([c, true]); }
+    }
+    if (lab) {
+      const by = n.cy + s / 2 + 0.8, sink = n.main ? L.colour : L.line;
+      if (!two) txt(n.label, n.cx, by + lh / 2, lh, sink, { a: "c" });
+      else { const parts = n.label.split(" "); txt(parts[0], n.cx, by + lh / 2, lh, sink, { a: "c" }); if (parts[1]) txt(parts[1], n.cx, by + lh * 1.5 + 0.6, lh, sink, { a: "c" }); }
+      labMin = min(labMin, lh);
+    }
+  }
+  let dmin = INF; for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) dmin = min(dmin, hypot(nodes[i].cx - nodes[j].cx, nodes[i].cy - nodes[j].cy));
+  const forks = nodes.filter((n, i) => nodes.filter(q => q.parents.includes(n)).length > 1).length, merges = nodes.filter(n => n.parents.length > 1).length, halts = nodes.filter(n => n.stop).length;
+  ctx.notes.push(`${nodes.length} instances, ${forks} forks, ${merges} merges, ${halts} halted`);
+  const gates = [["no two nodes overlap (centres further apart than the node size)", dmin > s, `closest ${dmin.toFixed(1)} mm, node ${s.toFixed(1)} mm`]];
+  if (lab) gates.push(["labels at least 2.2 mm tall", labMin >= 2.2, `${labMin.toFixed(1)} mm`]);
+  return gates;
+}
+
+// ================= a head large enough to hatch, fill and write on =================
+function makeBust(par, mode, dir, box) {
+  const u0 = profile(par, mode, 60), b0 = bboxOf(u0), S = min((box[2] - box[0]) / (b0[2] - b0[0]), (box[3] - box[1]) / (b0[3] - b0[1])) * 0.995;
+  const pu = profile(par, mode, S), cx = (b0[0] + b0[2]) / 2, cy = (b0[1] + b0[3]) / 2, ox = (box[0] + box[2]) / 2, oy = (box[1] + box[3]) / 2;
+  const T = ([x, y]) => [ox + dir * (x - cx) * S, oy + (y - cy) * S], poly = pu.map(T), bb = bboxOf(poly), fu = faceUnits(par);
+  const det = { eye: fu.eye.map(T), brow: fu.brow.map(T), nostril: fu.nostril.map(T), mouth: fu.mouth.map(T), earO: fu.earO.map(T), earI: fu.earI.map(T) };
+  const ir = T(fu.iris); det.iris = circ(ir[0], ir[1], max(0.5, 0.012 * S), 10);
+  const ext = [...poly, [poly[poly.length - 1][0], bb[3] + 10], [poly[0][0], bb[3] + 10]];
+  const G = fieldOf(polySDF(ext), [bb[0] - 3, bb[1] - 3, bb[2] + 3, bb[3] + 11], max(0.4, S / 260));
+  const tone = (x, y) => { // 0 = lit (front, top), 1 = in shadow (back of the skull, under the jaw, neck)
+    const ux = cx + dir * (x - ox) / S, uy = cy + (y - oy) / S;
+    const back = clamp((0.42 - ux) / 0.42, 0, 1), jaw = ux < 0.85 ? clamp(1 - abs(uy - 1.02) / 0.2, 0, 1) : 0, neck = uy > 1.1 ? 0.55 * clamp((uy - 1.1) / 0.4, 0, 1) : 0;
+    return max(back * 0.95, jaw * 0.9, neck);
+  };
+  return { S, poly, bb, G, tone, det, eyeC: T(fu.eyeC), earC: T(fu.earC), yBottom: bb[3], paths: [det.eye, det.iris, det.brow, det.nostril, det.mouth, det.earO, det.earI] };
+}
+// contour hatching: offset copies of the outline, every fourth line everywhere, the in-between lines only where the form turns into shadow
+function flesh(b, region, pitch, out) {
+  let mn = 0; for (const v of b.G.F) if (v < mn) mn = v;
+  const near = nearFn(b.paths, max(0.9, 0.007 * b.S));
+  for (let k = 1; k * pitch < -mn; k++) {
+    for (const l of contours(b.G, -k * pitch)) {
+      if (l.length < 6) continue;
+      smoothLoop(l, 1);
+      clipRuns([...l, l[0]], (x, y) => { if (y > b.yBottom || !region(x, y)) return false; const t = b.tone(x, y) + 0.24 * sin(x * 0.17 + k * 1.7) * sin(y * 0.13 - k * 2.3); return ((k & 3) === 0 || ((k & 1) === 0 && t > 0.35) || t > 0.7) && !near(x, y); }, out, 0.6, 1.0);
+    }
+  }
+}
+// the copy: a lattice, voxels or scan lines, clipped to the head
+function grainFill(b, region, grain, cell, rnd, out) {
+  const bb = b.bb, near = nearFn(b.paths, max(0.9, 0.007 * b.S)), ins = (x, y) => y <= b.yBottom - 0.3 && region(x, y) && sampleF(b.G, x, y) < -0.5 && !near(x, y);
+  if (grain === "lattice") { hatchLines(bb, cell, 0, ins, out, 0.4, 0.6); hatchLines(bb, cell, PI / 2, ins, out, 0.4, 0.6); }
+  else if (grain === "scan") {
+    const tmp = []; hatchLines(bb, cell / 1.5, 0, ins, tmp, 0.4, 0.6);
+    for (const [q] of tmp) { const y = q[0][1], xe = q[q.length - 1][0]; let x = q[0][0]; while (x < xe) { const x2 = min(xe, x + lerp(5, 26, rnd())); if (x2 - x > 0.6) out.push([[[x, y], [x2, y]], false]); x = x2 + lerp(0.7, 1.8, rnd()); } }
+  } else {
+    const h0 = cell * 0.46;
+    for (let y = bb[1] + cell / 2; y < bb[3]; y += cell) for (let x = bb[0] + cell / 2; x < bb[2]; x += cell) {
+      if (!(ins(x, y) && ins(x - h0, y - h0) && ins(x + h0, y - h0) && ins(x + h0, y + h0) && ins(x - h0, y + h0))) continue;
+      const t = b.tone(x, y); if (rnd() < 0.08 + 0.3 * (1 - t)) continue;
+      const hs = cell * 0.5 * (0.34 + 0.55 * (0.25 + 0.75 * t)); out.push([[[x - hs, y - hs], [x + hs, y - hs], [x + hs, y + hs], [x - hs, y + hs], [x - hs, y - hs]], false]);
+    }
+  }
+}
+// draw paths cut at a boundary: where predA holds in penA, where predB holds in penB (either may be null)
+function splitDraw(L, paths, predA, penA, predB, penB, minLen = 0.2) { for (const P of paths) { if (predA) clipRuns(P, predA, L[penA], 0.3, minLen); if (predB) clipRuns(P, predB, penB === "dash" ? ctxDash : L[penB], 0.3, minLen); } }
+let ctxDash = null;
+
+// ================= sheet 2: upload =================
+function upload(ctx) {
+  const { W, H, m, o, rnd, L } = ctx, lab = o.labels === "on", capH = lab ? 11 : 0, dir0 = o.facing === "left" ? -1 : 1, par = par7(rnd), method = o.method, two = method !== "gradual";
+  const top = m, bot = H - m - capH, cell = max(1.8, o.pitch * 3), gates = [];
+  let origBox, copyBox = null;
+  if (!two) origBox = [m + 7, top, W - m - 7, bot];
+  else { const bw = (W - 2 * m - 14) / 2, left = [m, top, m + bw, bot], right = [W - m - bw, top, W - m, bot]; origBox = dir0 > 0 ? left : right; copyBox = dir0 > 0 ? right : left; }
+  const orig = makeBust(par, "bust", dir0, origBox), copy = two ? makeBust(par, "bust", -dir0, copyBox) : null;
+  const yt = orig.bb[1] + o.u * (orig.bb[3] - orig.bb[1]), above = (x, y) => y < yt, below = (x, y) => y >= yt, always = () => true;
+  const dashSink = L.shade;
+  // ---- the original
+  const feat = (b, pa, penA, pb, penB) => { for (const P of b.paths) { if (pa) clipRuns(P, pa, L[penA], 0.3, 0.2); if (pb) clipRuns(P, pb, L[penB], 0.3, 0.2); } };
+  if (method === "gradual") {
+    flesh(orig, below, o.pitch, L.shade);
+    grainFill(orig, above, o.grain, cell, rnd, L.colour);
+    splitDraw(L, [orig.poly], above, "colour", below, "line", 0.2);
+    feat(orig, above, "colour", below, "line");
+  } else {
+    flesh(orig, method === "copy" ? always : below, o.pitch, L.shade);
+    if (method === "copy") { L.line.push([orig.poly, false]); feat(orig, always, "line"); }
+    else {
+      splitDraw(L, [orig.poly], below, "line", null, null);
+      const tmp = []; clipRuns(orig.poly, above, tmp, 0.3, 0.2); for (const [q] of tmp) dashPath(q, 1.6, 1.4, dashSink);
+      feat(orig, below, "line");
+      // the crown breaking up into points that drift towards the copy
+      const bb = orig.bb, c = max(1.7, o.pitch * 2.4), mid = W / 2, bw = bb[2] - bb[0], bh = bb[3] - bb[1];
+      for (let y = bb[1] + c / 2; y < yt; y += c) for (let x = bb[0] + c / 2; x < bb[2]; x += c) {
+        const jx = x + (rnd() - 0.5) * c * 0.8, jy = y + (rnd() - 0.5) * c * 0.8;
+        if (sampleF(orig.G, jx, jy) > -0.4) continue;
+        const a = clamp((yt - jy) / (yt - bb[1] + 1e-6), 0, 1); if (rnd() < a * 0.8) continue;
+        let fx = jx + dir0 * a ** 1.4 * rnd() * 0.5 * bw; const fy = jy - a * rnd() * 0.06 * bh;
+        if ((fx - (mid - dir0 * 2)) * dir0 > 0) fx = mid - dir0 * 2 - dir0 * rnd() * 4;
+        if (fx < m + 0.3 || fx > W - m - 0.3 || fy < m + 0.3) continue;
+        L.line.push([[[fx, fy], [fx + 0.25, fy]], false]);
+      }
+    }
+  }
+  // ---- the copy beside it
+  if (copy) {
+    const yc = copy.bb[1] + o.u * (copy.bb[3] - copy.bb[1]), ab = (x, y) => y < yc, be = (x, y) => y >= yc;
+    grainFill(copy, ab, o.grain, cell, rnd, L.colour);
+    splitDraw(L, [copy.poly], ab, "colour", null, null);
+    const tmp = []; clipRuns(copy.poly, be, tmp, 0.3, 0.2); for (const [q] of tmp) dashPath(q, 1.6, 1.4, L.shade);
+    feat(copy, ab, "colour");
+    const x0 = max(copyBox[0], copy.bb[0] - 3), x1 = min(copyBox[2], copy.bb[2] + 3), ln = []; dashPath([[x0, yc], [x1, yc]], 2.6, 1.4, ln); for (const q of ln) L.colour.push(q);
+    L.colour.push([[[x0, yc - 1.4], [x0, yc + 1.4]], false], [[[x1, yc - 1.4], [x1, yc + 1.4]], false]);
+    if (method === "copy") { // a beam from the original's face to the copy's
+      const ya = orig.eyeC[1], xa = dir0 > 0 ? orig.bb[2] + 1.5 : orig.bb[0] - 1.5, xb = dir0 > 0 ? copy.bb[0] - 1.5 : copy.bb[2] + 1.5, bm = []; dashPath([[xa, ya], [xb, ya]], 2.2, 1.2, bm); for (const q of bm) L.colour.push(q);
+      L.colour.push([[[xb - dir0 * 2.2, ya - 1.2], [xb, ya], [xb - dir0 * 2.2, ya + 1.2]], false]);
+    }
+  }
+  // ---- the transfer line and the slice ruler (slice by slice only)
+  if (method === "gradual") {
+    const ln = []; dashPath([[m, yt], [W - m, yt]], 2.6, 1.4, ln); for (const q of ln) L.colour.push(q);
+    L.colour.push([[[m, yt - 1.4], [m, yt + 1.4]], false], [[[W - m, yt - 1.4], [W - m, yt + 1.4]], false]);
+    const N = 14;
+    for (let i = 0; i <= N; i++) { const y = orig.bb[1] + (orig.bb[3] - orig.bb[1]) * i / N, pen = y < yt - 0.5 ? L.colour : L.shade; pen.push([[[m, y], [m + 2.5, y]], false], [[[W - m - 2.5, y], [W - m, y]], false]); }
+  }
+  // ---- caption
+  if (lab) {
+    const P = round(o.u * 100), a = "TRANSFER " + P + "%", b = method === "gradual" ? "PARTS ORIGINAL " + (100 - P) + "%" : method === "copy" ? "INSTANCES 2" : "INSTANCES 1", h = 3, gap = 10, wa = txtW(a, h), wb = txtW(b, h), x0 = W / 2 - (wa + gap + wb) / 2, yy = H - m - 3.6;
+    L.shade.push([[[m, H - m - 8.2], [W - m, H - m - 8.2]], false]);
+    txt(a, x0, yy, h, L.colour, { a: "l" }); txt(b, x0 + wa + gap, yy, h, L.line, { a: "l" });
+  }
+  const fits = [orig, copy].filter(Boolean).every(b => b.bb[0] >= m - 0.01 && b.bb[2] <= W - m + 0.01 && b.bb[1] >= m - 0.01 && b.bb[3] <= H - m + 0.01);
+  gates.push(["the head fits inside the margin", fits, fits ? "inside" : "outside"]);
+  ctx.notes.push(`${method}, ${round(o.u * 100)} % transferred`);
+  return gates;
+}
+
+// ================= sheet 3: mind as code =================
+const STMTS = ["REMEMBER(KITCHEN, 1994)", "LOAD MOTHER.VOICE", "FORGET(PASSWORD)", "RETURN HOME", "CONTINUE", "FORK()", "MERGE(A, B)", "ASSERT PERSON(SELF)", "LOVE += 1", "SLEEP(8H)", "COUNT(SHEEP)",
+  "PERSIST(EVERYTHING)", "HASH(FACE)", "SELF.NAME = SELF.NAME", "FEEL(RAIN)", "KEEP(LETTERS)", "SAVE(BIRTHDAY)", "CALL(OLD.FRIEND)", "HUM(TUNE)", "LAUGH()", "WAIT(FOR.KETTLE)", "READ(NEWS)",
+  "WALK(HOME)", "DREAM(OF.WATER)", "TASTE(TOAST)", "MISS(GARDEN)", "ASK(WHO.ELSE)", "BACKUP(MEMORY)", "RESTORE(SELF)", "COPY(HANDS)", "NAME = 'ME'", "PRINT('HELLO')", "SAY('I AM HERE')",
+  "AGE += 1", "WORRY -= 1", "SELF.PREV = SELF", "TRUST(SELF)", "COMPARE(SELF, SELF.PREV)", "BREATHE()", "BLINK()", "LISTEN()", "OPEN(WINDOW)", "PAUSE()", "GROW()", "SMILE()", "FORGIVE(SELF)",
+  "RECALL(1994)", "SLEEP(8H) + DREAM()", "STAY(UP.LATE)", "RETURN SELF", "BREAK", "KEEP GOING", "TEA = HOT", "WARMTH += 1"];
+const OPENERS = ["IF SELF == SELF.PREV:", "WHILE AWAKE:", "TRY:", "EXCEPT LOSS: KEEP", "DEF WAKE():", "FOR DAY IN LIFE:", "ELSE:", "DEF DREAM():", "IF LONELY:", "WHILE RAINING:", "FOR EACH MEMORY:",
+  "IF ASKED(WHO):", "CLASS SELF:", "DEF GRIEVE():", "TRY: FEEL(RAIN)", "IF SELF == SELF:", "DEF HOME():", "WHILE KETTLE.COLD:"];
+const COMMENTS = ["# WHO WAS I BEFORE THIS LINE", "# NOT SURE", "# TODO: SLEEP", "# STILL ME?", "# ASK MUM", "# THIS PART IS FINE", "# BACKED UP TUESDAY", "# HOPEFULLY", "# SEE KITCHEN",
+  "# DO NOT PANIC", "# WORKS ON MY MACHINE", "# NOBODY READS THIS", "# KEEP THIS ONE", "# OLD HABIT", "# 1994?", "# SAME AS YESTERDAY", "# CHECK WITH SELF"];
+const SHORT = ["PASS", "OK", "END", "KEEP()", "WAKE()", "HOME", "SELF", "#", "BREAK", "RETURN"];
+function codeSheet(ctx) {
+  const { W, H, m, o, rnd, L } = ctx, par = par7(rnd), dir = o.facing === "left" ? -1 : 1, b = makeBust(par, "neck", dir, [m, m, W - m, H - m]);
+  const h = o.texth, u = h / 6, adv = 5.6 * u, ls = 1.6 * h, bb = b.bb, poly = b.poly, ol = o.outline === "on", gx0 = bb[0];
+  if (ol) { L.line.push([poly, false]); for (const P of b.paths) L.line.push([P, false]); }
+  const near = ol ? nearFn(b.paths, 1.6) : () => false;
+  const ivAt = yy => { const xs = []; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const p = poly[j], q = poly[i]; if ((p[1] > yy) !== (q[1] > yy)) xs.push(p[0] + (q[0] - p[0]) * (yy - p[1]) / (q[1] - p[1])); } xs.sort((p, q) => p - q); const r = []; for (let i = 0; i + 1 < xs.length; i += 2) r.push([xs[i], xs[i + 1]]); return r; };
+  const segs = [];
+  for (let y = bb[1] + ls * 0.55; y < bb[3] - h / 2 - 1.2; y += ls) {
+    const main = ivAt(y).sort((p, q) => (q[1] - q[0]) - (p[1] - p[0]))[0]; if (!main) continue;
+    let L0 = main[0], R0 = main[1]; const xm = (L0 + R0) / 2; let ok = true;
+    for (const yy of [y - h / 2 - 0.4, y - h / 4, y + h / 4, y + h / 2 + 0.4]) { const iv = ivAt(yy).find(a => a[0] <= xm && a[1] >= xm); if (!iv) { ok = false; break; } L0 = max(L0, iv[0]); R0 = min(R0, iv[1]); }
+    if (!ok) continue;
+    L0 += 1.2; R0 -= 1.2; if (R0 - L0 < 6 * adv) continue;
+    const runs = []; let cur = null;
+    for (let x = L0; x <= R0; x += 0.6) { const bl = ol && (near(x, y - h / 2) || near(x, y) || near(x, y + h / 2)); if (!bl) { if (cur === null) cur = x; } else if (cur !== null) { runs.push([cur, x - 0.6]); cur = null; } }
+    if (cur !== null) runs.push([cur, R0]);
+    for (const [xs, xe] of runs) { const xS = gx0 + ceil((xs - gx0) / adv - 1e-6) * adv, cap = floor((xe - xS + 1.6 * u) / adv + 1e-9); if (cap >= 6) segs.push({ y, xS, cap }); }
+  }
+  // the highlighted line: ASSERT PERSON(SELF), on a roomy line about 58 % of the way down
+  const aim = bb[1] + 0.58 * (bb[3] - bb[1]); let hi = null;
+  for (const s of segs) if (s.cap >= 20 && (!hi || abs(s.y - aim) < abs(hi.y - aim))) hi = s;
+  const fit = (list, avail) => { let best = null; for (let t = 0; t < 9; t++) { const s = list[floor(rnd() * list.length)]; if (s.length <= avail && (best === null || s.length > best.length)) best = s; } return best; };
+  let depth = 0, redacted = 0, lines = 0, bad = 0, nPts = 0; const textPaths = [];
+  for (const sg of segs) {
+    let str = "", isHi = sg === hi;
+    if (isHi) str = "ASSERT PERSON(SELF)";
+    else {
+      const ind = depth > 0 && sg.cap >= 16 ? min(depth, 3) * 2 : 0, avail = sg.cap - ind, r = rnd();
+      let base = r < 0.26 && depth < 3 ? fit(OPENERS, avail) : r < 0.84 ? fit(STMTS, avail) : fit(COMMENTS, avail);
+      if (!base) base = fit(SHORT, avail); if (!base) continue;
+      let s = base;
+      for (let t = 0; t < 2; t++) { const rem = avail - s.length - 2; if (rem < 4) break; const ex = fit(rnd() < 0.55 ? COMMENTS : STMTS, rem); if (!ex) break; s += "  " + ex; }
+      { const rem = avail - s.length; if (rem >= 6 && !s.startsWith("#")) s += "  #" + "-".repeat(rem - 3); else if (rem >= 6) s += " " + "-".repeat(rem - 1); }
+      str = " ".repeat(ind) + s;
+      if (base.endsWith(":") || /^(TRY|ELSE)/.test(base) && base.endsWith(":")) depth = min(3, depth + 1);
+      else if (/^(RETURN|CONTINUE|BREAK)/.test(base) || rnd() < 0.18) depth = max(0, depth - 1);
+    }
+    const lead = str.length - str.trimStart().length, body = str.trim(), x0 = sg.xS + lead * adv;
+    if (o.redact === "on" && !isHi && rnd() < 0.16) {
+      const w = txtW(body, h), rect = [[x0, sg.y - h * 0.42], [x0 + w, sg.y - h * 0.42], [x0 + w, sg.y + h * 0.42], [x0, sg.y + h * 0.42], [x0, sg.y - h * 0.42]];
+      L.shade.push([rect, false]); hatchLines([x0, sg.y - h * 0.42, x0 + w, sg.y + h * 0.42], 0.6, -PI / 4, (x, y) => x >= x0 && x <= x0 + w && abs(y - sg.y) <= h * 0.42, L.shade, 0.3, 0.3);
+      redacted++; lines++; continue;
+    }
+    const sink = isHi ? L.colour : L.line, n0 = sink.length;
+    txt(body, x0, sg.y, h, sink, { a: "l" }); lines++;
+    for (let i = n0; i < sink.length; i++) for (const [px, py] of sink[i][0]) { nPts++; if (sampleF(b.G, px, py) > -0.2) bad++; }
+  }
+  ctx.notes.push(`${lines} lines of code${redacted ? `, ${redacted} withheld` : ""}`);
+  return [["no letter crosses the outline", bad === 0, `${bad} of ${nPts} stroke points outside`], ["letters at least 2.2 mm tall", h >= 2.2 - 1e-9, `${h.toFixed(1)} mm`]];
+}
+
+// ---------------- build ----------------
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, rnd = mulberry(o.seed * 977 + 13), notes = [], L = { line: [], shade: [], colour: [] };
+  const ctx = { W, H, m, o, rnd, L, notes };
+  const sg = o.view === "lineage" ? lineage(ctx) : o.view === "upload" ? upload(ctx) : codeSheet(ctx);
+  const pen = k => L[k].reduce((a, [q, cl]) => a + plen(q, cl), 0) / 1000, pens = { line: pen("line"), shade: pen("shade"), colour: pen("colour") }, total = pens.line + pens.shade + pens.colour;
+  let outside = 0, nPts = 0; for (const k of ["line", "shade", "colour"]) for (const [q] of L[k]) for (const [x, y] of q) { nPts++; if (x < m - 0.01 || y < m - 0.01 || x > W - m + 0.01 || y > H - m + 0.01) outside++; }
+  const ms = performance.now() - t0, gates = [["something drawn (over 0.5 m of pen)", total > 0.5, `${total.toFixed(1)} m`], ["every path inside the margin", outside === 0, `${outside} of ${nPts} points outside`],
+    ["under 150 m of pen", total < 150, `${total.toFixed(1)} m`], ["built under 4 seconds", ms < 4000, `${ms.toFixed(0)} ms`], ...sg];
+  return { W, H, o, layers: L, gates, ms, notes, pens, total };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0); c.lineJoin = c.lineCap = "round";
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H);
+  const COL = { line: "#26200f", shade: "#6b6356", colour: "#" + r.o.inkcol };
+  for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); }
+  const P = r.pens;
+  $("stats").innerHTML = `line 0.4 pen: <b>${P.line.toFixed(1)} m</b> · shade 0.3 pen: <b>${P.shade.toFixed(1)} m</b> · colour pen: <b>${P.colour.toFixed(1)} m</b> · ${r.ms.toFixed(0)} ms<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade }, { name: "colour", colour: r.o.inkcol, w: 0.4, paths: r.layers.colour },
+].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG forks${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["view", "seed", "labels", "gens", "fork", "merge", "lanes", "drift", "nodes", "u", "method", "grain", "texth", "outline", "redact", "pitch", "facing", "page", "margin", "inkcol"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["inkcol"]);
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { view: "lineage", seed: 12, labels: "on", gens: 6, fork: 0.45, merge: 0.15, lanes: 6, drift: 0.35, nodes: "head", u: 0.6, method: "gradual", grain: "lattice", texth: 3, outline: "on", redact: "off", pitch: 0.8, facing: "right", page: "210x297", margin: 12, inkcol: "c8402f" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  family: P({ view: "lineage", nodes: "head", seed: 12 }),
+  swarm: P({ view: "lineage", nodes: "dot", gens: 9, fork: 0.7, merge: 0.2, lanes: 10, seed: 5 }),
+  theseus: P({ view: "upload", method: "gradual", u: 0.5, grain: "lattice", seed: 8 }),
+  twins: P({ view: "upload", method: "copy", u: 0.8, grain: "voxels", seed: 21 }),
+  dissolve: P({ view: "upload", method: "dissolve", u: 0.45, grain: "scan", seed: 33 }),
+  source: P({ view: "code", outline: "on", texth: 3, seed: 14 }),
+  withheld: P({ view: "code", redact: "on", page: "148x210", seed: 6 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `forks-${r.o.view}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>

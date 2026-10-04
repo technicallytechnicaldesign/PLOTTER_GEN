@@ -22,6 +22,7 @@ export const PAGES = [
   ["signal-book-studio.html", "Signal", "Signal book", "Alphabets as pictures: ship's signal flags on hoists, semaphore, ogham, braille shapes and tap code."],
   ["spider-web-studio.html", "Scenes", "Spider web studio", "Webs grown the way a spider builds them: orbs, cobwebs, sheet webs, dew and moonlit hedges."],
   ["weather-studio.html", "Scenes", "Weather studio", "Clouds, rain, lightning, fog and rainbows over the hills, or a synoptic chart with isobars and fronts."],
+  ["worlds-studio.html", "Scenes", "Worlds studio", "A planetary system from a seed: its atlas, its worlds close up and from the ground, and the life of each from molten to the end of its sun."],
   ["orrery-studio.html", "Scenes", "Orrery studio", "A new star system every seed: plan, tilted, textbook plate and brass orrery views."],
   ["island-atlas-studio.html", "Scenes", "Island atlas studio", "Islands nobody has visited, as survey sheets, antique charts, portolans and treasure maps."],
   ["underground-studio.html", "Scenes", "Underground studio", "A cut-away slice of the earth: roots, mycelium, burrows, strata and a buried fossil."],
@@ -38,6 +39,8 @@ export const PAGES = [
   ["gear-bam-studio.html", "Gears", "Gear BAM studio", "Comic 3D gears with crosshatched walls, riso halftone tops and extruded sound effects."],
   ["gear-weave-studio.html", "Gears", "Gear weave studio", "Hundreds of overlapping gears woven over and under like chainmail."],
   ["gear-reverb-studio.html", "Gears", "Gear reverb studio", "A meshing gear train wrapped in reverb rings, tilted under a camera."],
+  ["forks-studio.html", "Posthuman", "Forks studio", "A copied mind drawn three ways: a family tree of forks and merges, an upload slice by slice, and a head made of its own code."],
+  ["meatsack-studio.html", "Posthuman", "Meatsack studio", "The body as hardware: augmentations drawn as old patent sheets, a body replaced part by part, and a line of clones in their vats."],
   ["spirograph-studio.html", "Art", "Spirograph studio", "A wheel rolls round the outline of letters or a shape and a pen in its hole draws the loops: rings, laps and up to four pens."],
 ];
 export const SOURCES = ["plg-stego/core.js", "plg-stego/marks.js", "plg-stego/studio.js", "plg-stego/cipher-core.js", "plg-stego/cipher.js", "plg-stego/overlay.js", "plg-stego/signals.js", "plg-stego/signals-core.js", "plg-stego/decoder-core.js", "plg-stego/decoder.js",

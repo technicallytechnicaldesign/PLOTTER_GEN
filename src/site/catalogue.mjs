@@ -1,5 +1,5 @@
 // Editorial choices only. Geometry and complete settings come from the published studios.
-export const collections = [
+const entries = [
   {id:'lino', mode:'cutter', hiddenPresets:['skull','gaunt','scream','solid','bones','perched','sheetsr'], page:'lino-decal-studio.html', name:'Lino decals', subtitle:'Carved ravens, crows and bats in one colour of vinyl.', family:'Lino & vinyl', tags:'lino linocut carving vinyl decal raven crow bat sticker cutting weeding', description:'Carve a raven, crow or bat into closed shapes for cutting from one colour of vinyl. Choose a die-cut figure, a moon or a carved block, then change the gouges, silhouette and scale.', lesson:'The filled shapes are the vinyl you keep; the holes are what you weed away. Export the decal cut layer from the studio, set it to Basic Cut in Design Space and check the size in millimetres. Iron-on exports are already mirrored by the studio; do not mirror them a second time. Physical cut sizes remain untested.', samples:[['raven','Raven on a branch'],['calling','Calling at the moon'],['crow','Crow in flight'],['bat','Bat at the moon']]},
   {"id":"web","page":"spider-web-studio.html","name":"Spider web","subtitle":"Orbs, tangled corners, moonlit hedges.","family":"Scenes","tags":"spider orb cobweb sheet dew moon hedge silk nature","description":"Grow an orb between twigs, fill a corner with cobwebs, or stretch a sheet web through the grass. Add dew, torn threads and a spider at the hub.","lesson":"Frame threads and radii support the capture spiral. Different web types change the construction; twig and leaf outlines hide threads behind them. Dew can use a separate pen.","samples":[["garden","Garden orb"],["cobweb","Corner tenant"],["moonhedge","Moonlit hedge"],["sheet","Silk in the grass"]]},
   {"id":"weather","page":"weather-studio.html","name":"Weather","subtitle":"Thunderheads, valley fog, pressure charts.","family":"Scenes","tags":"weather sky clouds storm lightning rain fog isobars fronts map snow","description":"Build weather over a stack of ridges, or switch to a chart of pressure systems, fronts and wind barbs. Rain, cloud cover and wind have their own controls.","lesson":"Landscape views clip rain and cloud marks against foreground shapes. Chart views use a pressure field for isobars and separate symbols for fronts and wind. These are generated scenes, not forecasts.","samples":[["storm","Windmill weather"],["atlantic","Atlantic low"],["mackerel","Mackerel sky"],["northsea","North Sea chart"]]},
@@ -15,6 +15,9 @@ export const collections = [
   {"id":"figure","page":"jointed-figure-studio.html","name":"Jointed figures","subtitle":"Cut-out dolls and jumping jacks on split pins.","family":"Scenes","tags":"paper doll jointed figure jumping jack puppet skeleton robot knight bear split pin cut layer toy","description":"A skeleton, robot, knight or bear drawn in pen and cut into parts with a pin hole at every joint. Pin it together with brass paper fasteners as a posable doll, or string it as a jumping jack. Cut sizes untested.","lesson":"Each part is a few rounded shapes merged into one outline, and every joint is a disc of card round a hole at the same point on both parts. A jumping jack's limbs have a tab past the pivot: pull the tabs down and the limbs swing up.","samples":[["skeleton","Skeleton"],["jackbones","Skeleton jumping jack"],["robot","Robot"],["bear","Bear"]]},
   {"id":"wardrobe","page":"doll-wardrobe-studio.html","name":"Paper doll wardrobe","subtitle":"Clothes, hair, hats and things to carry.","family":"Scenes","tags":"paper doll clothes wardrobe outfit dress coat shirt trousers skirt shoes boots hair hat crown tabs split pin cut layer","description":"T-shirts, jumpers, shirts, dresses, coats, trousers, shorts, skirts, shoes, boots, seven hairstyles, three hats and things to carry (a bag, a teddy, a balloon, an umbrella and more) for the plain doll from the jointed figure studio. Cut sizes untested.","lesson":"Each garment is the doll part beneath grown by 1.2 mm and trimmed to shape. Where it covers a joint it shares the doll's split pin; where it does not, fold tabs wrap behind the doll.","samples":[["everyday","Everyday"],["party","Party dress"],["explorer","Explorer"],["picnic","Picnic"]]},
   {"id":"animals","page":"jointed-animal-studio.html","name":"Jointed animals","subtitle":"Rabbits, horses, dogs and more, on split pins.","family":"Scenes","tags":"animal jointed rabbit horse zebra dog dalmatian cat elephant pig split pin cut layer toy spots stripes","description":"A rabbit, horse, dog, cat, elephant or pig in side view, cut into a body, a nodding head, a wagging tail and four legs pinned in pairs. Spots, stripes or patches turn a horse into a zebra and a dog into a dalmatian. Cut sizes untested.","lesson":"Each outline is a smooth curve through hand-placed points, and the pen adds fur strokes that follow the body and engraved shading along the undersides. Near and far legs share one split pin at the shoulder and one at the hip, so walking them apart reads as a stride.","samples":[["zebra","Zebra"],["dalmatian","Dalmatian"],["rabbit","Rabbit"],["pig","Pig"]]},
+  {"id":"worlds","page":"worlds-studio.html","name":"Worlds","subtitle":"Star systems from a seed, and the life of every world.","family":"Scenes","tags":"space planets star system exoplanet red dwarf binary two suns atlas world lava ocean ice desert gas giant moons rings life astronomy seed","description":"A seed makes a planetary system: a red dwarf’s close family, a sun with rock inside and giants outside, worlds round two suns. Read its atlas, or stand on one world and follow its life from molten rock to the end of its sun.","lesson":"Worlds form as rock inside the frost line and as gas and ice outside it; warmth comes from starlight and distance, and small hot worlds lose their air. When moves the clock: low shows the newborn system, past 1 shows its future. The rules are rough on purpose; it is a drawing generator, not a model.","samples":[["home","Seven worlds"],["red","Red dwarf family"],["newborn","Newborn system"],["twosuns","Two suns"],["oneworld","A living world, close"]]},
+  {"id":"forks","page":"forks-studio.html","name":"Forks","subtitle":"A copied mind: its family tree, its upload, its code.","family":"Posthuman","tags":"posthuman transhuman fork merge copy clone identity lineage genealogy upload mind consciousness code personhood theseus profile head self","description":"What happens to a self that can be copied. Draw its lineage as a family tree of forks and merges, move it across in an upload slice by slice, or fill a head with the lines of code it runs on.","lesson":"Every head is one profile curve nudged by a seed, so each fork drifts a little from its parent and the shading shows how far it has come from the original. The upload asks the ship of Theseus question three ways: replace it slice by slice, copy it beside itself, or let the original dissolve as the copy forms.","samples":[["family","Family tree"],["swarm","Nine generations"],["theseus","Slice by slice"],["twins","Two of me"],["source","Source"]]},
+  {"id":"meatsack","page":"meatsack-studio.html","name":"Meatsack","subtitle":"Bolt on, swap out, print another.","family":"Posthuman","tags":"posthuman transhuman cyborg cybernetics augmentation implant prosthetic patent drawing replacement theseus clone clones vat body parts serial","description":"The literal side of being posthuman. Draw an augmentation as an old patent sheet with numbered parts, replace a body part by part from the hands inward, or line up clones in their vats with one original among them.","lesson":"The body is built from rounded shapes merged by a distance field, so every part has its own outline. A replaced part keeps that outline and swaps contour hatching for panel seams, rivets and joint discs, which is all it takes to read as machine next to flesh.","samples":[["substrate","The meat underneath"],["ocular","Ocular implant"],["halfway","Halfway"],["vats","The vats"],["diverged","Diverged"]]},
   {id:'cipher', page:'cipher-garden-studio.html', name:'Cipher garden', subtitle:'Mazes, tiles, ridges. Messages stashed inside.', family:'Hidden messages', tags:'tiles maze ridgelines constellation knots code', description:'A message becomes a landscape, a constellation or a field of tiles. Follow the marks and the drawing tells you what it says.', lesson:'The drawing is the code. In Truchet tiles, orientation carries a bit; in ridgelines, the line carries the message. Different methods need different reading keys.', samples:[['ridges','Unknown pleasures'],['arcs','Something to hide'],['stars','Letters in the sky'],['knots','Over / under']]},
   {id:'weave', page:'gear-weave-studio.html', name:'Gear weave', subtitle:'Sunflowers, chainmail, swarms of gears.', family:'Gears & fields', tags:'woven chainmail sunflower swarm gears texture', description:'Hundreds of toothed rings pass over and under one another. Order a lattice, grow a sunflower, or let the whole thing swarm.', lesson:'Where two gears overlap, the rim passes over on one side and under on the other. Arrangement, size variation and fill change the entire character.', samples:[['sunflower','Sunflower gears'],['mail','Chainmail'],['swarm','Gear infestation'],['plates','Plates']]},
   {id:'signal', page:'signal-book-studio.html', name:'Signal book', subtitle:'Flags, semaphore, ogham, braille.', family:'Signs & alphabets', tags:'flags semaphore ogham braille tap code alphabet', description:'Hoist a sentence. Draw an alphabet. Turn words into flags, gestures and marks, with black-ink hatching standing in for colour.', lesson:'Signal flags use heraldic hatching to represent colour in black ink. Semaphore encodes letters through arm positions; ogham uses strokes along a stem.', samples:[['hoist','Up the mast'],['semachart','Body language'],['ogham','Along the stem'],['braille','Six positions']]},
@@ -24,3 +27,59 @@ export const collections = [
   {id:'dimension', page:'gear-3d-studio.html', name:'Gear 3D', subtitle:'Gears on ripples, rays and ribbons.', family:'Gears & fields', tags:'perspective rays ripple stream truchet floor gears', description:'Solid gears rise out of fields of rays, ripples and ribbons. Camera angle and floor spacing change the composition.', lesson:'Perspective projects the gear geometry onto paper. Hidden lines are removed, and floor spacing is constrained so distant detail can still be plotted.', samples:[['ripple','Ripple effect'],['spark','Sparks on the floor'],['truchet','Ribbon machinery']]},
   {id:'reverb', page:'gear-reverb-studio.html', name:'Gear reverb', subtitle:'Gear trains and offset rings.', family:'Gears & fields', tags:'echo rings meshing gears field', description:'A meshing gear train surrounded by rings of echoes. Explore the space where mechanical geometry becomes a contour field.', lesson:'Offset rings radiate from the gear train. Ring spacing, camera angle and the outline of the field change the balance between machinery and landscape.', samples:[['','Echo chamber']]}
 ];
+
+// Shelves: in the Shelves view the pile folds studios of one kind under a single drawer, in the order listed here.
+// A studio with no shelf sits loose in the pile. Searching, A-Z or a shelf filter always lists studios one by one.
+export const shelves = [
+  {id:'gears', name:'Gears', blurb:'Toothed rings woven, extruded, echoed and set in perspective.'},
+  {id:'dolls', name:'Paper dolls', blurb:'Jointed figures, animals and the wardrobe that pins onto them.'},
+  {id:'hidden', name:'Hidden', blurb:'Drawings that carry a message, and sheets that reveal one.'},
+  {id:'archaeology', name:'Archaeology', blurb:'Trenches, flint and broken pots, drawn the way finds are recorded.'},
+  {id:'nature', name:'Natural sciences', blurb:'Weather, webs, soil and terrain, each grown from its own rules.'},
+  {id:'space', name:'Space', blurb:'Star systems, orbits and the machinery for showing them.'},
+  {id:'posthuman', name:'Posthuman', blurb:'Selves that fork, upload and swap their parts.'},
+];
+
+// Thematic view: four poles on a diamond. Material sits opposite Signal (stuff and information),
+// Machine opposite System (built mechanism and grown rule). Adjacent poles share an edge word.
+export const poles = [
+  {id:'material', name:'Material', note:'Stuff with weight: stone, card, soil, thread.'},
+  {id:'machine', name:'Machine', note:'Mechanisms: gears, joints, wheels, things that turn.'},
+  {id:'signal', name:'Signal', note:'Marks that carry meaning: codes, charts, readings.'},
+  {id:'system', name:'System', note:'Rules that grow: weather, webs, orbits, swarms.'},
+];
+export const edges = {'material|machine':'tools', 'machine|signal':'instruments', 'signal|system':'models', 'system|material':'growth'};
+
+// Where each studio lives. axes are relative pulls toward each pole (any scale, normalised on the page):
+// one pole puts a studio on that corner, two put it on the edge between them, more pull it toward the middle.
+const placement = {
+  lino:        {axes:{material:3, signal:1}},
+  web:         {shelf:'nature', axes:{system:3, material:2}},
+  weather:     {shelf:'nature', axes:{system:3, signal:2, material:1}},
+  island:      {shelf:'nature', axes:{material:2, signal:2, system:1}},
+  underground: {shelf:'nature', axes:{material:3, system:2}},
+  worlds:      {shelf:'space', axes:{system:3, material:2, signal:1}},
+  orrery:      {shelf:'space', axes:{system:3, machine:2, signal:1}},
+  archaeology: {shelf:'archaeology', axes:{material:3, signal:1, system:1}},
+  flint:       {shelf:'archaeology', axes:{material:3, machine:2}},
+  pottery:     {shelf:'archaeology', axes:{material:3, signal:1, machine:1}},
+  forks:       {shelf:'posthuman', axes:{signal:3, system:2, machine:1}},
+  meatsack:    {shelf:'posthuman', axes:{machine:3, material:3, system:1}},
+  spirograph:  {axes:{machine:3, system:2}},
+  vampire:     {shelf:'dolls', axes:{material:2, machine:2}},
+  garland:     {axes:{material:3, machine:1}},
+  figure:      {shelf:'dolls', axes:{machine:3, material:2}},
+  wardrobe:    {shelf:'dolls', axes:{material:3, signal:1, machine:1}},
+  animals:     {shelf:'dolls', axes:{material:2, machine:2, system:1}},
+  cipher:      {shelf:'hidden', axes:{signal:3, system:2}},
+  signal:      {shelf:'hidden', axes:{signal:4, material:1}},
+  purloined:   {shelf:'hidden', axes:{signal:3, material:2}},
+  overlay:     {shelf:'hidden', axes:{signal:3, machine:1, material:1}},
+  weave:       {shelf:'gears', axes:{machine:2, material:2, system:1}},
+  bam:         {shelf:'gears', axes:{machine:3, signal:2}},
+  dimension:   {shelf:'gears', axes:{machine:3, system:1}},
+  reverb:      {shelf:'gears', axes:{machine:2, signal:2, system:1}},
+};
+
+export const collections = entries.map(c => ({...c, ...placement[c.id]}));
+for (const c of collections) if (c.shelf && !shelves.some(s => s.id === c.shelf)) throw Error(`${c.id}: unknown shelf ${c.shelf}`);

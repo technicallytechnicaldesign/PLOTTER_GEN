@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meatsack studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Meatsack studio</h1>
+  <p class="sub">The body as hardware: bolt on, swap out, print another. Augmentations drawn as patent sheets, a body replaced part by part, a line of clones.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="arm">Patent: arm</button><button data-preset="ocular">Patent: ocular</button><button data-preset="spine">Patent: spine</button><button data-preset="halfway">Halfway</button><button data-preset="substrate">Substrate</button><button data-preset="vats">Vats</button><button data-preset="diverged">Diverged</button><button data-preset="heads">Heads</button></div>
+  </fieldset>
+  <fieldset><legend>The sheet</legend>
+    <label>Sheet <select id="view"><option value="patent">patent sheet (augmentation)</option><option value="theseus">replacement, part by part</option><option value="clones">clone line</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="17"></label>
+    <p class="hint">The seed picks the body's proportions, the order the augments appear in, the serial numbers and which clone is marked. The groups below each belong to one sheet; the others are ignored.</p>
+  </fieldset>
+  <fieldset><legend>The body</legend>
+    <label>Flesh <select id="flesh"><option value="faint">faint: soft grey outline, sparse broken hatching</option><option value="full">full: pen outline and hatching</option><option value="ghost">ghost: a dotted outline only</option></select></label>
+    <label>Network <output id="o-network"></output><input type="range" id="network" min="0" max="1" step="0.05" value="0.4"></label>
+    <label>Kind of network <select id="netkind"><option value="circuit">circuit traces</option><option value="lace">hex lace</option><option value="veins">veins</option></select></label>
+    <label>Network pen <select id="netpen"><option value="colour">colour pen</option><option value="line">line pen</option></select></label>
+    <label>Skin texture <output id="o-texture"></output><input type="range" id="texture" min="0" max="1" step="0.05" value="0.3"></label>
+    <p class="hint">Every sheet. The network grows outward from the augments and ports, so at 0 there is none and at 1 it covers the whole body. Texture goes from fine stipple, through cross-contour rings, to stitched graft seams at the top end.</p>
+  </fieldset>
+  <fieldset><legend>Patent</legend>
+    <label>Subject <select id="subject"><option value="arm">forearm and hand</option><option value="head">head and shoulders</option><option value="spine">back, with spinal implant</option><option value="whole">the whole body</option></select></label>
+    <label>Augment level <output id="o-aug"></output><input type="range" id="aug" min="0" max="1" step="0.05" value="0.6"></label>
+    <label>Figures <select id="figs"><option value="one">one: assembled</option><option value="two">two: assembled, then exploded</option></select></label>
+    <p class="hint">Patent sheet only. With two figures the first shows the body and the second pulls the augments out along dashed lines. Every numeral on the drawing is in the parts list.</p>
+  </fieldset>
+  <fieldset><legend>Replacement</legend>
+    <label>Fraction replaced <output id="o-replaced"></output><input type="range" id="replaced" min="0" max="1" step="0.01" value="0.5"></label>
+    <label>Row of stages beneath <select id="strip"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Stages in the row <output id="o-stages"></output><input type="range" id="stages" min="5" max="9" step="1" value="7"></label>
+    <p class="hint">Replacement sheet only. Parts go from the extremities inwards, hands and feet first, and the head is last.</p>
+  </fieldset>
+  <fieldset><legend>Clones</legend>
+    <label>Layout <select id="layout"><option value="grid">grid</option><option value="lineage">lineage (family tree)</option></select></label>
+    <label>Generations (lineage) <output id="o-gens"></output><input type="range" id="gens" min="3" max="5" step="1" value="4"></label>
+    <label>Who <select id="who"><option value="bodies">whole bodies</option><option value="heads">heads</option></select></label>
+    <label>Rows <output id="o-rows"></output><input type="range" id="rows" min="1" max="6" step="1" value="3"></label>
+    <label>Columns <output id="o-cols"></output><input type="range" id="cols" min="2" max="10" step="1" value="5"></label>
+    <label>Vessel <select id="vessel"><option value="tube">glass tube</option><option value="tray">drawer</option><option value="none">none</option></select></label>
+    <label>Divergence <output id="o-drift"></output><input type="range" id="drift" min="0" max="1" step="0.05" value="0.35"></label>
+    <label>Mark one clone <select id="mark"><option value="original">the original</option><option value="defect">a defect</option><option value="none">none</option></select></label>
+    <p class="hint">Clone sheet only. Divergence is how far the clones have drifted: 0 identical, 0.3 posture and proportions, 0.6 each on its own augmentation path, 1 wildly diverged. In the lineage layout each generation forks and children keep what their parents grew; rows and columns set the grid, columns also cap how wide a generation may get.</p>
+  </fieldset>
+  <fieldset><legend>Drawing</legend>
+    <label>Captions and serials <select id="labels"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2" step="0.05" value="0.8"></label>
+    <label>Colour pen (joint discs, serials, network, marks) <select id="inkcol"><option value="c8402f">red</option><option value="2a9d8f">teal</option><option value="2f6db5">blue</option><option value="d9822b">amber</option></select></label>
+    <p class="hint">Flesh is hatched along the limb on the shadow side, light from the upper left. Replaced parts are hatched straight at 45 degrees, with seams, rivets and a joint disc.</p>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="210x297">A4 portrait</option><option value="148x210">A5 portrait</option><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="297x210">A4 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="6" max="30" step="1" value="12"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Plotter only, no cutting. Line is the 0.4 pen, shade the 0.3 pen, and the colour pen is the one chosen above. The split files carry four corner ticks so every layer lands in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1075"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: each body part is a distance field (capsules, ellipses and a smooth torso outline) and its outline is traced where the field crosses zero, so neighbouring parts meet cleanly at the joints. Flesh is hatched along each limb, curving with the form, closest together on the shadow side. A replaced part keeps the same outline but gets a panel line inside it, seams with rivets, a joint disc and straight hatching, so the machine reads next to the flesh. Patent numerals are placed by a small solver that checks no two leader lines cross. The network grows outward from the augment sites as a Manhattan trace, a honeycomb or a branching vein, and the flesh hatching steps aside for it. In the clone line, each clone carries a genome of seeded mutations that build up with divergence, and the family tree lets children keep what their parents grew. Everything is drawn in the single-stroke capitals, so it all plots.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, pow } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const smin = (a, b, k) => { if (k <= 0) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+
+// ---------------- stroke lettering (upper case, digits, a little punctuation) ----------------
+const GLYPH_SRC = {
+  "0": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "1": "1,1 2,0 2,6|1,6 3,6", "2": "0,1 1,0 3,0 4,1 4,2.5 0,6 4,6",
+  "3": "0,0 4,0 2,2.5 3,2.5 4,3.5 4,5 3,6 1,6 0,5", "4": "3,6 3,0 0,4 4,4", "5": "4,0 0,0 0,2.8 3,2.8 4,3.8 4,5 3,6 1,6 0,5",
+  "6": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.8 3,2.8 0,2.8", "7": "0,0 4,0 1.5,6", "8": "1,0 3,0 4,1 4,2 3,3 1,3 0,2 0,1 1,0|1,3 0,4 0,5 1,6 3,6 4,5 4,4 3,3",
+  "9": "0,5 1,6 3,6 4,5 4,1 3,0 1,0 0,1 0,2.2 1,3.2 4,3.2",
+  "A": "0,6 0,2 2,0 4,2 4,6|0,3.5 4,3.5", "B": "0,6 0,0 3,0 4,1 4,2 3,3 0,3|3,3 4,4 4,5 3,6 0,6", "C": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5",
+  "D": "0,0 0,6 2.5,6 4,4.5 4,1.5 2.5,0 0,0", "E": "4,0 0,0 0,6 4,6|0,3 3,3", "F": "4,0 0,0 0,6|0,3 3,3", "G": "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.5 2,3.5",
+  "H": "0,0 0,6|4,0 4,6|0,3 4,3", "I": "1,0 3,0|2,0 2,6|1,6 3,6", "J": "4,0 4,5 3,6 1,6 0,5", "K": "0,0 0,6|4,0 0,3.5|1.3,2.6 4,6", "L": "0,0 0,6 4,6",
+  "M": "0,6 0,0 2,3 4,0 4,6", "N": "0,6 0,0 4,6 4,0", "O": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1", "P": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5",
+  "Q": "0,1 1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1|2.5,4.5 4,6.4", "R": "0,6 0,0 3,0 4,1 4,2.5 3,3.5 0,3.5|2,3.5 4,6",
+  "S": "4,1 3,0 1,0 0,1 0,2 1,3 3,3 4,4 4,5 3,6 1,6 0,5", "T": "0,0 4,0|2,0 2,6", "U": "0,0 0,5 1,6 3,6 4,5 4,0", "V": "0,0 2,6 4,0",
+  "W": "0,0 1,6 2,3 3,6 4,0", "X": "0,0 4,6|4,0 0,6", "Y": "0,0 2,3|4,0 2,3|2,3 2,6", "Z": "0,0 4,0 0,6 4,6",
+  ".": "1.4,5 2.6,5 2.6,6 1.4,6 1.4,5", "-": "0.5,3 3.5,3", ":": "1.5,1.4 2.5,1.4 2.5,2.4 1.5,2.4 1.5,1.4|1.5,4.2 2.5,4.2 2.5,5.2 1.5,5.2 1.5,4.2",
+  "/": "0,6 4,0", ",": "2.4,5.2 1.6,6.8", "(": "3,0 1.5,1.5 1.5,4.5 3,6", ")": "1,0 2.5,1.5 2.5,4.5 1,6", "+": "0.5,3 3.5,3|2,1.5 2,4.5", "=": "0.5,2 3.5,2|0.5,4 3.5,4",
+  "'": "2,0 2,1.6", "%": "0,6 4,0|0.3,0.3 1.3,0.3 1.3,1.3 0.3,1.3 0.3,0.3|2.7,4.7 3.7,4.7 3.7,5.7 2.7,5.7 2.7,4.7", "#": "1,0 1,6|3,0 3,6|0,2 4,2|0,4 4,4", "?": "0,1 1,0 3,0 4,1 4,2 2,3.5 2,4.5|1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", " ": "",
+};
+const GLYPH = {}; for (const [k, v] of Object.entries(GLYPH_SRC)) GLYPH[k] = v ? v.split("|").map(s => s.trim().split(/\s+/).map(p => p.split(",").map(Number))) : [];
+let MINH = INF; // smallest letter height drawn in this build, for the lettering gate
+function txtW(s, h) { const u = h / 6; return max(0, String(s).length * 5.6 * u - 1.6 * u); }
+// draws s with its centre-line at y and returns the text box as a polygon. o.a = l | c | r, o.ang = rotation (radians)
+function txt(s, x, y, h, out, o = {}) {
+  s = String(s).toUpperCase(); MINH = min(MINH, h);
+  const u = h / 6, adv = 5.6 * u, w = txtW(s, h), ox = o.a === "c" ? -w / 2 : o.a === "r" ? -w : 0, ang = o.ang || 0, c = cos(ang), sn = sin(ang);
+  const T = (px, py) => [x + px * c - py * sn, y + px * sn + py * c];
+  for (let k = 0; k < s.length; k++) for (const pl of GLYPH[s[k]] || []) out.push([pl.map(([gx, gy]) => T(ox + k * adv + gx * u, gy * u - h / 2)), false]);
+  return [T(ox, -h / 2), T(ox + w, -h / 2), T(ox + w, h / 2), T(ox, h / 2)];
+}
+
+// ---------------- distance-field helpers (from the garland studio) ----------------
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+const loopArea = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+function smooth(l, passes = 2) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+const polySDF = pts => { // signed distance to a closed polygon (negative inside); typed arrays and no destructuring, it runs millions of times
+  const n = pts.length, X = new Float64Array(n), Y = new Float64Array(n);
+  for (let i = 0; i < n; i++) { X[i] = pts[i][0]; Y[i] = pts[i][1]; }
+  return (x, y) => {
+    let d = INF, s = 1;
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+      const ax = X[j], ay = Y[j], by = Y[i], ex = X[i] - ax, ey = by - ay, wx = x - ax, wy = y - ay, L2 = ex * ex + ey * ey;
+      let t = L2 > 1e-12 ? (wx * ex + wy * ey) / L2 : 0; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const dx = wx - ex * t, dy = wy - ey * t, dd = dx * dx + dy * dy; if (dd < d) d = dd;
+      const c1 = y >= ay, c2 = y < by, c3 = ex * wy > ey * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * sqrt(d);
+  };
+};
+const inPoly = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [ax, ay] = pts[j], [bx, by] = pts[i]; if ((ay > y) !== (by > y) && x < ax + (bx - ax) * (y - ay) / (by - ay)) c = !c; } return c; };
+const densify = (pts, step) => { const out = []; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], n = max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } return out; };
+
+// ---------------- small geometry ----------------
+const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl && q.length > 1) s += hypot(q[0][0] - q[q.length - 1][0], q[0][1] - q[q.length - 1][1]); return s; };
+const circle = (x, y, r, n = 0) => { n = n || max(10, ceil(r * 7)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+const arcP = (cx, cy, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [cx + rx * cos(a), cy + ry * sin(a)]; });
+function dens(pts, step, closed) {
+  const out = [], n = pts.length, m = closed ? n : n - 1;
+  for (let i = 0; i < m; i++) { const a = pts[i], b = pts[(i + 1) % n], k = max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let j = 0; j < k; j++) out.push([a[0] + (b[0] - a[0]) * j / k, a[1] + (b[1] - a[1]) * j / k]); }
+  out.push(closed ? pts[0] : pts[n - 1]); return out;
+}
+function crm(pts, closed, step = 0.5) { // Catmull-Rom through the points, sampled about every step mm
+  const n = pts.length, get = i => closed ? pts[(i + n) % n] : pts[clamp(i, 0, n - 1)], out = [];
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2), k = max(2, ceil(hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let j = 0; j < k; j++) { const t = j / k, t2 = t * t, t3 = t2 * t; out.push([0, 1].map(c => 0.5 * (2 * p1[c] + (p2[c] - p0[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t2 + (3 * p1[c] - p0[c] - 3 * p2[c] + p3[c]) * t3))); }
+  }
+  if (!closed) out.push(pts[n - 1].slice()); else out.push(out[0]);
+  return out;
+}
+// keep the runs of a polyline where keep(x, y) holds (the polyline is sampled every step mm first)
+function runsOf(pts, keep, step = 0.3, minLen = 0.35, closed = false) {
+  const d = dens(pts, step, closed), out = []; let run = [];
+  const flush = () => { if (run.length > 1 && plen(run) >= minLen) out.push(rdp(run, 0.012)); run = []; };
+  for (const p of d) { if (keep(p[0], p[1])) run.push(p); else flush(); }
+  flush(); return out;
+}
+const put = (L, pts, cl = false) => L.push([pts, cl]);
+const putAll = (L, arr) => { for (const a of arr) L.push([a, false]); };
+const newInk = () => ({ line: [], shade: [], colour: [] });
+const cross2 = (ax, ay, bx, by) => ax * by - ay * bx;
+function segsCross(a, b, c, d) { // proper crossing of segments ab and cd
+  const r = [b[0] - a[0], b[1] - a[1]], s = [d[0] - c[0], d[1] - c[1]], den = cross2(r[0], r[1], s[0], s[1]);
+  if (abs(den) < 1e-9) return false;
+  const t = cross2(c[0] - a[0], c[1] - a[1], s[0], s[1]) / den, u = cross2(c[0] - a[0], c[1] - a[1], r[0], r[1]) / den;
+  return t > 0.001 && t < 0.999 && u > 0.001 && u < 0.999;
+}
+const distSeg = (x, y, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - a[0]) * dx + (y - a[1]) * dy) / L2, 0, 1); return hypot(x - a[0] - t * dx, y - a[1] - t * dy); };
+const bbOf = pts => { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of pts) { a = min(a, x); b = min(b, y); c = max(c, x); d = max(d, y); } return [a, b, c, d]; };
+const bbU = (A, B) => [min(A[0], B[0]), min(A[1], B[1]), max(A[2], B[2]), max(A[3], B[3])];
+const bbOv = (A, B) => A[0] < B[2] && B[0] < A[2] && A[1] < B[3] && B[1] < A[3];
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const dashed = (a, b, dash = 1.8, gap = 1.2) => { const L = hypot(b[0] - a[0], b[1] - a[1]), out = []; for (let t = 0; t < L; t += dash + gap) out.push([lerp2(a, b, t / L), lerp2(a, b, min(L, t + dash) / L)]); return out; };
+
+// ---------------- signed-distance primitives, in page millimetres ----------------
+const pCap = (a, ra, b, rb) => ({ d: (x, y) => { const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - a[0]) * dx + (y - a[1]) * dy) / L2, 0, 1); return hypot(x - a[0] - t * dx, y - a[1] - t * dy) - (ra + (rb - ra) * t); }, b: [min(a[0] - ra, b[0] - rb), min(a[1] - ra, b[1] - rb), max(a[0] + ra, b[0] + rb), max(a[1] + ra, b[1] + rb)] });
+const pEll = (c, rx, ry, ang = 0) => { const cs = cos(ang), sn = sin(ang), m = min(rx, ry), M = max(rx, ry); return { d: (x, y) => { const dx = x - c[0], dy = y - c[1]; return (hypot((dx * cs + dy * sn) / rx, (-dx * sn + dy * cs) / ry) - 1) * m; }, b: [c[0] - M, c[1] - M, c[0] + M, c[1] + M] }; };
+const pPoly = pts => ({ d: polySDF(pts), b: bbOf(pts) });
+const pUnion = (ps, k = 0) => ({ d: (x, y) => { let d = 1e6; for (const p of ps) d = k > 0 ? smin(d, p.d(x, y), k) : min(d, p.d(x, y)); return d; }, b: ps.map(p => p.b).reduce(bbU) });
+function fld(d, B, h) {
+  const nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[j * nx + i] = d(B[0] + i * h, B[1] + j * h);
+  return { F, nx, ny, h, x0: B[0], y0: B[1] };
+}
+
+// ================= the body =================
+// Head units: the figure is about 7.5 heads tall, x across from the centre line, y down from the top of the head.
+const LIGHT = [-0.62, -0.785];  // light from the upper left, as a direction pointing toward the light
+const ORDER = ["torso", "pelvis", "thighR", "thighL", "shinR", "shinL", "footR", "footL", "neck", "head", "upperArmR", "upperArmL", "forearmR", "forearmL", "handR", "handL", "neck2", "head2", "upperArmS", "forearmS", "handS", "upperArmT", "forearmT", "handT"];
+const PARENT = { pelvis: "torso", neck: "torso", head: "neck", neck2: "torso", head2: "neck2", thighR: "pelvis", thighL: "pelvis", shinR: "thighR", shinL: "thighL", footR: "shinR", footL: "shinL", upperArmR: "torso", upperArmL: "torso", upperArmS: "torso", upperArmT: "torso", forearmT: "upperArmT", handT: "forearmT", forearmR: "upperArmR", forearmL: "upperArmL", forearmS: "upperArmS", handR: "forearmR", handL: "forearmL", handS: "forearmS" };
+const REPLACE_ORDER = [["handR", "handL"], ["footR", "footL"], ["forearmR", "forearmL"], ["shinR", "shinL"], ["upperArmR", "upperArmL"], ["thighR", "thighL"], ["pelvis"], ["torso"], ["neck"], ["head"]];
+
+function makeBody(B) {
+  const s = B.s, pz = B.pose || {}, bld = pz.bld || 1, shw = pz.shw || 1, hs = pz.h || 1, rot = B.rot || 0, cr = cos(rot), sr = sin(rot), tilt = (pz.tilt || 0) * D2R, h = B.h || 0.5, W = B.twin ? 1.75 : 1;
+  const armA = pz.armA || [7, 7], bend = pz.bend || [3, 3], legA = pz.legA || [2.5, 2.5], armK = pz.armK || [1, 1], legK = pz.legK || [1, 1], Eo = pz.elong || 1, hk = pz.hunch || 0, HY = hk * 0.4, KX = (pz.headK || [1, 1])[0], KY = (pz.headK || [1, 1])[1], lb = pz.legBend || 0, tw = pz.tw || 1, bt = bld * tw, Yf = y => y <= 1.3 ? y : y <= 3.1 ? 1.3 + (y - 1.3) * Eo : y + (Eo - 1) * 1.8;
+  const T = (x, y) => { const X = x * s, Y = Yf(y) * s * hs; return [B.x + X * cr - Y * sr, B.y + X * sr + Y * cr]; };
+  const Ht = (x, y) => { const dy = y - 0.93, rx = x * cos(tilt) - dy * sin(tilt), ry = x * sin(tilt) + dy * cos(tilt); return [rx * KX, 0.93 + ry * KY + HY]; };
+  const R = r => r * s, Rb = r => r * s * bld, parts = [], by = {}, joints = [];
+  const mk = (name, prim, axisHu, extra = {}) => {
+    if (B.only && !B.only.has(name)) return null;
+    const b = prim.b, pad = 2.5, G = fld(prim.d, [b[0] - pad, b[1] - pad, b[2] + pad, b[3] + pad], extra.h || h);
+    const loops = contours(G, 0).filter(l => abs(loopArea(l)) > 0.3).sort((p, q) => abs(loopArea(q)) - abs(loopArea(p))).map(l => rdp([...smooth(l, 1), l[0]], 0.02).slice(0, -1));
+    const P = { name, G, bb: [G.x0, G.y0, G.x0 + (G.nx - 1) * G.h, G.y0 + (G.ny - 1) * G.h], loops, axis: axisHu.map(p => T(p[0], p[1])), par: PARENT[name] || null, sd: name.endsWith("R") ? -1 : name.endsWith("L") ? 1 : 0, ...extra };
+    parts.push(P); by[name] = P; return P;
+  };
+  const armFK = (sh, aDeg, bDeg, K) => { const a1 = aDeg * D2R, a2 = (aDeg - bDeg) * D2R, a3 = a2 - 2 * D2R, d1 = [sin(a1), cos(a1)], el = [sh[0] + 1.36 * K * d1[0], sh[1] + 1.36 * K * d1[1]], d2 = [sin(a2), cos(a2)], wr = [el[0] + 1.1 * K * d2[0], el[1] + 1.1 * K * d2[1]]; return { sh, el, wr, d3: [sin(a3), cos(a3)] }; };
+  const arm = {}, leg = {};
+  for (const sd of [-1, 1]) {
+    const k = sd < 0 ? 0 : 1;
+    arm[sd] = armFK([sd * 0.86 * shw * W * pow(tw, 0.7), 1.6 - hk * 0.12], sd * armA[k], sd * bend[k], armK[k]);
+    const l1 = sd * legA[k] * D2R, hip = [sd * 0.35 * W, 3.5], kn = [hip[0] + 1.95 * legK[k] * sin(l1), hip[1] + 1.95 * legK[k] * cos(l1)], l2 = l1 * 0.4 + sd * lb * D2R, an = [kn[0] + 1.63 * legK[k] * sin(l2), kn[1] + 1.63 * legK[k] * cos(l2)];
+    leg[sd] = { hip, kn, an };
+  }
+  const exA = pz.extraArm === 2 ? [1, -1] : pz.extraArm ? [pz.extraArm] : []; for (const sdE of exA) arm[sdE > 0 ? "S" : "T"] = armFK([sdE * 0.8 * shw * W * pow(tw, 0.7), 2.15], sdE * 32, -sdE * 8, 0.95);
+  const mirror = a => a.slice().reverse().map(([x, y]) => [-x, y]);
+  const sx = pow(tw, 0.7), half = [[0.18, 1.27 - hk * 0.1], [0.5 * W * sx, 1.37 - hk * 0.12], [0.8 * shw * W * sx, 1.5 - hk * 0.12], [0.8 * shw * W * sx, 1.9], [0.74 * bt * W, 2.35], [0.62 * bt * W, 2.85], [0.635 * bt * W, 3.1]];
+  const torsoPoly = pPoly(crm([[0, 1.25], ...half, [0, 3.2], ...mirror(half)].map(p => T(p[0], p[1])), true, 0.6).slice(0, -1));
+  const dCaps = [-1, 1].filter(sd => !B.only || B.only.has("upperArm" + (sd < 0 ? "R" : "L"))).map(sd => pCap(T(...arm[sd].sh), Rb(0.19), T(...arm[sd].sh), Rb(0.19)));
+  mk("torso", pUnion([torsoPoly, ...dCaps], R(0.16)), [[0, 1.4], [0, 3.0]]);
+  const phalf = [[0.6 * bt * W, 2.95], [0.64 * bt * W, 3.12], [0.67 * bt * W, 3.3], [0.66 * bt * W, 3.58], [0.5 * bt * W, 3.76]];
+  mk("pelvis", pPoly(crm([[0, 2.95], ...phalf, [0, 3.86], ...mirror(phalf)].map(p => T(p[0], p[1])), true, 0.6).slice(0, -1)), [[0, 3.05], [0, 3.75]]);
+  for (const sd of [-1, 1]) {
+    const nm = sd < 0 ? "R" : "L", { hip, kn, an } = leg[sd], mid = lerp2(kn, an, 0.28);
+    mk("thigh" + nm, pCap(T(...hip), Rb(0.29), T(...kn), Rb(0.16)), [hip, kn]);
+    mk("shin" + nm, pUnion([pCap(T(...kn), Rb(0.18), T(...mid), Rb(0.18)), pCap(T(...mid), Rb(0.18), T(...an), Rb(0.1))], R(0.05)), [kn, an]);
+    const fy = an[1] + 0.1;
+    mk("foot" + nm, pUnion([pEll(T(an[0] + sd * 0.05, fy + 0.15), R(0.22), R(0.14)), pCap(T(an[0], an[1] - 0.05), R(0.1), T(an[0] + sd * 0.05, fy + 0.1), R(0.17))], R(0.05)), [[an[0], an[1] - 0.04], [an[0] + sd * 0.05, fy + 0.22]]);
+  }
+  const hp = [[0, 0], [0.22, 0.02], [0.355, 0.17], [0.375, 0.38], [0.35, 0.58], [0.3, 0.76], [0.2, 0.93], [0.08, 1.0]];
+  for (const hdd of B.twin ? [["", -0.55], ["2", 0.55]] : [["", 0]]) {
+    const [suf, dx] = hdd, HX = (x, y) => { const p = Ht(x, y); return [p[0] + dx, p[1]]; };
+    mk("neck" + suf, pCap(T(dx, 0.86 + HY * 0.8), Rb(0.165), T(dx, 1.4), Rb(0.21)), [[dx, 0.9 + HY * 0.8], [dx, 1.38]], { hx: dx });
+    if (!B.noHead) mk("head" + suf, pPoly(crm([...hp, [0, 1.012], ...mirror(hp.slice(1))].map(p => T(...HX(p[0], p[1]))), true, 0.5).slice(0, -1)), [HX(0, 0.14), HX(0, 0.9)], { hx: dx });
+    joints.push({ key: "neck" + suf, pa: "torso", ch: "neck" + suf, p: T(dx, 1.36), r: R(0.15) });
+  }
+  const handFor = (sd, wr, d) => {
+    const pv = [-d[1], d[0]], vt = (-sd * pv[0] > 0) ? 1 : -1, L = (u, v) => T(wr[0] + d[0] * u + pv[0] * v, wr[1] + d[1] * u + pv[1] * v), dp = [d[0] * cr - d[1] * sr, d[0] * sr + d[1] * cr], ang = atan2(-dp[0], dp[1]);
+    if (B.fingers) {
+      const ps = [pCap(L(0.06, 0), R(0.105), L(0.3, 0), R(0.13))], lens = [0.33, 0.37, 0.34, 0.26], lines = [];
+      for (let i = 0; i < 4; i++) { const v = vt * (0.09 - 0.06 * i); ps.push(pCap(L(0.3, v), R(0.03), L(0.3 + lens[i], v), R(0.027))); if (i < 3) { const vm = vt * (0.09 - 0.06 * (i + 0.5)); lines.push([L(0.3, vm), L(0.3 + min(lens[i], lens[i + 1]) - 0.02, vm)]); } }
+      ps.push(pCap(L(0.1, vt * 0.09), R(0.047), L(0.37, vt * 0.2), R(0.032)));
+      return { prim: pUnion(ps), lines, fing: lens.map((l, i) => [L(0.3, vt * (0.09 - 0.06 * i)), L(0.3 + l, vt * (0.09 - 0.06 * i))]), h: h * 0.6, knuckle: lens.map((l, i) => [L(0.3 + l * 0.55, vt * (0.09 - 0.06 * i)), vt * (0.09 - 0.06 * i)]) };
+    }
+    return { prim: pUnion([pCap(L(0.05, 0), R(0.1), L(0.55, 0), R(0.075)), pEll(L(0.28, 0), R(0.115), R(0.26), ang), pCap(L(0.1, vt * 0.08), R(0.04), L(0.34, vt * 0.17), R(0.03))], R(0.03)), lines: [], knuckle: [] };
+  };
+  const armParts = (nm, sd, a, ext = {}) => {
+    const hd = handFor(sd, a.wr, a.d3);
+    mk("upperArm" + nm, pCap(T(...a.sh), Rb(0.18), T(...a.el), Rb(0.14)), [a.sh, a.el], ext);
+    mk("forearm" + nm, pCap(T(...a.el), Rb(0.14), T(...a.wr), Rb(0.095)), [a.el, a.wr], ext);
+    mk("hand" + nm, hd.prim, [a.wr, [a.wr[0] + (B.fingers ? 0.3 : 0.5) * a.d3[0], a.wr[1] + (B.fingers ? 0.3 : 0.5) * a.d3[1]]], { h: hd.h, fingerLines: hd.lines, knuckle: hd.knuckle, fing: hd.fing, ...ext });
+    joints.push({ key: "shoulder" + nm, pa: "torso", ch: "upperArm" + nm, p: T(...a.sh), r: R(0.17) }, { key: "elbow" + nm, pa: "upperArm" + nm, ch: "forearm" + nm, p: T(...a.el), r: R(0.13) }, { key: "wrist" + nm, pa: "forearm" + nm, ch: "hand" + nm, p: T(...a.wr), r: R(0.092) });
+  };
+  armParts("R", -1, arm[-1]); armParts("L", 1, arm[1]); for (const sdE of exA) armParts(sdE > 0 ? "S" : "T", sdE, arm[sdE > 0 ? "S" : "T"], { sd: sdE });
+  parts.sort((a, b) => ORDER.indexOf(a.name) - ORDER.indexOf(b.name));
+  for (const sd of [-1, 1]) { const n = sd < 0 ? "R" : "L", l = leg[sd];
+    joints.push({ key: "hip" + n, pa: "pelvis", ch: "thigh" + n, p: T(...l.hip), r: R(0.22) }, { key: "knee" + n, pa: "thigh" + n, ch: "shin" + n, p: T(...l.kn), r: R(0.15) }, { key: "ankle" + n, pa: "shin" + n, ch: "foot" + n, p: T(...l.an), r: R(0.1) }); }
+  return { parts, by, joints, T, Ht, s, hs, rot, tilt, arm, leg, R, W, ox: B.x, oy: B.y };
+}
+
+// ---------------- frames: the centre line of a part, with how far the part reaches either side of it ----------------
+function frameOf(P) {
+  const step = 0.45, A = P.axis, segs = []; let tot = 0;
+  for (let i = 0; i + 1 < A.length; i++) { const L = hypot(A[i + 1][0] - A[i][0], A[i + 1][1] - A[i][1]); if (L < 1e-6) continue; segs.push({ ax: A[i][0], ay: A[i][1], dx: (A[i + 1][0] - A[i][0]) / L, dy: (A[i + 1][1] - A[i][1]) / L, len: L, s0: tot }); tot += L; }
+  const N = max(2, floor(tot / step) + 1), G = P.G, hh = G.h * 0.5, fr = { step, N, tot, segs, X: new Float32Array(N), Y: new Float32Array(N), NX: new Float32Array(N), NY: new Float32Array(N), ES: new Float32Array(N), EL: new Float32Array(N), hwMax: 0 };
+  const reach = (cx, cy, nx, ny) => { let prev = sampleF(G, cx, cy); if (prev >= 0) return 0; for (let d = hh; d < 90; d += hh) { const f = sampleF(G, cx + nx * d, cy + ny * d); if (f >= 0) return d - hh + hh * (-prev) / (f - prev); prev = f; } return 0; };
+  for (let i = 0; i < N; i++) {
+    const sv = min(i * step, tot); let g = segs[0]; for (const q of segs) if (q.s0 <= sv + 1e-9) g = q;
+    const t = sv - g.s0, cx = g.ax + g.dx * t, cy = g.ay + g.dy * t; let nx = -g.dy, ny = g.dx;
+    if (nx * LIGHT[0] + ny * LIGHT[1] > 0) { nx = -nx; ny = -ny; }
+    fr.X[i] = cx; fr.Y[i] = cy; fr.NX[i] = nx; fr.NY[i] = ny; fr.ES[i] = reach(cx, cy, nx, ny); fr.EL[i] = reach(cx, cy, -nx, -ny);
+    fr.hwMax = max(fr.hwMax, (fr.ES[i] + fr.EL[i]) / 2);
+  }
+  P.fr = fr; return fr;
+}
+// where a point sits across its part: -1 on the lit edge, +1 on the shadow edge
+function frameAt(P, x, y) {
+  const fr = P.fr; let bd = INF, bs = 0;
+  for (const g of fr.segs) { const t = clamp((x - g.ax) * g.dx + (y - g.ay) * g.dy, 0, g.len), px = g.ax + g.dx * t - x, py = g.ay + g.dy * t - y, d = px * px + py * py; if (d < bd) { bd = d; bs = g.s0 + t; } }
+  const i = clamp(round(bs / fr.step), 0, fr.N - 1), hw = (fr.ES[i] + fr.EL[i]) / 2;
+  if (hw < 1e-6) return 0;
+  return ((x - fr.X[i]) * fr.NX[i] + (y - fr.Y[i]) * fr.NY[i] - (fr.ES[i] - fr.EL[i]) / 2) / hw;
+}
+const textBox = (s, x, y, h, ang) => { const w = txtW(s, h), c = cos(ang), sn = sin(ang), T = (px, py) => [x + px * c - py * sn, y + px * sn + py * c]; return [T(-w / 2, -h / 2), T(w / 2, -h / 2), T(w / 2, h / 2), T(-w / 2, h / 2)]; };
+const hashStr = (a, b) => { let x = (a * 2654435761 + b * 40503) >>> 0; x ^= x >>> 13; x = Math.imul(x, 1274126177) >>> 0; return (x ^ x >>> 16) >>> 0; };
+const serialOf = (seed, i) => "P-" + String(hashStr(seed, i + 101) % 9000 + 1000);
+
+
+// ---------------- iso-lines that may stay open (the network fades out where its coverage ends) ----------------
+function contourChains(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const out = [], seen = new Set();
+  const walk = e0 => { const l = []; let prev = -1, cur = e0; for (;;) { seen.add(cur); l.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { if (nb.includes(e0) && l.length > 2) l.push(pt(e0)); break; } prev = cur; cur = nxt; } return l; };
+  for (const [e, nb] of adj) if (nb.length === 1 && !seen.has(e)) out.push(walk(e));
+  for (const e of adj.keys()) if (!seen.has(e)) out.push(walk(e));
+  return out;
+}
+const hrand = (seed, a, b) => (hashStr(floor(a) * 7919 + seed, floor(b) + 31) % 10007) / 10007;
+const dotted = (pts, on = 0.45, off = 1.0) => { const out = []; let acc = 0, run = null; for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i], L = hypot(b[0] - a[0], b[1] - a[1]); let t = 0; while (t < L) { const step = max(0.05, acc < on ? on - acc : on + off - acc); const t2 = min(L, t + step); if (acc < on) out.push([lerp2(a, b, t / L), lerp2(a, b, t2 / L)]); acc = (acc + (t2 - t)) % (on + off); t = t2; } } return out; };
+// the network: circuit traces, a hex lace, or veins grown out from the augment sites, thinning as they go
+function buildNet(body, vis, st, occX, keepAll) {
+  const net = { paths: [], pads: [], pts: new Map() }, s = body.s, val = st.net || 0;
+  net.near = (x, y) => { if (!net.pts.size) return false; const cx = floor(x), cy = floor(y); for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const a = net.pts.get((cx + i) * 100003 + cy + j); if (a) for (const p of a) if (hypot(p[0] - x, p[1] - y) < 0.62) return true; } return false; };
+  if (val <= 0.001 || !vis.length) return net;
+  let bb = [INF, INF, -INF, -INF]; for (const P of vis) bb = bbU(bb, P.bb);
+  const src = (st.sources || []).slice(); for (const P of vis) if (st.mach.has(P.name)) { const f = P.fr || frameOf(P), i = floor(f.N / 2); src.push([f.X[i], f.Y[i]]); }
+  if (!src.length) src.push(vis.some(P => P.name === "torso") ? body.T(0, 1.3) : body.T(0, 0.45));
+  const R = val * hypot(bb[2] - bb[0], bb[3] - bb[1]) * 0.7, srcD = (x, y) => { let d = INF; for (const q of src) d = min(d, hypot(x - q[0], y - q[1])); return d; };
+  const inBody = (x, y) => { for (const P of vis) { if (x > P.bb[0] && x < P.bb[2] && y > P.bb[1] && y < P.bb[3] && sampleF(P.G, x, y) < -0.5) return true; } return false; };
+  const faces = vis.filter(P => /^head/.test(P.name) && !P.noFace).map(P => P), inv = (x, y) => [(x - body.ox) / s, (y - body.oy) / (s * body.hs)];
+  const onFace = (x, y) => { for (const P of faces) { const u = inv(x, y); if (abs(u[0] - (P.hx || 0)) < 0.3 && u[1] > 0.33 && u[1] < 0.9) return true; } return false; };
+  net.keep = (x, y) => inBody(x, y) && keepAll(x, y) && !onFace(x, y) && !occX.some(f => f(x, y, false));
+  const seed = st.seed || 1, kind = st.netkind || "circuit", add = (pts, closed) => net.paths.push([pts, closed]);
+  if (kind === "circuit") {
+    // Manhattan traces grown outward from each site: straight runs, right-angle turns, branches, a pad at every end; the first run from a site is a three-line bus
+    const gp = max(2.6, 0.09 * s), rr = mulberry(seed * 71 + 3), life0 = R * 1.1, dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+    const walk = (p, d0, life, bus) => {
+      let x = p[0], y = p[1], d = d0, left = life, out = 0, guard = 0, lt = 1; const path = [[x, y]];
+      while (left > 0 && guard++ < 40 && net.paths.length < 700) {
+        const L = gp * (1 + floor(rr() * 3)); x += dirs[d][0] * L; y += dirs[d][1] * L; left -= L; path.push([x, y]);
+        if (!inBody(x, y)) { if (++out > 2) break; } else out = 0;
+        if (rr() < 0.3 && left > gp * 3) walk([x, y], (d + (rr() < 0.5 ? 1 : 3)) % 4, left * 0.55, false);
+        if (rr() < 0.7) { lt = rr() < 0.8 ? -lt : lt; d = (d + (lt > 0 ? 1 : 3)) % 4; }
+      }
+      if (bus) { for (const o of [-0.3, 0, 0.3]) add(path.map((q, i) => { const a = path[max(0, i - 1)], b = path[min(path.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], dd = hypot(dx, dy) || 1; return [q[0] - dy / dd * gp * o, q[1] + dx / dd * gp * o]; }), false); }
+      else add(path, false);
+      if (!bus || true) net.pads.push([x, y, max(0.45, gp * 0.15)]);
+    };
+    for (const q of src.slice(0, 10)) { const nb = 3 + floor(val * 3); for (let b = 0; b < nb; b++) walk(q, (b + floor(rr() * 4)) % 4, life0 * (0.5 + 0.5 * rr()), b === 0); }
+  } else if (kind === "lace") {
+    // a honeycomb net: hexagon edges, de-duplicated and chained into long runs
+    const a = clamp(0.05 * s, 1.7, 2.6), hh = a * 0.8660254, edges = new Map(), key = (x, y) => round(x * 50) * 100003 + round(y * 50), verts = new Map();
+    const vk = (x, y) => { const k = key(x, y); if (!verts.has(k)) verts.set(k, { p: [x, y], nb: [] }); return verts.get(k); };
+    const i1 = ceil((bb[2] - bb[0]) / (1.5 * a)) + 2, j1 = ceil((bb[3] - bb[1]) / (2 * hh)) + 2;
+    for (let i = -1; i < i1; i++) for (let j = -1; j < j1; j++) {
+      const cx = bb[0] + i * 1.5 * a, cy = bb[1] + j * 2 * hh + (i & 1 ? hh : 0);
+      for (let k = 0; k < 6; k++) {
+        const p = [cx + a * cos(k * PI / 3), cy + a * sin(k * PI / 3)], q = [cx + a * cos((k + 1) * PI / 3), cy + a * sin((k + 1) * PI / 3)], m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+        if (srcD(m[0], m[1]) > R * (0.8 + 0.2 * hrand(seed, floor(m[0] / 7), floor(m[1] / 7)))) continue;
+        const A = vk(p[0], p[1]), B = vk(q[0], q[1]), ek = A.p[0] < B.p[0] || (A.p[0] === B.p[0] && A.p[1] < B.p[1]) ? key(A.p[0], A.p[1]) + ":" + key(B.p[0], B.p[1]) : key(B.p[0], B.p[1]) + ":" + key(A.p[0], A.p[1]);
+        if (edges.has(ek)) continue; edges.set(ek, false); A.nb.push([B, ek]); B.nb.push([A, ek]);
+      }
+    }
+    for (const [ek0] of edges) {
+      if (edges.get(ek0)) continue;
+      const [ka, kb] = ek0.split(":").map(Number); let cur = verts.get(kb); if (!cur) continue;
+      let start = verts.get(ka); const path = [start.p, cur.p]; edges.set(ek0, true);
+      for (let guard = 0; guard < 400; guard++) { const nx = cur.nb.find(([v, ek]) => !edges.get(ek)); if (!nx) break; edges.set(nx[1], true); cur = nx[0]; path.push(cur.p); }
+      add(path, false);
+    }
+  } else {
+    const rr = mulberry(seed * 53 + 7), life0 = R * 0.9, stepL = 1.1, W0 = 0.7, grow = (p, ang, life, w0) => {
+      const path = [p.slice()]; let x = p[0], y = p[1], a = ang, left = life, out = 0, br = floor(8 + rr() * 10);
+      while (left > 0 && net.paths.length < 900) {
+        a += (rr() - 0.5) * 0.55; x += cos(a) * stepL; y += sin(a) * stepL; left -= stepL; path.push([x, y]);
+        if (!inBody(x, y)) { if (++out > 3) break; } else out = 0;
+        if (--br <= 0 && left > 6) { br = floor(8 + rr() * 12); if (rr() < 0.65) grow([x, y], a + (rr() < 0.5 ? -1 : 1) * (0.5 + rr() * 0.5), left * (0.55 + rr() * 0.2), w0 * 0.75); }
+      }
+      net.paths.push([path, false, w0 * (life / life0 > 0.2 ? 1 : 0.5)]);
+    };
+    for (const q of src.slice(0, 8)) { const nb = 5 + floor(val * 3); for (let b = 0; b < nb; b++) grow(q, TAU * (b + rr() * 0.6) / nb, life0 * (0.45 + 0.55 * rr()), W0 * 1.15); }
+  }
+  // spatial index of the traces, so flesh hatching can step aside
+  const idx = (x, y, store) => { const key = floor(x) * 100003 + floor(y); let a = net.pts.get(key); if (!a) net.pts.set(key, a = []); a.push([x, y]); };
+  for (const [pts] of net.paths) for (const p of dens(pts, 0.5, false)) { if (inBody(p[0], p[1]) && !onFace(p[0], p[1])) idx(p[0], p[1]); }
+  for (const [x, y, r] of net.pads) if (inBody(x, y)) for (const p of circle(x, y, r, 8)) idx(p[0], p[1]);
+  return net;
+}
+function emitNet(net, O, pen, w) {
+  if (!net.keep) return;
+  for (const q of net.paths) {
+    const pts = q[0], wd = q[2] || 0;
+    if (wd > 0.55) { // a wider vein is a thin ribbon, two lines
+      const n = pts.length, L1 = [], L2 = [];
+      for (let i = 0; i < n; i++) { const a = pts[max(0, i - 1)], b = pts[min(n - 1, i + 1)], d = hypot(b[0] - a[0], b[1] - a[1]) || 1, t = wd * 0.5 * (1 - 0.8 * i / n); L1.push([pts[i][0] - (b[1] - a[1]) / d * t, pts[i][1] + (b[0] - a[0]) / d * t]); L2.push([pts[i][0] + (b[1] - a[1]) / d * t, pts[i][1] - (b[0] - a[0]) / d * t]); }
+      for (const r of runsOf(L1, net.keep, 0.3, 0.5)) put(pen, r); for (const r of runsOf(L2, net.keep, 0.3, 0.5)) put(pen, r);
+    } else for (const r of runsOf(pts, net.keep, 0.3, 0.5)) put(pen, r);
+  }
+  for (const [x, y, r] of net.pads) if (net.keep(x, y)) put(pen, circle(x, y, r, 10), true);
+}
+
+// skin: ink on the shadow side, softest first
+function fleshLines(P, gap, okS, O, sparse, seed) {
+  const fr = P.fr, N = fr.N, U0 = P.name === "head" ? 0.6 : 0.36;
+  for (let k = 0; k < 60; k++) {
+    const d = gap * (0.5 + k + 0.07 * k * k); let any = false, run = [], seg = -1, segOn = true;
+    const flush = () => { if (run.length > 2 && plen(run) > (sparse ? 1.6 : 1.2)) put(O.shade, rdp(run, 0.03)); run = []; };
+    const trim = min(0.42, 0.03 * k + 0.06 * ((hashStr(floor(P.bb[0] * 10), k + 1) % 1000) / 1000)), i0 = floor(N * trim), i1 = N - floor(N * trim);
+    for (let i = 0; i < N; i++) {
+      const hw = (fr.ES[i] + fr.EL[i]) / 2, ok = hw > 0 && d < (1 - U0) * hw && i >= i0 && i < i1;
+      if (sparse) { const sg = floor(i / (14 + (hashStr(seed + k, 3) % 9))); if (sg !== seg) { seg = sg; segOn = hrand(seed, k * 13 + floor(P.bb[0]), sg) < 0.55; } if (!segOn) { flush(); continue; } }
+      if (ok) { const x = fr.X[i] + fr.NX[i] * (fr.ES[i] - d), y = fr.Y[i] + fr.NY[i] * (fr.ES[i] - d); if (okS(x, y)) { run.push([x, y]); any = true; continue; } }
+      flush();
+    }
+    flush(); if (!any && d > fr.hwMax) break;
+  }
+}
+// skin texture: fine stipple, then cross-contour rings, then stitched graft seams at the top end
+function skinTexture(P, st, O, okS, gap, isHead) {
+  const t = st.tex || 0; if (t <= 0.02) return;
+  const fr = P.fr, seed = st.seed || 1, area = (P.bb[2] - P.bb[0]) * (P.bb[3] - P.bb[1]), kP = floor(P.bb[0] * 3 + P.bb[1]);
+  const ws = t < 0.34 ? t / 0.34 : 1 - (t - 0.34) * 0.9, sp = 2.4 / sqrt(ws + 0.08);
+  if (ws > 0.05) for (let y = P.bb[1]; y < P.bb[3]; y += sp) for (let x = P.bb[0]; x < P.bb[2]; x += sp) {
+    const i = floor(x / sp), j = floor(y / sp), px = x + (hrand(seed, i + kP, j) - 0.5) * sp, py = y + (hrand(seed, i, j + kP + 7) - 0.5) * sp;
+    if (hrand(seed, i * 3 + kP, j * 5 + 1) > ws * 0.55 || sampleF(P.G, px, py) > -0.8) continue;
+    const u = frameAt(P, px, py); if (u < -0.5 && hrand(seed, i, j + 91) > 0.35) continue;
+    if (!okS(px, py)) continue; const a = hrand(seed, i + 11, j + 17) * PI; put(O.shade, [[px, py], [px + cos(a) * 0.2, py + sin(a) * 0.2]]);
+  }
+  const wr = isHead ? 0 : clamp((t - 0.25) / 0.3, 0, 1) * (t > 0.75 ? 0.6 : 1);
+  if (wr > 0.02 && fr.tot > 5) for (let sv = 2.2; sv < fr.tot - 1; sv += 3.3) {
+    const i = round(sv / fr.step); if (hrand(seed, i + kP, 77) > wr) continue;
+    const c = [fr.X[i], fr.Y[i]], n = [fr.NX[i], fr.NY[i]], tg = [n[1], -n[0]], hw = (fr.ES[i] + fr.EL[i]) / 2; if (hw < 1.2) continue;
+    const a = fr.ES[i] - 0.4, b = fr.ES[i] - hw * (0.5 + 0.9 * hrand(seed, i, 5)), pts = Array.from({ length: 9 }, (_, k) => { const u = k / 8, q = lerp2([c[0] + n[0] * a, c[1] + n[1] * a], [c[0] + n[0] * b, c[1] + n[1] * b], u), bw = 0.1 * hw * sin(PI * u); return [q[0] + tg[0] * bw, q[1] + tg[1] * bw]; });
+    for (const r of runsOf(pts, okS, 0.25, 0.5)) put(O.shade, r);
+  }
+  const wsn = clamp((t - 0.65) / 0.3, 0, 1);
+  if (wsn > 0.05 && fr.tot > 8) {
+    const seams = [], nseam = fr.tot > 30 ? 3 : 2;
+    for (let q = 0; q < nseam; q++) { const f = (q + 0.6) / (nseam + 0.2), i = round(f * (fr.N - 1)), c = [fr.X[i], fr.Y[i]], n = [fr.NX[i], fr.NY[i]], tg = [n[1], -n[0]], a = fr.ES[i] - 0.5, b = -(fr.EL[i] - 0.5); seams.push(Array.from({ length: 13 }, (_, k) => { const u = k / 12, o = a + (b - a) * u, bw = 0.06 * (a - b) * sin(PI * u); return [c[0] + n[0] * o + tg[0] * bw, c[1] + n[1] * o + tg[1] * bw]; })); }
+    { const i0 = round(0.12 * (fr.N - 1)), i1 = round(0.88 * (fr.N - 1)), off = 0.28, pts = []; for (let i = i0; i <= i1; i += 3) { const hwv = (fr.ES[i] - fr.EL[i]) / 2 - off * (fr.ES[i] + fr.EL[i]) / 2; pts.push([fr.X[i] + fr.NX[i] * hwv, fr.Y[i] + fr.NY[i] * hwv]); } if (pts.length > 2) seams.push(pts); }
+    for (const sm of seams) {
+      const dashes = dotted(dens(sm, 0.4, false), 2.4, 1.2);
+      for (const [a, b] of dashes) { const m = lerp2(a, b, 0.5); if (okS(m[0], m[1])) put(O.shade, [a, b]); }
+      let acc = 0; for (let k = 1; k < sm.length; k++) { const a = sm[k - 1], b = sm[k], L = hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / (L || 1), uy = (b[1] - a[1]) / (L || 1); for (let tt = 0; tt < L; tt += 0.4) { acc += 0.4; if (acc >= 2) { acc = 0; const p = [a[0] + ux * tt, a[1] + uy * tt]; if (okS(p[0], p[1])) put(O.shade, [[p[0] - uy * 0.65, p[1] + ux * 0.65], [p[0] + uy * 0.65, p[1] - ux * 0.65]]); } } }
+    }
+  }
+}
+
+// a calm eye: almond, iris under the lid, a small pupil, an upper lid line
+function eyeInk(body, H, O, okL, c, sc = 1, hd = 20, pen = null) {
+  const { R, rot, tilt } = body, ang = rot + tilt, L = pen || O.line, rx = R(0.06) * sc, ry = R(0.034) * sc;
+  const loc = (x, y) => [c[0] + x * cos(ang) - y * sin(ang), c[1] + x * sin(ang) + y * cos(ang)];
+  const up = Array.from({ length: 15 }, (_, k) => { const t = k / 14; return loc(-rx + 2 * rx * t, -ry * pow(sin(PI * t), 0.9)); }), lo = Array.from({ length: 15 }, (_, k) => { const t = 1 - k / 14; return loc(-rx + 2 * rx * t, ry * 0.75 * pow(sin(PI * t), 0.9)); });
+  const alm = [...up, ...lo.slice(1)];
+  if (hd < 14) { for (const r of runsOf(up, okL, 0.2, 0.2)) put(L, r); return; }
+  for (const r of runsOf(alm, okL, 0.2, 0.2, true)) put(L, r);
+  if (hd < 34) return;
+  const ic = loc(0, -ry * 0.1), ir = ry * 0.85;
+  for (const r of runsOf(circle(ic[0], ic[1], ir, 16), (x, y) => okL(x, y) && inPoly(alm, x, y), 0.15, 0.15)) put(L, r);
+  if (hd >= 50) put(L, circle(ic[0], ic[1], max(0.18, ir * 0.38), 8), true);
+  if (hd >= 50) { const lid = Array.from({ length: 11 }, (_, k) => { const t = 0.1 + 0.8 * k / 10; return loc(-rx + 2 * rx * t, -ry * 1.5 * pow(sin(PI * t), 0.9)); }); for (const r of runsOf(lid, okL, 0.2, 0.2)) put(L, r); }
+}
+function earInk(body, mach, O, okL, hx, pen) {
+  const H = (x, y) => { const p = body.Ht(x, y); return [p[0] + (hx || 0), p[1]]; };
+  for (const sd of [-1, 1]) { const pts = crm([[0.366, 0.42], [0.425, 0.45], [0.44, 0.54], [0.4, 0.635], [0.338, 0.66]].map(([x, y]) => body.T(...H(sd * x, y))), false, 0.3); if (mach) { const p = body.T(...H(sd * 0.41, 0.54)); for (const r of runsOf(circle(p[0], p[1], max(0.8, body.R(0.05)), 10), okL, 0.2, 0.2)) put(O.colour, r); } for (const r of runsOf(pts, okL, 0.25, 0.3)) put(pen || O.line, r); }
+}
+function faceInk(body, mach, O, okL, hd, hx, pen) {
+  const { T, R } = body, H = (x, y) => { const p = body.Ht(x, y); return [p[0] + (hx || 0), p[1]]; }, L = pen || O.line;
+  const emit = (pts, Ly) => { for (const r of runsOf(pts, okL, 0.25, 0.2)) put(Ly, r); };
+  if (!mach) {
+    for (const sd of [-1, 1]) eyeInk(body, H, O, okL, T(...H(sd * 0.135, 0.47)), 1, hd, L);
+    if (hd < 11) emit([T(...H(-0.07, 0.8)), T(...H(0.07, 0.8))], L); else emit(crm([T(...H(-0.1, 0.8)), T(...H(0, 0.822)), T(...H(0.1, 0.8))], false, 0.3), L);
+  } else {
+    for (const sd of [-1, 1]) { const p = T(...H(sd * 0.135, 0.47)); emit(circle(p[0], p[1], R(0.06), 14), O.line); emit(circle(p[0], p[1], R(0.036), 10), O.line); emit(circle(p[0], p[1], max(0.25, R(0.014)), 6), O.line); }
+    for (const y of hd < 11 ? [0.8] : [0.77, 0.8, 0.83]) emit([T(...H(-0.09, y)), T(...H(0.09, y))], O.line);
+  }
+}
+
+function renderBody(body, st, out, occX = []) {
+  const vis = body.parts.filter(P => !st.only || st.only.has(P.name)), isM = n => st.mach.has(n), keepAll = st.keep || (() => true);
+  const O = st.col ? { line: out.colour, shade: out.colour, colour: out.colour } : out, s = body.s, hd = s, mode = st.flesh || "full", gap0 = st.gap;
+  const sparse = mode === "faint", gap = sparse ? gap0 * 1.8 : gap0, fleshOut = mode === "faint" && !st.cloneOutline ? O.shade : O.line;
+  for (const P of vis) if (!P.fr) frameOf(P);
+  const net = buildNet(body, vis, st, occX, keepAll);
+  vis.forEach((P, i) => {
+    const fr = P.fr, mach = isM(P.name), front = vis.slice(i + 1).filter(Q => bbOv(P.bb, Q.bb)), par = P.par && vis.includes(body.by[P.par]) ? body.by[P.par] : null, parFlesh = par && !isM(par.name);
+    const hid = (x, y, sh) => { const th = sh ? 0.28 : 0; for (const Q of front) if (sampleF(Q.G, x, y) < (Q.par === P.name && !sh && isM(Q.name) ? 0.3 : th)) return true; for (const f of occX) if (f(x, y, sh)) return true; return false; };
+    const okL = (x, y) => keepAll(x, y) && !hid(x, y, false);
+    const okS = (x, y) => keepAll(x, y) && sampleF(P.G, x, y) < -0.22 && !hid(x, y, true) && !net.near(x, y);
+    const tick = /^(upperArm|forearm|hand|shin|foot|neck)/.test(P.name), blend = /^(pelvis|thigh)/.test(P.name), shoulderBlend = /^upperArm/.test(P.name) && body.rot === 0, yArm = shoulderBlend ? body.T(0, 2.0)[1] : 0;
+    const crease = (x, y) => !mach && parFlesh && (tick || blend) && sampleF(par.G, x, y) < 0 && (blend || (shoulderBlend && y < yArm) || (!shoulderBlend && abs(frameAt(P, x, y)) < 0.75));
+    const outPen = mach ? O.line : fleshOut;
+    for (const l of P.loops) for (const r of runsOf(l, (x, y) => okL(x, y) && !crease(x, y), 0.3, 0.4, true)) { if (!mach && mode === "ghost") { for (const [a, b] of dotted(r)) put(O.shade, [a, b]); } else put(outPen, r); }
+    for (const g of P.fingerLines || []) for (const r of runsOf(g, okL, 0.25, 0.3)) { if (!mach && mode === "ghost") { for (const [a, b] of dotted(r)) put(O.shade, [a, b]); } else put(outPen, r); }
+    const hx = P.hx || 0, isHead = /^head/.test(P.name);
+    if (!mach) {
+      if (mode === "hollow") { const ins = clamp(0.03 * s, 0.6, 1.3); for (const l of contours(P.G, -ins)) if (abs(loopArea(l)) > 1) { const q = smooth(l, 2); for (const r of runsOf(q, okL, 0.3, 0.5, true)) put(O.shade, r); } if (isHead) earInk(body, false, O, okL, hx, O.line); return; }
+      if (mode !== "ghost" && !st.noShade) { fleshLines(P, gap, okS, O, sparse, st.seed || 1); skinTexture(P, st, O, okS, gap, isHead); }
+      if (isHead) { const fp = mode === "ghost" ? O.shade : O.line; earInk(body, false, O, okL, hx, mode === "ghost" ? O.shade : outPen); if (st.face !== false && !P.noFace) faceInk(body, false, O, okL, hd, hx, fp); }
+      return;
+    }
+    // ---- machine: the same outline, then panel line, seams with rivets, hatching, joint discs, serial ----
+    const ins = clamp(0.034 * s, 0.5, 1.4), masks = [], mine = body.joints.filter(j => j.ch === P.name);
+    if (fr.hwMax > 3 * ins) for (const l of contours(P.G, -ins)) if (abs(loopArea(l)) > 1.5) { const q = smooth(l, 2); for (const r of runsOf(q, okL, 0.3, 0.5, true)) put(O.line, r); }
+    let serialBox = null;
+    if (st.serial && !/^(hand|foot|pelvis|neck)/.test(P.name)) {
+      const txtS = serialOf(st.seed || 1, ORDER.indexOf(P.name)), i0 = floor(fr.N / 2), cx = fr.X[i0], cy = fr.Y[i0], g = fr.segs[0], a0 = atan2(g.dy, g.dx), tries = [a0 > PI / 2 ? a0 - PI : a0 < -PI / 2 ? a0 + PI : a0, 0];
+      for (const ang of tries) { const bx = textBox(txtS, cx, cy, 2.2, ang); let ok = true; for (let k = 0; k < 4 && ok; k++) for (let q = 0; q <= 4; q++) { const p = lerp2(bx[k], bx[(k + 1) % 4], q / 4); if (sampleF(P.G, p[0], p[1]) > -ins - 0.5) ok = false; } if (ok) { serialBox = { s: txtS, cx, cy, ang }; break; } }
+      if (serialBox) { txt(serialBox.s, cx, cy, 2.2, out.colour, { a: "c", ang: serialBox.ang }); const c = cos(-serialBox.ang), sn = sin(-serialBox.ang), w = txtW(serialBox.s, 2.2) / 2 + 1, hh = 2.1; masks.push((x, y) => { const dx = x - cx, dy = y - cy; return abs(dx * c - dy * sn) < w && abs(dx * sn + dy * c) < hh; }); }
+    }
+    const seams = [];
+    if (isHead) {
+      const Hh = (x, y) => { const p = body.Ht(x, y); return [p[0] + hx, p[1]]; };
+      seams.push({ pts: crm([[-0.33, 0.4], [-0.19, 0.31], [0, 0.275], [0.19, 0.31], [0.33, 0.4]].map(p => body.T(...Hh(...p))), false, 0.3), closed: false });
+      earInk(body, true, O, okL, hx); if (st.face !== false && !P.noFace) faceInk(body, true, O, okL, hd, hx);
+    } else {
+      const tt = P.name.startsWith("hand") ? [0.2] : fr.tot < 14 ? [0.5] : fr.tot < 34 ? (serialBox ? [0.25, 0.75] : [0.33, 0.67]) : (serialBox ? [0.18, 0.82] : [0.25, 0.5, 0.75]);
+      for (const t of tt) {
+        const i2 = round(t * (fr.N - 1)), c = [fr.X[i2], fr.Y[i2]], n = [fr.NX[i2], fr.NY[i2]], tg = [n[1], -n[0]], ea = fr.ES[i2] - ins * 1.6, eb = fr.EL[i2] - ins * 1.6;
+        if (ea + eb < 2.2) continue;
+        const bow = 0.07 * (ea + eb), pts = Array.from({ length: 13 }, (_, k) => { const u = k / 12, q = lerp2([c[0] + n[0] * ea, c[1] + n[1] * ea], [c[0] - n[0] * eb, c[1] - n[1] * eb], u), b = bow * sin(PI * u); return [q[0] + tg[0] * b, q[1] + tg[1] * b]; });
+        seams.push({ pts, closed: false, rivets: true });
+        if (s >= 12 && ea + eb > 6) { const dv = clamp(0.03 * s, 0.6, 1.3); seams.push({ pts: pts.map(p => [p[0] + tg[0] * dv, p[1] + tg[1] * dv]), closed: false }); }
+      }
+    }
+    const rv = clamp(0.011 * s, 0.28, 0.55), rp = max(2.3, rv * 7);
+    for (const sm of seams) {
+      for (const r of runsOf(sm.pts, okL, 0.25, 0.4)) put(O.line, r);
+      masks.push((x, y) => { for (let k = 0; k + 1 < sm.pts.length; k += 2) { const a = sm.pts[k], b = sm.pts[min(k + 2, sm.pts.length - 1)]; if (distSeg(x, y, a, b) < 1.0) return true; } return false; });
+      if (sm.rivets || isHead) {
+        const Ls = plen(sm.pts), m = max(1, floor(Ls / rp)), cum = [0]; let acc = 0; for (let k = 1; k < sm.pts.length; k++) { acc += hypot(sm.pts[k][0] - sm.pts[k - 1][0], sm.pts[k][1] - sm.pts[k - 1][1]); cum.push(acc); }
+        for (let j = 0; j <= m; j++) { const target = (j + 0.5) / (m + 1) * Ls; let k = 1; while (k < cum.length - 1 && cum[k] < target) k++; const f = (target - cum[k - 1]) / max(1e-6, cum[k] - cum[k - 1]), p = lerp2(sm.pts[k - 1], sm.pts[k], f); if (okL(p[0], p[1]) && sampleF(P.G, p[0], p[1]) < -ins - rv - 0.2) put(O.line, circle(p[0], p[1], rv, 8), true); }
+      }
+    }
+    for (const [p] of P.knuckle || []) if (okL(p[0], p[1])) put(O.line, circle(p[0], p[1], clamp(0.016 * s, 0.22, 0.45), 6), true);
+    for (const j of mine) { const r = j.r * 0.8; if (r < 0.9) continue; masks.push((x, y) => hypot(x - j.p[0], y - j.p[1]) < j.r + 0.35);
+      for (const q of runsOf(circle(j.p[0], j.p[1], r, 24), okL, 0.25, 0.3)) put(O.colour, q);
+      for (const q of runsOf([[j.p[0] - r, j.p[1]], [j.p[0] + r, j.p[1]]], okL, 0.25, 0.3)) put(O.colour, q);
+      for (const q of runsOf([[j.p[0], j.p[1] - r], [j.p[0], j.p[1] + r]], okL, 0.25, 0.3)) put(O.colour, q); }
+    const U0M = 0.04, g2 = gap0 * 1.15 * clamp(fr.hwMax / 12, 1, 1.8) * 1.4142, B = P.bb;
+    for (let C = B[0] + B[1]; C <= B[2] + B[3]; C += g2) {
+      let run = [];
+      const flush = () => { if (run.length > 1 && plen(run) > 0.9) put(O.shade, [run[0], run[run.length - 1]]); run = []; };
+      for (let x = max(B[0], C - B[3]); x <= min(B[2], C - B[1]); x += 0.3) {
+        const y = C - x; let ok = sampleF(P.G, x, y) < -ins - 0.3 && keepAll(x, y) && !hid(x, y, true) && !net.near(x, y);
+        if (ok) { for (const m of masks) if (m(x, y)) { ok = false; break; } }
+        if (ok && frameAt(P, x, y) > U0M) run.push([x, y]); else flush();
+      }
+      flush();
+    }
+  });
+  emitNet(net, O, st.netpen === "line" ? O.line : O.colour);
+}
+
+// ================= sheets: shared bits =================
+const cellOf = hd => clamp(hd / 34, 0.26, 0.55);
+const poseOf = seed => { const r = mulberry(seed * 131 + 7); return { h: 0.975 + 0.05 * r(), shw: 0.95 + 0.1 * r(), bld: 0.95 + 0.1 * r(), armA: [7, 7], bend: [3, 3], legA: [2.5, 2.5], tilt: 0 }; };
+const shuffle = (a, rnd) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const outlineBox = body => { let b = [INF, INF, -INF, -INF]; for (const P of body.parts) for (const l of P.loops) b = bbU(b, bbOf(l)); return b; };
+const label = (c, s, x, y, h = 2.6, o = {}) => txt(s, x, y, h, c.L.line, o);
+const skinOf = (o, extra = {}) => ({ flesh: o.flesh, net: o.network, netkind: o.netkind, netpen: o.netpen, tex: o.texture, ...extra });
+
+// ================= replacement sheet =================
+function theseusSheet(c) {
+  const { W, H, m, o, L, rnd } = c, on = o.labels === "on", seq = REPLACE_ORDER.flatMap(g => shuffle(g, rnd)), total = seq.length, strip = o.strip === "on", n = o.stages;
+  const pose = poseOf(o.seed), gap = o.pitch;
+  const hdrH = on ? 10 : 0, capH = on ? 9 : 0, wcol = (W - 2 * m) / n;
+  const sHd = strip ? min(wcol * 0.9 / 2.5, 0.3 * (H - 2 * m) / 7.75) : 0, sBlock = strip ? sHd * 7.75 + 15 : 0;
+  const lHd = min((H - 2 * m - hdrH - capH - sBlock - 6) / 7.75, (W - 2 * m) * 0.55 / 2.5);
+  if (on) {
+    label(c, "BODY NO. " + (1000 + o.seed * 7), m, m + 2.2, 2.6); label(c, "REPLACEMENT RECORD", W - m, m + 2.2, 2.6, { a: "r" });
+    put(L.line, [[m, m + 5.6], [W - m, m + 5.6]]);
+  }
+  const draw = (hd, cx, y0, f, serial) => {
+    const body = makeBody({ s: hd, x: cx, y: y0, h: cellOf(hd), pose, fingers: hd >= 20 });
+    renderBody(body, { mach: new Set(seq.slice(0, round(f * total))), serial: serial && hd >= 14, gap: hd < 12 ? max(0.5, gap * 0.8) : gap, seed: o.seed, ...skinOf(o) }, L);
+    return body;
+  };
+  const yBig = m + hdrH + 2, bigF = o.replaced, big = draw(lHd, W / 2, yBig, bigF, true), nrep = round(bigF * total);
+  if (on) label(c, `PARTS REPLACED ${nrep} OF ${total}`, W / 2, H - m - 1.4, 2.8, { a: "c" });
+  c.gates.push(["the large figure fits inside the margin", (() => { const b = outlineBox(big); return b[0] >= m - 0.01 && b[2] <= W - m + 0.01 && b[1] >= m - 0.01 && b[3] <= H - m + 0.01; })(), `${(lHd * 7.5).toFixed(0)} mm tall`]);
+  if (strip) {
+    const ys = H - m - capH - 12 - sHd * 7.75 + 1, boxes = [], centres = [];
+    for (let i = 0; i < n; i++) {
+      const f = n > 1 ? i / (n - 1) : 0, cx = m + wcol * (i + 0.5), b = draw(sHd, cx, ys, f, false);
+      boxes.push(outlineBox(b)); centres.push(cx);
+      label(c, round(f * 100) + "%", cx, ys + sHd * 7.75 + 4.2, 2.4, { a: "c" });
+    }
+    const yb = ys + sHd * 7.75 + 9.2, x0 = centres[0], x1 = centres[n - 1], xm = x0 + (x1 - x0) * bigF;
+    put(L.line, [[x0, yb], [x1, yb]]); for (const x of centres) put(L.line, [[x, yb - 0.8], [x, yb + 0.8]]);
+    put(L.colour, [[xm, yb + 0.5], [xm - 1.6, yb + 3.6], [xm + 1.6, yb + 3.6], [xm, yb + 0.5]], true);
+    let gmin = INF; for (let i = 0; i + 1 < n; i++) gmin = min(gmin, boxes[i + 1][0] - boxes[i][2]);
+    c.gates.push(["strip figures do not overlap", gmin >= 1, `closest ${gmin.toFixed(1)} mm`]);
+  }
+}
+
+// ================= clones: a genome of seeded mutation operators, applied cumulatively =================
+const PATHS = ["OPTIC", "LIMB", "LACE", "PLATING", "OVERGROWTH", "HOLLOWING"];
+const PATH_OPS = {
+  OPTIC: [[0.3, "lensEye"], [0.5, "extraEyes"], [0.7, "visor"], [0.85, "lensCluster"], [1.0, "sensorHead"]],
+  LIMB: [[0.3, "lengthen"], [0.45, "platedArms"], [0.6, "jaw"], [0.75, "extraArm"], [0.9, "missingLimb"]],
+  LACE: [[0.3, "lace1"], [0.5, "lace2"], [0.7, "crown"], [0.9, "lace3"]],
+  PLATING: [[0.3, "plate1"], [0.5, "plate3"], [0.7, "plate6"], [0.85, "skullPlates"], [1.0, "mismatch"]],
+  OVERGROWTH: [[0.3, "veins1"], [0.5, "circuit2"], [0.7, "bulk"], [0.9, "net3"]],
+  HOLLOWING: [[0.3, "fade"], [0.5, "blank"], [0.75, "hollow"], [0.95, "twin"]],
+};
+const LIMB_PARTS = ["upperArmR", "upperArmL", "forearmR", "forearmL", "handR", "handL", "thighR", "thighL", "shinR", "shinL", "footR", "footL"];
+const newGenome = () => ({ hK: 1, tw: 1, elong: 1, hunch: 0, headK: [1, 1], legBend: 0, headMode: null, replKind: null, replSide: null, repl: null, tail: 0, splay: 0, kneel: false, silDone: new Set(), done: new Set(), lens: false, extraEyes: 0, visor: false, lensCluster: false, sensorHead: false, armK: [1, 1], legK: [1, 1], plated: new Set(), jaw: false, extraArm: 0, missing: new Set(), net: 0, netkind: null, crown: false, skullPlates: false, bulk: 1, flesh: null, blank: false, twin: false, tether: false, pj: null });
+const cloneGenome = g => ({ ...g, headK: g.headK.slice(), silDone: new Set(g.silDone), done: new Set(g.done), plated: new Set(g.plated), missing: new Set(g.missing), armK: g.armK.slice(), legK: g.legK.slice() });
+function applyOp(g, op, rr, heads) {
+  const pick = a => a[floor(rr() * a.length)];
+  switch (op) {
+    case "lensEye": g.lens = true; break;
+    case "extraEyes": g.extraEyes = min(3, g.extraEyes + 1); break;
+    case "visor": g.visor = true; break;
+    case "lensCluster": g.lensCluster = true; break;
+    case "sensorHead": if (heads) g.lensCluster = true; else g.sensorHead = true; break;
+    case "lengthen": { const k = rr() < 0.5 ? 1.18 + 0.18 * rr() : 0.78 + 0.1 * rr(); if (heads || rr() < 0.6) { const i = floor(rr() * 2); g.armK[i] = clamp(g.armK[i] * k, 0.7, 1.35); } else { const i = floor(rr() * 2); g.legK[i] = clamp(g.legK[i] * (k > 1 ? 1.08 : 0.9), 0.88, 1.12); } break; }
+    case "platedArms": for (const n of ["forearmR", "forearmL", "handR", "handL"]) g.plated.add(n); break;
+    case "jaw": if (heads) g.jaw = true; else { g.plated.add("neck"); g.plated.add("head"); } break;
+    case "extraArm": if (heads) g.extraEyes = min(3, g.extraEyes + 1); else g.extraArm = rr() < 0.5 ? -1 : 1; break;
+    case "missingLimb": if (heads) g.blank = true; else { const side = rr() < 0.5 ? "R" : "L"; if (rr() < 0.7) for (const n of ["upperArm", "forearm", "hand"]) g.missing.add(n + side); else g.missing.add("hand" + side); } break;
+    case "lace1": g.net = max(g.net, 0.25); g.netkind = "lace"; break;
+    case "lace2": g.net = max(g.net, 0.5); g.netkind = "lace"; break;
+    case "lace3": g.net = max(g.net, 0.85); g.netkind = "lace"; break;
+    case "crown": g.crown = true; g.net = max(g.net, 0.35); g.netkind = "lace"; break;
+    case "plate1": g.plated.add(pick(LIMB_PARTS)); break;
+    case "plate3": for (let i = 0; i < 3; i++) g.plated.add(pick(LIMB_PARTS)); break;
+    case "plate6": for (let i = 0; i < 6; i++) g.plated.add(pick(LIMB_PARTS.concat(["torso", "pelvis"]))); break;
+    case "skullPlates": g.skullPlates = true; if (!heads) g.plated.add(pick(["torso", "pelvis", "thighR"])); break;
+    case "mismatch": { const side = rr() < 0.5 ? "R" : "L"; for (const n of ["upperArm", "thigh", "foot"]) g.plated.add(n + side); g.plated.add("torso"); break; }
+    case "veins1": g.net = max(g.net, 0.3); g.netkind = "veins"; break;
+    case "circuit2": g.net = max(g.net, 0.55); g.netkind = "circuit"; break;
+    case "bulk": g.bulk = 1.16; g.net = max(g.net, 0.7); g.netkind = "veins"; break;
+    case "net3": g.net = 1; g.netkind = pick(["circuit", "lace"]); break;
+    case "fade": g.flesh = "ghost"; break;
+    case "blank": g.blank = true; break;
+    case "hollow": g.flesh = "hollow"; break;
+    case "twin": if (heads) g.extraEyes = 3; else g.twin = true; break;
+  }
+}
+function mutate(g, path, sev, rr, heads) { for (const [thr, op] of PATH_OPS[path]) if (thr <= sev && !g.done.has(op)) { g.done.add(op); applyOp(g, op, rr, heads); } }
+function wildOps(g, d, rr, heads) { if (d < 0.7) return; const p = (d - 0.5) * 1.6; if (rr() < p * 0.45) g.tether = true; if (rr() < p * 0.45) g.blank = true; if (rr() < p * 0.4) applyOp(g, "sensorHead", rr, heads); if (rr() < p * 0.35 && !heads) g.twin = true; if (rr() < p * 0.35) applyOp(g, "missingLimb", rr, heads); }
+function jitterOf(rr, d) { const e = pow(d, 0.8), j = k => (rr() - 0.5) * k * e; return { h: j(0.1), shw: j(0.12), bld: j(0.12), a: [j(20), j(20)], b: [j(16), j(16)], l: [j(5), j(5)], tilt: j(12) }; }
+const ZERO_J = { h: 0, shw: 0, bld: 0, a: [0, 0], b: [0, 0], l: [0, 0], tilt: 0 };
+
+function skullPlate(A, pp, gap) {
+  const poly = crm(pp, true, 0.4), cen = [0, 1].map(k => pp.reduce((a, p) => a + p[k], 0) / pp.length);
+  put(A.ink.line, poly); put(A.ink.line, crm(pp.map(p => [cen[0] + (p[0] - cen[0]) * 0.8, cen[1] + (p[1] - cen[1]) * 0.8]), true, 0.4));
+  for (const p of pp.filter((_, i) => i % 2 === 0)) put(A.ink.line, circle(cen[0] + (p[0] - cen[0]) * 0.9, cen[1] + (p[1] - cen[1]) * 0.9, 0.35, 6), true);
+  hatchIn((x, y) => inPoly(poly, x, y) && (x - cen[0]) + (y - cen[1]) > 0.5, bbOf(poly), gap, A.ink.shade); polyOcc(A, poly);
+}
+
+
+// ---------------- silhouette operators: these change the outline, not just the pattern on it ----------------
+const SIL_BODY = ["height", "limbs", "bulk", "torsoShape", "headScale", "headSwap", "extraArms", "replLimb", "twin", "legBend", "tail", "posture"];
+const SIL_HEAD = ["headScale", "headSwap", "tail", "headElong", "headScale"];
+function applySil(g, rr, heads, d) {
+  const list = heads ? SIL_HEAD : SIL_BODY, free = list.filter(n => !g.silDone.has(n)), op = (free.length ? free : list)[floor(rr() * (free.length ? free.length : list.length))], big = rr() < 0.6 + 0.3 * d;
+  g.silDone.add(op);
+  switch (op) {
+    case "height": g.hK = big ? (rr() < 0.55 ? 0.7 + 0.08 * rr() : 1.14 + 0.06 * rr()) : (rr() < 0.5 ? 0.85 : 1.1); break;
+    case "limbs": { const i = floor(rr() * 2), j = floor(rr() * 2); g.armK[i] = clamp(g.armK[i] * (rr() < 0.5 ? 0.6 + 0.12 * rr() : 1.3 + 0.1 * rr()), 0.6, 1.4); g.legK[j] = clamp(g.legK[j] * (rr() < 0.5 ? 0.62 + 0.12 * rr() : 1.28 + 0.1 * rr()), 0.6, 1.4); break; }
+    case "bulk": g.tw = rr() < 0.5 ? 0.5 + 0.12 * rr() : 1.38 + 0.12 * rr(); break;
+    case "torsoShape": if (rr() < 0.5) g.hunch = 0.7 + 0.3 * rr(); else g.elong = 1.35 + 0.15 * rr(); break;
+    case "headScale": { const k = rr() < 0.5 ? 0.65 + 0.1 * rr() : 1.25 + 0.1 * rr(); g.headK = [k, k * (0.92 + 0.16 * rr())]; break; }
+    case "headElong": g.headK = [0.78 + 0.08 * rr(), 1.3 + 0.08 * rr()]; break;
+    case "headSwap": g.headMode = ["sensor", "mast", "stump"][floor(rr() * 3)]; if (g.headMode === "sensor" && !heads) g.sensorHead = true; break;
+    case "extraArms": g.extraArm = rr() < 0.5 ? 2 : (rr() < 0.5 ? 1 : -1); break;
+    case "replLimb": { g.replKind = rr() < 0.6 ? "leg" : "arm"; g.replSide = rr() < 0.5 ? "R" : "L"; g.repl = ["strut", "wheel", "tripod"][floor(rr() * 3)]; if (g.replKind === "leg") for (const n of ["thigh", "shin", "foot"]) g.missing.add(n + g.replSide); else for (const n of ["upperArm", "forearm", "hand"]) g.missing.add(n + g.replSide); break; }
+    case "twin": g.twin = true; break;
+    case "legBend": g.legBend = (rr() < 0.5 ? -1 : 1) * (22 + 10 * rr()); break;
+    case "tail": g.tail = rr() < 0.5 ? -1 : 1; break;
+    case "posture": if (rr() < 0.5) g.splay = 1; else g.kneel = true; break;
+  }
+}
+function silCount(d, gen, gens, rr) {
+  if (d < 0.04) return 0;
+  if (d >= 0.9) return 1 + (rr() < 0.55 ? 1 : 0) + (gen >= gens - 1 && rr() < 0.5 ? 1 : 0);
+  return floor(d * d * (1.0 + 1.5 * rr()) * (0.5 + 0.5 * gen / max(1, gens - 1)) + 0.35);
+}
+
+// draws one figure (a body or a head) from a genome; returns its box, wrists and a silhouette test
+function figure(c, X) {
+  const { o, L } = c, g = X.g, heads = X.heads, hd = X.hd, base = poseOf(o.seed), pj = g.pj || ZERO_J, ink = newInk(), A = mkA("f", [0, 0]), shapes = [];
+  const lk = max(g.kneel ? g.legK[0] * 0.62 : g.legK[0], g.kneel ? g.legK[1] * 0.62 : g.legK[1]);
+  let hs = base.h * (1 + pj.h) * g.hK; const bottomHu = 3.9 + 3.58 * lk + (g.elong - 1) * 1.8; if (bottomHu * hs > 9.0) hs = 9.0 / bottomHu;
+  const pose = { h: hs, shw: base.shw * (1 + pj.shw) * (g.bulk > 1 ? 1.08 : 1), bld: base.bld * (1 + pj.bld) * g.bulk, armA: [7 + pj.a[0] + g.splay * 22, 7 + pj.a[1] + g.splay * 22], bend: [3 + pj.b[0], 3 + pj.b[1]], legA: [2.5 + pj.l[0] + g.splay * 9 + (g.kneel ? 12 : 0), 2.5 + pj.l[1] + g.splay * 9 + (g.kneel ? 12 : 0)], tilt: pj.tilt, armK: g.armK, legK: g.kneel ? g.legK.map(k => k * 0.62) : g.legK, extraArm: g.twin ? 0 : g.extraArm, tw: g.twin ? min(g.tw, 1) : g.tw, elong: g.elong, hunch: g.hunch, headK: g.headK, legBend: g.legBend };
+  const only = heads ? new Set(["head", "neck", "head2", "neck2"]) : new Set(ORDER.filter(n => !g.missing.has(n)));
+  const U = 3 * cellOf(hd) * 1.05, topY = round((heads ? X.cut - 1.3 * hd : X.base - bottomHu * hd * hs) / U) * U, bx = round(X.cx / U) * U;
+  const body = makeBody({ s: hd, x: bx, y: topY, h: cellOf(hd) * 1.05, pose, fingers: hd >= 20, only, twin: g.twin, noHead: !!g.headMode || (g.sensorHead && !heads) }), T = body.T, Ht = body.Ht, R = body.R, TT = (x, y) => T(...Ht(x, y)), floorY = heads ? topY + 1.3 * hd : topY + bottomHu * hd * hs;
+  const mach = new Set([...g.plated].filter(n => body.by[n])), sources = [], occ = [];
+  const faceOff = g.blank || g.visor || g.lensCluster;
+  if (g.lens && !g.headMode) { const e = TT(0.135, 0.47), a = mkA("lens", e); lensA(a, e[0], e[1], R(0.075)); pushA(ink, a); occ.push(...a.occ); sources.push(e); }
+  const netVal = clamp(g.net * o.network / 0.4, 0, 1);
+  const st = { mach, only, keep: X.keep || (() => true), gap: o.pitch, seed: o.seed, col: X.col, flesh: g.flesh || o.flesh, cloneOutline: true, face: !faceOff, net: netVal, netkind: g.netkind || o.netkind, netpen: o.netpen, tex: o.texture, sources };
+  if (g.crown) sources.push(TT(0, 0.05));
+  const hasHead = !!body.by.head, circ = (p, r) => (x, y) => hypot(x - p[0], y - p[1]) < r, cap = (a, b, w) => (x, y) => distSeg(x, y, a, b) < w, A1 = ink;
+  if (hasHead) {
+    if (g.visor) { const c0 = TT(0, 0.47), a = mkA("v", c0), ang = body.rot + body.tilt, out = rrect(c0[0], c0[1], R(0.34), R(0.075), R(0.04), ang), inn = rrect(c0[0], c0[1], R(0.3), R(0.045), R(0.025), ang); put(a.ink.line, out); put(a.ink.line, inn); put(a.ink.colour, [TT(-0.27, 0.47), TT(0.27, 0.47)]); hatchIn((x, y) => inPoly(out, x, y) && !inPoly(inn, x, y), bbOf(out), 0.7, a.ink.shade); polyOcc(a, out); pushA(ink, a); occ.push(...a.occ); }
+    if (g.lensCluster) { const a = mkA("lc", [0, 0]); for (const [x, y, r] of [[-0.17, 0.46, 0.1], [0.13, 0.42, 0.12], [0, 0.62, 0.07], [0.22, 0.6, 0.06], [-0.2, 0.64, 0.055]]) { const p = TT(x, y); put(a.ink.line, circle(p[0], p[1], R(r), 22), true); if (R(r) > 1.4) { put(a.ink.line, circle(p[0], p[1], R(r) * 0.62, 16), true); put(a.ink.colour, circle(p[0], p[1], R(r) * 0.25, 10), true); } } pushA(ink, a); }
+    if (g.skullPlates) for (const sg of [-1, 1]) { const a = mkA("sp", [0, 0]); skullPlate(a, [[-0.02, 0.07], [0.18, 0.1], [0.265, 0.22], [0.26, 0.36], [0.1, 0.34], [0.0, 0.2]].map(([x, y]) => TT(sg * x, y)), 0.7); pushA(ink, a); occ.push(...a.occ); }
+    if (g.jaw) {
+      const a = mkA("jaw", [0, 0]), seam = crm([[-0.325, 0.64], [-0.17, 0.72], [0, 0.745], [0.17, 0.72], [0.325, 0.64]].map(([x, y]) => TT(x, y)), false, 0.3), P0 = body.by.head, inv = (x, y) => [(x - body.ox) / body.s, (y - body.oy) / (body.s * body.hs)];
+      put(a.ink.line, seam); const sp = plen(seam), m = max(2, floor(sp / 2.6)); for (let k = 0; k <= m; k++) { const p = seam[min(seam.length - 1, round(k / m * (seam.length - 1)))]; put(a.ink.line, circle(p[0], p[1] + 0.9, 0.3, 6), true); }
+      hatchIn((x, y) => { const u = inv(x, y); return sampleF(P0.G, x, y) < -0.8 && u[1] > 0.77 && abs(u[0]) < 0.3 - (u[1] - 0.77) * 0.9; }, P0.bb, 0.7, a.ink.shade); pushA(ink, a);
+    }
+  }
+  // heads replaced: a cluster of sensors on stalks, a mast, or a blank stump plate (these are part of the silhouette)
+  const hm = g.headMode || (g.sensorHead && !heads ? "sensor" : null);
+  if (hm && !heads || hm && heads) {
+    const a = mkA("hm", [0, 0]), nk = TT(0, 0.9 + hk0(g) * 0.3);
+    if (hm === "sensor") {
+      const cl = [[0, 0.45, 0.26], [-0.22, 0.22, 0.14], [0.22, 0.28, 0.12], [0.1, 0.74, 0.15], [-0.17, 0.8, 0.1], [0.3, 0.58, 0.08]].map(([x, y, r]) => [TT(x, y), R(r)]);
+      for (const [p] of cl) { const keepOut = (x, y) => !cl.some(([q, r]) => hypot(x - q[0], y - q[1]) < r + 0.1); for (const r of runsOf([nk, p], keepOut, 0.25, 0.4)) put(a.ink.line, r); shapes.push(cap(nk, p, R(0.02))); }
+      for (const [p, r] of cl) { put(a.ink.line, circle(p[0], p[1], r, 24), true); if (r > 1.6) { put(a.ink.line, circle(p[0], p[1], r * 0.6, 18), true); put(a.ink.colour, circle(p[0], p[1], r * 0.22, 8), true); } shapes.push(circ(p, r)); }
+      sources.push(TT(0, 0.5));
+    } else if (hm === "mast") {
+      const top = TT(0, heads ? -0.35 : -0.9), w = R(0.035), cl = [[top, R(0.13)], [[top[0] + R(0.17), top[1] + R(0.22)], R(0.08)], [[top[0] - R(0.15), top[1] + R(0.35)], R(0.07)]];
+      put(a.ink.line, [[nk[0] - w, nk[1]], [top[0] - w, top[1]]]); put(a.ink.line, [[nk[0] + w, nk[1]], [top[0] + w, top[1]]]); shapes.push(cap(nk, top, w + 0.2));
+      for (const [p, r] of cl) { put(a.ink.line, circle(p[0], p[1], r, 20), true); put(a.ink.line, circle(p[0], p[1], r * 0.55, 14), true); put(a.ink.colour, circle(p[0], p[1], r * 0.2, 8), true); shapes.push(circ(p, r)); }
+    } else {
+      const c0 = TT(0, 0.78), out = rrect(c0[0], c0[1], R(0.36), R(0.09), R(0.05), body.rot), inn = rrect(c0[0], c0[1], R(0.3), R(0.05), R(0.03), body.rot);
+      put(a.ink.line, out); put(a.ink.line, inn); hatchIn((x, y) => inPoly(out, x, y) && !inPoly(inn, x, y), bbOf(out), 0.7, a.ink.shade); shapes.push((x, y) => inPoly(out, x, y));
+      for (const sg of [-1, 1]) { const p = TT(sg * 0.28, 0.78); put(a.ink.line, circle(p[0], p[1], max(0.3, R(0.02)), 6), true); }
+    }
+    pushA(ink, a);
+  }
+  // prosthetics for a missing limb: a strut, a wheel or a tripod leg
+  if (g.repl && !heads) {
+    const a = mkA("pr", [0, 0]), sd = g.replSide === "R" ? -1 : 1, w = R(0.03);
+    if (g.replKind === "leg") {
+      const hip = T(...body.leg[sd].hip), fx = hip[0] + sd * R(0.05);
+      if (g.repl === "strut") { const f = [fx, floorY - R(0.06)]; for (const o2 of [-w, w]) put(a.ink.line, [[hip[0] + o2, hip[1]], [f[0] + o2, f[1]]]); put(a.ink.line, rrect(f[0], floorY - R(0.03), R(0.2), R(0.03), 0.4)); shapes.push(cap(hip, f, w + 0.2), (x, y) => abs(x - f[0]) < R(0.2) && y > floorY - R(0.07) && y < floorY); }
+      else if (g.repl === "wheel") { const ax = [fx, floorY - R(0.3)]; for (const o2 of [-w, w]) put(a.ink.line, [[hip[0] + o2, hip[1]], [ax[0] + o2, ax[1]]]); put(a.ink.line, circle(ax[0], ax[1], R(0.3), 32), true); put(a.ink.line, circle(ax[0], ax[1], R(0.08), 12), true); for (let k = 0; k < 6; k++) put(a.ink.line, [[ax[0] + R(0.08) * cos(k * PI / 3), ax[1] + R(0.08) * sin(k * PI / 3)], [ax[0] + R(0.3) * cos(k * PI / 3), ax[1] + R(0.3) * sin(k * PI / 3)]]); shapes.push(cap(hip, ax, w + 0.2), circ(ax, R(0.3))); }
+      else for (const dx of [-0.42, 0, 0.42]) { const f = [hip[0] + dx * R(1), floorY - 0.2]; put(a.ink.line, [hip, f]); put(a.ink.line, circle(f[0], f[1], max(0.5, R(0.03)), 8), true); shapes.push(cap(hip, f, 0.5)); }
+    } else {
+      const sh = T(...body.arm[sd].sh), e = [sh[0] + sd * R(0.45), sh[1] + R(1.4)];
+      for (const o2 of [-w, w]) put(a.ink.line, [[sh[0] + o2, sh[1]], [e[0] + o2, e[1]]]);
+      put(a.ink.line, circle(e[0], e[1], R(0.08), 12), true); shapes.push(cap(sh, e, w + 0.2), circ(e, R(0.08)));
+      if (g.repl === "wheel") { put(a.ink.line, circle(e[0], e[1], R(0.18), 20), true); shapes.push(circ(e, R(0.18))); }
+    }
+    pushA(ink, a);
+  }
+  if (g.tail) {
+    const a = mkA("tail", [0, 0]), sg = g.tail, pts = heads ? [[sg * 0.12, 1.25], [sg * 0.5, 1.2], [sg * 0.72, 0.85], [sg * 0.66, 0.4]].map(p => T(...p)) : [[0, 3.8], [sg * 0.45, 4.5], [sg * 0.85, 5.6], [sg * 0.95, 6.9], [sg * 1.45, 7.4]].map(p => T(...p));
+    const path = crm(pts, false, 0.6), w = max(0.45, R(0.025)); a.cen = cableA(a, pts, w); pushA(ink, a); const seg = path.filter((_, i) => i % 3 === 0); shapes.push((x, y) => { for (let i = 0; i + 1 < seg.length; i++) if (distSeg(x, y, seg[i], seg[i + 1]) < w + 0.3) return true; return false; });
+  }
+  if (!X.dry) renderBody(body, st, ink, occ);
+  if (hasHead && g.extraEyes && !g.headMode) { const spots = [[0, 0.26, 0.9], [-0.22, 0.65, 0.75], [0.22, 0.65, 0.75]], O2 = X.col ? { line: ink.colour } : ink; if (!X.dry) for (let k = 0; k < g.extraEyes; k++) eyeInk(body, Ht, O2, () => true, TT(spots[k][0], spots[k][1]), spots[k][2], hd, X.col ? ink.colour : null); }
+  if (!X.dry) for (const k of ["line", "shade", "colour"]) for (const q of ink[k]) L[k].push(q);
+  const box = outlineBox(body), cut = heads ? X.cut : INF;
+  for (const sh of shapes) { /* extend the box over silhouette extras by sampling their reach */ }
+  const inside = (x, y) => { if (y > cut) return false; for (const P of body.parts) if (x > P.bb[0] && x < P.bb[2] && y > P.bb[1] && y < P.bb[3] && sampleF(P.G, x, y) < 0) return true; for (const sh of shapes) if (sh(x, y)) return true; return false; };
+  return { body, box, inside, cx: bx, ref: floorY, hd, wr: { L: body.by.handL ? body.T(...body.arm[1].wr) : null, R: body.by.handR ? body.T(...body.arm[-1].wr) : null } };
+}
+const hk0 = g => g.hunch || 0;
+// likeness: intersection over union of two silhouettes, each sampled on the same grid relative to its own figure
+function silMask(F, heads) {
+  const hd = F.hd, u0 = -2.8, u1 = 2.8, v0 = heads ? -2.8 : -9.8, v1 = heads ? 0.2 : 0.5, st = 0.1, nu = round((u1 - u0) / st), nv = round((v1 - v0) / st), M = new Uint8Array(nu * nv);
+  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) M[j * nu + i] = F.inside(F.cx + (u0 + i * st) * hd, F.ref + (v0 + j * st) * hd) ? 1 : 0;
+  return M;
+}
+const maskMerge = (Ma, Mb) => { const n = Ma.length, nu = round(5.6 / 0.1), M = new Uint8Array(n); for (let k = 0; k < n; k++) M[k] = (k % nu) < nu / 2 ? Ma[k] : Mb[k]; return M; };
+const iouOf = (A, B) => { let a = 0, b = 0; for (let k = 0; k < A.length; k++) { if (A[k] && B[k]) a++; if (A[k] || B[k]) b++; } return b ? a / b : 1; };
+
+const figDims = (heads, wide) => heads ? { w: wide ? 1.4 : 1.0, h: 1.9 } : { w: wide ? 3.6 : 2.7, h: 7.6 };
+function cloneLabel(c, s, cx, y, cw, col) { const h = cw >= 22 ? 2.4 : 2.2; txt(s, cx, y, h, col ? c.L.colour : c.L.line, { a: "c" }); return txtW(s, h); }
+
+// ================= clone line: grid =================
+function clonesGrid(c) {
+  const { W, H, m, o, L, rnd } = c, on = o.labels === "on", rows = o.rows, cols = o.cols, heads = o.who === "heads", n = rows * cols, d = o.drift;
+  const cw = (W - 2 * m) / cols, ch = (H - 2 * m) / rows, labH = on ? 7.5 : 0, tube = o.vessel === "tube", tray = o.vessel === "tray";
+  const markIdx = o.mark === "none" ? -1 : floor(rnd() * n), defectKind = heads || rnd() < 0.5 ? "eye" : "hand", fd = figDims(heads, false);
+  const vw0 = cw - (tube ? 7 : 4), vh0 = ch - labH - 3;
+  const padW = o.vessel === "none" ? 0 : min(4, vw0 * 0.2), padT = tube ? min(17, vh0 * 0.15) : tray ? min(heads ? 4 : 5, vh0 * 0.1) : 0, padB = tube ? min(6, vh0 * 0.08) : tray ? (heads ? 0.5 * 7.75 : min(7, vh0 * 0.1)) : 0;
+  const hd = max(0.4, min((vh0 - padT - padB) / fd.h, (vw0 - padW) / fd.w)), figHmm = fd.h * hd, vw = o.vessel === "none" ? fd.w * hd : min(vw0, fd.w * hd + padW), vh = o.vessel === "none" ? figHmm : min(vh0, figHmm + padT + padB);
+  const boxes = [], labW = [], figs = [], gens = [];
+  for (let i = 0; i < n; i++) {
+    const rr = mulberry(o.seed * 7919 + i * 104729 + 3), g = newGenome(), mark = i === markIdx, isDef = mark && o.mark === "defect", isOrig = mark && o.mark === "original";
+    if (!isOrig) { g.pj = jitterOf(rr, d); const sev = d * (0.8 + 0.5 * rr()), path = PATHS[floor(rr() * PATHS.length)]; mutate(g, path, sev, rr, heads); wildOps(g, d, rr, heads); for (let k = silCount(d, 1, 2, rr) * (d >= 0.9 ? 1 : 1); k > 0; k--) applySil(g, rr, heads, d); g.path = path; }
+    else g.path = "ORIGINAL";
+    if (isDef) { if (defectKind === "eye") g.extraEyes = 1; else g.missing.add("handL"); }
+    gens.push(g);
+  }
+  const refMask = silMask(figure(c, { cx: 0, base: 7.6 * hd, cut: 1.3 * hd, hd, g: newGenome(), heads, dry: true }), heads), likes = [];
+  for (let i = 0; i < n; i++) {
+    const g = gens[i], col = i % cols, row = floor(i / cols), cx = m + cw * (col + 0.5), cy0 = m + ch * row + (ch - labH - vh) / 2, mark = i === markIdx, isDef = mark && o.mark === "defect", isOrig = mark && o.mark === "original";
+    const figTop = cy0 + padT, vx0 = cx - vw / 2, vx1 = cx + vw / 2, vy0 = cy0, vy1 = cy0 + vh, V = L.line, base = heads ? figTop + 0.55 * hd + 1.3 * hd : figTop + 7.6 * hd + 0.2 * hd, cutY = base;
+    let keep = heads ? (x, y) => y < cutY : () => true;
+    if (tube) {
+      const r = vw / 2, rim = vy0 + min(3.2, vh * 0.04);
+      put(V, [[vx0, rim], ...arcP(cx, vy1 - r - 3, r, r, 180, 0, 28), [vx1, rim]]);
+      put(V, [[vx0 - 0.8, rim], [vx1 + 0.8, rim]]); put(V, [[vx0 - 0.8, rim], [vx0 - 0.8, rim - 1.3], [vx1 + 0.8, rim - 1.3], [vx1 + 0.8, rim]]);
+      put(V, [[vx0 - 1.6, rim - 1.3], [vx0 - 1.6, vy0 + 0.2], [vx1 + 1.6, vy0 + 0.2], [vx1 + 1.6, rim - 1.3], [vx0 - 1.6, rim - 1.3]]);
+      put(V, [[cx - vw * 0.28, vy1 - 2.6], [cx - vw * 0.28, vy1], [cx + vw * 0.28, vy1], [cx + vw * 0.28, vy1 - 2.6]]); put(V, [[cx - vw * 0.34, vy1 - 2.6], [cx + vw * 0.34, vy1 - 2.6]]);
+      const lv = vy0 + min(7.5, vh * 0.08); put(L.shade, crm(Array.from({ length: 7 }, (_, k) => [vx0 + 0.6 + (vw - 1.2) * k / 6, lv + 0.45 * sin(k * 2.1 + i)]), false, 0.5));
+      put(L.shade, [[vx0 + 1.8, lv + 6], [vx0 + 1.8, vy1 - r - 8]]); put(L.shade, [[vx0 + 2.8, lv + 9], [vx0 + 2.8, vy1 - r - 12]]);
+    } else if (tray) {
+      const fp = heads ? vh * 0.34 : 5.5, win = [vx0 + 1.2, vy0 + 1.2, vx1 - 1.2, vy1 - fp];
+      put(V, [[vx0, vy0], [vx1, vy0], [vx1, vy1], [vx0, vy1], [vx0, vy0]]); put(V, [[win[0], win[1]], [win[2], win[1]], [win[2], win[3]], [win[0], win[3]], [win[0], win[1]]]);
+      put(V, [[cx - vw * 0.22, vy1 - fp / 2 - 0.9], [cx + vw * 0.22, vy1 - fp / 2 - 0.9], [cx + vw * 0.22, vy1 - fp / 2 + 0.9], [cx - vw * 0.22, vy1 - fp / 2 + 0.9], [cx - vw * 0.22, vy1 - fp / 2 - 0.9]]);
+      keep = (x, y) => y < win[3] - 0.2 && x > win[0] + 0.2 && x < win[2] - 0.2 && y > win[1] + 0.2;
+    }
+    const F = figure(c, { cx, base, cut: cutY, hd, g, heads, col: mark, keep });
+    figs.push(F); if (!isOrig) likes.push(iouOf(refMask, silMask(F, heads)));
+    if (heads && !tray) { const w = F.body.R(0.2); put(mark ? L.colour : L.line, [[cx - w, cutY], [cx + w, cutY]]); }
+    if (tube) { const rr = mulberry(o.seed * 31 + i), k = 3 + floor(rr() * 3); for (let q = 0; q < k; q++) { const bx = vx0 + 2 + (vw - 4) * rr(), by = vy0 + 9.5 + rr() * max(0, padT - 12.5), br = 0.5 + rr() * 0.9; if (by < figTop - br - 1.2) put(L.line, circle(bx, by, br, 10), true); } }
+    boxes.push([vx0, vy0, vx1, vy1]);
+    if (on) { let s = isOrig ? "ORIGINAL" : "A-" + String(i + 1).padStart(3, "0") + (isDef ? "?" : ""); const h = cw >= 16 ? 2.4 : 2.2; if (txtW(s, h) > cw - 1) s = isOrig ? "ORIG." : "A-" + (i + 1) + (isDef ? "?" : ""); labW.push(cloneLabel(c, s, cx, vy1 + 4, cw, mark)); }
+  }
+  for (let i = 0; i < n; i++) if (gens[i].tether && i % cols < cols - 1 && figs[i].wr.L && figs[i + 1].wr.R) { const a = figs[i].wr.L, b = figs[i + 1].wr.R, A2 = mkA("t", [0, 0]), sag = hypot(b[0] - a[0], b[1] - a[1]) * 0.25; cableA(A2, [a, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + sag], b], max(0.4, hd * 0.012)); pushA(L, A2); put(L.colour, circle(a[0], a[1], 0.8, 8), true); put(L.colour, circle(b[0], b[1], 0.8, 8), true); }
+  let gmin = INF; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const a = boxes[i], b = boxes[j]; gmin = min(gmin, max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3])); }
+  c.gates.push(["vessels do not overlap", n < 2 || gmin >= 0.5, n < 2 ? "one vessel" : `closest ${gmin.toFixed(1)} mm`]);
+  if (on) c.gates.push(["every serial fits under its vessel", max(...labW) <= cw - 1, `widest ${max(...labW).toFixed(1)} of ${(cw - 1).toFixed(1)} mm`]);
+  if (likes.length) c.notes.push(`mean likeness to the original ${round(100 * likes.reduce((a, b) => a + b, 0) / likes.length)}%`);
+}
+
+// ================= clone line: lineage (a family tree) =================
+function clonesLineage(c) {
+  const { W, H, m, o, L, rnd } = c, on = o.labels === "on", heads = o.who === "heads", d = o.drift, gens = o.gens, fd = figDims(heads, true);
+  const caps = [1, 2, 4, 5, 5].slice(0, gens); if (gens === 3) caps[2] = 4;
+  const root = { gen: 0, g: newGenome(), path: "ORIGINAL", par: [], mi: false, main: true }; root.g.path = "ORIGINAL";
+  const rows = [[root]];
+  for (let gen = 1; gen < gens; gen++) {
+    const prev = rows[gen - 1], next = []; let stubs = 0;
+    prev.forEach((nd, pi) => {
+      if (nd.halt) return;
+      const remaining = prev.slice(pi + 1).filter(x => !x.halt).length, figsNow = next.filter(x => !x.halt).length, free = caps[gen] - figsNow - remaining, allowed = max(1, free), want = gen === 1 || rnd() < 0.8 ? 2 : 1, nk = min(want, allowed), ps = shuffle(PATHS, rnd);
+      for (let k = 0; k < nk; k++) {
+        const rr = mulberry(o.seed * 7919 + gen * 1013 + pi * 131 + k * 17), g = cloneGenome(nd.g), sg = d * (0.35 + 0.65 * gen / max(1, gens - 1));
+        g.pj = jitterOf(rr, d); mutate(g, ps[k], sg * (0.9 + 0.3 * rr()), rr, heads);
+        for (let q = silCount(d, gen, gens, rr); q > 0; q--) applySil(g, rr, heads, d);
+        if (gen >= gens - 1) wildOps(g, d, rr, heads); g.path = ps[k];
+        next.push({ gen, g, path: ps[k], par: [nd], mi: false, first: k === 0 && nd.main });
+      }
+      if (want > nk && stubs < 1 && gen > 1) { stubs++; next.push({ gen, halt: true, par: [nd], path: "HALT", mi: false }); }
+    });
+    if (gen >= 2 && next.filter(x => !x.halt).length >= 3 && rnd() < 0.6) {
+      for (let i = 0; i + 1 < next.length; i++) if (!next[i].halt && !next[i + 1].halt && next[i].par[0] !== next[i + 1].par[0]) { const a = next[i], b = next[i + 1]; next.splice(i, 2, { gen, g: a.g, g2: b.g, path: "MERGE", par: [a.par[0], b.par[0]], mi: true }); break; }
+    }
+    rows.push(next);
+  }
+  for (let gen = 1; gen < rows.length; gen++) for (const nd of rows[gen]) nd.main = !!(nd.first && nd.par[0].main);
+  const nrows = rows.length, maxN = max(...rows.map(r => r.length)), labH = on ? 9 : 0, capH = on ? 5 : 0, rp = (H - 2 * m - 2 - capH) / nrows, region = rp - labH - 7;
+  const hd = max(0.4, min(heads ? region * 0.94 / fd.h : region * 0.94 / 7.55, ((W - 2 * m) / maxN) * 0.85 / fd.w));
+  const serial = (nd, i) => String.fromCharCode(65 + nd.gen) + "-" + String(i + 1).padStart(2, "0");
+  rows.forEach((r, gi) => r.forEach((nd, i) => { nd.ser = serial(nd, i); nd.cx = m + (W - 2 * m) * (i + 0.5) / r.length; nd.base = m + 1 + rp * (gi + 1) - labH - 2; }));
+  const figNodes = rows.flat().filter(x => !x.halt), markNd = o.mark === "none" ? null : o.mark === "original" ? root : (() => { const a = figNodes.slice(1); return a[floor(rnd() * a.length)]; })();
+  const rootF = figure(c, { cx: root.cx, base: root.base, cut: root.base, hd, g: root.g, heads, col: markNd === root, keep: heads ? (x, y) => y < root.base : undefined });
+  root.F = rootF; root.box = rootF.box; const refMask = silMask(rootF, heads), boxes = [], likes = [], bottomLikes = [];
+  if (heads) { const w = hd * 0.2; put(markNd === root ? L.colour : L.line, [[root.cx - w, root.base], [root.cx + w, root.base]]); }
+  for (const r of rows) r.forEach((nd, i) => {
+    const cw = (W - 2 * m) / r.length, mark = nd === markNd;
+    if (nd.halt) { nd.box = [nd.cx - 1.5, nd.base - 9, nd.cx + 1.5, nd.base]; for (const [a, b] of dotted([[nd.cx, nd.base - 9], [nd.cx, nd.base - 1]], 0.5, 1.0)) put(L.line, [a, b]); put(L.line, [[nd.cx - 1.4, nd.base - 1], [nd.cx + 1.4, nd.base - 1]]); }
+    else if (nd !== root) {
+      const keepOf = x0 => heads ? (x, y) => y < nd.base && x0(x) : (x, y) => x0(x);
+      if (nd.mi) {
+        const a = figure(c, { cx: nd.cx, base: nd.base, cut: nd.base, hd, g: nd.g, heads, col: mark, keep: keepOf(x => x < nd.cx) }), b = figure(c, { cx: nd.cx, base: nd.base, cut: nd.base, hd, g: nd.g2, heads, col: mark, keep: keepOf(x => x >= nd.cx) });
+        nd.box = bbU([nd.cx - 1, a.box[1], a.box[2], a.box[3]], [b.box[0], b.box[1], nd.cx + 1, b.box[3]]); nd.box = [min(a.box[0], b.box[0], nd.cx), min(a.box[1], b.box[1]), max(a.box[2], b.box[2]), max(a.box[3], b.box[3])];
+        const y0 = nd.box[1], y1 = nd.base; for (const [p, q] of dashed([nd.cx, y0 - 0.5], [nd.cx, y1 + 0.5], 1.6, 1.1)) put(L.colour, [p, q]); for (let y = y0; y < y1; y += 3.5) put(L.colour, [[nd.cx - 0.8, y], [nd.cx + 0.8, y]]);
+        nd.mask = maskMerge(silMask(a, heads), silMask(b, heads));
+      } else { const F = figure(c, { cx: nd.cx, base: nd.base, cut: nd.base, hd, g: nd.g, heads, col: mark, keep: heads ? (x, y) => y < nd.base : undefined }); nd.box = F.box; nd.mask = silMask(F, heads); }
+      if (heads) { const w = hd * 0.2; put(mark ? L.colour : L.line, [[nd.cx - w, nd.base], [nd.cx + w, nd.base]]); nd.box = [nd.box[0], nd.box[1], nd.box[2], nd.base]; }
+      nd.like = iouOf(refMask, nd.mask); likes.push(nd.like); if (nd.gen === nrows - 1) bottomLikes.push(nd.like);
+    } else nd.box = root.box;
+    let lw = 0;
+    if (on) {
+      const h = cw >= 22 ? 2.4 : 2.2, y = nd.base + 3.4, pw = d > 0.001 ? " " + nd.path : "", l1 = nd === root ? "ORIGINAL" : nd.halt ? "HALT" : nd.mi ? "MERGE" : nd.ser + pw, l2 = nd.mi ? `${nd.par[0].ser}+${nd.par[1].ser}` : null;
+      if (!l2 && txtW(l1, h) <= cw - 1) lw = cloneLabel(c, l1, nd.cx, y, cw, mark);
+      else if (l2) lw = max(cloneLabel(c, l1, nd.cx, y - 0.4, cw, mark), cloneLabel(c, l2, nd.cx, y + h + 0.8, cw, mark));
+      else lw = pw ? max(cloneLabel(c, nd.ser, nd.cx, y - 0.4, cw, mark), cloneLabel(c, nd.path, nd.cx, y + h + 0.8, cw, mark)) : cloneLabel(c, nd.ser, nd.cx, y, cw, mark);
+    }
+    nd.lw = lw; boxes.push([min(nd.box[0], nd.cx - lw / 2), nd.box[1], max(nd.box[2], nd.cx + lw / 2), nd.base + labH]);
+  });
+  for (let gi = 1; gi < nrows; gi++) for (const nd of rows[gi]) for (const p of nd.par) {
+    const x0 = p.cx, y0 = p.base + labH + 0.8, x1 = nd.cx, y1 = nd.box[1] - 1.0, k = max(1, (y1 - y0)) * 0.5, pts = Array.from({ length: 29 }, (_, q) => { const t = q / 28, u = 1 - t; return [u * u * u * x0 + 3 * u * u * t * x0 + 3 * u * t * t * x1 + t * t * t * x1, u * u * u * y0 + 3 * u * u * t * (y0 + k) + 3 * u * t * t * (y1 - k) + t * t * t * y1]; });
+    put(nd.main ? L.colour : L.line, pts);
+  }
+  let gmin = INF; for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) { const a = boxes[i], b = boxes[j]; gmin = min(gmin, max(b[0] - a[2], a[0] - b[2], b[1] - a[3], a[1] - b[3])); }
+  c.gates.push(["lineage nodes do not overlap", boxes.length < 2 || gmin >= 0.3, `${boxes.length} nodes, closest ${gmin.toFixed(1)} mm`]);
+  const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 1, all = mean(likes), bot = mean(bottomLikes);
+  c.notes.push(`mean likeness to the original ${round(100 * all)}% (bottom generation ${round(100 * bot)}%)`);
+  if (on) txt(`MEAN LIKENESS TO THE ORIGINAL ${round(100 * all)}%`, W / 2, H - m - 2.2, 2.4, L.line, { a: "c" });
+  if (d >= 0.9) c.gates.push(["bottom generation is under 60% like the original", bot < 0.6, `${round(100 * bot)}%`]);
+  if (d <= 0.001) c.gates.push(["no stray changes at zero divergence (likeness over 95%)", all > 0.95, `${round(100 * all)}%`]);
+  const bodyH = !heads ? rootF.box[3] - rootF.box[1] : 0;
+  c.notes.push(`${figNodes.length} ${heads ? "heads" : "bodies"} in ${nrows} generations${heads ? "" : `, nodes about ${bodyH.toFixed(0)} mm tall`}`);
+}
+function clonesSheet(c) { if (c.o.layout === "lineage") clonesLineage(c); else clonesGrid(c); }
+
+// ================= patent sheets: augment parts, drawn as overlays in page millimetres =================
+const rrect = (cx, cy, hw, hh, r = 0, ang = 0) => {
+  r = min(r, hw, hh); const pts = [];
+  const corner = (px, py, a0) => { if (r <= 0) pts.push([px, py]); else for (let k = 0; k <= 5; k++) { const a = (a0 + 90 * k / 5) * D2R; pts.push([px + r * cos(a), py + r * sin(a)]); } };
+  corner(cx + hw - r, cy + hh - r, 0); corner(cx - hw + r, cy + hh - r, 90); corner(cx - hw + r, cy - hh + r, 180); corner(cx + hw - r, cy - hh + r, 270);
+  pts.push(pts[0].slice());
+  if (!ang) return pts;
+  const c = cos(ang), s = sin(ang); return pts.map(([x, y]) => [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c]);
+};
+function hatchIn(inside, bb, gap, out) { // 45 degree lines, kept where inside(x, y) holds
+  const g2 = gap * 1.4142;
+  for (let C = bb[0] + bb[1]; C <= bb[2] + bb[3]; C += g2) {
+    let a = null, b = null;
+    const fin = () => { if (a && b && hypot(b[0] - a[0], b[1] - a[1]) > 0.8) put(out, [a, b]); a = b = null; };
+    for (let x = max(bb[0], C - bb[3]); x <= min(bb[2], C - bb[1]); x += 0.3) { const y = C - x; if (inside(x, y)) { if (!a) a = [x, y]; b = [x, y]; } else fin(); }
+    fin();
+  }
+}
+const mkA = (key, cen) => ({ key, ink: newInk(), occ: [], cen, ex: [0, 0], exd: 0, side: null });
+function shiftA(A, dx, dy) {
+  const sh = q => q.map(([pts, cl]) => [pts.map(p => [p[0] + dx, p[1] + dy]), cl]);
+  return { ...A, ink: { line: sh(A.ink.line), shade: sh(A.ink.shade), colour: sh(A.ink.colour) }, occ: A.occ.map(f => (x, y) => f(x - dx, y - dy)), cen: [A.cen[0] + dx, A.cen[1] + dy] };
+}
+const pushA = (L, A) => { for (const k of ["line", "shade", "colour"]) for (const q of A.ink[k]) L[k].push(q); };
+const polyOcc = (A, poly) => A.occ.push((x, y) => inPoly(poly, x, y));
+const circOcc = (A, cx, cy, r) => A.occ.push((x, y) => hypot(x - cx, y - cy) < r);
+const screw = (A, cx, cy, r, ang = 0.7) => { put(A.ink.line, circle(cx, cy, r, 10), true); put(A.ink.line, [[cx - r * 0.75 * cos(ang), cy - r * 0.75 * sin(ang)], [cx + r * 0.75 * cos(ang), cy + r * 0.75 * sin(ang)]]); };
+
+function servoA(A, cx, cy, r, gap) { // a servo horn: toothed ring, inner ring, cross, screws (colour pen picks out the disc)
+  put(A.ink.colour, circle(cx, cy, r, 48), true); put(A.ink.line, circle(cx, cy, r * 0.64, 36), true);
+  put(A.ink.colour, [[cx - r * 0.64, cy], [cx + r * 0.64, cy]]); put(A.ink.colour, [[cx, cy - r * 0.64], [cx, cy + r * 0.64]]);
+  for (let k = 0; k < 24; k++) { const a = TAU * k / 24; put(A.ink.line, [[cx + r * 1.02 * cos(a), cy + r * 1.02 * sin(a)], [cx + r * 1.14 * cos(a), cy + r * 1.14 * sin(a)]]); }
+  if (r > 4) for (let k = 0; k < 6; k++) { const a = TAU * (k + 0.5) / 6; screw(A, cx + r * 0.82 * cos(a), cy + r * 0.82 * sin(a), max(0.4, r * 0.06), a); }
+  circOcc(A, cx, cy, r * 1.16 + 0.3);
+}
+function pistonA(A, a, b, w) { // a cylinder with a rod and a clevis at each end, from a to b
+  const dx = b[0] - a[0], dy = b[1] - a[1], len = hypot(dx, dy), ux = dx / len, uy = dy / len, vx = -uy, vy = ux, Pt = (u, v) => [a[0] + ux * u + vx * v, a[1] + uy * u + vy * v];
+  const cl = len * 0.56, rw = w * 0.42, body = [Pt(0, -w), Pt(cl, -w), Pt(cl, w), Pt(0, w), Pt(0, -w)];
+  put(A.ink.line, body); put(A.ink.line, [Pt(cl, -rw), Pt(len - w * 0.8, -rw)]); put(A.ink.line, [Pt(cl, rw), Pt(len - w * 0.8, rw)]);
+  for (const f of [0.18, 0.3]) put(A.ink.line, [Pt(cl * f, -w), Pt(cl * f, w)]);
+  put(A.ink.line, circle(...Pt(-w * 0.1, 0), w * 0.8, 14), true); put(A.ink.line, circle(...Pt(len, 0), w * 0.8, 14), true); put(A.ink.line, circle(...Pt(len, 0), w * 0.28, 8), true);
+  const lowHalf = [Pt(0, 0), Pt(cl, 0), Pt(cl, w), Pt(0, w), Pt(0, 0)], bb = bbOf(body);
+  hatchIn((x, y) => inPoly(lowHalf, x, y) && inPoly(body, x, y), bb, 0.7, A.ink.shade);
+  polyOcc(A, [Pt(-w * 0.9, -w * 1.05), Pt(len + w * 0.9, -w * 1.05), Pt(len + w * 0.9, w * 1.05), Pt(-w * 0.9, w * 1.05)]);
+  return Pt(cl * 0.5, 0);
+}
+function cableA(A, pts, w) { // a cable run: two parallel lines with clamps
+  const path = crm(pts, false, 0.5), n = path.length, L = [], R2 = [], nz = i => { const p = path[max(0, i - 1)], q = path[min(n - 1, i + 1)], d = hypot(q[0] - p[0], q[1] - p[1]) || 1; return [-(q[1] - p[1]) / d, (q[0] - p[0]) / d]; };
+  for (let i = 0; i < n; i++) { const t = nz(i); L.push([path[i][0] + t[0] * w, path[i][1] + t[1] * w]); R2.push([path[i][0] - t[0] * w, path[i][1] - t[1] * w]); }
+  put(A.ink.line, L); put(A.ink.line, R2);
+  let acc = 0; const every = max(11, w * 9);
+  for (let i = 1; i < n; i++) { acc += hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]); if (acc > every && i < n - 3) { acc = 0; const t = nz(i), e = w + 0.9; put(A.ink.line, [[path[i][0] + t[0] * e, path[i][1] + t[1] * e], [path[i][0] - t[0] * e, path[i][1] - t[1] * e]]); } }
+  const seg = path.filter((_, i) => i % 2 === 0); A.occ.push((x, y) => { for (let i = 0; i + 1 < seg.length; i++) if (distSeg(x, y, seg[i], seg[i + 1]) < w + 0.4) return true; return false; });
+  return path[floor(n / 2)];
+}
+function portA(A, cx, cy, w, h, ang = 0) { // a data port: a housing, a recess and a row of pin slots
+  const out = rrect(cx, cy, w / 2, h / 2, h * 0.2, ang), inn = rrect(cx, cy, w / 2 - h * 0.17, h / 2 - h * 0.17, h * 0.1, ang);
+  put(A.ink.line, out); put(A.ink.line, inn);
+  const c = cos(ang), s = sin(ang), nk = 4, sw = (w - h * 0.7) / nk;
+  for (let k = 0; k < nk; k++) { const lx = -((nk - 1) / 2 - k) * sw, a = [cx + lx * c + (-h * 0.16) * -s, cy + lx * s + (-h * 0.16) * c], b = [cx + lx * c + (h * 0.16) * -s, cy + lx * s + (h * 0.16) * c]; put(A.ink.line, [a, b]); }
+  polyOcc(A, out);
+}
+function lensA(A, cx, cy, r, bracketTo, earP) { // an ocular device seated in the socket: housing, lens rings, an iris diaphragm, a bracket and a cable
+  const dir = bracketTo === undefined ? 1 : (bracketTo > cx ? 1 : -1);
+  put(A.ink.line, circle(cx, cy, r * 1.24, 44), true); if (r >= 4) { put(A.ink.line, circle(cx, cy, r * 1.08, 40), true); for (const f of [0.9, 0.7]) put(A.ink.line, circle(cx, cy, r * f, 36), true); } else put(A.ink.line, circle(cx, cy, r * 0.8, 24), true);
+  if (r >= 3) {
+    const nb = 7, ro = r * 0.56, ri = r * 0.2;
+    put(A.ink.colour, circle(cx, cy, ro, 30), true); put(A.ink.colour, circle(cx, cy, ri, 14), true);
+    for (let k = 0; k < nb; k++) { const a = TAU * k / nb, b = a + 1.05; put(A.ink.colour, [[cx + ro * cos(a), cy + ro * sin(a)], [cx + ri * cos(b), cy + ri * sin(b)]]); }
+    for (const a of [45, 135, 225, 315]) { const q = a * D2R; screw(A, cx + r * 1.16 * cos(q), cy + r * 1.16 * sin(q), max(0.25, r * 0.045), q); }
+  } else put(A.ink.colour, circle(cx, cy, r * 0.3, 10), true);
+  circOcc(A, cx, cy, r * 1.24 + 0.3);
+  if (bracketTo !== undefined) {
+    const x0 = cx + dir * r * 1.24, pw = r * 0.5, py = r * 0.62;
+    put(A.ink.line, [[x0, cy - r * 0.3], [bracketTo - dir * pw, cy - r * 0.3]]); put(A.ink.line, [[x0, cy + r * 0.3], [bracketTo - dir * pw, cy + r * 0.3]]);
+    put(A.ink.line, [[bracketTo - dir * pw, cy - py], [bracketTo, cy - py], [bracketTo, cy + py], [bracketTo - dir * pw, cy + py], [bracketTo - dir * pw, cy - py]]);
+    if (r >= 4) for (const sy of [-1, 1]) screw(A, bracketTo - dir * pw * 0.5, cy + sy * py * 0.5, max(0.28, r * 0.07));
+    A.occ.push((x, y) => (x - x0) * dir > 0 && (x - bracketTo) * dir < 0.3 && abs(y - cy) < py + 0.3);
+  }
+  if (earP) { const c0 = [cx + dir * r * 0.6, cy + r * 1.22]; A.cable = cableA(A, [c0, [cx + dir * r * 1.2, cy + r * 1.9], [earP[0] - dir * r * 0.6, earP[1] - r * 0.3], earP], max(0.45, r * 0.06)); put(A.ink.line, rrect(earP[0], earP[1], max(0.6, r * 0.12), max(0.9, r * 0.2), 0.3)); }
+}
+function panelA(A, cx, cy, w, h) { // a chest panel: housing, vents, a port and screws
+  const out = rrect(cx, cy, w / 2, h / 2, w * 0.1);
+  put(A.ink.line, out); put(A.ink.line, rrect(cx, cy, w / 2 - w * 0.09, h / 2 - w * 0.09, w * 0.05));
+  for (let k = 0; k < 3; k++) { const y = cy - h * 0.3 + k * h * 0.11; put(A.ink.line, [[cx - w * 0.28, y], [cx + w * 0.28, y]]); }
+  put(A.ink.colour, circle(cx, cy + h * 0.2, w * 0.14, 20), true); put(A.ink.colour, circle(cx, cy + h * 0.2, w * 0.06, 12), true);
+  for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) screw(A, cx + sx * (w / 2 - w * 0.045), cy + sy * (h / 2 - w * 0.045), max(0.28, w * 0.025));
+  hatchIn((x, y) => inPoly(out, x, y) && (x - cx) + (y - cy) > w * 0.1 && y > cy + h * 0.3 - 0.0001 - h * 0.05, bbOf(out), 0.8, A.ink.shade);
+  polyOcc(A, out);
+}
+
+// ================= patent figures =================
+// Every figure function draws into c.L and returns { targets: {key: {p, arrow, side}}, box }.
+const wave = (x0, y0, x1, y1, amp = 1.2, n = 6) => { const pts = []; for (let k = 0; k <= 24; k++) { const t = k / 24, nx = -(y1 - y0), ny = x1 - x0, d = hypot(nx, ny) || 1; pts.push([x0 + (x1 - x0) * t + nx / d * amp * sin(t * n * PI), y0 + (y1 - y0) * t + ny / d * amp * sin(t * n * PI)]); } return pts; };
+
+function figArm(c, R, act, mode) {
+  const { o, L } = c, exp = mode === "exp", pose = { ...poseOf(o.seed), armA: [0, 0], bend: [0, 0] };
+  const s = min((R[2] - R[0]) / 2.0, (R[3] - R[1]) / (exp ? 1.2 : 0.62)), hs = pose.h, bld = pose.bld, ex = R[0] + 0.13 * s, ey = (R[1] + R[3]) / 2, Lf = 1.1 * s * hs;
+  const body = makeBody({ s, x: ex - 2.96 * s * hs, y: ey + 0.86 * pose.shw * s, rot: -PI / 2, h: cellOf(s), pose, fingers: true, only: new Set(["forearmL", "handL"]) });
+  const hw0 = 0.14 * s * bld, hw1 = 0.095 * s * bld, hwAt = x => hw0 + (hw1 - hw0) * clamp((x - ex) / Lf, 0, 1), wx = ex + Lf, as = {}, tg = {};
+  if (act.has("pistons")) { const A = mkA("pistons", [0, 0]), w = max(1.3, 0.2 * hwAt(ex + 0.3 * Lf)), cs = [];
+    for (const sg of [-1, 1]) cs.push(pistonA(A, [ex + 0.12 * Lf, ey + sg * 0.52 * hwAt(ex + 0.3 * Lf)], [ex + 0.64 * Lf, ey + sg * 0.52 * hwAt(ex + 0.5 * Lf)], w)); A.cen = cs[0]; A.ex = [0, -1]; A.exd = 0.3 * s; A.side = "T"; as.pistons = A; }
+  if (act.has("port")) { const A = mkA("port", [ex + 0.8 * Lf, ey - 0.4 * hwAt(ex + 0.8 * Lf)]); portA(A, A.cen[0], A.cen[1], 0.1 * s, 0.062 * s); A.ex = [0, -1]; A.exd = 0.46 * s; A.side = "T"; as.port = A; }
+  if (act.has("cable")) { const A = mkA("cable", [0, 0]), x0 = ex + 0.04 * Lf; A.cen = cableA(A, [[x0, ey - 0.78 * hwAt(x0)], [ex + 0.2 * Lf, ey - 0.1 * hwAt(ex)], [ex + 0.42 * Lf, ey + 0.2 * hwAt(ex)], [ex + 0.66 * Lf, ey + 0.05 * hwAt(ex)], [wx - 0.145 * s, ey]], max(0.8, 0.011 * s)); A.ex = [0, 1]; A.exd = 0.3 * s; A.side = "B"; as.cable = A; }
+  if (act.has("disc")) { const A = mkA("disc", [wx, ey]); servoA(A, wx, ey, 1.28 * hw1); A.ex = [0, 1]; A.exd = 0.46 * s; A.side = "B"; as.disc = A; }
+  if (act.has("caps")) { const A = mkA("caps", [0, 0]), F = body.by.handL.fing; let cen = null;
+    F.forEach((f, i) => { for (const t of [0.4, 0.74]) { const p = lerp2(f[0], f[1], t), r = 0.03 * s - 0.2; put(A.ink.line, rrect(p[0], p[1], 0.9, r, 0.5)); put(A.ink.line, [[p[0], p[1] - r], [p[0], p[1] + r]]); if (i === 1 && t === 0.4) cen = p; } });
+    A.cen = cen; A.ex = [0, 1]; A.exd = 0.3 * s; A.side = "B"; as.caps = A; }
+  const occ = exp ? [] : Object.values(as).flatMap(a => a.occ);
+  renderBody(body, { mach: new Set(), only: new Set(["forearmL", "handL"]), keep: (x) => x >= ex - 0.02 * s, gap: o.pitch, face: false, noShade: exp, seed: o.seed, ...skinOf(o, exp ? { net: 0 } : { sources: Object.values(as).map(a => a.cen) }) }, L, occ);
+  const brk = wave(ex - 0.02 * s, ey - 0.2 * s, ex - 0.02 * s, ey + 0.2 * s, 0.9, 4); put(L.line, brk);
+  for (const [k, A] of Object.entries(as)) {
+    if (!exp) pushA(L, A);
+    else { const B = shiftA(A, A.ex[0] * A.exd, A.ex[1] * A.exd); pushA(L, B); for (const [a, b] of dashed(A.cen, B.cen)) put(L.line, [a, b]); as[k] = B; }
+    tg[k] = { p: as[k].cen, arrow: false, side: exp ? A.side : null };
+  }
+  tg.forearm = { p: [ex + 0.3 * Lf, ey + hwAt(ex + 0.3 * Lf)], arrow: true }; tg.hand = { p: [wx + 0.2 * s, ey + 0.02 * s], arrow: false };
+  return { targets: tg, box: [ex - 0.02 * s, ey - (exp ? 0.6 : 0.3) * s, wx + 0.9 * s, ey + (exp ? 0.66 : 0.33) * s] };
+}
+
+function figHead(c, R, act, mode) {
+  const { o, L } = c, exp = mode === "exp", pose = poseOf(o.seed);
+  const s = min((R[2] - R[0]) / (exp ? 3.4 : 1.95), (R[3] - R[1]) / (exp ? 3.0 : 2.25)), cx = (R[0] + R[2]) / 2, top = (R[1] + R[3]) / 2 - (exp ? 1.3 : 1.05) * s;
+  const body = makeBody({ s, x: cx, y: top, h: cellOf(s), pose, fingers: false, only: new Set(["torso", "neck", "head"]) }), T = body.T, Ht = body.Ht, Rr = body.R, ycut = T(0, 2.1)[1], as = {}, tg = {};
+  const eyeP = T(...Ht(0.135, 0.47));
+  if (act.has("lens")) { const A = mkA("lens", eyeP); lensA(A, eyeP[0], eyeP[1], Rr(0.1), T(0.345, 0.47)[0], T(...Ht(0.43, 0.68))); A.ex = [1, -0.55]; A.exd = 0.95 * s; as.lens = A; }
+  if (act.has("plate")) {
+    const A = mkA("plate", [0, 0]), pp = [[-0.02, 0.07], [0.18, 0.1], [0.265, 0.22], [0.26, 0.36], [0.1, 0.34], [0.0, 0.2]].map(p => T(...Ht(...p))), poly = crm(pp, true, 0.4), cen = [0, 1].map(k => pp.reduce((a, p) => a + p[k], 0) / pp.length);
+    put(A.ink.line, poly); put(A.ink.line, crm(pp.map(p => [cen[0] + (p[0] - cen[0]) * 0.8, cen[1] + (p[1] - cen[1]) * 0.8]), true, 0.4));
+    for (const p of pp.filter((_, i) => i % 2 === 0)) screw(A, cen[0] + (p[0] - cen[0]) * 0.9, cen[1] + (p[1] - cen[1]) * 0.9, max(0.35, Rr(0.017)));
+    hatchIn((x, y) => inPoly(poly, x, y) && (x - cen[0]) + (y - cen[1]) > 0.6, bbOf(poly), 0.7, A.ink.shade); polyOcc(A, poly); A.cen = cen; A.ex = [0.15, -1]; A.exd = 0.78 * s; as.plate = A;
+  }
+  if (act.has("port")) { const A = mkA("port", T(0.0, 1.17)); portA(A, A.cen[0], A.cen[1], Rr(0.18), Rr(0.1)); for (const y of [1.04, 1.3]) { const hw = y < 1.2 ? 0.168 : 0.19; put(A.ink.line, crm([T(-hw, y), T(0, y + 0.03), T(hw, y)], false, 0.4)); } A.ex = [-1, 0.2]; A.exd = 0.95 * s; A.side = "L"; as.port = A; }
+  if (act.has("cable")) { const A = mkA("cable", [0, 0]); A.cen = cableA(A, [[0.1, 1.17], [0.28, 1.3], [0.5, 1.38], [0.64, 1.52], [0.68, 1.75], [0.56, 1.98]].map(p => T(...p)), max(0.8, Rr(0.024))); put(A.ink.colour, circle(...T(0.56, 1.98), Rr(0.04), 14), true); A.ex = [1, 0.5]; A.exd = 0.78 * s; as.cable = A; }
+  const occ = exp ? [] : Object.values(as).flatMap(a => a.occ);
+  renderBody(body, { mach: new Set(), keep: (x, y) => y <= ycut, gap: o.pitch, face: true, noShade: exp, seed: o.seed, ...skinOf(o, exp ? { net: 0 } : { sources: Object.values(as).map(a => a.cen) }) }, L, occ);
+  const xs = T(0.9, 0)[0] - cx; put(L.line, wave(cx - xs, ycut, cx + xs, ycut, 0.9, 9));
+  for (const [k, A] of Object.entries(as)) {
+    if (!exp) pushA(L, A);
+    else { const B = shiftA(A, A.ex[0] * A.exd, A.ex[1] * A.exd); pushA(L, B); for (const [a, b] of dashed(A.cen, B.cen)) put(L.line, [a, b]); as[k] = B; }
+    tg[k] = { p: as[k].cen, arrow: false, side: as[k].side };
+  }
+  tg.head = { p: T(...Ht(-0.36, 0.38)), arrow: true }; tg.neck = { p: T(-0.19, 1.12), arrow: true };
+  return { targets: tg, box: [cx - 0.9 * s, top, cx + 0.9 * s, ycut] };
+}
+
+function figSpine(c, R, act, mode) {
+  const { o, L } = c, exp = mode === "exp", pose = poseOf(o.seed), n = 12 + round(o.aug * 6), as = {}, tg = {};
+  const s = exp ? min((R[3] - R[1]) / 4.9, (R[2] - R[0]) / 2.1) : min((R[2] - R[0]) / 1.95, (R[3] - R[1]) / 4.25), cx = (R[0] + R[2]) / 2, top = exp ? R[1] + 0.55 * s : (R[1] + R[3]) / 2 - 2.05 * s;
+  let body = null, T = (x, y) => [cx + x * s, top + y * s * (exp ? 1 : pose.h)], ycut = 0;
+  if (!exp) { body = makeBody({ s, x: cx, y: top, h: cellOf(s), pose, fingers: false, only: new Set(["torso", "pelvis", "neck", "head"]) }); T = body.T; ycut = T(0, 3.95)[1]; }
+  const yTop = 1.5, yBot = 3.0, sp = exp ? 1.9 : 1, pitch = (yBot - yTop) / n, units = [];
+  const yAt = i => exp ? 1.5 + i * pitch * 1.9 - (n * pitch * 0.45) : yTop + (i + 0.5) * pitch, ex0 = exp ? 0.9 : 0;
+  for (let i = 0; i < n; i++) { const t = (i + 0.5) / n, xo = 0.03 * sin(t * PI * 2.2 + 0.6), y = yAt(i); units.push({ c: T(xo, y), hw: (0.11 + 0.09 * t) * s, hh: pitch * 0.43 * s, t, xo, y }); }
+  const A = mkA("units", units[floor(n * 0.4)].c), Rc = body ? body.R : r => r * s;
+  for (const u of units) {
+    const out = rrect(u.c[0], u.c[1], u.hw, u.hh, u.hh * 0.28); put(A.ink.line, out); put(A.ink.line, [[u.c[0], u.c[1] - u.hh * 0.55], [u.c[0], u.c[1] + u.hh * 0.55]]);
+    if (s >= 24) for (const sg of [-1, 1]) put(A.ink.line, circle(u.c[0] + sg * u.hw * 0.6, u.c[1], max(0.3, 0.012 * s), 6), true);
+    hatchIn((x, y) => inPoly(out, x, y) && (x - u.c[0]) > u.hw * 0.2 && (y - u.c[1]) > -u.hh * 0.2, bbOf(out), 0.7, A.ink.shade);
+    A.occ.push((x, y) => abs(x - u.c[0]) < u.hw + 0.2 && abs(y - u.c[1]) < u.hh + 0.2);
+  }
+  as.units = A; A.ex = [0, 0];
+  if (act.has("rods")) { const Rg = mkA("rods", [0, 0]); units.forEach((u, i) => { if (i + 1 < n) { const v = units[i + 1]; for (const sg of [-0.34, 0.34]) put(Rg.ink.line, [[u.c[0] + sg * u.hw, u.c[1] + u.hh], [v.c[0] + sg * v.hw, v.c[1] - v.hh]]); } }); const k = floor(n * 0.62), u = units[k], v = units[k + 1]; Rg.cen = [(u.c[0] + v.c[0]) / 2 + 0.34 * u.hw, (u.c[1] + u.hh + v.c[1] - v.hh) / 2]; as.rods = Rg; }
+  if (act.has("branch") || act.has("nodes")) {
+    const Bn = mkA("branch", [0, 0]), nb = 2 + round(o.aug * 3), idx = [0.2, 0.46, 0.7, 0.33, 0.6].slice(0, nb).map(f => floor(n * f)), nodes = [];
+    idx.forEach((i, j) => { const u = units[i], sg = j % 2 ? 1 : -1, x0 = u.c[0] + sg * u.hw, p = [[x0, u.c[1]], [x0 + sg * 0.16 * s, u.c[1] - 0.08 * s], [x0 + sg * 0.3 * s, u.c[1] + 0.02 * s], [x0 + sg * 0.42 * s, u.c[1] + 0.12 * s]];
+      const mid = cableA(Bn, p, max(0.4, 0.007 * s)); const e = p[3]; put(Bn.ink.line, circle(e[0], e[1], max(0.5, 0.022 * s), 10), true); put(Bn.ink.colour, circle(e[0], e[1], max(0.9, 0.04 * s), 14), true); nodes.push(e); if (j === 0) Bn.cen = mid; });
+    as.branch = Bn; as.nodes = Object.assign(mkA("nodes", nodes[nodes.length - 1] || [0, 0]), { ink: newInk() });
+  }
+  if (act.has("skull")) { const Sk = mkA("skull", T(0, exp ? yAt(0) - 0.5 : 1.12)); portA(Sk, Sk.cen[0], Sk.cen[1], Rc(0.2), Rc(0.1)); const u0 = units[0]; put(Sk.ink.line, [[Sk.cen[0] - Rc(0.05), Sk.cen[1] + Rc(0.05)], [u0.c[0] - u0.hw * 0.5, u0.c[1] - u0.hh]]); put(Sk.ink.line, [[Sk.cen[0] + Rc(0.05), Sk.cen[1] + Rc(0.05)], [u0.c[0] + u0.hw * 0.5, u0.c[1] - u0.hh]]); as.skull = Sk; }
+  if (act.has("sacral")) {
+    const Sa = mkA("sacral", [0, 0]), y0 = exp ? yAt(n - 1) + 0.45 : 3.12, pp = [[-0.15, y0 + 0.02], [0, y0 - 0.03], [0.15, y0 + 0.02], [0.11, y0 + 0.26], [0, y0 + 0.42], [-0.11, y0 + 0.26]].map(p => T(...p)), poly = crm(pp, true, 0.4), cen = [0, 1].map(k => pp.reduce((a, p) => a + p[k], 0) / pp.length);
+    put(Sa.ink.line, poly); put(Sa.ink.line, crm(pp.map(p => [cen[0] + (p[0] - cen[0]) * 0.8, cen[1] + (p[1] - cen[1]) * 0.8]), true, 0.4));
+    for (const p of [pp[0], pp[2], pp[4]]) screw(Sa, cen[0] + (p[0] - cen[0]) * 0.86, cen[1] + (p[1] - cen[1]) * 0.86, max(0.4, 0.016 * s));
+    hatchIn((x, y) => inPoly(poly, x, y) && (x - cen[0]) + (y - cen[1]) > 0.4, bbOf(poly), 0.7, Sa.ink.shade); polyOcc(Sa, poly); Sa.cen = cen; as.sacral = Sa;
+  }
+  const occ = exp ? [] : Object.values(as).flatMap(a => a.occ);
+  if (!exp) {
+    renderBody(body, { mach: new Set(), keep: (x, y) => y <= ycut, gap: o.pitch, face: false, seed: o.seed, ...skinOf(o, { sources: Object.values(as).map(a => a.cen) }) }, L, occ);
+    const xs = T(0.9, 0)[0] - cx; put(L.line, wave(cx - xs, ycut, cx + xs, ycut, 0.9, 9));
+  } else { for (const [a, b] of dashed(T(0, yAt(0) - 0.6), T(0, yAt(n - 1) + 1.25), 2, 1.4)) put(L.line, [a, b]); }
+  for (const [k, Ag] of Object.entries(as)) { if (k === "nodes") continue; pushA(L, Ag); tg[k] = { p: Ag.cen, arrow: false }; }
+  if (as.nodes) tg.nodes = { p: as.nodes.cen, arrow: false };
+  if (!exp) tg.torso = { p: T(0.75, 2.5), arrow: true };
+  return { targets: tg, box: [cx - 0.9 * s, top - (exp ? 0.4 * s : 0), cx + 0.9 * s, exp ? top + 4.9 * s : ycut] };
+}
+
+function figWhole(c, R, act, mode) {
+  const { o, L } = c, pose = poseOf(o.seed), s = min((R[2] - R[0]) / 2.75, (R[3] - R[1]) / 7.75), cx = (R[0] + R[2]) / 2, top = (R[1] + R[3]) / 2 - 3.85 * s, as = {}, tg = {};
+  const body = makeBody({ s, x: cx, y: top, h: cellOf(s), pose, fingers: s >= 20 }), T = body.T, Ht = body.Ht, Rr = body.R, arm = body.arm, leg = body.leg;
+  const site = (key, A, o2) => { as[key] = A; };
+  if (act.has("lens")) { const e = T(...Ht(0.135, 0.47)), A = mkA("lens", e); lensA(A, e[0], e[1], Rr(0.085), T(0.345, 0.47)[0]); as.lens = A; }
+  if (act.has("neck")) { const A = mkA("neck", T(0, 1.2)); portA(A, A.cen[0], A.cen[1], Rr(0.2), Rr(0.1)); as.neck = A; }
+  if (act.has("chest")) { const p = T(-0.28, 2.05), A = mkA("chest", p); panelA(A, p[0], p[1], Rr(0.4), Rr(0.5)); as.chest = A; }
+  if (act.has("elbow")) { const p = T(...arm[-1].el), A = mkA("elbow", p); servoA(A, p[0], p[1], Rr(0.15)); as.elbow = A; }
+  if (act.has("wrist")) { const p = T(arm[1].wr[0], arm[1].wr[1] - 0.32), A = mkA("wrist", p); portA(A, p[0], p[1], Rr(0.13), Rr(0.18), 0); as.wrist = A; }
+  if (act.has("knee")) { const k = T(...leg[1].kn), A = mkA("knee", k), a = T(leg[1].kn[0] + 0.05, leg[1].kn[1] - 0.75), b = T(leg[1].kn[0] + 0.02, leg[1].kn[1] + 0.85); servoA(A, k[0], k[1], Rr(0.16)); A.cen = pistonA(A, a, b, Rr(0.05)); A.cen = k; as.knee = A; }
+  const occ = Object.values(as).flatMap(a => a.occ);
+  renderBody(body, { mach: new Set(), gap: o.pitch, face: true, seed: o.seed, ...skinOf(o, { sources: Object.values(as).map(a => a.cen) }) }, L, occ);
+  for (const A of Object.values(as)) pushA(L, A);
+  for (const [k, A] of Object.entries(as)) tg[k] = { p: A.cen, arrow: false };
+  tg.body = { p: T(0.52, 2.55), arrow: true };
+  return { targets: tg, box: outlineBox(body), as, s };
+}
+
+// ================= patent sheet: layout, numerals, leaders, parts list =================
+function placeLeaders(c, items, box, mode, nh = 2.6) {
+  const out = { texts: [], leaders: [], cross: 0 };
+  if (!items.length) return out;
+  const lr = mode === "lr", cxm = (box[0] + box[2]) / 2, cym = (box[1] + box[3]) / 2, G = { L: [], R: [], T: [], B: [] }, placed = [];
+  for (const it of items) G[it.side || (lr ? (it.p[0] < cxm ? "L" : "R") : (it.p[1] < cym ? "T" : "B"))].push(it);
+  const sp = lr ? nh * 2.3 : txtW("88", nh) + 4.5, lo = lr ? box[1] + 3 : box[0] + 5, hi = lr ? box[3] - 3 : box[2] - 5;
+  for (const key of ["L", "R", "T", "B"]) {
+    const g = G[key].slice().sort((a, b) => lr ? a.p[1] - b.p[1] : a.p[0] - b.p[0]), pos = g.map(it => lr ? it.p[1] : it.p[0]);
+    for (let i = 0; i < pos.length; i++) pos[i] = max(pos[i], i ? pos[i - 1] + sp : lo);
+    for (let i = pos.length - 1; i >= 0; i--) pos[i] = min(pos[i], i < pos.length - 1 ? pos[i + 1] - sp : hi);
+    g.forEach((it, i) => placed.push({ it, key, pos: pos[i] }));
+  }
+  const geom = q => {
+    const tw = txtW(String(q.it.num), nh), k = q.key, ctr = k === "L" ? [box[0] + 4 + tw / 2, q.pos] : k === "R" ? [box[2] - 4 - tw / 2, q.pos] : k === "T" ? [q.pos, box[1] + 3 + nh / 2] : [q.pos, box[3] - 3 - nh / 2];
+    const st = k === "L" ? [ctr[0] + tw / 2 + 1.3, ctr[1]] : k === "R" ? [ctr[0] - tw / 2 - 1.3, ctr[1]] : k === "T" ? [ctr[0], ctr[1] + nh / 2 + 1.3] : [ctr[0], ctr[1] - nh / 2 - 1.3];
+    return { ctr, st };
+  };
+  const crossings = () => { const gs = placed.map(geom), bad = []; for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) if (segsCross(gs[i].st, placed[i].it.p, gs[j].st, placed[j].it.p)) bad.push([i, j]); return bad; };
+  for (let pass = 0; pass < 60; pass++) { const bad = crossings(); if (!bad.length) break; let moved = false; for (const [i, j] of bad) if (placed[i].key === placed[j].key) { const t = placed[i].pos; placed[i].pos = placed[j].pos; placed[j].pos = t; moved = true; break; } if (!moved) break; }
+  out.cross = crossings().length;
+  for (const q of placed) { const g = geom(q); out.texts.push({ num: q.it.num, c: g.ctr }); out.leaders.push({ a: g.st, b: q.it.p, arrow: q.it.arrow }); }
+  return out;
+}
+function drawLeaders(c, P) {
+  const { L } = c;
+  for (const t of P.texts) txt(String(t.num), t.c[0], t.c[1], 2.6, L.line, { a: "c" });
+  for (const l of P.leaders) {
+    put(L.line, [l.a, l.b]);
+    const d = hypot(l.b[0] - l.a[0], l.b[1] - l.a[1]) || 1, ux = (l.b[0] - l.a[0]) / d, uy = (l.b[1] - l.a[1]) / d;
+    if (l.arrow) { for (const sg of [-1, 1]) put(L.line, [l.b, [l.b[0] - ux * 2.6 - uy * sg * 0.9, l.b[1] - uy * 2.6 + ux * sg * 0.9]]); } else put(L.line, circle(l.b[0], l.b[1], 0.6, 8), true);
+  }
+}
+
+const SUBJECTS = {
+  arm: { title: "JOINTED LIMB WITH POWERED WRIST", mode: "tb", base: [["forearm", "FOREARM SHELL"], ["hand", "HAND"]], aug: [["disc", "SERVO JOINT"], ["pistons", "PISTON PAIR"], ["cable", "CABLE RUN"], ["port", "DATA PORT"], ["caps", "FINGER JOINT CAPS"]], fixed: 0, n: a => clamp(round(1 + a * 4), 1, 5), fig: figArm },
+  head: { title: "OCULAR AND CRANIAL IMPLANT", mode: "lr", base: [["head", "HEAD"], ["neck", "NECK"]], aug: [["lens", "OCULAR LENS"], ["plate", "CRANIAL PLATE"], ["port", "NECK PORT"], ["cable", "SHOULDER CABLE"]], fixed: 0, n: a => clamp(round(1 + a * 3), 1, 4), fig: figHead },
+  spine: { title: "SEGMENTED SPINAL IMPLANT", mode: "lr", base: [["torso", "TORSO"]], aug: [["units", "VERTEBRA UNITS"], ["rods", "LINK RODS"], ["skull", "SKULL BASE PORT"], ["sacral", "SACRAL PLATE"], ["branch", "CABLE BRANCHES"], ["nodes", "SENSOR NODES"]], fixed: 2, n: a => clamp(round(2 + a * 4), 2, 6), fig: figSpine },
+  whole: { title: "MODULAR BODY AUGMENTS", mode: "lr", base: [["body", "BODY"]], aug: [["lens", "OCULAR LENS"], ["neck", "NECK PORT"], ["chest", "CHEST PANEL"], ["elbow", "ELBOW SERVO"], ["wrist", "WRIST PORT"], ["knee", "KNEE ACTUATOR"]], fixed: 0, n: a => clamp(4 + round(a * 2), 4, 6), fig: figWhole },
+};
+const MONTHS = ["JAN.", "FEB.", "MAR.", "APR.", "MAY", "JUNE", "JULY", "AUG.", "SEPT.", "OCT.", "NOV.", "DEC."];
+const HUMOUR = ["SUBJECT HAS CONSENTED (SEE FORM 11)", "ORIGINAL PARTS RETURNED ON REQUEST", "PLEASE KEEP HANDS AWAY FROM MOVING PARTS"];
+
+function wholeDetails(c, R, act) { // FIG. 2 of the whole-body sheet: each augment on its own, larger
+  const { L } = c, keys = [...act], cols = 2, rows = ceil(keys.length / cols), cw = (R[2] - R[0]) / cols, ch = (R[3] - R[1]) / rows, tg = {};
+  keys.forEach((k, i) => {
+    const cx = R[0] + cw * (i % cols + 0.5), cy = R[1] + ch * (floor(i / cols) + 0.5), u = min(cw, ch) * 0.8, A = mkA(k, [cx, cy]);
+    if (k === "lens") lensA(A, cx, cy, u * 0.3, cx + u * 0.5);
+    else if (k === "neck") portA(A, cx, cy, u * 0.7, u * 0.36);
+    else if (k === "chest") panelA(A, cx, cy, u * 0.55, u * 0.7);
+    else if (k === "elbow") servoA(A, cx, cy, u * 0.33);
+    else if (k === "wrist") portA(A, cx, cy, u * 0.4, u * 0.58);
+    else { servoA(A, cx - u * 0.12, cy, u * 0.22); pistonA(A, [cx + u * 0.2, cy - u * 0.4], [cx + u * 0.2, cy + u * 0.42], u * 0.07); }
+    pushA(L, A); tg[k] = { p: A.cen, arrow: false };
+  });
+  return { targets: tg, box: R };
+}
+
+function patentSheet(c) {
+  const { W, H, m, o, L, rnd } = c, S = SUBJECTS[o.subject], on = o.labels === "on", two = o.figs === "two";
+  const pool = [...S.aug.slice(0, S.fixed), ...shuffle(S.aug.slice(S.fixed), rnd)], act = pool.slice(0, S.n(o.aug)), keys = new Set(act.map(a => a[0]));
+  const items = [...S.base, ...act].map(([key, name], i) => ({ key, name, num: 10 + 2 * i, fig: two && i >= S.base.length ? 2 : 1 }));
+  // frame, title block
+  put(L.line, [[m, m], [W - m, m], [W - m, H - m], [m, H - m], [m, m]]); put(L.line, [[m + 1.2, m + 1.2], [W - m - 1.2, m + 1.2], [W - m - 1.2, H - m - 1.2], [m + 1.2, H - m - 1.2], [m + 1.2, m + 1.2]]);
+  const pn = 1000000 + (o.seed * 7919 + 4421) % 900000, pns = String(pn).replace(/(\d)(?=(\d{3})+$)/g, "$1,"), yr = 1921 + (o.seed * 3) % 17, dt = `${MONTHS[(o.seed * 5) % 12]} ${1 + (o.seed * 11) % 28}, ${yr}`;
+  txt("PAT. NO. " + pns, m + 4, m + 5.2, 2.6, L.line, {}); txt("SHEET 1 OF 1", W - m - 4, m + 5.2, 2.6, L.line, { a: "r" });
+  txt(S.title, m + 4, m + 10.4, 2.6, L.line, {}); txt("FILED " + dt, W - m - 4, m + 10.4, 2.6, L.line, { a: "r" });
+  put(L.line, [[m + 1.2, m + 13.4], [W - m - 1.2, m + 13.4]]);
+  // parts list block
+  const ncol = (W - 2 * m) >= 150 ? 2 : 1, rows = ceil(items.length / ncol), listH = on ? rows * 4.3 + 4 : 0, humH = on ? 5.5 : 0;
+  const zy0 = m + 16, zy1 = H - m - 3 - humH - listH - 2, zx0 = m + 3, zx1 = W - m - 3;
+  if (on) {
+    const yt = H - m - 3 - humH - listH;
+    put(L.line, [[zx0, yt], [zx1, yt], [zx1, yt + listH], [zx0, yt + listH], [zx0, yt]]);
+    items.forEach((it, i) => { const col = ncol === 2 ? floor(i / rows) : 0, row = ncol === 2 ? i % rows : i, x = zx0 + 4 + col * (zx1 - zx0) / ncol, y = yt + 4 + row * 4.3 - 0.4; txt(String(it.num), x, y, 2.4, L.line, {}); txt(it.name, x + 8.5, y, 2.4, L.line, {}); });
+    txt(HUMOUR[o.seed % 3], zx0, H - m - 3.5, 2.4, L.line, {});
+  }
+  // figure boxes
+  const capH = 8, tall = o.subject === "spine" || o.subject === "whole";
+  const boxes = !two ? [[zx0, zy0, zx1, zy1 - capH]] : tall ? [[zx0, zy0, (zx0 + zx1) / 2 - 1, zy1 - capH], [(zx0 + zx1) / 2 + 1, zy0, zx1, zy1 - capH]] : [[zx0, zy0, zx1, (zy0 + zy1) / 2 - capH], [zx0, (zy0 + zy1) / 2, zx1, zy1 - capH]];
+  const lmargin = S.mode === "lr" ? 13 : 0, tmargin = S.mode === "tb" ? 12 : 0, inner = b => [b[0] + lmargin, b[1] + tmargin, b[2] - lmargin, b[3] - tmargin];
+  const allLeaders = [], numsDrawn = [];
+  boxes.forEach((b, i) => {
+    const mode = i === 0 ? "asm" : "exp", isDetail = o.subject === "whole" && i === 1;
+    const tune = tall && two && i === 1 && o.subject === "head" ? [b[0] + 3, b[1], b[2] - 3, b[3]] : null;
+    const R = inner(b), r = isDetail ? wholeDetails(c, [R[0] + 4, R[1] + 6, R[2] - 4, R[3] - 4], keys) : S.fig(c, tune ? inner(tune) : R, keys, mode);
+    // figure caption
+    txt("FIG. " + (i + 1), (b[0] + b[2]) / 2, b[3] + 4.6, 3.6, L.line, { a: "c" });
+    if (!on) return;
+    const its = items.filter(t => t.fig === i + 1 || (!two && i === 0)).map(t => ({ num: t.num, ...(r.targets[t.key] || { p: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], arrow: false }) }));
+    const P = placeLeaders(c, its, b, S.mode); drawLeaders(c, P); allLeaders.push(P); for (const t of P.texts) numsDrawn.push(t.num);
+  });
+  if (on) {
+    // leaders must not cross, across both figures too
+    const segs = allLeaders.flatMap(P => P.leaders.map(l => [l.a, l.b])); let x = 0; for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) if (segsCross(segs[i][0], segs[i][1], segs[j][0], segs[j][1])) x++;
+    c.gates.push(["leader lines do not cross each other", x === 0, `${x} crossings in ${segs.length} leaders`]);
+    const missing = numsDrawn.filter(n => !items.some(t => t.num === n)), unused = items.filter(t => !numsDrawn.includes(t.num));
+    c.gates.push(["every numeral in the parts list, and every entry used", missing.length === 0 && unused.length === 0, `${numsDrawn.length} numerals, ${items.length} entries`]);
+  }
+}
+
+// ================= build =================
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, rnd = mulberry(o.seed * 977 + 13), L = newInk(), gates = [], notes = [];
+  MINH = INF;
+  const c = { W, H, m, o, L, gates, notes, rnd };
+  if (o.view === "patent") patentSheet(c); else if (o.view === "theseus") theseusSheet(c); else clonesSheet(c);
+  // anything that strays past the margin (a wide mutant at the edge of the page) is trimmed to it
+  const inM = (x, y) => x >= m && y >= m && x <= W - m && y <= H - m;
+  for (const k of ["line", "shade", "colour"]) { const out = []; for (const [q, cl] of L[k]) { if (q.every(p => inM(p[0], p[1]))) { out.push([q, cl]); continue; } for (const r of runsOf(q, inM, 0.4, 0.3, cl)) out.push([r, false]); } L[k] = out; }
+  const pen = k => L[k].reduce((a, [q, cl]) => a + plen(q, cl), 0) / 1000, total = pen("line") + pen("shade") + pen("colour");
+  let outside = 0, pts = 0; for (const k of ["line", "shade", "colour"]) for (const [q] of L[k]) for (const [x, y] of q) { pts++; if (x < m - 0.01 || y < m - 0.01 || x > W - m + 0.01 || y > H - m + 0.01) outside++; }
+  const ms = performance.now() - t0;
+  const g0 = [["something drawn (over 0.5 m of pen)", total > 0.5, total.toFixed(1) + " m"], ["every path inside the margin", outside === 0, `${outside} of ${pts} points outside`], ["under 150 m of pen", total < 150, total.toFixed(1) + " m"]];
+  const g1 = [["letters at least 2.2 mm tall", MINH >= 2.2 - 1e-6, MINH === INF ? "no lettering" : MINH.toFixed(1) + " mm smallest"], ["built under 4 seconds", ms < 4000, ms.toFixed(0) + " ms"]];
+  return { W, H, o, layers: { line: L.line, shade: L.shade, colour: L.colour }, gates: [...g0, ...gates, ...g1], ms, notes };
+}
+
+// ================= draw + export =================
+function draw(r) {
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0); c.lineJoin = c.lineCap = "round";
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H);
+  const COL = { line: "#26200f", shade: "#6b6356", colour: "#" + r.o.inkcol };
+  for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); }
+  const lenm = Lr => Lr.reduce((a, [q, cl]) => a + plen(q, cl), 0) / 1000;
+  $("stats").innerHTML = `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · ${r.ms.toFixed(0)} ms<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade }, { name: "colour", colour: r.o.inkcol, w: 0.4, paths: r.layers.colour },
+].filter(Lr => Lr.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = Lr => `<g id="pen-${Lr.name}" stroke="#${Lr.colour}" stroke-width="${Lr.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...Lr.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG meatsack${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(Lr => !only || Lr.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["view", "seed", "flesh", "network", "netkind", "netpen", "texture", "subject", "aug", "figs", "replaced", "strip", "stages", "layout", "gens", "who", "rows", "cols", "vessel", "drift", "mark", "labels", "pitch", "inkcol", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["inkcol"]);
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { view: "patent", seed: 17, flesh: "faint", network: 0.4, netkind: "circuit", netpen: "colour", texture: 0.3, subject: "arm", aug: 0.6, figs: "one", replaced: 0.5, strip: "on", stages: 7, layout: "grid", gens: 4, who: "bodies", rows: 3, cols: 5, vessel: "tube", drift: 0.35, mark: "original", labels: "on", pitch: 0.8, inkcol: "c8402f", page: "210x297", margin: 12 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  arm: P({ view: "patent", subject: "arm", figs: "two", seed: 17 }),
+  ocular: P({ view: "patent", subject: "head", figs: "one", seed: 41, aug: 0.8 }),
+  spine: P({ view: "patent", subject: "spine", figs: "one", seed: 23, aug: 0.7 }),
+  halfway: P({ view: "theseus", replaced: 0.5, strip: "on", stages: 7, seed: 9 }),
+  substrate: P({ view: "patent", subject: "whole", figs: "one", seed: 8, aug: 0.8, flesh: "ghost", network: 0.85, netkind: "lace" }),
+  vats: P({ view: "clones", layout: "grid", who: "bodies", rows: 2, cols: 5, vessel: "tube", mark: "original", seed: 12, drift: 0.35 }),
+  diverged: P({ view: "clones", layout: "lineage", who: "bodies", gens: 4, cols: 6, vessel: "none", mark: "original", seed: 21, drift: 1 }),
+  heads: P({ view: "clones", layout: "lineage", who: "heads", gens: 4, cols: 6, vessel: "none", mark: "none", seed: 5, drift: 0.8 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `meatsack-${r.o.view}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((Lr, i) => setTimeout(() => save(toSVG(last, Lr.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${Lr.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
