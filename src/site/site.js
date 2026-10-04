@@ -40,7 +40,9 @@ function render(){
  if($('sort').value==='az')visible.sort((a,b)=>a.name.localeCompare(b.name));
  if(!activeCollections().some(c=>c.id===expanded&&(c.season||visible.includes(c))))expanded=null;
  $('result-count').textContent=`${visible.length} ${visible.length===1?'STUDIO':'STUDIOS'} / ${visible.reduce((n,c)=>n+c.samples.length,0)} SHEETS`;
- $('empty').hidden=!!visible.length;
+ const inSeason=activeCollections().filter(c=>c.season&&tokens.length&&tokens.every(t=>`${c.name} ${c.tags} ${c.description} ${c.samples.map(s=>s.title+' '+s.preset).join(' ')}`.toLowerCase().includes(t))).length;
+ if(inSeason)$('result-count').textContent+=` + ${inSeason} IN SEASONAL ABOVE`;
+ $('empty').hidden=!!visible.length||!!inSeason;
  const seasonal=activeCollections().filter(c=>c.season);
  $('atlas').innerHTML=visible.map(card).join('');
  $('seasonal-atlas').innerHTML=seasonal.map(card).join('');
@@ -156,7 +158,7 @@ try{const response=await fetch('site/catalogue.json',{cache:'no-cache'});if(!res
 }catch(error){$('result-count').textContent='The drawings could not load.';$('atlas').innerHTML='<p class="error">Please reload, or <a href="cipher-garden-studio.html">open Cipher Garden directly</a>.</p>';console.error(error)}
 
 // The section rail: pinned on the left once the page scrolls past it, lighting the section in view.
-{const links=[...document.querySelectorAll('.rail a')],seen=new Map();
- const light=()=>{const on=links.filter(a=>!a.hidden).map(a=>[a,seen.get(a.getAttribute('href').slice(1))]).filter(([,r])=>r).sort((x,y)=>Math.abs(x[1].top-150)-Math.abs(y[1].top-150))[0];links.forEach(a=>a.toggleAttribute('aria-current',on?.[0]===a))};
- const io=new IntersectionObserver(es=>{for(const e of es)seen.set(e.target.id,e.isIntersecting?e.boundingClientRect:null);light()},{rootMargin:'-140px 0px -45% 0px'});
- for(const a of links){const t=document.getElementById(a.getAttribute('href').slice(1));if(t)io.observe(t)}}
+{const links=[...document.querySelectorAll('.rail a')];
+ // The lit link is the last visible section whose heading has reached the pinned bars at the top of the window.
+ const light=()=>{const live=links.filter(a=>!a.hidden),line=Math.min(innerHeight*.45,220);let on=live[0];for(const a of live){const t=document.getElementById(a.getAttribute('href').slice(1));if(t&&!t.hidden&&t.getBoundingClientRect().top<=line)on=a}links.forEach(a=>a.toggleAttribute('aria-current',a===on&&scrollY>0))};
+ addEventListener('scroll',light,{passive:true});addEventListener('resize',light);light()}
