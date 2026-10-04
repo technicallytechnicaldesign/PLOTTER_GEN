@@ -3,7 +3,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
 import {createRequire} from 'node:module';
-import {collections} from './catalogue.mjs';
+import {collections,shelves,poles,edges} from './catalogue.mjs';
 import {bakePuppets} from './puppet-assets.mjs';
 const require=createRequire(import.meta.url);
 function dependency(name){try{return require(name)}catch{return require(path.join(process.env.PLG_NODE_MODULES || '', name))}}
@@ -64,10 +64,11 @@ export async function buildSite({repo,here,pages}) {
   for(const [page,family,name,description] of pages){if(page==='plot-decoder.html'||catalogue.some(c=>c.page===page))continue;const presets=new Set([...fs.readFileSync(path.join(repo,page),'utf8').matchAll(/data-preset="([^"]+)"/g)].map(m=>m[1])).size;catalogue.push({id:page.replace('.html',''),page,name,description,subtitle:description,family,tags:'',lesson:'Open the studio to explore its methods.',presets,samples:[]})}
   bakePuppets({catalogue,repo,here});
   fs.writeFileSync(path.join(out,'catalogue.json'),JSON.stringify(catalogue));
+  fs.writeFileSync(path.join(out,'taxonomy.json'),JSON.stringify({shelves,poles,edges}));
   for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','exhibit.js','gallery.js','gallery-world.js','print-gallery.json','gallery.css','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
   fs.copyFileSync(path.join(here,'site/gallery.html'),path.join(out,'gallery.html'));
   const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
-  const fallback=pages.map(([p,,t,d])=>`<li><a href="${escape(p)}">${escape(t)}</a> — ${escape(d)}</li>`).join('\n');
+  const fallback=pages.map(([p,,t,d])=>`<li><a href="${escape(p)}">${escape(t)}</a>: ${escape(d)}</li>`).join('\n');
   const revision=name=>crypto.createHash('sha256').update(fs.readFileSync(path.join(out,name))).digest('hex').slice(0,12);
   const app=fs.readFileSync(path.join(out,'site.js'),'utf8').replace('./plot-animation.js', './plot-animation.js?v='+revision('plot-animation.js')).replace('./hero-motion.js','./hero-motion.js?v='+revision('hero-motion.js'));
   fs.writeFileSync(path.join(out,'site.js'),app);
@@ -76,7 +77,7 @@ export async function buildSite({repo,here,pages}) {
   // The opening sheet is picked at random per visit; its SVG is preloaded before the catalogue arrives.
   const heroPools=Object.fromEntries(['plotter','cutter'].map(mode=>[mode,catalogue.filter(c=>(c.mode||'plotter')===mode).flatMap(c=>c.samples.map(s=>s.id))]));
   const heroScript=`<script>(()=>{const pools=${JSON.stringify(heroPools)},p=pools[new URLSearchParams(location.search).get('gen')==='cutter'?'cutter':'plotter'],id=p[Math.floor(Math.random()*p.length)],l=document.createElement('link');window.__plgHero=id;l.rel='preload';l.as='fetch';l.crossOrigin='anonymous';l.href='site/art/'+id+'.svg';document.head.appendChild(l)})()</script>`;
-  const html=fs.readFileSync(path.join(here,'site-index.template.html'),'utf8').replace('<!--@@FALLBACK@@-->',fallback).replace('<!--@@HERO@@-->',heroScript).replace('src="site/site.js"','src="site/site.js?v='+revision('site.js')+'"');
+  const html=fs.readFileSync(path.join(here,'site-index.template.html'),'utf8').replace('<!--@@FALLBACK@@-->',fallback).replace('<!--@@HERO@@-->',heroScript).replace('src="site/site.js"','src="site/site.js?v='+revision('site.js')+'"').replace('href="site/site.css"','href="site/site.css?v='+revision('site.css')+'"');
   fs.writeFileSync(path.join(repo,'index.html'),html);
   console.log(`site: ${catalogue.length} studios, ${catalogue.reduce((n,c)=>n+c.samples.length,0)} specimens`);
 }

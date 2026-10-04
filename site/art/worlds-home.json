@@ -1,0 +1,28 @@
+{
+  "studio": "worlds-studio.html",
+  "id": "worlds-home",
+  "title": "Seven worlds",
+  "preset": "home",
+  "content": {},
+  "settings": {
+    "seed": "329",
+    "weird": "0.3",
+    "agef": "1",
+    "stars": "1",
+    "detail": "1",
+    "pitch": "0.9",
+    "arch": "solar",
+    "count": "0",
+    "view": "atlas",
+    "world": "0",
+    "colour": "both",
+    "warmpen": "d9822b",
+    "coolpen": "2f6db5",
+    "paper": "210x297"
+  },
+  "sourceHash": "53aa84d63ff2b7d89a7dfcb86ea4eea70da47e5844868bf6c53b2cd06dce9720",
+  "svg": "site/art/worlds-home.svg",
+  "image": "site/art/worlds-home.webp",
+  "page": "210x297",
+  "seed": 329
+}
