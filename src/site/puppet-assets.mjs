@@ -8,10 +8,10 @@ const VERSION=3;
 const pathData=(points,closed=false)=>'M'+points.map(p=>p.map(v=>Number(v.toFixed(3))).join(',')).join(' L')+(closed?' Z':'');
 export function bakePuppets({catalogue,repo,here}){
  const require=createRequire(path.join(here,'site/package.json')), {createCanvas,Path2D}=require('@napi-rs/canvas');
- for(const collection of catalogue.filter(c=>['figure','animals','lino','overlay'].includes(c.id))){
+ for(const collection of catalogue.filter(c=>['figure','vampire','animals','lino','overlay','garland'].includes(c.id))){
   const source=fs.readFileSync(path.join(repo,collection.page),'utf8');
   for(const s of collection.samples){
-   const lino=collection.id==='lino',property=collection.id==='overlay'?'reveal':lino?'weeding':'motion',url=`site/art/${s.id}-${property}.json`,file=path.join(repo,url);
+   const lino=collection.id==='lino',property=collection.id==='overlay'?'reveal':lino?'weeding':collection.id==='garland'?'garland':'motion',url=`site/art/${s.id}-${property}.json`,file=path.join(repo,url);
    const key=crypto.createHash('sha256').update(JSON.stringify([VERSION,s.sourceHash,s.settings])).digest('hex');
    if(fs.existsSync(file)&&JSON.parse(fs.readFileSync(file,'utf8')).key===key){s[property]=url;continue}
    const els=new Map();
@@ -36,6 +36,17 @@ export function bakePuppets({catalogue,repo,here}){
     const data={key,sourceHash:s.sourceHash,method:r.o.method,pitch:r.o.pitch,cell:r.o.cell,pivot:r.res.pivot,cut:r.res.cut,positions:r.res.positions||4,reads:r.res.reads};
     fs.writeFileSync(file,JSON.stringify(data));s.reveal=url;console.log('reveal: '+s.id);continue;
    }
+   if(collection.id==='garland'){
+    // The charms lift off the sheet and hang along one string, the same layout as the studio's window preview.
+    const strung=r.parts.slice(0,9),gap=10,wsum=strung.reduce((a,p)=>a+p.box[2]-p.box[0],0),scale=Math.min(1,(r.W-40)/(wsum+gap*(strung.length-1))),sag=.16*r.H,top=.16*r.H;
+    const sy=x=>top+sag*(1-((x-r.W/2)/(r.W/2))**2);let cx=(r.W-scale*(wsum+gap*(strung.length-1)))/2;
+    const charms=strung.map(p=>{const w=(p.box[2]-p.box[0])*scale,hang=p.holes.length===1?p.holes[0].c:[(p.holes[0].c[0]+p.holes[1].c[0])/2,(p.holes[0].c[1]+p.holes[1].c[1])/2],ax=cx+w/2,drop=p.holes.length===1?6:0;cx+=w+gap*scale;
+     return {kind:p.kind,at:p.at,hang,anchor:[ax,sy(ax)+drop],knot:[ax,sy(ax)],outline:[p.outline,...p.inner].map(q=>pathData(q,true)).join(' '),ink:Object.fromEntries(['line','shade','colour'].map(k=>[k,p.ink[k].map(q=>pathData(q)).join(' ')])),holes:p.holes.map(h=>({center:h.c,radius:h.r}))}});
+    const string=pathData(Array.from({length:71},(_,i)=>{const x=i*r.W/70;return [x,sy(x)]}));
+    const data={key,sourceHash:s.sourceHash,width:r.W,height:r.H,scale,string,colour:'#'+r.o.inkcol,charms};
+    if(/NaN|Infinity/.test(JSON.stringify(data)))throw Error('Invalid garland geometry '+s.id);
+    fs.writeFileSync(file,JSON.stringify(data));s.garland=url;console.log(`garland: ${s.id}, ${charms.length} charms strung`);continue;
+   }
    if(lino){
     const X=x=>r.mirrored?r.W-x:x;
     const loops=r.decals.flatMap(d=>d.wasteLoops.map(q=>q.map(([x,y])=>[X(x+d.x),y+d.y])));
@@ -48,7 +59,8 @@ export function bakePuppets({catalogue,repo,here}){
    const origin=[r.W/2-(animal?scale*(left+right)/2:0),r.H/2-scale*(top+bottom)/2];
    const leg=(far,lower)=>P.filter(p=>p.kind==='limb'&&!!p.far===far&&!!p.lower===lower);
    const back=P.filter(p=>p.kind==='limb'&&r.R.jack),front=P.filter(p=>!(p.kind==='limb'&&r.R.jack));
-   const ordered=animal?[...leg(true,false),...leg(true,true),...P.filter(p=>p.kind==='tail'),...P.filter(p=>p.kind==='torso'),...leg(false,false),...leg(false,true),...P.filter(p=>p.kind==='head')]:[...back,...front.filter(p=>p.kind==='torso'),...front.filter(p=>p.kind==='head'),...front.filter(p=>p.kind==='limb'&&/upper|thigh/.test(p.name)),...front.filter(p=>p.kind==='limb'&&!/upper|thigh/.test(p.name))];
+   const capes=P.filter(p=>p.kind==='cape');
+   const ordered=animal?[...leg(true,false),...leg(true,true),...P.filter(p=>p.kind==='tail'),...P.filter(p=>p.kind==='torso'),...leg(false,false),...leg(false,true),...P.filter(p=>p.kind==='head')]:[...capes,...back.filter(p=>p.kind!=='cape'),...front.filter(p=>p.kind==='torso'),...front.filter(p=>p.kind==='head'),...front.filter(p=>p.kind==='limb'&&/upper|thigh/.test(p.name)),...front.filter(p=>p.kind==='limb'&&!/upper|thigh/.test(p.name))];
    if(new Set(ordered).size!==P.length)throw Error('Missing puppet part: '+s.id);
    const parts=P.map(p=>({name:p.name,parent:p.parent?P.indexOf(p.parent):-1,pivot:p.pivot||[0,0],key:p.key||'',sign:p.sign??1,at:p.at,outline:pathData(p.outline,true),ink:Object.fromEntries(['line','shade','colour'].map(k=>[k,p.ink[k].map(q=>pathData(q)).join(' ')])),holes:p.holes.map(h=>({center:h.c,radius:h.r,pin:h.kind==='pin'}))}));
    const data={key,sourceHash:s.sourceHash,width:r.W,height:r.H,animal,jack:!!r.R.jack,joints:r.o.joints,scale,origin,order:ordered.map(p=>P.indexOf(p)),parts};
