@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spooky garland</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Spooky garland</h1>
+  <p class="sub">Ghosts, pumpkins and bats to cut out and string across a window. Every charm has a small hanging hole at the top (or two, so the string weaves through and they all face the room), and the faces are jack-o-lantern faces: drawn by the pen and filled in dark, or cut right through so the light shines out of them. Every seed is a new set of faces.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="classic">Ghosts and pumpkins</button><button data-preset="lanterns">Glowing lanterns</button><button data-preset="patch">Pumpkin patch</button><button data-preset="parade">Ghost parade</button><button data-preset="trio">With bats</button><button data-preset="colour">Colour me in</button><button data-preset="tiny">Tiny garland (A4)</button></div>
+  </fieldset>
+  <fieldset><legend>The charms</legend>
+    <label>On the string <select id="mix"><option value="alt">ghost, pumpkin, ghost, pumpkin</option><option value="trio">ghost, pumpkin, bat</option><option value="pumpkin">pumpkins only</option><option value="ghost">ghosts only</option><option value="bat">bats only</option></select></label>
+    <label>Size (mm tall) <output id="o-size"></output><input type="range" id="size" min="35" max="130" step="5" value="70"></label>
+    <label>How many (0 fills the page) <output id="o-count"></output><input type="range" id="count" min="0" max="40" step="1" value="0"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="31"></label>
+  </fieldset>
+  <fieldset><legend>Faces</legend>
+    <label>Faces <select id="faces"><option value="drawn">drawn and filled in by the pen</option><option value="cut">cut right through, so light shines out</option><option value="none">no faces</option></select></label>
+    <label>Mood <select id="mood"><option value="mixed">a mix</option><option value="happy">happy</option><option value="spooky">spooky</option><option value="silly">silly</option></select></label>
+    <p class="hint">Cut-through faces glow best with yellow tissue or baking paper glued behind them. A cut face that would leave a strip of card thinner than 2 mm fails the gates below; make the charms bigger if it does.</p>
+  </fieldset>
+  <fieldset><legend>Hanging</legend>
+    <label>Holes <select id="holes"><option value="one">one, at the top</option><option value="two">two, the string weaves through</option></select></label>
+    <label>Hole diameter (mm) <output id="o-hole"></output><input type="range" id="hole" min="1.2" max="4" step="0.1" value="1.8"></label>
+    <p class="hint">One hole: tie each charm on with a short loop of thread. Two holes: thread the string in at the back, out through one hole and back in through the other, so the charms sit flat and face the room.</p>
+  </fieldset>
+  <fieldset><legend>Drawing</legend>
+    <label>Pumpkin ribs and curls <select id="ribs"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Pumpkin skin <select id="skin"><option value="card">plain, cut from orange card</option><option value="hatch">hatched in the colour pen, for white card</option></select></label>
+    <label>Accents in the colour pen <select id="accent"><option value="on">on: rosy ghost cheeks</option><option value="off">off</option></select></label>
+    <label>Colour pen (preview) <select id="inkcol"><option value="e86a10">orange</option><option value="2e7d32">green</option><option value="7b2d8b">purple</option><option value="d7263d">red</option></select></label>
+    <label>Detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
+    <label>Draw the outlines with a pen <select id="outlines"><option value="off">off</option><option value="on">on, their own layer</option></select></label>
+    <label>Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.6"></label>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="strung">strung across a window</option><option value="sheet">the sheet, as cut</option></select></label>
+    <label>Night in the window <select id="night"><option value="on">dusk, the faces lit</option><option value="off">daylight</option></select></label>
+    <p class="hint">Preview only. The export is always the flat sheet of charms.</p>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per layer in job order: the pen layers, then the cut. The pen files carry four corner ticks at 1 mm and the cut file carries a trim rectangle at 1 mm, so every file lands in the same place in Design Space.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: each charm is a set of rounded shapes (pumpkin lobes, a ghost's dome and wavy hem, a bat's scalloped wings) merged into one outline by a distance field, and the cut line is where that field crosses zero. A cut-through face is subtracted from the same field, so the eyes and mouth come out as clean holes, and the gates check that every strip of card left between them and the edge is at least 2 mm wide (assumed, not yet cut-tested). The hanging hole always keeps 2.2 mm of card round it (assumed). Pumpkins hang from their stems.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------------- cut sizes (ASSUMED until the cut calibration sheet is read) ----------------
+const PIN_HOLE_D = 2.4;     // ASSUMED: hole for a standard brass paper fastener (shank about 2 mm), cut-cal row A
+const STRING_HOLE_D = 1.6;  // ASSUMED: hole a thread can be pushed through
+const JOINT_MARGIN = 3.0;   // ASSUMED: card left round every hole, so the pin does not tear out
+const MIN_HALF = 2.5;       // ASSUMED: no part narrower than 5 mm
+const PART_GAP = 3.0;       // ASSUMED: space between parts on the sheet
+const INK_GAP = 0.4;        // ASSUMED: clear space between ink and any cut line
+const TRIM_INSET = 1.0;     // trim rectangle, mm from every page edge (the pen corner ticks sit at the same 1 mm)
+const JR = PIN_HOLE_D / 2 + JOINT_MARGIN + 0.8; // joint disc radius round each pin hole
+
+// ---------------- small stroke font for the assembly letters (cap height 6, y down) ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.75,3.9 L3.25,3.9", B: "M0,3 L2.3,3 A2.3,1.5,1.5,1.5,90,-90 L0,0 L0,6 L2.4,6 A2.4,4.5,1.6,1.5,90,-90 L2.3,3",
+  C: "A2.1,3,2.1,3,-50,-310", D: "M0,0 L0,6 L1.6,6 A1.6,3,2.4,3,90,-90 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2.1,3,2.1,3,-50,-320 L4.2,3.3 L2.4,3.3", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", J: "M3,0 L3,4.5 A1.5,4.5,1.5,1.5,0,170", K: "M0,0 L0,6 M3.8,0 L0,3.8 M1.3,2.5 L4,6",
+  N: "M0,6 L0,0 L4,6 L4,0",
+};
+function glyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+const letter = (ch, cx, cy, size) => (GLYPHS[ch] || []).map(s => s.map(([x, y]) => [cx + (x - 2) * size / 6, cy + (y - 3) * size / 6]));
+
+// ---------------- shapes: signed distance primitives ----------------
+const Circ = (x, y, r) => ({ t: "c", x, y, r: max(r, MIN_HALF) });
+const Limb = (ax, ay, ra, bx, by, rb) => ({ t: "k", ax, ay, ra: max(ra, MIN_HALF), bx, by, rb: max(rb, MIN_HALF) });
+const Box = (x, y, hw, hh, r, ang = 0) => ({ t: "b", x, y, hw: max(hw, MIN_HALF), hh: max(hh, MIN_HALF), r: min(max(r, 0.5), min(hw, hh)), ang });
+function primDist(p, x, y) {
+  if (p.t === "c") return hypot(x - p.x, y - p.y) - p.r;
+  if (p.t === "k") { const dx = p.bx - p.ax, dy = p.by - p.ay, L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - p.ax) * dx + (y - p.ay) * dy) / L2, 0, 1); return hypot(x - p.ax - t * dx, y - p.ay - t * dy) - (p.ra + (p.rb - p.ra) * t); }
+  const c = cos(-p.ang), s = sin(-p.ang), lx = (x - p.x) * c - (y - p.y) * s, ly = (x - p.x) * s + (y - p.y) * c;
+  const qx = abs(lx) - p.hw + p.r, qy = abs(ly) - p.hh + p.r;
+  return hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - p.r;
+}
+const smin = (a, b, k) => { if (k <= 0) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+const primBox = p => p.t === "c" ? [p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r] : p.t === "k" ? [min(p.ax - p.ra, p.bx - p.rb), min(p.ay - p.ra, p.by - p.rb), max(p.ax + p.ra, p.bx + p.rb), max(p.ay + p.ra, p.by + p.rb)] : [p.x - hypot(p.hw, p.hh), p.y - hypot(p.hw, p.hh), p.x + hypot(p.hw, p.hh), p.y + hypot(p.hw, p.hh)];
+
+// ---------------- iso-lines (marching squares) ----------------
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+const loopArea = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+function smooth(l, passes = 2) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
+// ---------------- fields per part ----------------
+function partField(p, h) {
+  let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF;
+  for (const q of p.prims) { const b = primBox(q); bx0 = min(bx0, b[0]); by0 = min(by0, b[1]); bx1 = max(bx1, b[2]); by1 = max(by1, b[3]); }
+  const pad = 3 + p.smooth, x0 = bx0 - pad, y0 = by0 - pad, nx = ceil((bx1 - bx0 + 2 * pad) / h) + 1, ny = ceil((by1 - by0 + 2 * pad) / h) + 1, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const x = x0 + i * h, y = y0 + j * h; let d = INF; for (const q of p.prims) d = smin(d === INF ? 1e6 : d, primDist(q, x, y), p.smooth); F[j * nx + i] = d; }
+  return { F, nx, ny, h, x0, y0 };
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+// ink may go where the card is at least INK_GAP inside the outline and INK_GAP clear of every hole
+const inkRoom = (p, x, y) => { let d = -sampleF(p.G, x, y); for (const H of p.holes) d = min(d, hypot(x - H.c[0], y - H.c[1]) - H.r); return d; };
+function clip(p, lines) {
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)) : 1;
+      for (let k = 0; k < n; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n;
+        if (inkRoom(p, x, y) > INK_GAP + 0.02) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; }
+      }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.02));
+}
+
+// ---------------- drawing helpers ----------------
+const circle = (x, y, r, n = 0) => { n = n || max(12, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+const arc = (x, y, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [x + rx * cos(a), y + ry * sin(a)]; });
+const rect = (x, y, hw, hh) => [[x - hw, y - hh], [x + hw, y - hh], [x + hw, y + hh], [x - hw, y + hh], [x - hw, y - hh]];
+function hatch(p, gap, ang, filter) { // parallel lines over the part's box, kept where filter(x, y) holds
+  const G = p.G, c = cos(ang), s = sin(ang), cx = G.x0 + G.nx * G.h / 2, cy = G.y0 + G.ny * G.h / 2, R = hypot(G.nx, G.ny) * G.h / 2, out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.3) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (filter(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } } if (run.length > 1) out.push(run); }
+  return out;
+}
+function grad(G, x, y) { const e = G.h; return [sampleF(G, x + e, y) - sampleF(G, x - e, y), sampleF(G, x, y + e) - sampleF(G, x, y - e)]; }
+// the line where the card is d mm in from the outline (an inner outline)
+const inset = (p, d) => contours(p.G, -d).map(l => { const q = smooth(l, 2); return [...q, q[0]]; });
+const axisOf = p => { const k = p.prims.find(q => q.t === "k"); return k ? [k.ax, k.ay, k.bx, k.by] : null; };
+
+
+// ================= garland: everything above this line is the jointed figure studio's engine, copied unchanged =================
+const HANG_MARGIN = 2.2;   // ASSUMED: card left round a hanging hole, so a thread does not tear it out
+const BRIDGE = 2.0;        // ASSUMED: narrowest strip of card between a cut-out face feature and the outline, a hole or another feature
+const FEAT_R = 1.0;        // ASSUMED: a cut-out feature must hold a 2 mm circle, or the blade drags instead of cutting
+const polySDF = pts => { // signed distance to a closed polygon (negative inside); typed arrays and no destructuring, it runs millions of times
+  const n = pts.length, X = new Float64Array(n), Y = new Float64Array(n);
+  for (let i = 0; i < n; i++) { X[i] = pts[i][0]; Y[i] = pts[i][1]; }
+  return (x, y) => {
+    let d = INF, s = 1;
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+      const ax = X[j], ay = Y[j], by = Y[i], ex = X[i] - ax, ey = by - ay, wx = x - ax, wy = y - ay, L2 = ex * ex + ey * ey;
+      let t = L2 > 1e-12 ? (wx * ex + wy * ey) / L2 : 0; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const dx = wx - ex * t, dy = wy - ey * t, dd = dx * dx + dy * dy; if (dd < d) d = dd;
+      const c1 = y >= ay, c2 = y < by, c3 = ex * wy > ey * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * sqrt(d);
+  };
+};
+const ell = (cx, cy, rx, ry) => (x, y) => (hypot((x - cx) / rx, (y - cy) / ry) - 1) * min(rx, ry);
+const prim = q => (x, y) => primDist(q, x, y);
+const unionK = (fs, k) => (x, y) => { let d = 1e6; for (const f of fs) d = smin(d, f(x, y), k); return d; };
+// Exact distances only in a band round the cut line, where the contour and the ink-room tests can see them; elsewhere the field is
+// read off a grid four times coarser (a distance field changes no faster than the distance moved, so the sign there is never wrong).
+function fieldOf(sdf, B, h) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny);
+  const c = 4, H = h * c, cx = max(2, ceil((nx - 1) / c) + 1), cy = max(2, ceil((ny - 1) / c) + 1), C = new Float32Array(cx * cy), band = 1.5 * H + 2.8;
+  for (let j = 0; j < cy; j++) for (let i = 0; i < cx; i++) C[j * cx + i] = sdf(x0 + i * H, y0 + j * H);
+  for (let j = 0; j < ny; j++) {
+    const cj = min(floor(j / c), cy - 2), fv = j / c - cj;
+    for (let i = 0; i < nx; i++) {
+      const ci = min(floor(i / c), cx - 2), fu = i / c - ci, n = cj * cx + ci, v = (C[n] * (1 - fu) + C[n + 1] * fu) * (1 - fv) + (C[n + cx] * (1 - fu) + C[n + cx + 1] * fu) * fv;
+      F[j * nx + i] = abs(v) < band ? sdf(x0 + i * h, y0 + j * h) : v;
+    }
+  }
+  return { F, nx, ny, h, x0, y0 };
+}
+const inPoly = (pts, x, y) => { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [ax, ay] = pts[j], [bx, by] = pts[i]; if ((ay > y) !== (by > y) && x < ax + (bx - ax) * (y - ay) / (by - ay)) c = !c; } return c; };
+const densify = (pts, step) => { const out = []; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], n = max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } return out; };
+// walk down from y0 at x until the card round a hole of radius r is wide enough
+const findHole = (sdf, x, y0, r) => { for (let y = y0; y < y0 + 200; y += 0.2) if (-sdf(x, y) >= r + HANG_MARGIN + 0.3 && -sdf(x, y + 0.6) >= r + HANG_MARGIN) return [x, y]; return [x, y0 + 5]; };
+
+// ---------------- the charms (local mm, y down, roughly centred on 0,0) ----------------
+function pumpkin(s, rnd, o) {
+  const w = s * (0.92 + 0.26 * rnd()), bh = s * (0.66 + 0.1 * rnd()), n = rnd() < 0.5 ? 3 : 5, lobes = [];
+  for (let i = 0; i < n; i++) { const f = (i / (n - 1)) * 2 - 1, cx = f * w * (n === 3 ? 0.25 : 0.3), rx = w * (n === 3 ? 0.27 : 0.2) * (1 - 0.12 * abs(f)), ry = bh * 0.5 * (1 - 0.1 * abs(f)); lobes.push({ cx, rx, ry }); }
+  const hr = o.hole / 2, stw = max(0.065 * s, hr + HANG_MARGIN + 0.5), sth = 0.11 * s, tilt = (rnd() - 0.5) * 0.4;
+  const sc = [sin(tilt) * sth * 0.6, -bh / 2 - sth * 0.55];
+  const body = unionK(lobes.map(l => ell(l.cx, 0, l.rx, l.ry)), 0.035 * w);
+  const shape = unionK([body, prim(Box(sc[0], sc[1], stw, sth, stw * 0.45, tilt))], 0.04 * s);
+  const holes = o.holes === "one" ? [{ c: [sc[0] + sin(tilt) * sth * 0.25, sc[1] - cos(tilt) * sth * 0.25], r: hr }]
+    : [-1, 1].map(sd => ({ c: findHole(shape, sd * 0.2 * w, -bh / 2, hr), r: hr }));
+  return { kind: "pumpkin", shape, body, box: [-w / 2 - 2, sc[1] - sth - 4, w / 2 + 2, bh / 2 + 2], holes, fc: [0, 0.05 * bh], k: min(w * 0.92, bh * 1.2), lobes, bh, w, sc, stw, sth, tilt };
+}
+function ghost(s, rnd, o) {
+  const r = 0.29 * s, hy = -0.5 * s + r, sway = (rnd() - 0.5) * 0.3, hemY = 0.44 * s, waves = 3 + floor(rnd() * 2), depth = 0.08 * s, pts = [];
+  for (let i = 0; i <= 24; i++) { const a = PI + PI * i / 24; pts.push([r * cos(a), hy + r * sin(a)]); }
+  const fy = y => (y - hy) / (hemY - hy), half = y => r + 0.12 * s * fy(y) ** 1.3, sx = y => sway * s * fy(y) ** 2;
+  for (let i = 1; i <= 16; i++) { const y = hy + (hemY - hy) * i / 16; pts.push([half(y) + sx(y), y]); }
+  const xr = half(hemY) + sx(hemY), xl = -half(hemY) + sx(hemY);
+  for (let i = 1; i < 48; i++) { const t = i / 48; pts.push([xr + (xl - xr) * t, hemY - depth * (1 - abs(cos(PI * waves * t)))]); } // round lobes, the corners on a lobe
+  for (let i = 16; i >= 1; i--) { const y = hy + (hemY - hy) * i / 16; pts.push([-half(y) + sx(y), y]); }
+  const lift = (0.1 + 0.4 * rnd()) * r, arms = [-1, 1].map(sd => prim(Limb(sd * 0.75 * r + sx(hy + r) * 0.5, hy + 0.95 * r, 0.075 * s, sd * (r + 0.18 * s) + sx(hy + r), hy + 0.7 * r - lift * (sd > 0 ? 1 : 0.5), 0.05 * s)));
+  const shape = unionK([polySDF(pts), ...arms], 0.035 * s), hr = o.hole / 2;
+  const holes = o.holes === "one" ? [{ c: [0, hy - r + hr + HANG_MARGIN + 0.6], r: hr }] : [-1, 1].map(sd => ({ c: findHole(shape, sd * 0.42 * r, hy - r, hr), r: hr }));
+  const ext = r + 0.18 * s + 0.05 * s + abs(sway) * s + 2;
+  return { kind: "ghost", shape, box: [-ext, hy - r - 2, ext, hemY + 2], holes, fc: [0, hy + 0.12 * r], k: 1.75 * r, r, hy, hemY };
+}
+function bat(s, rnd, o) {
+  const hr = 0.13 * s, hy = -0.13 * s, flap = (rnd() - 0.5) * 0.12 * s, sh = [0.07 * s, -0.07 * s];
+  const tip = [0.54 * s, -0.2 * s + flap], top = [0.24 * s, -0.24 * s + flap * 0.6], P = [tip, [0.41 * s, 0.03 * s + flap * 0.4], [0.27 * s, 0.1 * s + flap * 0.2], [0.09 * s, 0.13 * s]];
+  const wing = [sh, top, tip];
+  for (let i = 0; i < 3; i++) { const a = P[i], b = P[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], L = hypot(dx, dy), nx = dy / L, ny = -dx / L; for (let k = 1; k <= 10; k++) { const t = k / 10, bow = 0.055 * s * sin(PI * t); wing.push([a[0] + dx * t + nx * bow, a[1] + dy * t + ny * bow]); } }
+  const wings = [-1, 1].map(sd => polySDF(sd > 0 ? wing : wing.map(([x, y]) => [-x, y]).reverse()));
+  const ears = [-1, 1].map(sd => polySDF([[sd * 0.15 * hr, hy - 0.6 * hr], [sd * 0.98 * hr, hy - 0.35 * hr], [sd * 0.78 * hr, hy - 1.5 * hr]]));
+  const shape = unionK([ell(0, 0.03 * s, 0.11 * s, 0.17 * s), (x, y) => hypot(x, y - hy) - hr, ...ears, ...wings], 0.02 * s), r2 = o.hole / 2;
+  const holes = o.holes === "one" ? [{ c: [0, hy - hr + r2 + HANG_MARGIN + 0.5], r: r2 }] : [-1, 1].map(sd => ({ c: findHole(shape, sd * 0.24 * s, -0.3 * s, r2), r: r2 }));
+  return { kind: "bat", shape, box: [-0.58 * s, hy - 1.9 * hr, 0.58 * s, 0.22 * s], holes, fc: [0, hy + 0.12 * hr], k: 2 * hr, sh, P, hr, hy };
+}
+
+// ---------------- jack-o-lantern faces: every feature is one closed shape, so it can be drawn and filled or cut right through ----------------
+const ring = (cx, cy, rx, ry, n = 18) => Array.from({ length: n }, (_, i) => [cx + rx * cos(TAU * i / n), cy + ry * sin(TAU * i / n)]);
+function face(kind, mood, rnd) {
+  const F = [], line = [], colour = [], pick = a => a[floor(rnd() * a.length)];
+  const eye = (style, sd) => {
+    const ex = sd * 0.19, ey = -0.06, m = pts => pts.map(([x, y]) => [ex + sd * x, ey + y]);
+    if (style === "tri") return m([[-0.085, 0.055], [0, -0.075], [0.085, 0.055]]);
+    if (style === "angry") return m([[-0.1, -0.005], [0.1, -0.075], [0.065, 0.06]]);
+    if (style === "round") return ring(ex, ey, 0.068, 0.068);
+    if (style === "oval") return ring(ex, ey - 0.01, 0.06, 0.095);
+    if (style === "happy") { const o = []; for (let a = 200; a <= 340; a += 10) o.push([ex + 0.105 * cos(a * D2R), ey + 0.05 + 0.105 * sin(a * D2R)]); for (let a = 340; a >= 200; a -= 10) o.push([ex + 0.06 * cos(a * D2R), ey + 0.085 + 0.055 * sin(a * D2R)]); return o; }
+    return m([[-0.08, 0], [0, -0.06], [0.08, 0], [0, 0.06]]); // diamond
+  };
+  const grin = (top, bottom, hw = 0.3, my = 0.2) => { // a smile with square teeth hanging from the top lip and standing on the bottom one
+    const yu = x => my - 0.02 - 0.06 * (x / hw) ** 2, yl = x => my + 0.1 - 0.18 * (x / hw) ** 2, tw = 0.034, out = [];
+    for (let i = 0; i <= 24; i++) { const x = -hw + 2 * hw * i / 24, t = top.find(c => abs(x - c) < tw); out.push([x, t !== undefined ? yu(x) + 0.055 : yu(x)]); }
+    for (let i = 24; i >= 0; i--) { const x = -hw + 2 * hw * i / 24, t = bottom.find(c => abs(x - c) < tw); out.push([x, t !== undefined ? yl(x) - 0.05 : yl(x)]); }
+    return out;
+  };
+  const zig = (hw = 0.3, my = 0.2, n = 7) => { const out = []; for (let i = 0; i <= n * 2; i++) { const x = -hw + 2 * hw * i / (n * 2); out.push([x, my - 0.02 - 0.06 * (x / hw) ** 2 + (i % 2 ? 0.05 : 0)]); } for (let i = 24; i >= 0; i--) { const x = -hw + 2 * hw * i / 24; out.push([x, my + 0.1 - 0.18 * (x / hw) ** 2]); } return out; };
+  const band = (hw, my, curve, th) => { const out = []; for (let i = 0; i <= 16; i++) { const x = -hw + 2 * hw * i / 16; out.push([x, my - curve * (x / hw) ** 2]); } for (let i = 16; i >= 0; i--) { const x = -hw + 2 * hw * i / 16; out.push([x, my - curve * (x / hw) ** 2 + th * (1 - 0.5 * (x / hw) ** 2)]); } return out; };
+  if (kind === "pumpkin") {
+    const es = mood === "spooky" ? "angry" : mood === "happy" ? pick(["tri", "happy", "tri", "diamond"]) : pick(["round", "diamond", "tri"]);
+    if (mood === "silly") { F.push(eye("round", -1), eye(rnd() < 0.5 ? "happy" : "round", 1)); } else F.push(eye(es, -1), eye(es, 1));
+    if (mood !== "silly" || rnd() < 0.5) F.push([[-0.045, 0.075], [0, 0.01], [0.045, 0.075]]);
+    if (mood === "spooky") F.push(rnd() < 0.5 ? zig() : grin([-0.16, 0.0, 0.16], [-0.08, 0.08]));
+    else if (mood === "happy") F.push(grin(rnd() < 0.5 ? [-0.1, 0.12] : [0.02], rnd() < 0.5 ? [0.0] : []));
+    else if (rnd() < 0.5) { F.push(band(0.26, 0.22, 0.06, 0.05)); for (let i = -2; i <= 2; i++) line.push([[i * 0.09 - 0.03, 0.19 - 0.06 * (i * 0.09 / 0.26) ** 2], [i * 0.09 + 0.03, 0.31 - 0.06 * (i * 0.09 / 0.26) ** 2]]); } // a stitched slit, the stitches in pen
+    else F.push(grin([0.07], [], 0.26, 0.21));
+  } else if (kind === "ghost") {
+    if (mood === "silly") F.push(eye("oval", -1), eye("happy", 1)); else F.push(eye("oval", -1), eye("oval", 1));
+    if (mood === "spooky") F.push(ring(0, 0.22, 0.075, 0.11)); else if (mood === "happy") F.push(band(0.15, 0.2, 0.05, 0.075)); else F.push(ring(0.03, 0.21, 0.065, 0.055));
+    if (mood !== "spooky") for (const sd of [-1, 1]) colour.push([...ring(sd * 0.3, 0.12, 0.06, 0.04), ring(sd * 0.3, 0.12, 0.06, 0.04)[0]]);
+  } else {
+    for (const sd of [-1, 1]) F.push(mood === "spooky" ? (sd > 0 ? [[0.08, -0.05], [0.36, -0.09], [0.21, 0.13]] : [[-0.21, 0.13], [-0.36, -0.09], [-0.08, -0.05]]) : ring(sd * 0.21, -0.01, 0.1, 0.1));
+    for (const sd of [-1, 1]) line.push([[sd * 0.04, 0.24], [sd * 0.08, 0.36], [sd * 0.12, 0.24]]); // fangs
+    line.push(arc(0, 0.12, 0.16, 0.12, 30, 150, 10));
+  }
+  return { feats: F, line, colour };
+}
+
+// ---------------- ink for each charm (local, unclipped) ----------------
+function extras(c, o, rnd) {
+  const L = [], Sh = [], Co = [];
+  if (c.kind === "pumpkin" && o.ribs === "on") {
+    for (let i = 0; i < c.lobes.length - 1; i++) { // the groove between two lobes, bowing outward
+      const xb = (c.lobes[i].cx + c.lobes[i].rx + c.lobes[i + 1].cx - c.lobes[i + 1].rx) / 2, s = [];
+      for (let k = 0; k <= 20; k++) { const t = k / 20 * 2 - 1; s.push([xb * (1 + 0.18 * (1 - t * t)), t * c.bh * 0.44]); }
+      L.push(s);
+    }
+    for (const l of c.lobes) if (abs(l.cx) > 0.1 * c.w) { const s = []; for (let k = 0; k <= 16; k++) { const t = k / 16 * 2 - 1; s.push([l.cx + (l.cx < 0 ? -1 : 1) * l.rx * 0.45 * (1 - t * t), t * c.bh * 0.36]); } Sh.push(s); }
+    // a vine tendril: it leaves the stem, runs along the shoulder and winds into a spiral
+    const sd = c.tilt >= 0 ? -1 : 1, base = [c.sc[0] + sd * c.stw * 0.9, -c.bh / 2 + 0.05 * c.w], r0 = 0.055 * c.w, cen = [base[0] + sd * 0.16 * c.w, base[1] + 0.02 * c.w], tend = [];
+    for (let k = 0; k <= 10; k++) { const t = k / 10; tend.push([base[0] + (cen[0] - base[0]) * t, base[1] + (cen[1] + r0 - base[1]) * t + 0.02 * c.w * sin(PI * t)]); } // the tail ends at the foot of the spiral
+    for (let k = 1; k <= 40; k++) { const t = k / 40, a = PI / 2 + sd * TAU * 1.5 * t, rr = r0 * (1 - 0.8 * t); tend.push([cen[0] + rr * cos(a), cen[1] + rr * sin(a)]); }
+    L.push(tend);
+  }
+  if (c.kind === "pumpkin") { // the line where the stem meets the pumpkin
+    L.push(arc(c.sc[0], -c.bh / 2 + 0.01 * c.w, c.stw * 1.25, 0.05 * c.w, 20, 160, 12));
+    const stemIn = (x, y) => { const q = Box(c.sc[0], c.sc[1], c.stw, c.sth, c.stw * 0.45, c.tilt); return primDist(q, x, y) < -0.6 && y < -c.bh / 2 + 0.03 * c.w; };
+    Sh.push({ hatch: true, gap: 0.7, ang: PI / 2.2, f: stemIn });
+    if (o.skin === "hatch") Co.push({ hatch: true, gap: 1.1, ang: PI / 5, f: (x, y) => c.body(x, y) < -0.6 && y > -c.bh / 2 + 0.03 * c.w });
+  }
+  if (c.kind === "bat") {
+    for (const sd of [-1, 1]) for (const q of c.P.slice(0, 3)) L.push([[sd * c.sh[0], c.sh[1]], [sd * (c.sh[0] + (q[0] - c.sh[0]) * 0.92), c.sh[1] + (q[1] - c.sh[1]) * 0.92]]);
+    Sh.push({ hatch: true, gap: 0.8, ang: PI / 3, f: (x, y) => hypot(x / (0.11 * c.k / 0.26), (y - 0.03 * c.k / 0.26) / (0.17 * c.k / 0.26)) < 0.85 && y > c.hy + c.hr * 0.7 });
+  }
+  return { line: L, shade: Sh, colour: Co };
+}
+
+// ---------------- build ----------------
+const SEQ = { alt: ["ghost", "pumpkin"], trio: ["ghost", "pumpkin", "bat"], pumpkin: ["pumpkin"], ghost: ["ghost"], bat: ["bat"] };
+function makeCharm(kind, o, rnd) {
+  const s = o.size * (0.95 + 0.1 * rnd());
+  const c = kind === "pumpkin" ? pumpkin(s, rnd, o) : kind === "ghost" ? ghost(s, rnd, o) : bat(s, rnd, o);
+  const mood = o.mood === "mixed" ? ["happy", "spooky", "silly"][floor(rnd() * 3)] : o.mood;
+  const fr = face(kind, mood, rnd), K = ([x, y]) => [c.fc[0] + x * c.k, c.fc[1] + y * c.k];
+  const feats = o.faces === "none" ? [] : fr.feats.map(f => f.map(K)), featSD = feats.map(polySDF), cut = o.faces === "cut";
+  const sdf = cut && feats.length ? (x, y) => { let d = c.shape(x, y); for (const f of featSD) d = max(d, -f(x, y)); return d; } : c.shape;
+  const h = max(0.15, o.size / 380), p = { kind, mood, holes: c.holes, c };
+  let B = c.box.slice();
+  for (let t = 0; t < 8; t++) { // grow the field's box until no card touches its edge
+    let ok = true;
+    for (let x = B[0]; x <= B[2] && ok; x += 0.8) if (sdf(x, B[1]) < 0.5 || sdf(x, B[3]) < 0.5) ok = false;
+    for (let y = B[1]; y <= B[3] && ok; y += 0.8) if (sdf(B[0], y) < 0.5 || sdf(B[2], y) < 0.5) ok = false;
+    if (ok) break; B = [B[0] - 4, B[1] - 4, B[2] + 4, B[3] + 4];
+  }
+  p.G = fieldOf(sdf, B, h);
+  const loops = contours(p.G, 0).filter(l => abs(loopArea(l)) > 0.3).sort((a, b) => abs(loopArea(b)) - abs(loopArea(a)));
+  const tidy = l => rdp([...smooth(l, 1), l[0]], 0.02).slice(0, -1);
+  p.outline = tidy(loops[0] || [[0, 0], [1, 0], [0, 1]]); p.inner = loops.slice(1).map(tidy);
+  // one piece: every inner loop is a hole in the outline, and no hole holds an island of card
+  p.onePiece = p.inner.every(l => inPoly(p.outline, ...l[0])) && p.inner.every((l, i) => p.inner.every((m, j) => i === j || !inPoly(m, ...l[0])));
+  let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF; for (const [x, y] of p.outline) { bx0 = min(bx0, x); by0 = min(by0, y); bx1 = max(bx1, x); by1 = max(by1, y); }
+  p.box = [bx0, by0, bx1, by1];
+  // measurements for the gates
+  p.holeMargin = min(...c.holes.map(H => -c.shape(H.c[0], H.c[1]) - H.r));
+  p.bridge = INF; p.featR = INF;
+  const dens = feats.map(f => densify(f, 0.25));
+  feats.forEach((f, i) => {
+    for (const [x, y] of dens[i]) { p.bridge = min(p.bridge, -c.shape(x, y)); for (const H of c.holes) p.bridge = min(p.bridge, hypot(x - H.c[0], y - H.c[1]) - H.r); for (let j = 0; j < feats.length; j++) if (j !== i) p.bridge = min(p.bridge, featSD[j](x, y)); }
+    let a = INF, b = INF, cc = -INF, d = -INF; for (const [x, y] of f) { a = min(a, x); b = min(b, y); cc = max(cc, x); d = max(d, y); }
+    let r = 0; for (let y = b; y <= d; y += 0.2) for (let x = a; x <= cc; x += 0.2) r = max(r, -featSD[i](x, y)); p.featR = min(p.featR, r);
+  });
+  // ink: drawn faces are outlined and filled dark; ribs, curls and the rest keep clear of them
+  const avoid = cut ? [] : featSD;
+  const room = (x, y) => { let d = inkRoom(p, x, y); for (const f of avoid) d = min(d, f(x, y) - 0.5); return d; };
+  const clipR = lines => { const out = []; for (const Ln of lines) { let run = []; for (let i = 0; i < Ln.length; i++) { const a = Ln[i], b = Ln[i + 1] || a, n = i + 1 < Ln.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)) : 1; for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n; if (room(x, y) > INK_GAP + 0.02) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } } } if (run.length > 1) out.push(run); } return out.map(r => rdp(r, 0.02)); };
+  const ex = extras(c, o, rnd), det = o.detail;
+  const expand = arr => arr.flatMap(e => e.hatch ? hatch(p, e.gap / det, e.ang, (x, y) => sampleF(p.G, x, y) < -INK_GAP && e.f(x, y)) : [e]);
+  p.ink = { line: clipR(expand(ex.line)), shade: clipR(expand(ex.shade)), colour: clipR(expand(ex.colour)) };
+  if (o.faces === "drawn") {
+    for (const f of feats) p.ink.line.push(...clip(p, [[...f, f[0]]]));
+    p.ink.shade.push(...clip(p, hatch(p, 0.55 / det, PI / 4, (x, y) => featSD.some(f => f(x, y) < -0.35))));
+  }
+  if (o.faces !== "none") { p.ink.line.push(...clipR(fr.line.map(l => l.map(K)))); if (o.accent === "on") p.ink.colour.push(...clipR(fr.colour.map(l => l.map(K)))); }
+  return p;
+}
+const outlineOf = (p, d) => d < 0.05 ? [p.outline, ...p.inner] : contours(p.G, -d).filter(l => abs(loopArea(l)) > 0.5).map(l => smooth(l, 1));
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [], rnd = mulberry(o.seed * 977 + 13);
+  const seq = SEQ[o.mix], parts = [];
+  let x = m, y = m, rowH = 0, full = false;
+  for (let i = 0; !full && i < (o.count || 99); i++) {
+    const p = makeCharm(seq[i % seq.length], o, rnd), w = p.box[2] - p.box[0], hh = p.box[3] - p.box[1];
+    if (x + w > W - m + 1e-6) { x = m; y += rowH + PART_GAP; rowH = 0; }
+    if (y + hh > H - m + 1e-6 || w > W - 2 * m) { full = true; if (o.count && i < o.count) notes.push(`only ${i} of ${o.count} charms fit on this page`); break; }
+    p.at = [x - p.box[0], y - p.box[1]]; x += w + PART_GAP; rowH = max(rowH, hh); parts.push(p);
+  }
+  if (!parts.length) notes.push("no charm fits on this page at this size");
+  const layers = { line: [], shade: [], colour: [], outline: [], cut: [] };
+  for (const p of parts) {
+    const f = q => [q[0] + p.at[0], q[1] + p.at[1]];
+    for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) layers[k].push([l.map(f), false]);
+    layers.cut.push([p.outline.map(f), true]); for (const l of p.inner) layers.cut.push([l.map(f), true]);
+    if (o.outlines === "on") for (const l of outlineOf(p, o.outlinein)) layers.outline.push([l.map(f), true]);
+    for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 24).slice(0, -1).map(f), true]);
+  }
+  layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
+  // ---------------- gates ----------------
+  let gapMin = INF;
+  for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) {
+    const a = parts[i], b = parts[j], A = [a.box[0] + a.at[0], a.box[1] + a.at[1], a.box[2] + a.at[0], a.box[3] + a.at[1]], B = [b.box[0] + b.at[0], b.box[1] + b.at[1], b.box[2] + b.at[0], b.box[3] + b.at[1]];
+    gapMin = min(gapMin, max(B[0] - A[2], A[0] - B[2], B[1] - A[3], A[1] - B[3]));
+  }
+  let inkBad = 0, inkN = 0;
+  for (const p of parts) for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) for (const [px, py] of l) { inkN++; if (inkRoom(p, px, py) < INK_GAP - 0.05) inkBad++; }
+  const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
+  const pen = ["line", "shade", "colour"].reduce((a, k) => a + layers[k].reduce((s, [q, cl]) => s + plen(q, cl), 0), 0) / 1000, cutm = layers.cut.reduce((s, [q, cl]) => s + plen(q, cl), 0) / 1000;
+  const pts = Object.values(layers).reduce((a, L) => a + L.reduce((s, [q]) => s + q.length, 0), 0);
+  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py] of q) if (px < m - 0.01 || py < m - 0.01 || px > W - m + 0.01 || py > H - m + 0.01) inside = false;
+  const bbox = L => { let a = INF, b = INF, c = -INF, d = -INF; for (const [q] of L) for (const [px, py] of q) { a = min(a, px); b = min(b, py); c = max(c, px); d = max(d, py); } return [a, b, c, d].map(v => v.toFixed(2)).join(","); };
+  const ms = performance.now() - t0, one = parts.filter(p => p.onePiece).length, hm = min(...parts.map(p => p.holeMargin));
+  gates.push(["build time under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`]);
+  gates.push(["at least one charm on the page", parts.length > 0, `${parts.length}`]);
+  gates.push(["total pen length under 150 m (about 45 minutes of plotting, assumed)", pen < 150, `${pen.toFixed(1)} m`]);
+  gates.push(["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]);
+  gates.push(["every charm is one piece, with no loose islands in its face", one === parts.length, `${one} of ${parts.length}`]);
+  gates.push([`every hanging hole has at least ${HANG_MARGIN} mm of card round it (assumed)`, hm >= HANG_MARGIN - 0.1, `least ${hm.toFixed(2)} mm`]);
+  if (o.faces === "cut") {
+    const br = min(...parts.map(p => p.bridge)), fr = min(...parts.map(p => p.featR));
+    gates.push([`card between cut-out features, holes and the edge at least ${BRIDGE} mm (assumed)`, br >= BRIDGE - 0.05, `narrowest ${br.toFixed(2)} mm`]);
+    gates.push([`every cut-out feature holds a ${2 * FEAT_R} mm circle (assumed)`, fr >= FEAT_R - 0.05, `smallest ${(2 * fr).toFixed(2)} mm`]);
+    const grow = max(BRIDGE / max(br, 0.01), FEAT_R / max(fr, 0.01)); // faces scale with the charm, so the shortfall says how much bigger to go
+    if (grow > 1.001) notes.push(`cut-through faces need charms of about ${min(130, ceil(o.size * grow * 1.04 / 5) * 5)} mm or more, or switch the faces to drawn`);
+  }
+  gates.push([`charms at least ${PART_GAP} mm apart and inside the margin`, inside && (parts.length < 2 || gapMin >= PART_GAP - 0.01), parts.length < 2 ? "one charm" : `closest ${gapMin.toFixed(1)} mm`]);
+  gates.push([`no ink within ${INK_GAP} mm of a cut line or hole (assumed)`, inkBad === 0, `${inkBad} of ${inkN} points`]);
+  const penBox = [[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET]].map(p => p.map(v => v.toFixed(2)).join(",")).join(",");
+  gates.push(["trim frame and pen corner ticks have the same bounding box", bbox([layers.cut.at(-1)]) === penBox, bbox([layers.cut.at(-1)])]);
+  return { W, H, o, ms, parts, pieces: parts.length, layers, gates, notes, pen, cutm };
+}
+
+// ---------------- draw + export ----------------
+const CARD = { pumpkin: "#ee8a2a", ghost: "#fbf9f2", bat: "#4a4352" };
+function draw(r) {
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0); c.lineJoin = c.lineCap = "round";
+  const path = (q, cl) => { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); };
+  const COL = { line: "#26200f", shade: "#4d463a", colour: "#" + r.o.inkcol };
+  if (r.o.view !== "sheet" && r.parts.length) { // "built" is the shared review harness's name for the put-together view
+    const night = r.o.night === "on";
+    c.fillStyle = night ? "#231d33" : "#e9eef0"; c.fillRect(0, 0, r.W, r.H);
+    // the window frame and its glazing bars
+    c.strokeStyle = night ? "#3b3350" : "#c9cfd2"; c.lineWidth = 3; c.strokeRect(6, 6, r.W - 12, r.H - 12); c.lineWidth = 1.6; c.beginPath(); c.moveTo(r.W / 2, 6); c.lineTo(r.W / 2, r.H - 6); c.moveTo(6, r.H * 0.62); c.lineTo(r.W - 6, r.H * 0.62); c.stroke();
+    if (night) { c.fillStyle = "#f3e7b0"; c.beginPath(); c.arc(r.W * 0.8, r.H * 0.78, 14, 0, TAU); c.fill(); c.fillStyle = "#231d33"; c.beginPath(); c.arc(r.W * 0.8 + 6, r.H * 0.78 - 3, 12, 0, TAU); c.fill(); }
+    const P = r.parts.slice(0, 9), wsum = P.reduce((a, p) => a + p.box[2] - p.box[0], 0), gap = 10, sc = min(1, (r.W - 40) / (wsum + gap * (P.length - 1))), sag = 0.16 * r.H;
+    const x0 = (r.W - sc * (wsum + gap * (P.length - 1))) / 2, sy = x => 0.16 * r.H + sag * (1 - ((x - r.W / 2) / (r.W / 2)) ** 2);
+    c.strokeStyle = night ? "#cbb98f" : "#7a6a4a"; c.lineWidth = 0.6; c.beginPath(); for (let x = 0; x <= r.W; x += 4) x ? c.lineTo(x, sy(x)) : c.moveTo(x, sy(x)); c.stroke();
+    let cx = x0;
+    for (const p of P) {
+      const w = (p.box[2] - p.box[0]) * sc, hp = p.holes.length === 1 ? p.holes[0].c : [(p.holes[0].c[0] + p.holes[1].c[0]) / 2, (p.holes[0].c[1] + p.holes[1].c[1]) / 2];
+      const ax = cx + w / 2, drop = p.holes.length === 1 ? 6 : 0, ox = ax - sc * hp[0], oy = sy(ax) + drop - sc * hp[1], g = ([x, y]) => [ox + sc * x, oy + sc * y];
+      if (drop) { c.strokeStyle = night ? "#cbb98f" : "#7a6a4a"; c.lineWidth = 0.4; c.beginPath(); c.moveTo(ax, sy(ax)); c.lineTo(...g(hp)); c.stroke(); }
+      if (night && r.o.faces === "cut") { c.fillStyle = "#ffd65c"; c.beginPath(); for (const l of p.inner) path(l.map(g), true); c.fill(); }
+      c.beginPath(); path(p.outline.map(g), true); for (const l of p.inner) path(l.map(g), true); for (const H of p.holes) { const [hx, hy] = g(H.c); c.moveTo(hx + H.r * sc, hy); c.arc(hx, hy, H.r * sc, 0, TAU); }
+      c.fillStyle = CARD[p.kind]; c.fill("evenodd");
+      c.strokeStyle = "rgba(38,32,15,0.55)"; c.lineWidth = 0.3; c.stroke();
+      for (const key of ["shade", "colour", "line"]) { c.strokeStyle = p.kind === "bat" && key !== "colour" ? "#17131c" : COL[key]; c.lineWidth = key === "shade" ? 0.22 : 0.32; c.beginPath(); for (const l of p.ink[key]) path(l.map(g), false); c.stroke(); }
+      cx += w + gap * sc;
+    }
+  } else {
+    c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H);
+    for (const key of ["shade", "colour", "line", "outline"]) { c.strokeStyle = key === "outline" ? "#1d3a8a" : COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
+    c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(q, cl); c.stroke(); c.setLineDash([]);
+  }
+  const lenm = L => L.reduce((a, [q]) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + s; }, 0) / 1000;
+  const n = kd => r.parts.filter(p => p.kind === kd).length, string = r.parts.reduce((a, p) => a + p.box[2] - p.box[0] + 40, 0) / 1000;
+  $("stats").innerHTML = `<b>${r.parts.length}</b> charms: ${["ghost", "pumpkin", "bat"].filter(n).map(kd => `${n(kd)} ${kd}${n(kd) > 1 ? "s" : ""}`).join(", ")} · about <b>${string.toFixed(1)} m</b> of garland at 4 cm spacing · ${r.ms.toFixed(0)} ms<br>`
+    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · ${r.layers.outline.length ? `outline pen: <b>${lenm(r.layers.outline).toFixed(1)} m</b> · ` : ""}cut: <b>${r.cutm.toFixed(1)} m</b>, ${r.layers.cut.length} paths<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade },
+  { name: "colour", colour: r.o.inkcol, w: 0.4, paths: r.layers.colour }, { name: "outline", colour: "1d3a8a", w: 0.4, paths: r.layers.outline }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length);
+// Pen files carry four corner ticks at 1 mm. The cut layer carries its own closed trim rectangle at 1 mm, so its box matches, and never gets ticks (they would slice the card).
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG spooky garland${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["mix", "size", "count", "seed", "faces", "mood", "holes", "hole", "ribs", "skin", "accent", "inkcol", "detail", "outlines", "outlinein", "view", "night", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["view", "night", "inkcol"]);
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { mix: "alt", size: 70, count: 0, seed: 31, faces: "drawn", mood: "mixed", holes: "one", hole: 1.8, ribs: "on", skin: "card", accent: "on", inkcol: "e86a10", detail: 1, outlines: "off", outlinein: 0.6, view: "strung", night: "on", page: "280x280", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  classic: P({}),
+  lanterns: P({ mix: "pumpkin", faces: "cut", size: 80, seed: 44, holes: "two" }),
+  patch: P({ mix: "pumpkin", mood: "happy", seed: 7, skin: "hatch", night: "off" }),
+  parade: P({ mix: "ghost", size: 65, seed: 12, mood: "mixed", holes: "two" }),
+  trio: P({ mix: "trio", size: 65, seed: 66, mood: "spooky" }),
+  colour: P({ ribs: "on", faces: "drawn", accent: "off", night: "off", seed: 3 }),
+  tiny: P({ size: 45, page: "190x250", seed: 21, faces: "drawn" }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `garland-${r.o.mix}-${r.o.faces}-s${r.o.size}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>

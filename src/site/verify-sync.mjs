@@ -3,8 +3,10 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {PAGES,SOURCES} from '../publish-site.mjs';
+import {stripLocal} from './local-only.mjs';
 const here=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),project=path.dirname(here),repo=path.join(project,'PLOTTER_GEN');
-const normalize=file=>fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'').replace(/\r\n/g,'\n');
+// the published copy has its local-only fences stripped, so both sides are compared stripped
+const normalize=file=>stripLocal(fs.readFileSync(file,'utf8').replace(/^\uFEFF/,'').replace(/\r\n/g,'\n'));
 const hash=file=>crypto.createHash('sha256').update(normalize(file)).digest('hex');
 const rows=[...PAGES.map(([p])=>['04_DOCS/'+p,p]),...SOURCES.map(p=>['02_WORK/'+p,'src/'+p]),['02_WORK/site-public-readme.md','README.md']];
 const result=rows.map(([desktop,published])=>({desktop,published,match:fs.existsSync(path.join(project,desktop))&&fs.existsSync(path.join(repo,published))&&hash(path.join(project,desktop))===hash(path.join(repo,published))}));
