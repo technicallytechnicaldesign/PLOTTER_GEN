@@ -4,7 +4,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
 import {createRequire} from 'node:module';
-const VERSION=3;
+const VERSION=4;
 const pathData=(points,closed=false)=>'M'+points.map(p=>p.map(v=>Number(v.toFixed(3))).join(',')).join(' L')+(closed?' Z':'');
 export function bakePuppets({catalogue,repo,here}){
  const require=createRequire(path.join(here,'site/package.json')), {createCanvas,Path2D}=require('@napi-rs/canvas');
@@ -38,7 +38,7 @@ export function bakePuppets({catalogue,repo,here}){
    }
    if(collection.id==='garland'){
     // The charms lift off the sheet and hang along one string, the same layout as the studio's window preview.
-    const strung=r.parts.slice(0,9),gap=10,wsum=strung.reduce((a,p)=>a+p.box[2]-p.box[0],0),scale=Math.min(1,(r.W-40)/(wsum+gap*(strung.length-1))),sag=.16*r.H,top=.16*r.H;
+    const strung=r.parts.slice(0,9),gap=10,wsum=strung.reduce((a,p)=>a+p.box[2]-p.box[0],0),scale=Math.min(1,(r.W-40)/(wsum+gap*(strung.length-1))),sag=.12*r.H,top=.3*r.H;
     const sy=x=>top+sag*(1-((x-r.W/2)/(r.W/2))**2);let cx=(r.W-scale*(wsum+gap*(strung.length-1)))/2;
     const charms=strung.map(p=>{const w=(p.box[2]-p.box[0])*scale,hang=p.holes.length===1?p.holes[0].c:[(p.holes[0].c[0]+p.holes[1].c[0])/2,(p.holes[0].c[1]+p.holes[1].c[1])/2],ax=cx+w/2,drop=p.holes.length===1?6:0;cx+=w+gap*scale;
      return {kind:p.kind,at:p.at,hang,anchor:[ax,sy(ax)+drop],knot:[ax,sy(ax)],outline:[p.outline,...p.inner].map(q=>pathData(q,true)).join(' '),ink:Object.fromEntries(['line','shade','colour'].map(k=>[k,p.ink[k].map(q=>pathData(q)).join(' ')])),holes:p.holes.map(h=>({center:h.c,radius:h.r}))}});

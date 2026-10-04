@@ -17,6 +17,22 @@ This mode reads the studio snapshots already in `PLOTTER_GEN`. It writes only `i
 
 The existing full publish command still mirrors studios first, then regenerates the same entrance and catalogue. Both modes use one template and one catalogue. Do not replace the full pipeline with an independent homepage deploy.
 
+## Putting a new studio on the site: the standard
+
+Every new generator goes up the same way, so nothing on the entrance needs explaining twice. Do all of it in the same session the studio is published.
+
+1. **Register it.** Add `[page, group, title, one line]` to `PAGES` in `publish-site.mjs`. Only what is listed is published.
+2. **Give it a catalogue entry** in `catalogue.mjs`: stable `id`, `page`, `name`, `subtitle`, `family`, `tags`, `description`, `lesson`, and `samples`: 3 to 5 of the studio's own built-in presets with display titles. These become the example sheets shown when the drawer is expanded. Every listed preset must pass the studio's own gates, or the build throws.
+3. **Seasonal work goes on the Seasonal shelf.** Add `"season":"<label>"` (for example `"Spooky season"`) and a `seasonal` tag. The collection then shows in the SEASONAL section above the pile instead of in it, the section heading takes the label, and a pile search that matches it says so. When the season is over, delete the `season` field and the studio drops back into the pile. With no seasonal collections, the section and its rail link hide themselves.
+4. **Give it the header treatment.** Every specimen joins the random header pool and gets the pen-drawing animation automatically. If the thing is assembled or used physically, it also gets a motion asset baked in `puppet-assets.mjs` and played in `hero-motion.js`:
+   - jointed rigs (`r.R.parts` with `pivot`, `parent`, `key`): `motion`. It draws, assembles, then repeats the studio's wiggle (figure, animals, vampire). Extra parts such as a cape need a place in the draw order.
+   - lino decals: `weeding`. Overlays: `reveal`. Strung charms: `garland`, where the charms lift off the sheet, hang on one string and sway (spooky garland).
+   - a new kind of motion means three things: a bake branch in `puppet-assets.mjs`, a `create…`/`…Progress` pair in `hero-motion.js`, and the hook-up in `site.js` (`showHero` and `setProgress`). Bump `VERSION` in `puppet-assets.mjs` whenever baked geometry changes.
+5. **Check it.** Run `node 02_WORK/publish-site.mjs`, then `node 02_WORK/site/verify.mjs`. In the browser pane, through the shared preview, open `index.html?sheet=<specimen-id>`, scrub the transport to the end to see the assembly, expand its drawer and open a specimen, at desktop and phone widths.
+6. **Publish.** Commit and push `PLOTTER_GEN`, then load the live page.
+
+The section rail (Seasonal, The pile, List) pins to the left on wide screens and becomes a strip under the tabs on phones. A new top-level section needs a link in `.rail` in `site-index.template.html`.
+
 ## Add a world or specimen
 
 Register the studio in the existing `PAGES` list in `publish-site.mjs`. Add its editorial entry in `catalogue.mjs`, including a stable ID, page, family, tags, description, lesson and built-in preset IDs with display titles. Uncurated pages remain available in the directory automatically.
