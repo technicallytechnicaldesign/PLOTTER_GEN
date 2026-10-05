@@ -58,3 +58,29 @@
 /* Phone: a small corner map that leaves the room in view. */
 #map text{font-size:170px}
 @media(max-width:700px){#map-panel{width:118px;padding:6px;right:6px;top:6px;outline:none}#map{height:150px}#map-panel p{display:none}.map-title{font-size:8px}#map-close{padding:2px 6px;font-size:14px;min-height:0}}
+
+/* Plinths: a stand and a slowly turning box, all built from flat faces inside preserve-3d groups. */
+.plinth,.plinth-base,.box-at,.box-spin,.cube{position:absolute;left:0;top:0;transform-style:preserve-3d}
+.plinth{cursor:pointer}.plinth[hidden]{display:none}
+.plinth:focus-visible .face-front{outline:2px solid #607e83;outline-offset:4px}
+.cube-face{position:absolute;display:block;transform-style:flat;backface-visibility:hidden;overflow:hidden}
+.plinth-base .cube-face{background:#fff;border:1px solid #4c555b}
+.plinth-base .face-right,.plinth-base .face-left{background:repeating-linear-gradient(135deg,#fff 0 7px,#9aa7ab 7px 8px)}
+.plinth-base .face-top{background:#f6f7f7}
+.plinth-label{position:absolute;left:0;right:0;top:34px;padding:0 10px;text-align:center;font:12px var(--font-mono);color:#47545c}
+.box-spin{animation:box-spin 28s linear infinite}
+@keyframes box-spin{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
+@media(prefers-reduced-motion:reduce){.box-spin{animation:none;transform:rotateY(-30deg)}}
+.box-at .cube-face,.cube .cube-face{background:#fff;border:2px solid #303a40}
+.box-at .face-top,.cube .face-top{background:repeating-linear-gradient(45deg,#fff 0 9px,#c7d0d3 9px 10px)}
+.cube-face img{width:100%;height:100%;object-fit:cover}
+.cube-face .photo-space{width:100%;height:100%;border:0;font-size:9px;gap:4px}
+.cube-face .photo-space .empty-mark{font-size:20px}
+/* Close look: drag the box round. */
+.cube-stage{width:100%;height:100%;display:grid;place-items:center;perspective:900px;cursor:grab;touch-action:none}
+.cube-stage:active{cursor:grabbing}
+.cube-stage .cube{position:relative;left:auto;top:auto;width:0;height:0}
+
+/* Shift lens: the horizon sits above centre, so floors, plinths and the lower half of the room stay in view. */
+#viewport{perspective-origin:50% 38%}
+#scene{top:38%}

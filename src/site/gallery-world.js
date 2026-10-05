@@ -9,8 +9,11 @@ export const rooms=[
  {id:'paper',name:'Paper & creatures',side:-1,row:2,tone:'#998373'},
  {id:'collected',name:'Collected prints',side:1,row:2,tone:'#738995'}
 ].map(r=>({...r,cx:r.side*(HALL+ROOM_W/2),cz:-600-r.row*ROW}));
+// Plinths and anything else standing on the floor: circles the walker cannot enter, filled by the page.
+export const obstacles=[];
 export function locationAt(x,z){return rooms.find(r=>r.side*x>HALL+10&&Math.abs(z-r.cz)<ROOM_D/2)?.id||'corridor'}
 export function canWalk(x,z){
+ if(obstacles.some(o=>Math.hypot(x-o.x,z-o.z)<o.r))return false;
  if(Math.abs(x)<=HALL-25&&z>=END+25&&z<=START-25)return true;
  return rooms.some(r=>(r.side*x>=HALL-25&&r.side*x<=HALL+60&&Math.abs(z-r.cz)<=DOOR_WIDTH/2-40)||(r.side*x>=HALL+30&&r.side*x<=HALL+ROOM_W-30&&Math.abs(z-r.cz)<=ROOM_D/2-30));
 }
@@ -49,3 +52,6 @@ export function hang(works,walls){
  }
  return out;
 }
+// Plinths stand on the room's centre line, spread between the door and the far wall.
+export const PLINTH_H=260;
+export function plinthSpots(r,n){return Array.from({length:n},(_,i)=>({x:r.side*(HALL+ROOM_W*(n===1?0.5:0.3+0.45*i/(n-1))),z:r.cz,side:r.side}))}
