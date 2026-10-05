@@ -3,6 +3,7 @@
   "id": "flint-levallois",
   "title": "Levallois core",
   "preset": "levallois",
+  "content": {},
   "settings": {
     "seed": "21",
     "pitch": "0.8",
@@ -30,7 +31,7 @@
     "page": "250x190",
     "ticks": "split"
   },
-  "sourceHash": "e081d04d762b4e0d027bee68cc59bbf4a109fc44fdceb04c5c59fb2baa21e5be",
+  "sourceHash": "1b5d45090a598e04534c409c5456c89733451026a2be26f40761376339a8200e",
   "svg": "site/art/flint-levallois.svg",
   "image": "site/art/flint-levallois.webp",
   "page": "250x190",

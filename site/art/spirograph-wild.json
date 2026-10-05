@@ -3,6 +3,7 @@
   "id": "spirograph-wild",
   "title": "Wacky wild",
   "preset": "wild",
+  "content": {},
   "settings": {
     "count": "18",
     "spread": "0.6",
@@ -61,7 +62,7 @@
     "page": "280x280",
     "ticks": "split"
   },
-  "sourceHash": "49404cae37f4d60b8e015be25ec8ede4c0b984940713e33a1cb527e5e432ef16",
+  "sourceHash": "d582a91ed328b573ea2c75fad339a16777b2f5e2e0e724b658dc58ed834e35b8",
   "svg": "site/art/spirograph-wild.svg",
   "image": "site/art/spirograph-wild.webp",
   "page": "280x280",

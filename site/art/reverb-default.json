@@ -3,6 +3,7 @@
   "id": "reverb-default",
   "title": "Echo chamber",
   "preset": "",
+  "content": {},
   "settings": {
     "seed": "7",
     "gears": "14",
@@ -19,7 +20,7 @@
     "frame": "organic",
     "page": "190x250"
   },
-  "sourceHash": "0406a37188176b70cd4d83a6ba29c2f94ea7d461c7f82f0ba278d46112b18cad",
+  "sourceHash": "f30857c41ad70b7f476a29ee060b0676308c5ed26255eab12912e0621c333b18",
   "svg": "site/art/reverb-default.svg",
   "image": "site/art/reverb-default.webp",
   "page": "190x250",

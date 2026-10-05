@@ -3,6 +3,7 @@
   "id": "archaeology-beaker",
   "title": "Beaker refit",
   "preset": "beaker",
+  "content": {},
   "settings": {
     "seed": "27",
     "pitch": "0.8",
@@ -34,7 +35,7 @@
     "page": "190x250",
     "ticks": "split"
   },
-  "sourceHash": "0518f009a2f7628948d91e90c04f8f0986eb8b6a4959495416e6786ecf538f05",
+  "sourceHash": "7eb0a2a46a328bb7814275b80bc0d2654668c56ee2baee07270e388b66d08558",
   "svg": "site/art/archaeology-beaker.svg",
   "image": "site/art/archaeology-beaker.webp",
   "page": "190x250",

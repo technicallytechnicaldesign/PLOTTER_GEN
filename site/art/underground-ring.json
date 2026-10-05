@@ -3,6 +3,7 @@
   "id": "underground-ring",
   "title": "Fairy ring",
   "preset": "ring",
+  "content": {},
   "settings": {
     "seed": "33",
     "cores": "4",
@@ -33,7 +34,7 @@
     "page": "190x250",
     "ticks": "split"
   },
-  "sourceHash": "5d7c6380533c452aec584c36e418e218e370bbacec26b301392e2d29360085a3",
+  "sourceHash": "258f8ddebd4c986626c69161174b613e82bdcf5edb35a274713e84435d5e086b",
   "svg": "site/art/underground-ring.svg",
   "image": "site/art/underground-ring.webp",
   "page": "190x250",

@@ -3,6 +3,7 @@
   "id": "pottery-beaker",
   "title": "Bell beaker",
   "preset": "beaker",
+  "content": {},
   "settings": {
     "seed": "7",
     "mscale": "1",
@@ -33,7 +34,7 @@
     "page": "280x280",
     "ticks": "split"
   },
-  "sourceHash": "bf970ce9e73973d7b416a59b33afe63c74dcbd099e0e85be3f42dfc5cf5deadc",
+  "sourceHash": "fcbede0dbf5a69cce61cb1c12e7747fc2f7d859e68b9e80eb9a9f0b5d726c035",
   "svg": "site/art/pottery-beaker.svg",
   "image": "site/art/pottery-beaker.webp",
   "page": "280x280",

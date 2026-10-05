@@ -3,6 +3,7 @@
   "id": "purloined-cables",
   "title": "Cable traffic",
   "preset": "cables",
+  "content": {},
   "settings": {
     "msg": "YES",
     "ckey": "3",
@@ -35,7 +36,7 @@
     "marks": "on",
     "ticks": "split"
   },
-  "sourceHash": "a0b96712682b505ac970a2a8ac090d277d5235af2a61cf3d542f0c8b9d6b57ce",
+  "sourceHash": "da10e061b1ede1dcbe3f37db78ec7fefd5088479ac25ac252247e63d39d85e4c",
   "svg": "site/art/purloined-cables.svg",
   "image": "site/art/purloined-cables.webp",
   "page": "190x250",

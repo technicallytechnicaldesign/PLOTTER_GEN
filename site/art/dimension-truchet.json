@@ -3,6 +3,7 @@
   "id": "dimension-truchet",
   "title": "Ribbon machinery",
   "preset": "truchet",
+  "content": {},
   "settings": {
     "seed": "3",
     "gears": "3",
@@ -39,7 +40,7 @@
     "frame": "off",
     "ticks": "split"
   },
-  "sourceHash": "b53a64c2cc5e61b573c726070b514c7aee7a79d778c18ee972cef55be586fc6f",
+  "sourceHash": "28a69d056897d62649f4e23bb4bd19e5dbb12aa4c3f00f31565b4b7849080338",
   "svg": "site/art/dimension-truchet.svg",
   "image": "site/art/dimension-truchet.webp",
   "page": "190x250",

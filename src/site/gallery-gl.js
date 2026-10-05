@@ -42,7 +42,7 @@ export function createGallery(host, world, onChange) {
   renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setClearColor(PAPER);
   renderer.domElement.className = 'gallery-canvas'; renderer.domElement.setAttribute('aria-hidden', 'true');
   host.prepend(renderer.domElement);
-  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(60, 1, 5, 9000), aniso = renderer.capabilities.getMaxAnisotropy();
+  const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(60, 1, 5, 24000), aniso = renderer.capabilities.getMaxAnisotropy();
   const lineMat = new THREE.LineBasicMaterial({ color: INK }), solids = [], spinners = [], swingers = [], prints = new Map();
   const mats = new Map(), once = (key, make) => mats.get(key) || (mats.set(key, make()), mats.get(key));
   // Surfaces sit a hair behind their own outlines, so pen lines never fight the paper.
@@ -183,7 +183,7 @@ export function createGallery(host, world, onChange) {
     renderer.render(scene, camera);
   }
   // Moving pieces only need frames while one is close enough to see.
-  const animating = p => !still.matches && [...spinners, ...swingers].some(o => { const v = o.getWorldPosition(new THREE.Vector3()); return o.visible && o.parent.visible && Math.hypot(v.x - p.x, v.z - p.z) < 2200; });
+  const animating = p => !still.matches && [...spinners, ...swingers].some(o => { const v = o.getWorldPosition(new THREE.Vector3()); return o.visible && o.parent.visible && Math.hypot(v.x - p.x, v.z - p.z) < 4500; });
   const ray = new THREE.Raycaster(), pickable = () => [...solids, ...doors, ...[...prints.values()].filter(g => g.visible)];
   function pick(clientX, clientY) {
     const r = renderer.domElement.getBoundingClientRect();

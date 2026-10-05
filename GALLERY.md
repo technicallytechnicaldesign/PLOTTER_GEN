@@ -1,6 +1,6 @@
 # Print gallery
 
-**UID:** PLG-GAL-1AFF2EBC · **Version:** 4 · 2026-10-05
+**UID:** PLG-GAL-1AFF2EBC · **Version:** 5 · 2026-10-05
 
 Source is in `src/site/` (`gallery.js`, `gallery-world.js`, `gallery-gl.js`, `gallery.css`, `print-gallery.json`, and three.js r170 bundled as `three.module.min.js`). `site/` is the published copy. Check changes with `node src/site/gallery-world-test.mjs`.
 
@@ -40,6 +40,16 @@ v1 to v3 drew the rooms with CSS 3D. That has no depth buffer: each browser gues
 - **Keyboard and screen readers:** `#scene` is now a hidden list of every door and print. The focused entry shows in the top-left of the view.
 - **Redraws:** the view redraws when you move, or while a turning box or swaying peg piece is within 2200px.
 - The v3 tiles and culling are gone; WebGL needs neither. The close-up turntable is still one CSS cube, which is safe.
+
+## v5: room to walk (2026-10-05)
+
+v4 drew correctly but a room still put the visitor's nose to the wall: on arrival the plinth box filled the view and the side wall ran off the edge.
+
+- **Rooms** 3600 x 2600 (about 14 x 10 m at eye height 400 = 1.6 m), up from 1500 x 1100: 5.7x the floor.
+- **Corridor** 1200 wide (was 660), **doors** 600 x 620 (was 360 x 480), **ceilings** 4.4 m (was 3.2 m).
+- **Walking** 520 px/s, 900 held fast (was 280 / 450), so crossing a room takes about 7 s.
+- **Frames** hang at 2x (was 1.5x) with a 160 gap, so prints still read in the bigger rooms; MAX_H is a fixed 440 so taller ceilings do not inflate them.
+- Camera far plane 24000 and the animation redraw radius 4500, to cover the longer corridor and rooms.
 
 ## Later: photogrammetry
 

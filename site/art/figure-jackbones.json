@@ -3,6 +3,7 @@
   "id": "figure-jackbones",
   "title": "Skeleton jumping jack",
   "preset": "jackbones",
+  "content": {},
   "settings": {
     "height": "320",
     "stock": "1",
@@ -26,7 +27,7 @@
     "page": "280x280",
     "ticks": "split"
   },
-  "sourceHash": "201e40e90638b5afa0519f6bc1c773a9f404ad017d4189103eeaeb515f254827",
+  "sourceHash": "38d062237441b0355426304485cfc86592f1e03f63521f057992b0e9a544f742",
   "svg": "site/art/figure-jackbones.svg",
   "image": "site/art/figure-jackbones.webp",
   "page": "280x280",

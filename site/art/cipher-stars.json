@@ -3,6 +3,7 @@
   "id": "cipher-stars",
   "title": "Letters in the sky",
   "preset": "stars",
+  "content": {},
   "settings": {
     "msg": "ALL THE STARS ARE LETTERS",
     "ckey": "3",
@@ -33,7 +34,7 @@
     "marks": "off",
     "ticks": "split"
   },
-  "sourceHash": "b6f602086e3c05822a89062cbd6438773f38f3408d01bbfef9d0e0cd3c99a839",
+  "sourceHash": "77244681aebee515ae21d9cf5def0d447cde5326c6376614059ea1d1ccdb5f50",
   "svg": "site/art/cipher-stars.svg",
   "image": "site/art/cipher-stars.webp",
   "page": "190x250",
