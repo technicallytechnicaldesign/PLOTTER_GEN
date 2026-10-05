@@ -28,8 +28,9 @@ Every new generator goes up the same way, so nothing on the entrance needs expla
    - jointed rigs (`r.R.parts` with `pivot`, `parent`, `key`): `motion`. It draws, assembles, then repeats the studio's wiggle (figure, animals, vampire). Extra parts such as a cape need a place in the draw order.
    - lino decals: `weeding`. Overlays: `reveal`. Strung charms: `garland`, where the charms lift off the sheet, hang on one string and sway (spooky garland).
    - a new kind of motion means three things: a bake branch in `puppet-assets.mjs`, a `create…`/`…Progress` pair in `hero-motion.js`, and the hook-up in `site.js` (`showHero` and `setProgress`). Bump `VERSION` in `puppet-assets.mjs` whenever baked geometry changes.
-5. **Check it.** Run `node 02_WORK/publish-site.mjs`, then `node 02_WORK/site/verify.mjs`. In the browser pane, through the shared preview, open `index.html?sheet=<specimen-id>`, scrub the transport to the end to see the assembly, expand its drawer and open a specimen, at desktop and phone widths.
-6. **Publish.** Commit and push `PLOTTER_GEN`, then load the live page.
+5. **Show only what's used.** Put `data-when` on each control that only matters for some bases (see `studio-dock.mjs` and `CONTROL_RELEVANCE.md` at the public root). Never hide a control the build still reads.
+6. **Check it.** Run `node 02_WORK/publish-site.mjs`, then `node 02_WORK/site/verify.mjs`. In the browser pane, through the shared preview, open `index.html?sheet=<specimen-id>`, scrub the transport to the end to see the assembly, expand its drawer and open a specimen, at desktop and phone widths.
+7. **Publish.** Commit and push `PLOTTER_GEN`, then load the live page.
 
 The section rail (Seasonal, The pile, List) pins to the left on wide screens and becomes a strip under the tabs on phones. A new top-level section needs a link in `.rail` in `site-index.template.html`.
 

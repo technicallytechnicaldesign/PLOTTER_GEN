@@ -58,6 +58,8 @@ aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
 aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 aside fieldset.dock-folded > :not(legend) { display:none !important; }
 aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
 .dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
 .dock-bar span { margin-right:auto; font-style:italic; }
 .dock-bar button { font-size:0.76rem; padding:1px 8px; }
@@ -110,6 +112,7 @@ aside fieldset.dock-folded { padding-bottom:0; }
     bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
     bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
     aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
     // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
     const frame = main.firstElementChild;
     if (!frame) return;
@@ -128,6 +131,53 @@ aside fieldset.dock-folded { padding-bottom:0; }
     frame.appendChild(btn);
     apply();
     matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();</script>
@@ -150,7 +200,7 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Labels and captions <select id="labels"><option value="on">on</option><option value="off">off</option></select></label>
     <p class="hint">The three drawings have their own groups below. Controls for a drawing you are not looking at stay open, and do nothing until you switch to it. Labels apply to Lineage and Upload.</p>
   </fieldset>
-  <fieldset><legend>Lineage</legend>
+  <fieldset data-when="view=lineage"><legend>Lineage</legend>
     <label>Generations <output id="o-gens"></output><input type="range" id="gens" min="3" max="9" step="1" value="6"></label>
     <label>Chance of a fork <output id="o-fork"></output><input type="range" id="fork" min="0" max="0.8" step="0.05" value="0.45"></label>
     <label>Chance of a merge <output id="o-merge"></output><input type="range" id="merge" min="0" max="0.5" step="0.05" value="0.15"></label>
@@ -159,13 +209,13 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Nodes <select id="nodes"><option value="head">profile heads</option><option value="ring">heads in a ring</option><option value="dot">dots, the graph alone</option></select></label>
     <p class="hint">Lineage only. Each head drifts a little from its parent, and the hatching inside it is denser the further it has wandered from the original. The colour line is the original's own line of descent.</p>
   </fieldset>
-  <fieldset><legend>Upload</legend>
+  <fieldset data-when="view=upload"><legend>Upload</legend>
     <label>Transferred <output id="o-u"></output><input type="range" id="u" min="0" max="1" step="0.01" value="0.6"></label>
     <label>Method <select id="method"><option value="gradual">slice by slice, from the crown down</option><option value="copy">scan and copy, the original stays</option><option value="dissolve">the original dissolves into points</option></select></label>
     <label>Copy is drawn as <select id="grain"><option value="lattice">a lattice</option><option value="voxels">voxels</option><option value="scan">scan lines</option></select></label>
     <p class="hint">Upload only. In the slice-by-slice method the copy ends up as the whole head, and nothing was ever swapped in one go.</p>
   </fieldset>
-  <fieldset><legend>Code</legend>
+  <fieldset data-when="view=code"><legend>Code</legend>
     <label>Text height (mm) <output id="o-texth"></output><input type="range" id="texth" min="2.2" max="6" step="0.1" value="3"></label>
     <label>Outline of the head <select id="outline"><option value="on">drawn</option><option value="off">left out, the code makes the shape</option></select></label>
     <label>Withheld lines <select id="redact"><option value="off">off</option><option value="on">some lines hatched out</option></select></label>

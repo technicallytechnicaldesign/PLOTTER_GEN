@@ -43,7 +43,6 @@ button { font-family:var(--font-mono); font-size:0.78rem; background:var(--page)
 button:hover { border-color:var(--accent); }
 button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
 .hint { color:var(--muted); font-size:0.76rem; line-height:1.45; margin:6px 0 0; }
-.only { display:none; }
 main { min-width:0; }
 .paper { background:var(--grid); border:1px solid var(--grid); border-radius:var(--radius); display:flex; justify-content:center; padding:12px; }
 canvas { display:block; max-width:100%; height:auto; }
@@ -62,6 +61,8 @@ aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
 aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 aside fieldset.dock-folded > :not(legend) { display:none !important; }
 aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
 .dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
 .dock-bar span { margin-right:auto; font-style:italic; }
 .dock-bar button { font-size:0.76rem; padding:1px 8px; }
@@ -114,6 +115,7 @@ aside fieldset.dock-folded { padding-bottom:0; }
     bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
     bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
     aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
     // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
     const frame = main.firstElementChild;
     if (!frame) return;
@@ -132,6 +134,53 @@ aside fieldset.dock-folded { padding-bottom:0; }
     frame.appendChild(btn);
     apply();
     matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();</script>
@@ -154,38 +203,38 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Module (mm, before fitting) <output id="o-mod"></output><input type="range" id="mod" min="1" max="6" step="0.5" value="4"></label>
     <label>Thickness (in modules) <output id="o-thick"></output><input type="range" id="thick" min="0.5" max="8" step="0.25" value="2.5"></label>
     <label>Compound stacks <select id="stack"><option value="off">off</option><option value="two">up to 2 gears per axle</option><option value="three">up to 3 gears per axle</option></select></label>
-    <label>Stacked axles (extra pairs) <output id="o-stackn"></output><input type="range" id="stackn" min="1" max="8" step="1" value="3"></label>
+    <label data-when="stack!=off">Stacked axles (extra pairs) <output id="o-stackn"></output><input type="range" id="stackn" min="1" max="8" step="1" value="3"></label>
     <label>Zoom <output id="o-zoom"></output><input type="range" id="zoom" min="0.3" max="2.5" step="0.05" value="0.55"></label>
   </fieldset>
   <fieldset><legend>03 camera and light</legend>
     <label>Turn (deg) <output id="o-az"></output><input type="range" id="az" min="-180" max="180" step="1" value="20"></label>
     <label>Height (deg) <output id="o-el"></output><input type="range" id="el" min="12" max="90" step="1" value="38"></label>
     <label>Lens (0 = flat, low = wide) <output id="o-lens"></output><input type="range" id="lens" min="0" max="12" step="0.1" value="3"></label>
-    <label>Light from (deg) <output id="o-la"></output><input type="range" id="la" min="-180" max="180" step="1" value="-130"></label>
-    <label>Light height (deg) <output id="o-le"></output><input type="range" id="le" min="12" max="80" step="1" value="40"></label>
+    <label data-when="shadow=on or ink!=outline">Light from (deg) <output id="o-la"></output><input type="range" id="la" min="-180" max="180" step="1" value="-130"></label>
+    <label data-when="shadow=on or ink!=outline">Light height (deg) <output id="o-le"></output><input type="range" id="le" min="12" max="80" step="1" value="40"></label>
     <label>Floor shadows <select id="shadow"><option value="off">off</option><option value="on">on</option></select></label>
     <label>Gear shading <select id="ink"><option value="outline">outline only</option><option value="lines">hatch</option><option value="dots">dots on the tops</option><option value="full">hatch and dots</option></select></label>
   </fieldset>
   <fieldset><legend>04 floor</legend>
     <label>Pattern <select id="bg"><option value="rays">spark rays</option><option value="rings">reverb rings</option><option value="ripple">ripple interference</option><option value="stream">stream round the gears</option><option value="truchet">ribbon Truchet tiles</option><option value="none">bare floor</option></select></label>
     <label>Layered with (own pen) <select id="bg2"><option value="none">nothing</option><option value="rays">spark rays</option><option value="rings">reverb rings</option><option value="ripple">ripple interference</option><option value="stream">stream round the gears</option><option value="truchet">ribbon Truchet tiles</option></select></label>
-    <label>Extent <select id="extent"><option value="organic">organic, within reach of the gears</option><option value="floor">the whole floor</option></select></label>
-    <label>Line spacing near the gears (mm on paper) <output id="o-sp"></output><input type="range" id="sp" min="0.5" max="4" step="0.05" value="1.2"></label>
-    <label>Reach (mm on paper) <output id="o-reach"></output><input type="range" id="reach" min="8" max="160" step="1" value="70"></label>
-    <label>Tightest line gap allowed (mm) <output id="o-mingap"></output><input type="range" id="mingap" min="0.3" max="1.5" step="0.05" value="0.5"></label>
-    <label class="only" data-bg="rings">Rings open up by <output id="o-ramp"></output><input type="range" id="ramp" min="1" max="6" step="0.1" value="3"></label>
-    <label class="only" data-bg="rays">Rays <select id="dash"><option value="dashed">dashed</option><option value="solid">solid</option><option value="dotted">dotted</option></select></label>
-    <label class="only" data-bg="rays">Rays per tooth <output id="o-rpt"></output><input type="range" id="rpt" min="1" max="3" step="1" value="1"></label>
-    <label class="only" data-bg="ripple">Wavelength (x spacing) <output id="o-wave"></output><input type="range" id="wave" min="2" max="12" step="0.25" value="4"></label>
-    <label class="only" data-bg="ripple">Fringes <output id="o-fr"></output><input type="range" id="fr" min="1" max="3" step="1" value="2"></label>
-    <label class="only" data-bg="stream">Flow direction (deg) <output id="o-fdir"></output><input type="range" id="fdir" min="-180" max="180" step="1" value="0"></label>
-    <label class="only" data-bg="stream">Swirl from the spin <output id="o-swirl"></output><input type="range" id="swirl" min="0" max="3" step="0.05" value="0.8"></label>
-    <label class="only" data-bg="truchet">Tile size (mm on paper) <output id="o-tile"></output><input type="range" id="tile" min="4" max="40" step="0.5" value="12"></label>
-    <label class="only" data-bg="truchet">Strands per ribbon <output id="o-strands"></output><input type="range" id="strands" min="1" max="6" step="1" value="3"></label>
+    <label data-when="bg!=none or bg2!=none">Extent <select id="extent"><option value="organic">organic, within reach of the gears</option><option value="floor">the whole floor</option></select></label>
+    <label data-when="bg!=none or bg2!=none">Line spacing near the gears (mm on paper) <output id="o-sp"></output><input type="range" id="sp" min="0.5" max="4" step="0.05" value="1.2"></label>
+    <label data-when="bg!=none or bg2!=none">Reach (mm on paper) <output id="o-reach"></output><input type="range" id="reach" min="8" max="160" step="1" value="70"></label>
+    <label data-when="bg!=none or bg2!=none">Tightest line gap allowed (mm) <output id="o-mingap"></output><input type="range" id="mingap" min="0.3" max="1.5" step="0.05" value="0.5"></label>
+    <label data-when="bg=rings or bg2=rings">Rings open up by <output id="o-ramp"></output><input type="range" id="ramp" min="1" max="6" step="0.1" value="3"></label>
+    <label data-when="bg=rays or bg2=rays">Rays <select id="dash"><option value="dashed">dashed</option><option value="solid">solid</option><option value="dotted">dotted</option></select></label>
+    <label data-when="bg=rays or bg2=rays">Rays per tooth <output id="o-rpt"></output><input type="range" id="rpt" min="1" max="3" step="1" value="1"></label>
+    <label data-when="bg=ripple or bg2=ripple">Wavelength (x spacing) <output id="o-wave"></output><input type="range" id="wave" min="2" max="12" step="0.25" value="4"></label>
+    <label data-when="bg=ripple or bg2=ripple">Fringes <output id="o-fr"></output><input type="range" id="fr" min="1" max="3" step="1" value="2"></label>
+    <label data-when="bg=stream or bg2=stream">Flow direction (deg) <output id="o-fdir"></output><input type="range" id="fdir" min="-180" max="180" step="1" value="0"></label>
+    <label data-when="bg=stream or bg2=stream">Swirl from the spin <output id="o-swirl"></output><input type="range" id="swirl" min="0" max="3" step="0.05" value="0.8"></label>
+    <label data-when="bg=truchet or bg2=truchet">Tile size (mm on paper) <output id="o-tile"></output><input type="range" id="tile" min="4" max="40" step="0.5" value="12"></label>
+    <label data-when="bg=truchet or bg2=truchet">Strands per ribbon <output id="o-strands"></output><input type="range" id="strands" min="1" max="6" step="1" value="3"></label>
   </fieldset>
   <fieldset><legend>05 ink and paper</legend>
-    <label>Hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.8"></label>
-    <label>Halftone pitch (mm) <output id="o-dp"></output><input type="range" id="dp" min="1" max="4" step="0.05" value="1.8"></label>
+    <label data-when="ink=full|lines">Hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.8"></label>
+    <label data-when="ink=full|dots">Halftone pitch (mm) <output id="o-dp"></output><input type="range" id="dp" min="1" max="4" step="0.05" value="1.8"></label>
     <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
     <label>Frame <select id="frame"><option value="off">none (4 mm margin)</option><option value="on">drawn panel frame</option></select></label>
     <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
@@ -765,8 +814,6 @@ function toSVG(r, only = null, ticks = false) {
 
 function sync() {
   for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
-  const on = [$("bg").value, $("bg2").value];
-  document.querySelectorAll(".only").forEach(el => el.style.display = on.includes(el.dataset.bg) ? "grid" : "none");
 }
 let pending = 0;
 function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }

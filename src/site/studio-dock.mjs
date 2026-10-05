@@ -2,6 +2,10 @@
 //   Desktop: the controls column scrolls on its own and the drawing is sized to fit the window, so it never scrolls away.
 //   Phone:   the drawing comes first and stays pinned to the top (size button cycles S / M / L / unpinned), controls below.
 //   Both:    every control group folds from its legend, with Fold all / Open all; folds are remembered per studio.
+//   Relevance: an aside element with data-when="clause; clause" shows only while every clause holds, so each studio
+//     offers just the controls its current base uses. Clauses: kind=spoked|mix (one of), fill!=none (none of),
+//     share&gt;0 / n&lt;3 (numeric; write > and < as entities), labels / !labels (ticked, or set: not "", 0, none, off),
+//     and "a or b" for either. A group with every control hidden hides too. Values stay put; "Show unused" reveals them dimmed.
 // The snippet sits in <head> between markers, as a <script id=...> so the headless harnesses (studio_export.mjs,
 // studio-vm.mjs), which slice the last bare <script> tag, never see it.
 //   node 02_WORK/site/studio-dock.mjs            (inject or refresh the dock in every 04_DOCS/*-studio.html)
@@ -19,6 +23,8 @@ aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
 aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 aside fieldset.dock-folded > :not(legend) { display:none !important; }
 aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
 .dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
 .dock-bar span { margin-right:auto; font-style:italic; }
 .dock-bar button { font-size:0.76rem; padding:1px 8px; }
@@ -72,6 +78,7 @@ function dock() {
     bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
     bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
     aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
     // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
     const frame = main.firstElementChild;
     if (!frame) return;
@@ -90,6 +97,53 @@ function dock() {
     frame.appendChild(btn);
     apply();
     matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 }

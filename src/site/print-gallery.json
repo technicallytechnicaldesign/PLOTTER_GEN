@@ -384,6 +384,141 @@
         "nsfw": false,
         "swearing": false
       }
+    },
+    {
+      "id": "paper-peg-01",
+      "room": "paper",
+      "title": "On the peg line 01",
+      "photo": null,
+      "frame": {
+        "width": 120,
+        "height": 230
+      },
+      "hang": "peg",
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-peg-02",
+      "room": "paper",
+      "title": "On the peg line 02",
+      "photo": null,
+      "frame": {
+        "width": 150,
+        "height": 180
+      },
+      "hang": "peg",
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-peg-03",
+      "room": "paper",
+      "title": "On the peg line 03",
+      "photo": null,
+      "frame": {
+        "width": 110,
+        "height": 250
+      },
+      "hang": "peg",
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-peg-04",
+      "room": "paper",
+      "title": "On the peg line 04",
+      "photo": null,
+      "frame": {
+        "width": 140,
+        "height": 200
+      },
+      "hang": "peg",
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "paper-peg-05",
+      "room": "paper",
+      "title": "On the peg line 05",
+      "photo": null,
+      "frame": {
+        "width": 130,
+        "height": 220
+      },
+      "hang": "peg",
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "mechanical-box-01",
+      "room": "mechanical",
+      "title": "3D print 01 (box)",
+      "photo": null,
+      "hang": "plinth",
+      "box": {
+        "width": 140,
+        "height": 90,
+        "depth": 110
+      },
+      "faces": {
+        "front": null,
+        "back": null,
+        "left": null,
+        "right": null,
+        "top": null
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "collected-box-01",
+      "room": "collected",
+      "title": "3D print 02 (tall box)",
+      "photo": null,
+      "hang": "plinth",
+      "box": {
+        "width": 90,
+        "height": 150,
+        "depth": 90
+      },
+      "faces": {
+        "front": null,
+        "back": null,
+        "left": null,
+        "right": null,
+        "top": null
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
     }
   ]
 }

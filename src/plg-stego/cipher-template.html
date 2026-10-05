@@ -105,7 +105,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="railfence">rail fence</option>
       <option value="route">route</option>
     </select></label>
-    <label>Cipher key <input type="text" id="ckey" value="3" maxlength="24"></label>
+    <label data-when="cipher!=none">Cipher key <input type="text" id="ckey" value="3" maxlength="24"></label>
     <p class="hint">Pigpen and constellations draw letters, so they ignore "bits as". Classical ciphers are historical puzzles, not modern security.</p>
   </fieldset>
   <fieldset><legend>Method</legend>
@@ -120,42 +120,42 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="automaton">reversible automaton</option>
       <option value="knots">knotwork</option>
     </select></label>
-    <label data-for="truchet">Tiles <select id="tiles">
+    <label data-when="method=truchet">Tiles <select id="tiles">
       <option value="arcs">quarter arcs (1 bit)</option>
       <option value="triangles">Truchet 1704 triangles (2 bits)</option>
       <option value="diag">10 PRINT diagonals (1 bit)</option>
       <option value="ribbons">ribbons (1 bit)</option>
     </select></label>
-    <label data-for="maze">Walls <select id="walls">
+    <label data-when="method=maze">Walls <select id="walls">
       <option value="line">single line, dead ends shaded</option>
       <option value="bands">bold shaded walls</option>
     </select></label>
-    <label data-for="hilbert">A 1 is drawn as <select id="mark">
+    <label data-when="method=hilbert">A 1 is drawn as <select id="mark">
       <option value="wave">a wave</option>
       <option value="loop">a loop</option>
       <option value="zigzag">a zigzag</option>
     </select></label>
-    <label data-for="automaton">Cells <select id="cells">
+    <label data-when="method=automaton">Cells <select id="cells">
       <option value="squares">squares</option>
       <option value="dots">dots</option>
       <option value="diamonds">diamonds</option>
     </select></label>
-    <label data-for="automaton">Rule <select id="rule">
+    <label data-when="method=automaton">Rule <select id="rule">
       <option value="30">30 (chaos)</option>
       <option value="150">150 (Sierpinski lace)</option>
       <option value="90">90 (Sierpinski)</option>
       <option value="110">110 (gliders)</option>
     </select></label>
-    <label data-for="ridges">Ridge noise <output id="o-noise"></output><input type="range" id="noise" min="0" max="1" step="0.05" value="0.5"></label>
-    <label data-for="stars">Polybius keyword <input type="text" id="pkey" value="" maxlength="20"></label>
-    <label data-for="truchet maze ridges pigpen automaton knots">Grain: at least this many across <output id="o-size"></output><input type="range" id="size" min="4" max="48" step="1" value="22"></label>
+    <label data-when="method=ridges">Ridge noise <output id="o-noise"></output><input type="range" id="noise" min="0" max="1" step="0.05" value="0.5"></label>
+    <label data-when="method=stars">Polybius keyword <input type="text" id="pkey" value="" maxlength="20"></label>
+    <label data-when="method=truchet|maze|ridges|pigpen|automaton|knots">Grain: at least this many across <output id="o-size"></output><input type="range" id="size" min="4" max="48" step="1" value="22"></label>
   </fieldset>
   <fieldset><legend>Hiding</legend>
     <label>Message <select id="hide">
       <option value="open">in reading order</option>
       <option value="scatter">scattered among noise</option>
     </select></label>
-    <label>Noise per message cell <select id="density">
+    <label data-when="hide=scatter">Noise per message cell <select id="density">
       <option value="2">1 in 2 cells carries</option>
       <option value="3">1 in 3</option>
       <option value="4">1 in 4</option>
@@ -175,8 +175,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="spiral">spiral</option>
       <option value="none">outline only</option>
     </select></label>
-    <label>Pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="3" step="0.05" value="0.7"></label>
-    <label>Angle (deg) <output id="o-angle"></output><input type="range" id="angle" min="-90" max="90" step="1" value="45"></label>
+    <label data-when="fill!=none">Pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="3" step="0.05" value="0.7"></label>
+    <label data-when="fill!=none">Angle (deg) <output id="o-angle"></output><input type="range" id="angle" min="-90" max="90" step="1" value="45"></label>
   </fieldset>
   <fieldset><legend>Caption and key</legend>
     <label>Below the drawing <select id="caption">
@@ -186,8 +186,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="code">code only</option>
       <option value="none">nothing</option>
     </select></label>
-    <label>Letter height (mm) <output id="o-tsize"></output><input type="range" id="tsize" min="3" max="14" step="0.5" value="6"></label>
-    <label>Text pen preview <select id="tpen">
+    <label data-when="caption!=none">Letter height (mm) <output id="o-tsize"></output><input type="range" id="tsize" min="3" max="14" step="0.5" value="6"></label>
+    <label data-when="caption!=none">Text pen preview <select id="tpen">
       <option value="#0b0f14">black</option>
       <option value="#c23b3b">red</option>
       <option value="#0e9a63">green</option>
@@ -197,7 +197,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="off">off</option>
       <option value="on">on (rings; the way through a maze; ticks at the automaton's message rows)</option>
     </select></label>
-    <label>Answer key pen preview <select id="rpen">
+    <label data-when="reveal=on">Answer key pen preview <select id="rpen">
       <option value="#c23b3b">red</option>
       <option value="#1f7dc2">blue</option>
       <option value="#0e9a63">green</option>
@@ -218,7 +218,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="mount">under a mount: marks outside the window, hidden when framed</option>
       <option value="corners">corners only: settings on a label for the back</option>
     </select></label>
-    <label>Mount window, mm in from the edge (for "under a mount") <output id="o-mount"></output><input type="range" id="mount" min="18" max="50" step="1" value="25"></label>
+    <label data-when="marks=mount">Mount window, mm in from the edge (for "under a mount") <output id="o-mount"></output><input type="range" id="mount" min="18" max="50" step="1" value="25"></label>
     <label>Corner ticks <select id="ticks">
       <option value="split">in split files only</option>
       <option value="on">in every file</option>

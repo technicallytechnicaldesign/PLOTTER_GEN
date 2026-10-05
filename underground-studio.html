@@ -58,6 +58,8 @@ aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
 aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 aside fieldset.dock-folded > :not(legend) { display:none !important; }
 aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
 .dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
 .dock-bar span { margin-right:auto; font-style:italic; }
 .dock-bar button { font-size:0.76rem; padding:1px 8px; }
@@ -110,6 +112,7 @@ aside fieldset.dock-folded { padding-bottom:0; }
     bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
     bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
     aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
     // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
     const frame = main.firstElementChild;
     if (!frame) return;
@@ -129,6 +132,53 @@ aside fieldset.dock-folded { padding-bottom:0; }
     apply();
     matchMedia("(max-width:760px)").addEventListener("change", apply);
   };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();</script>
 <!-- studio-dock:end -->
@@ -147,23 +197,23 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="21"></label>
     <div class="row"><button id="reroll">Reroll seed</button></div>
     <label>Cut <select id="cut"><option value="straight">straight slice</option><option value="monolith">monolith block</option><option value="core">core samples</option></select></label>
-    <label>Cores (core samples only) <output id="o-cores"></output><input type="range" id="cores" min="2" max="5" step="1" value="4"></label>
+    <label data-when="cut=core">Cores (core samples only) <output id="o-cores"></output><input type="range" id="cores" min="2" max="5" step="1" value="4"></label>
     <label>Ground line, share of page from the top <output id="o-ground"></output><input type="range" id="ground" min="0.22" max="0.38" step="0.01" value="0.3"></label>
     <label>Soil layers <output id="o-layers"></output><input type="range" id="layers" min="3" max="6" step="1" value="4"></label>
     <label>Pinched layers <output id="o-pinch"></output><input type="range" id="pinch" min="0" max="1" step="0.05" value="0.5"></label>
   </fieldset>
   <fieldset><legend>Above the ground</legend>
-    <label>Tree <select id="tree"><option value="none">none</option><option value="oak">spreading tree</option><option value="post">fence post</option></select></label>
-    <label>Tree size <output id="o-treesize"></output><input type="range" id="treesize" min="0.6" max="1.2" step="0.05" value="0.9"></label>
-    <label>Leaves <output id="o-foliage"></output><input type="range" id="foliage" min="0" max="1" step="0.05" value="0.6"></label>
+    <label data-when="cut!=core">Tree <select id="tree"><option value="none">none</option><option value="oak">spreading tree</option><option value="post">fence post</option></select></label>
+    <label data-when="cut!=core; tree!=none">Tree size <output id="o-treesize"></output><input type="range" id="treesize" min="0.6" max="1.2" step="0.05" value="0.9"></label>
+    <label data-when="cut!=core; tree=oak">Leaves <output id="o-foliage"></output><input type="range" id="foliage" min="0" max="1" step="0.05" value="0.6"></label>
     <label>Grass tufts <output id="o-grass"></output><input type="range" id="grass" min="0" max="40" step="1" value="24"></label>
     <label>Wildflowers <output id="o-flowers"></output><input type="range" id="flowers" min="0" max="24" step="1" value="9"></label>
     <label>Mushrooms <output id="o-mush"></output><input type="range" id="mush" min="0" max="14" step="1" value="3"></label>
-    <label>Mushroom spread (mm) <output id="o-mushspread"></output><input type="range" id="mushspread" min="4" max="30" step="1" value="12"></label>
+    <label data-when="mush&gt;0">Mushroom spread (mm) <output id="o-mushspread"></output><input type="range" id="mushspread" min="4" max="30" step="1" value="12"></label>
   </fieldset>
   <fieldset><legend>Below the ground</legend>
     <label>Stones <output id="o-stones"></output><input type="range" id="stones" min="0" max="30" step="1" value="10"></label>
-    <label>Biggest stone radius (mm) <output id="o-stonesize"></output><input type="range" id="stonesize" min="3" max="12" step="0.5" value="6.5"></label>
+    <label data-when="stones&gt;0">Biggest stone radius (mm) <output id="o-stonesize"></output><input type="range" id="stonesize" min="3" max="12" step="0.5" value="6.5"></label>
     <label>Root growth <output id="o-roots"></output><input type="range" id="roots" min="0" max="1" step="0.05" value="0.6"></label>
     <label>Mycelium <output id="o-myc"></output><input type="range" id="myc" min="0" max="1" step="0.05" value="0.35"></label>
     <label>Colour pen draws <select id="colourpen"><option value="mycelium">the mycelium</option><option value="water">the water table</option></select></label>
