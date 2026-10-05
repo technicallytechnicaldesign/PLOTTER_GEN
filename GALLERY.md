@@ -1,8 +1,8 @@
 # Print gallery
 
-**UID:** PLG-GAL-1AFF2EBC · **Version:** 3 · 2026-10-05
+**UID:** PLG-GAL-1AFF2EBC · **Version:** 4 · 2026-10-05
 
-Source is in `src/site/` (`gallery.js`, `gallery-world.js`, `gallery.css`, `print-gallery.json`). `site/` is the published copy. Check changes with `node src/site/gallery-world-test.mjs`.
+Source is in `src/site/` (`gallery.js`, `gallery-world.js`, `gallery-gl.js`, `gallery.css`, `print-gallery.json`, and three.js r170 bundled as `three.module.min.js`). `site/` is the published copy. Check changes with `node src/site/gallery-world-test.mjs`.
 
 ## v1 changes
 
@@ -30,6 +30,17 @@ Source is in `src/site/` (`gallery.js`, `gallery-world.js`, `gallery.css`, `prin
 - **A true stop.** Released movement used to decay towards zero without reaching it, so the scene was redrawn every frame, forever, at sub-pixel offsets. It now snaps to zero, and the camera only redraws when you move.
 - **Live site.** These changes are on the feature branch. GitHub Pages serves `main`, so they show on the live site only once merged.
 
+## v4: WebGL view (replaces the CSS 3D view)
+
+v1 to v3 drew the rooms with CSS 3D. That has no depth buffer: each browser guesses which layer is in front, and phones guessed wrong (flicker, then phantom walls and missing pieces). Headless Chromium guesses right, so it could not be checked here.
+
+- **`gallery-gl.js` draws the walkable view with three.js.** The depth buffer gives the same answer on every device. It reads the same layout as before (`gallery-world.js`: rooms, `hang()`, the peg line, plinths and collisions).
+- **Paper look kept.** Walls, floors and ceilings are textured planes with pen outlines. Frames, plaques, signs, peg pieces and box faces are drawn on canvases. Nothing is lit.
+- **Taps and clicks** go through raycasting: prints open the close-up, doorways walk you in, and walls block.
+- **Keyboard and screen readers:** `#scene` is now a hidden list of every door and print. The focused entry shows in the top-left of the view.
+- **Redraws:** the view redraws when you move, or while a turning box or swaying peg piece is within 2200px.
+- The v3 tiles and culling are gone; WebGL needs neither. The close-up turntable is still one CSS cube, which is safe.
+
 ## Later: photogrammetry
 
-Scan the object (RealityScan, Polycam or Meshroom) and export a GLB model. The walkable gallery is CSS 3D, not WebGL, so the model would open in the inspection dialog through `<model-viewer>` (orbit, zoom, AR on phones). The plinth keeps showing the face photos as its stand-in.
+Scan the object (RealityScan, Polycam or Meshroom) and export a GLB model. The view is three.js now, so the model can stand on the plinth itself (GLTFLoader) in place of the face-photo box. `<model-viewer>` still suits the close-up (orbit, zoom, AR on phones).

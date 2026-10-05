@@ -65,7 +65,7 @@ export async function buildSite({repo,here,pages}) {
   bakePuppets({catalogue,repo,here});
   fs.writeFileSync(path.join(out,'catalogue.json'),JSON.stringify(catalogue));
   fs.writeFileSync(path.join(out,'taxonomy.json'),JSON.stringify({shelves,poles,edges}));
-  for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','exhibit.js','gallery.js','gallery-world.js','print-gallery.json','gallery.css','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
+  for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','exhibit.js','gallery.js','gallery-world.js','gallery-gl.js','three.module.min.js','print-gallery.json','gallery.css','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
   fs.copyFileSync(path.join(here,'site/gallery.html'),path.join(out,'gallery.html'));
   const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
   const fallback=pages.map(([p,,t,d])=>`<li><a href="${escape(p)}">${escape(t)}</a>: ${escape(d)}</li>`).join('\n');
