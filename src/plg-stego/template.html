@@ -98,7 +98,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="geometric3">motif letters: geometric 3 x 3</option>
       <option value="geometric4">motif letters: geometric 4 x 4</option>
     </select></label>
-    <label>Five-bit error checks (chart layouts) <select id="check">
+    <label data-when="enc=fivebit">Five-bit error checks (chart layouts) <select id="check">
       <option value="none">none</option>
       <option value="parity">parity, separators, checksum</option>
       <option value="hamming">Hamming, separators, checksum</option>
@@ -111,7 +111,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="railfence">rail fence</option>
       <option value="route">route</option>
     </select></label>
-    <label>Cipher key <input type="text" id="ckey" value="3" maxlength="24"></label>
+    <label data-when="cipher!=none">Cipher key <input type="text" id="ckey" value="3" maxlength="24"></label>
     <p class="hint">Classical ciphers are historical puzzles, not modern security.</p>
   </fieldset>
   <fieldset><legend>Layout and hiding</legend>
@@ -137,9 +137,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="on">one stitch round</option>
       <option value="off">none</option>
     </select></label>
-    <label>Width in stitches (chart, tape) <output id="o-width"></output><input type="range" id="width" min="5" max="60" step="1" value="24"></label>
-    <label>Letters per line (columns) <output id="o-perline"></output><input type="range" id="perline" min="4" max="40" step="1" value="22"></label>
-    <label>Scatter density <select id="density">
+    <label data-when="hide=chart|tape">Width in stitches (chart, tape) <output id="o-width"></output><input type="range" id="width" min="5" max="60" step="1" value="24"></label>
+    <label data-when="hide=columns">Letters per line (columns) <output id="o-perline"></output><input type="range" id="perline" min="4" max="40" step="1" value="22"></label>
+    <label data-when="hide=scatter">Scatter density <select id="density">
       <option value="3">1 cell in 3 carries</option>
       <option value="2">1 cell in 2</option>
       <option value="4">1 cell in 4</option>
@@ -160,7 +160,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="on">on</option>
       <option value="off">off</option>
     </select></label>
-    <label>Fabric gaps (stitches) <select id="gaps">
+    <label data-when="look=stitches">Fabric gaps (stitches) <select id="gaps">
       <option value="shaded">shaded</option>
       <option value="plain">plain</option>
     </select></label>
@@ -179,7 +179,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="none">outline only</option>
     </select></label>
     <label>Pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="3" step="0.05" value="0.6"></label>
-    <label>Angle (deg) <output id="o-angle"></output><input type="range" id="angle" min="-90" max="90" step="1" value="45"></label>
+    <label data-when="fill!=none or offfill=light">Angle (deg) <output id="o-angle"></output><input type="range" id="angle" min="-90" max="90" step="1" value="45"></label>
     <label>Blank cells <select id="offfill">
       <option value="none">left bare</option>
       <option value="light">light fill</option>
@@ -195,8 +195,8 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="key">parcel key (hidden layouts)</option>
       <option value="none">nothing</option>
     </select></label>
-    <label>Letter height (mm) <output id="o-tsize"></output><input type="range" id="tsize" min="3" max="14" step="0.5" value="6"></label>
-    <label>Text pen preview <select id="tpen">
+    <label data-when="caption!=none">Letter height (mm) <output id="o-tsize"></output><input type="range" id="tsize" min="3" max="14" step="0.5" value="6"></label>
+    <label data-when="caption!=none">Text pen preview <select id="tpen">
       <option value="#26200f">black</option>
       <option value="#b03a30">red</option>
       <option value="#275e39">green</option>
@@ -206,7 +206,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="off">off</option>
       <option value="on">ring every message cell</option>
     </select></label>
-    <label>Answer key pen preview <select id="rpen">
+    <label data-when="reveal=on">Answer key pen preview <select id="rpen">
       <option value="#b03a30">red</option>
       <option value="#1f4e8c">blue</option>
       <option value="#275e39">green</option>
@@ -227,7 +227,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; }
       <option value="mount">under a mount: marks outside the window, hidden when framed</option>
       <option value="corners">corners only: settings on a label for the back</option>
     </select></label>
-    <label>Mount window, mm in from the edge (for "under a mount") <output id="o-mount"></output><input type="range" id="mount" min="18" max="50" step="1" value="25"></label>
+    <label data-when="marks=mount">Mount window, mm in from the edge (for "under a mount") <output id="o-mount"></output><input type="range" id="mount" min="18" max="50" step="1" value="25"></label>
     <label>Corner ticks <select id="ticks">
       <option value="split">in split files only</option>
       <option value="on">in every file</option>

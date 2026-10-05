@@ -58,6 +58,8 @@ aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
 aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 aside fieldset.dock-folded > :not(legend) { display:none !important; }
 aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
 .dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
 .dock-bar span { margin-right:auto; font-style:italic; }
 .dock-bar button { font-size:0.76rem; padding:1px 8px; }
@@ -110,6 +112,7 @@ aside fieldset.dock-folded { padding-bottom:0; }
     bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
     bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
     aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
     // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
     const frame = main.firstElementChild;
     if (!frame) return;
@@ -128,6 +131,53 @@ aside fieldset.dock-folded { padding-bottom:0; }
     frame.appendChild(btn);
     apply();
     matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();</script>
@@ -151,32 +201,32 @@ aside fieldset.dock-folded { padding-bottom:0; }
   <fieldset><legend>The body</legend>
     <label>Flesh <select id="flesh"><option value="faint">faint: soft grey outline, sparse broken hatching</option><option value="full">full: pen outline and hatching</option><option value="ghost">ghost: a dotted outline only</option></select></label>
     <label>Network <output id="o-network"></output><input type="range" id="network" min="0" max="1" step="0.05" value="0.4"></label>
-    <label>Kind of network <select id="netkind"><option value="circuit">circuit traces</option><option value="lace">hex lace</option><option value="veins">veins</option></select></label>
-    <label>Network pen <select id="netpen"><option value="colour">colour pen</option><option value="line">line pen</option></select></label>
+    <label data-when="network&gt;0">Kind of network <select id="netkind"><option value="circuit">circuit traces</option><option value="lace">hex lace</option><option value="veins">veins</option></select></label>
+    <label data-when="network&gt;0">Network pen <select id="netpen"><option value="colour">colour pen</option><option value="line">line pen</option></select></label>
     <label>Skin texture <output id="o-texture"></output><input type="range" id="texture" min="0" max="1" step="0.05" value="0.3"></label>
     <p class="hint">Every sheet. The network grows outward from the augments and ports, so at 0 there is none and at 1 it covers the whole body. Texture goes from fine stipple, through cross-contour rings, to stitched graft seams at the top end.</p>
   </fieldset>
-  <fieldset><legend>Patent</legend>
+  <fieldset data-when="view=patent"><legend>Patent</legend>
     <label>Subject <select id="subject"><option value="arm">forearm and hand</option><option value="head">head and shoulders</option><option value="spine">back, with spinal implant</option><option value="whole">the whole body</option></select></label>
     <label>Augment level <output id="o-aug"></output><input type="range" id="aug" min="0" max="1" step="0.05" value="0.6"></label>
     <label>Figures <select id="figs"><option value="one">one: assembled</option><option value="two">two: assembled, then exploded</option></select></label>
     <p class="hint">Patent sheet only. With two figures the first shows the body and the second pulls the augments out along dashed lines. Every numeral on the drawing is in the parts list.</p>
   </fieldset>
-  <fieldset><legend>Replacement</legend>
+  <fieldset data-when="view=theseus"><legend>Replacement</legend>
     <label>Fraction replaced <output id="o-replaced"></output><input type="range" id="replaced" min="0" max="1" step="0.01" value="0.5"></label>
     <label>Row of stages beneath <select id="strip"><option value="on">on</option><option value="off">off</option></select></label>
-    <label>Stages in the row <output id="o-stages"></output><input type="range" id="stages" min="5" max="9" step="1" value="7"></label>
+    <label data-when="strip=on">Stages in the row <output id="o-stages"></output><input type="range" id="stages" min="5" max="9" step="1" value="7"></label>
     <p class="hint">Replacement sheet only. Parts go from the extremities inwards, hands and feet first, and the head is last.</p>
   </fieldset>
-  <fieldset><legend>Clones</legend>
+  <fieldset data-when="view=clones"><legend>Clones</legend>
     <label>Layout <select id="layout"><option value="grid">grid</option><option value="lineage">lineage (family tree)</option></select></label>
-    <label>Generations (lineage) <output id="o-gens"></output><input type="range" id="gens" min="3" max="5" step="1" value="4"></label>
+    <label data-when="layout=lineage">Generations (lineage) <output id="o-gens"></output><input type="range" id="gens" min="3" max="5" step="1" value="4"></label>
     <label>Who <select id="who"><option value="bodies">whole bodies</option><option value="heads">heads</option></select></label>
-    <label>Rows <output id="o-rows"></output><input type="range" id="rows" min="1" max="6" step="1" value="3"></label>
-    <label>Columns <output id="o-cols"></output><input type="range" id="cols" min="2" max="10" step="1" value="5"></label>
-    <label>Vessel <select id="vessel"><option value="tube">glass tube</option><option value="tray">drawer</option><option value="none">none</option></select></label>
+    <label data-when="layout=grid">Rows <output id="o-rows"></output><input type="range" id="rows" min="1" max="6" step="1" value="3"></label>
+    <label data-when="layout=grid">Columns <output id="o-cols"></output><input type="range" id="cols" min="2" max="10" step="1" value="5"></label>
+    <label data-when="layout=grid">Vessel <select id="vessel"><option value="tube">glass tube</option><option value="tray">drawer</option><option value="none">none</option></select></label>
     <label>Divergence <output id="o-drift"></output><input type="range" id="drift" min="0" max="1" step="0.05" value="0.35"></label>
-    <label>Mark one clone <select id="mark"><option value="original">the original</option><option value="defect">a defect</option><option value="none">none</option></select></label>
+    <label data-when="layout=grid">Mark one clone <select id="mark"><option value="original">the original</option><option value="defect">a defect</option><option value="none">none</option></select></label>
     <p class="hint">Clone sheet only. Divergence is how far the clones have drifted: 0 identical, 0.3 posture and proportions, 0.6 each on its own augmentation path, 1 wildly diverged. In the lineage layout each generation forks and children keep what their parents grew; rows and columns set the grid, columns also cap how wide a generation may get.</p>
   </fieldset>
   <fieldset><legend>Drawing</legend>

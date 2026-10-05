@@ -58,6 +58,8 @@ aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
 aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 aside fieldset.dock-folded > :not(legend) { display:none !important; }
 aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
 .dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
 .dock-bar span { margin-right:auto; font-style:italic; }
 .dock-bar button { font-size:0.76rem; padding:1px 8px; }
@@ -110,6 +112,7 @@ aside fieldset.dock-folded { padding-bottom:0; }
     bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
     bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
     aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
     // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
     const frame = main.firstElementChild;
     if (!frame) return;
@@ -129,6 +132,53 @@ aside fieldset.dock-folded { padding-bottom:0; }
     apply();
     matchMedia("(max-width:760px)").addEventListener("change", apply);
   };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();</script>
 <!-- studio-dock:end -->
@@ -145,10 +195,10 @@ aside fieldset.dock-folded { padding-bottom:0; }
   </fieldset>
   <fieldset><legend>The drawing</legend>
     <label>Sheet <select id="sheet"><option value="single">one piece in several views</option><option value="reduction">reduction sequence</option><option value="plate">finds plate (assorted)</option></select></label>
-    <label>Knapping method <select id="method"><option value="handaxe">handaxe (bifacial)</option><option value="blades">blade core with blades</option><option value="levallois">Levallois core and flake</option><option value="arrowhead">pressure-flaked arrowhead</option><option value="scraper">scraper on a flake</option><option value="flake">single struck flake</option></select></label>
+    <label data-when="sheet!=plate">Knapping method <select id="method"><option value="handaxe">handaxe (bifacial)</option><option value="blades">blade core with blades</option><option value="levallois">Levallois core and flake</option><option value="arrowhead">pressure-flaked arrowhead</option><option value="scraper">scraper on a flake</option><option value="flake">single struck flake</option></select></label>
     <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="14"></label>
     <div class="row"><button id="reroll">Reroll seed</button></div>
-    <label>Views <select id="views"><option value="all">all the standard views</option><option value="main">main views only</option></select></label>
+    <label data-when="sheet=single">Views <select id="views"><option value="all">all the standard views</option><option value="main">main views only</option></select></label>
     <label>Labels and scale bar <select id="labels"><option value="on">on</option><option value="off">off</option></select></label>
     <label>Colour pen <select id="colourpen"><option value="cortex">cortex stipple</option><option value="arrows">strike arrows and numbers</option><option value="off">off (all in black)</option></select></label>
     <label>Strike marks <select id="marks"><option value="none">none</option><option value="arrows">arrows showing the blow</option><option value="order">arrows and order of removal</option></select></label>
@@ -167,19 +217,19 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>Edge retouch <output id="o-retouch"></output><input type="range" id="retouch" min="0" max="1" step="0.05" value="0.6"></label>
     <label>Step and hinge fractures <output id="o-steps"></output><input type="range" id="steps" min="0" max="1" step="0.05" value="0.25"></label>
   </fieldset>
-  <fieldset data-for="handaxe"><legend>Handaxe</legend>
+  <fieldset data-when="sheet!=plate; method=handaxe"><legend>Handaxe</legend>
     <label>Form <select id="hform"><option value="ovate">ovate</option><option value="pointed">pointed</option><option value="ficron">ficron (long, hollow-sided)</option><option value="cordate">cordate</option></select></label>
   </fieldset>
-  <fieldset data-for="arrowhead"><legend>Arrowhead</legend>
+  <fieldset data-when="sheet!=plate; method=arrowhead"><legend>Arrowhead</legend>
     <label>Form <select id="aform"><option value="barbed">barbed and tanged</option><option value="leaf">leaf-shaped</option><option value="triangular">triangular</option></select></label>
   </fieldset>
-  <fieldset data-for="scraper"><legend>Scraper</legend>
+  <fieldset data-when="sheet!=plate; method=scraper"><legend>Scraper</legend>
     <label>Retouched edge <select id="sform"><option value="end">end scraper</option><option value="side">side scraper</option><option value="round">thumbnail (round)</option></select></label>
   </fieldset>
-  <fieldset data-for="reduction"><legend>Reduction sheet</legend>
+  <fieldset data-when="sheet=reduction"><legend>Reduction sheet</legend>
     <label>Panels <output id="o-panels"></output><input type="range" id="panels" min="4" max="6" step="1" value="6"></label>
   </fieldset>
-  <fieldset data-for="plate"><legend>Finds plate</legend>
+  <fieldset data-when="sheet=plate"><legend>Finds plate</legend>
     <label>Pieces on the plate <output id="o-items"></output><input type="range" id="items" min="6" max="12" step="1" value="9"></label>
   </fieldset>
   <fieldset><legend>Paper and pens</legend>
@@ -1327,8 +1377,6 @@ const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +
 let last = null;
 function sync() {
   for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
-  const keys = [$("sheet").value]; if ($("sheet").value !== "plate") keys.push($("method").value);
-  document.querySelectorAll("[data-for]").forEach(e => { e.style.display = e.getAttribute("data-for").split(" ").some(t => keys.includes(t)) ? "" : "none"; });
 }
 let pending = 0;
 function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
