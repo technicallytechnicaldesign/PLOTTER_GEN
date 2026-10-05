@@ -51,7 +51,7 @@ export const SOURCES = ["plg-stego/core.js", "plg-stego/marks.js", "plg-stego/st
   "publish-site.mjs", "site-index.template.html", "site-public-readme.md",
   "site/build.mjs", "site/local-only.mjs", "site/catalogue.mjs", "site/verify.mjs", "site/verify-sync.mjs", "site/README.md",
   "site/package.json", "site/package-lock.json", "site/site.js", "site/site.css", "site/bench.css",
-  "site/gallery.html", "site/exhibit.js", "site/gallery.js", "site/gallery-world.js", "site/gallery-world-test.mjs", "site/print-gallery.json", "site/gallery.css", "site/plot-animation.js", "site/hero-motion.js", "site/hero-motion-test.mjs", "site/puppet-assets.mjs", "site/launch.html", "site/launch.js", "site/studio-dock.mjs"];
+  "site/gallery.html", "site/exhibit.js", "site/gallery.js", "site/gallery-world.js", "site/gallery-gl.js", "site/three.module.min.js", "site/gallery-world-test.mjs", "site/print-gallery.json", "site/gallery.css", "site/plot-animation.js", "site/hero-motion.js", "site/hero-motion-test.mjs", "site/puppet-assets.mjs", "site/launch.html", "site/launch.js", "site/studio-dock.mjs"];
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   if (!fs.existsSync(repo)) throw new Error(`no repo at ${repo}`);
