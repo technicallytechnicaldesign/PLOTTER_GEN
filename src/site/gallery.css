@@ -64,3 +64,12 @@
 .cube-stage{width:100%;height:100%;display:grid;place-items:center;perspective:900px;cursor:grab;touch-action:none}
 .cube-stage:active{cursor:grabbing}
 .cube-stage .cube{position:relative;left:auto;top:auto;width:0;height:0}
+
+/* Held buttons and the view are controls, not text: no selection, callout or tap flash while a finger is down. */
+.walk-controls,.walk-controls button,.gallery-stage,#viewport,#map-panel{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.walk-controls button{touch-action:none}
+/* The folded map: a small button docked where the map panel opens. */
+#map-toggle{position:absolute;right:14px;top:14px;z-index:6;border:1px solid #8b999f;background:#fff;color:#343d43;padding:10px 14px;min-height:44px;font:12px var(--font-mono);box-shadow:0 2px 8px #0001}
+#map-toggle[hidden]{display:none}
+@media(max-width:700px){#map-toggle{right:6px;top:6px;padding:8px 12px}}
+.gallery-header #simplify{margin-left:auto}
