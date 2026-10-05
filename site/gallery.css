@@ -37,54 +37,30 @@
 #flat .flat-title{overflow-wrap:anywhere}
 #flat .flat-photo{grid-template-columns:minmax(0,1fr)}#flat .flat-reserved{min-width:0;justify-self:center}
 
-/* Depth: only #scene is a 3D context. Leaves stay flat, so a frame's shadow, plaque and hatching are painted
-   into the frame instead of sharing its plane (coplanar layers z-fight on phone GPUs). The viewport is isolated
-   and the overlays get their own layers, so the walls never poke through the map or the caption. */
-#scene .room-surface,#scene .wall-work,#scene .door-label,#scene .door-portal,#scene .corridor-sign,#scene .peg-line{transform-style:flat}
+/* The walkable view is a WebGL canvas (gallery-gl.js); overlays sit above it. */
 #viewport{isolation:isolate;z-index:0}
-#map-panel,.room-caption{transform:translateZ(0);z-index:5}
+.gallery-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#map-panel,.room-caption{z-index:5}
 
-/* Peg garland: string, pegs and unframed pieces that sway a little. */
-.peg-line{position:absolute;backface-visibility:hidden}
-.peg-line svg{position:absolute;inset:0;overflow:visible}
-.peg-line path{fill:none;stroke:#4c555b;stroke-width:1.6}
-.peg{position:absolute;width:10px;height:26px;background:#d9c7a4;border:1px solid #6b5a3e;border-radius:2px;z-index:2}
-.peg-work{position:absolute;padding:0;background:#fff;border:1px solid #c9d0d3;cursor:pointer;transform-origin:50% 0;transform:rotate(var(--tilt));animation:peg-sway 6s ease-in-out infinite alternate}
-.peg-work img{width:100%;height:100%;object-fit:contain;pointer-events:none}
-.peg-work:focus-visible{outline:2px solid #607e83;outline-offset:4px}
-@keyframes peg-sway{from{transform:rotate(calc(var(--tilt) - 1.5deg))}to{transform:rotate(calc(var(--tilt) + 1.5deg))}}
-@media(prefers-reduced-motion:reduce){.peg-work{animation:none}}
+/* #scene is the keyboard and screen-reader index of doors and prints: hidden until a button in it has focus. */
+#scene{position:absolute;left:12px;top:12px;transform:none;z-index:6}
+#scene ul{list-style:none;margin:0;padding:0}
+#scene button{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;font:12px var(--font-mono);background:#fff;border:1px solid #607e83}
+#scene button:focus{width:auto;height:auto;padding:10px 14px;min-height:44px;overflow:visible;clip-path:none;outline:2px solid #607e83;outline-offset:2px}
 
 /* Phone: a small corner map that leaves the room in view. */
 #map text{font-size:170px}
 @media(max-width:700px){#map-panel{width:118px;padding:6px;right:6px;top:6px;outline:none}#map{height:150px}#map-panel p{display:none}.map-title{font-size:8px}#map-close{padding:2px 6px;font-size:14px;min-height:0}}
 
-/* Plinths: a stand and a slowly turning box, all built from flat faces inside preserve-3d groups. */
-.plinth,.plinth-base,.box-at,.box-spin,.cube{position:absolute;left:0;top:0;transform-style:preserve-3d}
-.plinth{cursor:pointer}.plinth[hidden]{display:none}
-.plinth:focus-visible .face-front{outline:2px solid #607e83;outline-offset:4px}
+/* Close look at a 3D piece: drag the box round (a single CSS cube in the dialog).
+   Faces are flat and the box has no bottom, so nothing shares a plane. */
+.cube{position:absolute;left:0;top:0;transform-style:preserve-3d}
 .cube-face{position:absolute;display:block;transform-style:flat;backface-visibility:hidden;overflow:hidden}
-.plinth-base .cube-face{background:#fff;border:1px solid #4c555b}
-.plinth-base .face-right,.plinth-base .face-left{background:repeating-linear-gradient(135deg,#fff 0 7px,#9aa7ab 7px 8px)}
-.plinth-base .face-top{background:#f6f7f7}
-.plinth-label{position:absolute;left:0;right:0;top:34px;padding:0 10px;text-align:center;font:12px var(--font-mono);color:#47545c}
-.box-spin{animation:box-spin 28s linear infinite}
-@keyframes box-spin{from{transform:rotateY(0deg)}to{transform:rotateY(360deg)}}
-@media(prefers-reduced-motion:reduce){.box-spin{animation:none;transform:rotateY(-30deg)}}
 .box-at .cube-face,.cube .cube-face{background:#fff;border:2px solid #303a40}
 .box-at .face-top,.cube .face-top{background:repeating-linear-gradient(45deg,#fff 0 9px,#c7d0d3 9px 10px)}
 .cube-face img{width:100%;height:100%;object-fit:cover}
 .cube-face .photo-space{width:100%;height:100%;border:0;font-size:9px;gap:4px}
 .cube-face .photo-space .empty-mark{font-size:20px}
-/* Close look: drag the box round. */
 .cube-stage{width:100%;height:100%;display:grid;place-items:center;perspective:900px;cursor:grab;touch-action:none}
 .cube-stage:active{cursor:grabbing}
 .cube-stage .cube{position:relative;left:auto;top:auto;width:0;height:0}
-
-/* Shift lens: the horizon sits above centre, so floors, plinths and the lower half of the room stay in view. */
-#viewport{perspective-origin:50% 38%}
-#scene{top:38%}
-
-/* Tiles: culled when wholly behind the eye; the wall's skirting hatch runs on across tiles. */
-#scene .culled{display:none!important}
-.room-surface:not(.room-floor):not(.room-ceiling):after{background-size:var(--bw,100%) 100%;background-position:var(--ox,0) 0;clip-path:polygon(0 100%,0 92%,100% 92%,100% 100%)}
