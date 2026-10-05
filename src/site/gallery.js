@@ -1,4 +1,4 @@
-import {rooms,FLOOR,CEILING,DOOR_WIDTH,DOOR_HEIGHT,HALL,ROOM_W,ROOM_D,START,END,SCALE,PLINTH_H,obstacles,plinthSpots,locationAt,advance,destination,roomWalls,hang} from './gallery-world.js?v=20261005-plinth';
+import {rooms,FLOOR,CEILING,DOOR_WIDTH,DOOR_HEIGHT,HALL,ROOM_W,ROOM_D,START,END,SCALE,PLINTH_H,obstacles,plinthSpots,locationAt,advance,destination,roomWalls,hang} from './gallery-world.js?v=20261005-still';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 let prints=[],simple=reduced.matches,p={...destination('corridor'),vf:0,vs:0,vturn:0},keys=new Set(),pulses=new Map(),drag=null,last=0,frame=0;
@@ -7,9 +7,28 @@ const placeholder=()=>'<span class="photo-space"><span class="empty-mark">＋</s
 function safeURL(value){if(!value)return null;try{const u=new URL(value,location.href);return ['http:','https:'].includes(u.protocol)?u.href:null}catch{return null}}
 export function contentFlags(s){return {nsfw:!!s.content?.nsfw,swearing:!!s.content?.swearing||/\b(fuck\w*|shit\w*|cunt\w*|bitch\w*)\b/i.test(s.title||'')}}
 function admitted(s){const f=contentFlags(s);return (!f.nsfw||$('nsfw').checked)&&(!f.swearing||$('swearing').checked)}
-function surface(cls,w,h,x,y,z,angle=0,tone=''){return `<div class="room-surface ${cls}" style="width:${w}px;height:${h}px;left:${-w/2}px;top:${-h/2}px;transform:translate3d(${x}px,${y}px,${z}px) rotateY(${angle}deg);${tone?'--room-ink:'+tone:''}"></div>`}
-function horizontal(cls,w,depth,x,z,y,angle){return `<div class="room-surface ${cls}" style="width:${w}px;height:${depth}px;left:${-w/2}px;top:${-depth/2}px;transform:translate3d(${x}px,${y}px,${z}px) rotateX(${angle}deg)"></div>`}
-function work(s,w,h,x,y,z,angle){return `<button class="wall-work" data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}" style="width:${w}px;height:${h}px;left:${-w/2}px;top:${-h/2}px;transform:translate3d(${x}px,${y}px,${z}px) rotateY(${angle}deg)">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:placeholder()}<span class="plaque">${esc(s.title)}<br><small>${s.photo?'Physical print photograph':'Awaiting a print photograph'}</small></span></button>`}
+// Long surfaces are cut into tiles of at most TILE px. Phones (iOS Safari above all) draw a big 3D plane that
+// passes behind the viewer badly and drop textures over ~4096px; short tiles avoid both, and cull() hides any tile
+// wholly behind the eye. Each tile keeps the whole surface's pattern by sizing its background to the surface.
+const TILE=640,cuts=len=>{const n=Math.ceil(len/TILE);return Array.from({length:n},(_,i)=>[(i+0.5)*len/n-len/2,len/n,i===0,i===n-1])};
+const cullAt=pts=>`data-cull="${pts.map(v=>Math.round(v)).join(',')}"`;
+function surface(cls,w,h,x,y,z,angle=0,tone=''){
+ const a=angle*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+ return cuts(w).map(([u,tw,first,last])=>{const cx=x+c*u,cz=z-sn*u;return `<div class="room-surface ${cls}" ${cullAt([cx-c*tw/2,cz+sn*tw/2,cx+c*tw/2,cz-sn*tw/2])} style="width:${tw}px;height:${h}px;left:${-tw/2}px;top:${-h/2}px;transform:translate3d(${cx}px,${y}px,${cz}px) rotateY(${angle}deg);${first?'':'border-left-width:0;'}${last?'':'border-right-width:0;'}--bw:${w}px;--ox:${-(u-tw/2+w/2)}px;${tone?'--room-ink:'+tone:''}"></div>`}).join('');
+}
+function horizontal(cls,w,depth,x,z,y,angle){
+ const k=Math.sin(angle*Math.PI/180);let out='';
+ for(const [u,tw,f1,l1] of cuts(w))for(const [v,td,f2,l2] of cuts(depth)){const cx=x+u,cz=z+k*v;
+  out+=`<div class="room-surface ${cls}" ${cullAt([cx-tw/2,cz-td/2,cx+tw/2,cz-td/2,cx-tw/2,cz+td/2,cx+tw/2,cz+td/2])} style="width:${tw}px;height:${td}px;left:${-tw/2}px;top:${-td/2}px;transform:translate3d(${cx}px,${y}px,${cz}px) rotateX(${angle}deg);${f1?'':'border-left-width:0;'}${l1?'':'border-right-width:0;'}${f2?'':'border-top-width:0;'}${l2?'':'border-bottom-width:0;'}background-size:${w}px ${depth}px!important;background-position:${-(u-tw/2+w/2)}px ${-(v-td/2+depth/2)}px!important"></div>`}
+ return out;
+}
+// Hide whatever lies wholly behind the eye: a point is behind when its depth in view space is not ahead of the lens.
+let culled=[];
+function cull(){
+ const a=p.yaw*Math.PI/180,sn=Math.sin(a),c=Math.cos(a);
+ for(const [el,pts] of culled){let ahead=false;for(let i=0;i<pts.length;i+=2)if(-(pts[i]-p.x)*sn+(pts[i+1]-p.z)*c<-20){ahead=true;break}if(el._behind!==!ahead){el._behind=!ahead;el.classList.toggle('culled',!ahead)}}
+}
+function work(s,w,h,x,y,z,angle){const a=angle*Math.PI/180;return `<button class="wall-work" ${cullAt([x-Math.cos(a)*w/2,z+Math.sin(a)*w/2,x+Math.cos(a)*w/2,z-Math.sin(a)*w/2])} data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}" style="width:${w}px;height:${h}px;left:${-w/2}px;top:${-h/2}px;transform:translate3d(${x}px,${y}px,${z}px) rotateY(${angle}deg)">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:placeholder()}<span class="plaque">${esc(s.title)}<br><small>${s.photo?'Physical print photograph':'Awaiting a print photograph'}</small></span></button>`}
 // A peg garland: a sagging string across a wall, each piece clipped to it by a peg instead of framed.
 function garland(set,wall){
  const L=wall.len*0.9,gap=40,k=Math.min(SCALE,(L-gap*(set.length+1))/set.reduce((t,s)=>t+s.frame.width,0));
@@ -18,7 +37,7 @@ function garland(set,wall){
  let d=`M0 20`;for(let u=10;u<=L;u+=10)d+=` L${u} ${yAt(u).toFixed(1)}`;
  let x=free;
  const items=set.map((s,i)=>{const u=x+s.frame.width/2,y=yAt(u),tilt=((i*37)%7-3)*0.8;x+=s.frame.width+free;return `<span class="peg" style="left:${u-5}px;top:${y-12}px"></span><button class="peg-work" data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}" style="left:${u-s.frame.width/2}px;top:${y+4}px;width:${s.frame.width}px;height:${s.frame.height}px;--tilt:${tilt}deg;animation-delay:${-i*1.3}s">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:placeholder()}</button>`}).join('');
- return `<div class="peg-line" style="width:${L}px;height:${H}px;left:${-L/2}px;top:${-H/2}px;transform:translate3d(${wall.x}px,${CEILING+H/2+150}px,${wall.z}px) rotateY(${wall.angle}deg)"><svg width="${L}" height="${H}" aria-hidden="true"><path d="${d}"/></svg>${items}</div>`;
+ const a=wall.angle*Math.PI/180;return `<div class="peg-line" ${cullAt([wall.x-Math.cos(a)*L/2,wall.z+Math.sin(a)*L/2,wall.x+Math.cos(a)*L/2,wall.z-Math.sin(a)*L/2])} style="width:${L}px;height:${H}px;left:${-L/2}px;top:${-H/2}px;transform:translate3d(${wall.x}px,${CEILING+H/2+150}px,${wall.z}px) rotateY(${wall.angle}deg)"><svg width="${L}" height="${H}" aria-hidden="true"><path d="${d}"/></svg>${items}</div>`;
 }
 // A cuboid centred on its own origin. Faces are flat leaves inside one preserve-3d group; the bottom is never drawn,
 // so a box resting on a plinth shares no plane with it.
@@ -30,7 +49,7 @@ const boxSize=s=>({w:s.box.width*SCALE,h:s.box.height*SCALE,d:s.box.depth*SCALE}
 function plinth(s,at){
  const {w,h,d}=boxSize(s),pw=Math.max(w,d)+90,top=FLOOR-PLINTH_H;
  obstacles.push({x:at.x,z:at.z,r:pw*0.75+40});
- return `<div class="plinth" role="button" tabindex="0" data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}" style="transform:translate3d(${at.x}px,0px,${at.z}px) rotateY(${-at.side*90}deg)"><span class="plinth-base" style="transform:translateY(${FLOOR-PLINTH_H/2}px)">${cuboid(pw,PLINTH_H,pw,n=>n==='front'?`<span class="plinth-label">${esc(s.title)}</span>`:'')}</span><span class="box-at" style="transform:translateY(${top-h/2-1}px)"><span class="box-spin">${cuboid(w,h,d,boxFace(s))}</span></span></div>`;
+ const q=pw*0.75;return `<div class="plinth" ${cullAt([at.x-q,at.z-q,at.x+q,at.z-q,at.x-q,at.z+q,at.x+q,at.z+q])} role="button" tabindex="0" data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}" style="transform:translate3d(${at.x}px,0px,${at.z}px) rotateY(${-at.side*90}deg)"><span class="plinth-base" style="transform:translateY(${FLOOR-PLINTH_H/2}px)">${cuboid(pw,PLINTH_H,pw,n=>n==='front'?`<span class="plinth-label">${esc(s.title)}</span>`:'')}</span><span class="box-at" style="transform:translateY(${top-h/2-1}px)"><span class="box-spin">${cuboid(w,h,d,boxFace(s))}</span></span></div>`;
 }
 function buildWorld(){
  const tall=FLOOR-CEILING,face=side=>side===-1?90:-90;
@@ -59,6 +78,7 @@ function buildWorld(){
   for(const h of hang(works.filter(s=>!s.hang),walls))html+=work(h.s,h.w,h.h,h.x,-40,h.z,h.angle);
  }
  $('scene').innerHTML=html;
+ culled=[...$('scene').querySelectorAll('[data-cull]')].map(el=>[el,el.dataset.cull.split(',').map(Number)]);
  $('scene').querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>jump(b.dataset.room));
  $('scene').querySelectorAll('[data-print]').forEach(b=>{b.onclick=()=>inspect(prints.find(s=>s.id===b.dataset.print));if(b.matches('[role=button]'))b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}}});
  // Architecture is built once: walking, looking, filters and the map never replace a wall or a print.
@@ -73,7 +93,7 @@ function buildMap(){
 let lens=800;
 function fit(){const v=$('viewport'),w=v.clientWidth||800,h=v.clientHeight||600;lens=Math.round(Math.max((w/2)/Math.tan(35*Math.PI/180),(h/2)/Math.tan(56*Math.PI/180)));v.style.perspective=lens+'px';camera()}
 function camera(){
- $('scene').style.transform=`translateZ(${lens}px) rotateY(${p.yaw}deg) translate3d(${-p.x}px,0px,${-p.z}px)`;
+ cull();$('scene').style.transform=`translateZ(${lens}px) rotateY(${p.yaw}deg) translate3d(${-p.x}px,0px,${-p.z}px)`;
  const where=locationAt(p.x,p.z),r=rooms.find(r=>r.id===where);$('room-caption').textContent=r?r.name:'Entrance corridor';$('wing').value=where;
  $('map-player')?.setAttribute('cx',p.x);$('map-player')?.setAttribute('cy',p.z);const a=p.yaw*Math.PI/180;
  if($('map-heading'))for(const [k,v] of Object.entries({x1:p.x,y1:p.z,x2:p.x+Math.sin(a)*260,y2:p.z-Math.cos(a)*260}))$('map-heading').setAttribute(k,v);
@@ -95,7 +115,7 @@ const bindings={w:'forward',s:'back',a:'strafe-left',d:'strafe-right',arrowup:'f
 window.addEventListener('keydown',e=>{if(simple||$('closer').open||e.target.matches('input,select,textarea')||e.ctrlKey||e.altKey||e.metaKey)return;const action=bindings[e.key.toLowerCase()];if(action){e.preventDefault();engage(action);$('viewport').focus({preventScroll:true})}});
 window.addEventListener('keyup',e=>{const action=bindings[e.key.toLowerCase()];if(action)keys.delete(action)});
 window.addEventListener('blur',stop);document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
-function animate(time){const dt=last?(time-last)/1000:0;last=time;if(!simple&&!document.hidden&&!$('closer').open){const held=action=>keys.has(action)||(pulses.get(action)||0)>time;const forward=Number(held('forward'))-Number(held('back')),strafe=Number(held('strafe-right'))-Number(held('strafe-left')),length=Math.max(1,Math.hypot(forward,strafe));advance(p,{forward:forward/length,strafe:strafe/length,turn:Number(held('right'))-Number(held('left'))},dt);camera()}frame=requestAnimationFrame(animate)}
+function animate(time){const dt=last?(time-last)/1000:0;last=time;if(!simple&&!document.hidden&&!$('closer').open){const held=action=>keys.has(action)||(pulses.get(action)||0)>time;const forward=Number(held('forward'))-Number(held('back')),strafe=Number(held('strafe-right'))-Number(held('strafe-left')),length=Math.max(1,Math.hypot(forward,strafe));const was=p.x+','+p.z+','+p.yaw;advance(p,{forward:forward/length,strafe:strafe/length,turn:Number(held('right'))-Number(held('left'))},dt);if(p.x+','+p.z+','+p.yaw!==was)camera()}frame=requestAnimationFrame(animate)}
 document.querySelectorAll('[data-walk]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);engage(b.dataset.walk)};b.onpointerup=b.onpointercancel=()=>keys.delete(b.dataset.walk);b.onlostpointercapture=()=>keys.delete(b.dataset.walk);b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();engage(b.dataset.walk)}};b.onkeyup=()=>keys.delete(b.dataset.walk)});
 const viewport=$('viewport');viewport.onpointerdown=e=>{if(e.button!==0)return;drag={id:e.pointerId,start:e.clientX,last:e.clientX,moved:false}};
 viewport.onpointermove=e=>{if(!drag||drag.id!==e.pointerId)return;if(Math.abs(e.clientX-drag.start)>5){drag.moved=true;viewport.setPointerCapture(e.pointerId)}if(drag.moved){p.yaw+=(e.clientX-drag.last)*.18;camera()}drag.last=e.clientX};

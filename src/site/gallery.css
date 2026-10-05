@@ -84,3 +84,7 @@
 /* Shift lens: the horizon sits above centre, so floors, plinths and the lower half of the room stay in view. */
 #viewport{perspective-origin:50% 38%}
 #scene{top:38%}
+
+/* Tiles: culled when wholly behind the eye; the wall's skirting hatch runs on across tiles. */
+#scene .culled{display:none!important}
+.room-surface:not(.room-floor):not(.room-ceiling):after{background-size:var(--bw,100%) 100%;background-position:var(--ox,0) 0;clip-path:polygon(0 100%,0 92%,100% 92%,100% 100%)}
