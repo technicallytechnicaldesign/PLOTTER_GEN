@@ -36,3 +36,25 @@
 #flat img{min-width:0;max-width:100%;max-height:100%;object-fit:contain}
 #flat .flat-title{overflow-wrap:anywhere}
 #flat .flat-photo{grid-template-columns:minmax(0,1fr)}#flat .flat-reserved{min-width:0;justify-self:center}
+
+/* Depth: only #scene is a 3D context. Leaves stay flat, so a frame's shadow, plaque and hatching are painted
+   into the frame instead of sharing its plane (coplanar layers z-fight on phone GPUs). The viewport is isolated
+   and the overlays get their own layers, so the walls never poke through the map or the caption. */
+#scene .room-surface,#scene .wall-work,#scene .door-label,#scene .door-portal,#scene .corridor-sign,#scene .peg-line{transform-style:flat}
+#viewport{isolation:isolate;z-index:0}
+#map-panel,.room-caption{transform:translateZ(0);z-index:5}
+
+/* Peg garland: string, pegs and unframed pieces that sway a little. */
+.peg-line{position:absolute;backface-visibility:hidden}
+.peg-line svg{position:absolute;inset:0;overflow:visible}
+.peg-line path{fill:none;stroke:#4c555b;stroke-width:1.6}
+.peg{position:absolute;width:10px;height:26px;background:#d9c7a4;border:1px solid #6b5a3e;border-radius:2px;z-index:2}
+.peg-work{position:absolute;padding:0;background:#fff;border:1px solid #c9d0d3;cursor:pointer;transform-origin:50% 0;transform:rotate(var(--tilt));animation:peg-sway 6s ease-in-out infinite alternate}
+.peg-work img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+.peg-work:focus-visible{outline:2px solid #607e83;outline-offset:4px}
+@keyframes peg-sway{from{transform:rotate(calc(var(--tilt) - 1.5deg))}to{transform:rotate(calc(var(--tilt) + 1.5deg))}}
+@media(prefers-reduced-motion:reduce){.peg-work{animation:none}}
+
+/* Phone: a small corner map that leaves the room in view. */
+#map text{font-size:170px}
+@media(max-width:700px){#map-panel{width:118px;padding:6px;right:6px;top:6px;outline:none}#map{height:150px}#map-panel p{display:none}.map-title{font-size:8px}#map-close{padding:2px 6px;font-size:14px;min-height:0}}
