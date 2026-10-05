@@ -469,6 +469,56 @@
         "nsfw": false,
         "swearing": false
       }
+    },
+    {
+      "id": "mechanical-box-01",
+      "room": "mechanical",
+      "title": "3D print 01 (box)",
+      "photo": null,
+      "hang": "plinth",
+      "box": {
+        "width": 140,
+        "height": 90,
+        "depth": 110
+      },
+      "faces": {
+        "front": null,
+        "back": null,
+        "left": null,
+        "right": null,
+        "top": null
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "collected-box-01",
+      "room": "collected",
+      "title": "3D print 02 (tall box)",
+      "photo": null,
+      "hang": "plinth",
+      "box": {
+        "width": 90,
+        "height": 150,
+        "depth": 90
+      },
+      "faces": {
+        "front": null,
+        "back": null,
+        "left": null,
+        "right": null,
+        "top": null
+      },
+      "studio": null,
+      "decoder": null,
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
     }
   ]
 }

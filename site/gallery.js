@@ -1,7 +1,8 @@
-import {rooms,FLOOR,CEILING,DOOR_WIDTH,DOOR_HEIGHT,HALL,ROOM_W,ROOM_D,START,END,SCALE,locationAt,advance,destination,roomWalls,hang} from './gallery-world.js?v=20261005-room';
+import {rooms,FLOOR,CEILING,DOOR_WIDTH,DOOR_HEIGHT,HALL,ROOM_W,ROOM_D,START,END,SCALE,PLINTH_H,obstacles,plinthSpots,locationAt,advance,destination,roomWalls,hang} from './gallery-world.js?v=20261005-plinth';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 let prints=[],simple=reduced.matches,p={...destination('corridor'),vf:0,vs:0,vturn:0},keys=new Set(),pulses=new Map(),drag=null,last=0,frame=0;
+const dims=s=>s.frame||{width:s.box.width,height:s.box.height};
 const placeholder=()=>'<span class="photo-space"><span class="empty-mark">＋</span><span>PRINT PHOTO</span><small>SPACE RESERVED</small></span>';
 function safeURL(value){if(!value)return null;try{const u=new URL(value,location.href);return ['http:','https:'].includes(u.protocol)?u.href:null}catch{return null}}
 export function contentFlags(s){return {nsfw:!!s.content?.nsfw,swearing:!!s.content?.swearing||/\b(fuck\w*|shit\w*|cunt\w*|bitch\w*)\b/i.test(s.title||'')}}
@@ -18,6 +19,18 @@ function garland(set,wall){
  let x=free;
  const items=set.map((s,i)=>{const u=x+s.frame.width/2,y=yAt(u),tilt=((i*37)%7-3)*0.8;x+=s.frame.width+free;return `<span class="peg" style="left:${u-5}px;top:${y-12}px"></span><button class="peg-work" data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}" style="left:${u-s.frame.width/2}px;top:${y+4}px;width:${s.frame.width}px;height:${s.frame.height}px;--tilt:${tilt}deg;animation-delay:${-i*1.3}s">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:placeholder()}</button>`}).join('');
  return `<div class="peg-line" style="width:${L}px;height:${H}px;left:${-L/2}px;top:${-H/2}px;transform:translate3d(${wall.x}px,${CEILING+H/2+150}px,${wall.z}px) rotateY(${wall.angle}deg)"><svg width="${L}" height="${H}" aria-hidden="true"><path d="${d}"/></svg>${items}</div>`;
+}
+// A cuboid centred on its own origin. Faces are flat leaves inside one preserve-3d group; the bottom is never drawn,
+// so a box resting on a plinth shares no plane with it.
+const FACES=[['front',0,0,1],['back',180,0,1],['right',90,0,0],['left',-90,0,0],['top',0,90,2]];
+function cuboid(w,h,d,face){return FACES.map(([n,ry,rx,k])=>{const fw=k===1||k===2?w:d,fh=k===2?d:h,t=k===1?d/2:k===2?h/2:w/2;return `<span class="cube-face face-${n}" style="width:${fw}px;height:${fh}px;left:${-fw/2}px;top:${-fh/2}px;transform:rotateY(${ry}deg) rotateX(${rx}deg) translateZ(${t}px)">${face(n)}</span>`}).join('')}
+const boxFace=s=>n=>{const url=safeURL(s.faces?.[n]);return url?`<img src="${esc(url)}" alt="">`:`<span class="photo-space"><span class="empty-mark">＋</span><span>${n.toUpperCase()}</span><small>FACE PHOTO</small></span>`};
+const boxSize=s=>({w:s.box.width*SCALE,h:s.box.height*SCALE,d:s.box.depth*SCALE});
+// A 3D piece on a plinth: the label faces the door, the box turns slowly on top; the whole stand is one clickable piece.
+function plinth(s,at){
+ const {w,h,d}=boxSize(s),pw=Math.max(w,d)+90,top=FLOOR-PLINTH_H;
+ obstacles.push({x:at.x,z:at.z,r:pw*0.75+40});
+ return `<div class="plinth" role="button" tabindex="0" data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}" style="transform:translate3d(${at.x}px,0px,${at.z}px) rotateY(${-at.side*90}deg)"><span class="plinth-base" style="transform:translateY(${FLOOR-PLINTH_H/2}px)">${cuboid(pw,PLINTH_H,pw,n=>n==='front'?`<span class="plinth-label">${esc(s.title)}</span>`:'')}</span><span class="box-at" style="transform:translateY(${top-h/2-1}px)"><span class="box-spin">${cuboid(w,h,d,boxFace(s))}</span></span></div>`;
 }
 function buildWorld(){
  const tall=FLOOR-CEILING,face=side=>side===-1?90:-90;
@@ -42,11 +55,12 @@ function buildWorld(){
  for(const r of rooms){
   const works=prints.filter(s=>s.room===r.id),pegged=works.filter(s=>s.hang==='peg');let walls=roomWalls(r);
   if(pegged.length){html+=garland(pegged,walls.find(w=>w.id==='far'));walls=walls.filter(w=>w.id!=='far')}
-  for(const h of hang(works.filter(s=>s.hang!=='peg'),walls))html+=work(h.s,h.w,h.h,h.x,-40,h.z,h.angle);
+  const stands=works.filter(s=>s.hang==='plinth');plinthSpots(r,stands.length).forEach((at,i)=>html+=plinth(stands[i],at));
+  for(const h of hang(works.filter(s=>!s.hang),walls))html+=work(h.s,h.w,h.h,h.x,-40,h.z,h.angle);
  }
  $('scene').innerHTML=html;
  $('scene').querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>jump(b.dataset.room));
- $('scene').querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>inspect(prints.find(s=>s.id===b.dataset.print)));
+ $('scene').querySelectorAll('[data-print]').forEach(b=>{b.onclick=()=>inspect(prints.find(s=>s.id===b.dataset.print));if(b.matches('[role=button]'))b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}}});
  // Architecture is built once: walking, looking, filters and the map never replace a wall or a print.
 }
 function buildMap(){
@@ -72,7 +86,7 @@ function applyFilters(){
  const visible=prints.filter(admitted),real=visible.filter(s=>s.photo);
  $('count').textContent=`${real.length} print photographs / ${visible.filter(s=>!s.photo).length} reserved spaces`;
  $('scene').querySelectorAll('[data-print]').forEach(b=>b.hidden=!admitted(prints.find(s=>s.id===b.dataset.print)));
- $('flat').innerHTML=visible.map(s=>`<button data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}"><span class="flat-photo">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:`<span class="flat-reserved" style="width:${s.frame.width*Math.min(1,250/s.frame.width,250/s.frame.height)}px;aspect-ratio:${s.frame.width}/${s.frame.height}">${placeholder()}</span>`}</span><span class="flat-title">${esc(s.title)}<br>${esc(rooms.find(r=>r.id===s.room)?.name)}</span></button>`).join('');
+ $('flat').innerHTML=visible.map(s=>`<button data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}"><span class="flat-photo">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:`<span class="flat-reserved" style="width:${dims(s).width*Math.min(1,250/dims(s).width,250/dims(s).height)}px;aspect-ratio:${dims(s).width}/${dims(s).height}">${placeholder()}</span>`}</span><span class="flat-title">${esc(s.title)}<br>${esc(rooms.find(r=>r.id===s.room)?.name)}</span></button>`).join('');
  $('flat').querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>inspect(prints.find(s=>s.id===b.dataset.print)));
  $('gallery-note').textContent=real.length?'Photographs of physical prints. Empty frames are reserved spaces.':'Reserved spaces for photographs of real, physical prints. No print photographs have been added yet.';
 }
@@ -91,7 +105,15 @@ for(const id of ['nsfw','swearing'])$(id).onchange=()=>{if($('closer').open)$('c
 function mapToggle(){const hidden=!$('map-panel').hidden;$('map-panel').hidden=hidden;$('map-toggle').setAttribute('aria-expanded',String(!hidden))}$('map-toggle').onclick=mapToggle;if(matchMedia('(max-width:700px)').matches)mapToggle();$('map-close').onclick=mapToggle;
 try{simple=JSON.parse(localStorage.getItem('plg-gallery-simple')??String(simple))}catch{}
 $('simplify').onclick=()=>{simple=!simple;try{localStorage.setItem('plg-gallery-simple',String(simple))}catch{}setSimple()};
-function inspect(s){stop();$('piece-title').textContent=s.title;$('piece').innerHTML=s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:placeholder();$('piece-description').textContent=s.description||'Space reserved for a photograph of a physical print.';$('piece-status').textContent='';for(const [id,url] of [['studio',s.studio],['decoder',s.decoder]]){const link=safeURL(url);$(id).hidden=!s.photo||!link;if(link)$(id).href=link}$('closer').showModal()}
+function turntable(s){
+ const {w,h,d}=boxSize(s),k=Math.min(1.4,260/Math.max(w,h,d));let ry=-30,rx=-18,from=null;
+ $('piece').innerHTML=`<div class="cube-stage" aria-label="Drag to turn ${esc(s.title)}"><div class="cube">${cuboid(w*k,h*k,d*k,boxFace(s))}</div></div>`;
+ const stage=$('piece').firstChild,cube=stage.firstChild,pose=()=>cube.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg)`;pose();
+ stage.onpointerdown=e=>{from=[e.clientX,e.clientY,ry,rx];stage.setPointerCapture(e.pointerId)};
+ stage.onpointermove=e=>{if(!from)return;ry=from[2]+(e.clientX-from[0])*0.5;rx=Math.max(-80,Math.min(80,from[3]-(e.clientY-from[1])*0.5));pose()};
+ stage.onpointerup=stage.onpointercancel=()=>from=null;
+}
+function inspect(s){stop();$('piece-title').textContent=s.title;if(s.hang==='plinth')turntable(s);else $('piece').innerHTML=s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:placeholder();$('piece-description').textContent=s.description||(s.hang==='plinth'?'Space reserved for photographs of each face of a 3D piece. Drag to turn it.':'Space reserved for a photograph of a physical print.');$('piece-status').textContent='';for(const [id,url] of [['studio',s.studio],['decoder',s.decoder]]){const link=safeURL(url);$(id).hidden=!s.photo||!link;if(link)$(id).href=link}$('closer').showModal()}
 async function close(){if(document.fullscreenElement)await document.exitFullscreen();$('closer').close();viewport.focus({preventScroll:true})}$('close').onclick=close;$('closer').addEventListener('cancel',e=>{e.preventDefault();close()});
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('closer').requestFullscreen()}catch{$('piece-status').textContent='Fullscreen is unavailable here; the large inspection view is still open.'}};
 try{const response=await fetch('print-gallery.json',{cache:'no-cache'});if(!response.ok)throw Error();const data=await response.json();prints=data.prints;buildWorld();buildMap();applyFilters();setSimple();fit();new ResizeObserver(fit).observe($('viewport'));frame=requestAnimationFrame(animate)}catch(error){$('status').textContent='The print gallery could not load. Reload or return to Studios.';console.error(error)}
