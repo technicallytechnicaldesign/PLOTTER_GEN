@@ -51,7 +51,7 @@ function applyFilters(){
  $('flat').querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>inspect(prints.find(s=>s.id===b.dataset.print)));
  $('gallery-note').textContent=real.length?'Photographs of physical prints. Empty frames are reserved spaces.':'Reserved spaces for photographs of real, physical prints. No print photographs have been added yet.';
 }
-function setSimple(){stop();$('simplify').setAttribute('aria-pressed',String(simple));document.querySelector('.gallery-stage').hidden=simple;document.querySelector('.walk-controls').hidden=simple;$('flat').hidden=!simple;$('map-toggle').hidden=simple;$('hint').textContent=simple?'Select a photograph or a reserved space to look closer.':'Hold W/A/S/D to walk. Hold arrow keys to turn. Drag to look. Rooms stay where they are.'}
+function setSimple(){stop();$('simplify').setAttribute('aria-pressed',String(simple));document.querySelector('.gallery-stage').hidden=simple;document.querySelector('.walk-controls').hidden=simple;$('flat').hidden=!simple;$('map-toggle').hidden=simple||!$('map-panel').hidden;$('hint').textContent=simple?'Select a photograph or a reserved space to look closer.':'Hold W/A/S/D to walk. Hold arrow keys to turn. Drag to look. Rooms stay where they are.'}
 const bindings={w:'forward',s:'back',a:'strafe-left',d:'strafe-right',arrowup:'forward',arrowdown:'back',arrowleft:'left',arrowright:'right'};
 window.addEventListener('keydown',e=>{if(simple||$('closer').open||e.target.matches('input,select,textarea')||e.ctrlKey||e.altKey||e.metaKey)return;const action=bindings[e.key.toLowerCase()];if(action){e.preventDefault();engage(action);$('viewport').focus({preventScroll:true})}});
 window.addEventListener('keyup',e=>{const action=bindings[e.key.toLowerCase()];if(action)keys.delete(action)});
@@ -66,7 +66,8 @@ viewport.addEventListener('click',e=>{if(e.target.closest('#scene'))return;const
 viewport.addEventListener('pointermove',e=>{if(drag||e.pointerType!=='mouse'||!gl)return;viewport.style.cursor=gl.pick(e.clientX,e.clientY)?'pointer':''});
 $('reset-view').onclick=()=>jump('corridor');$('wing').onchange=()=>jump($('wing').value);
 for(const id of ['nsfw','swearing'])$(id).onchange=()=>{if($('closer').open)$('closer').close();applyFilters()};
-function mapToggle(){const hidden=!$('map-panel').hidden;$('map-panel').hidden=hidden;$('map-toggle').setAttribute('aria-expanded',String(!hidden))}$('map-toggle').onclick=mapToggle;if(matchMedia('(max-width:700px)').matches)mapToggle();$('map-close').onclick=mapToggle;
+// The map docks in the stage's top-right corner: open it is the panel, folded it is a small Map button in the same corner.
+function mapToggle(){const hidden=!$('map-panel').hidden;$('map-panel').hidden=hidden;$('map-toggle').hidden=!hidden||simple;$('map-toggle').setAttribute('aria-expanded',String(!hidden));(hidden?$('map-toggle'):$('map-close')).focus({preventScroll:true})}$('map-toggle').onclick=mapToggle;if(matchMedia('(max-width:700px)').matches){$('map-panel').hidden=true;$('map-toggle').hidden=simple;$('map-toggle').setAttribute('aria-expanded','false')}$('map-close').onclick=mapToggle;
 try{simple=JSON.parse(localStorage.getItem('plg-gallery-simple')??String(simple))}catch{}
 $('simplify').onclick=()=>{simple=!simple;try{localStorage.setItem('plg-gallery-simple',String(simple))}catch{}setSimple()};
 function turntable(s){
@@ -81,3 +82,6 @@ function inspect(s){stop();$('piece-title').textContent=s.title;if(s.hang==='pli
 async function close(){if(document.fullscreenElement)await document.exitFullscreen();$('closer').close();viewport.focus({preventScroll:true})}$('close').onclick=close;$('closer').addEventListener('cancel',e=>{e.preventDefault();close()});
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('closer').requestFullscreen()}catch{$('piece-status').textContent='Fullscreen is unavailable here; the large inspection view is still open.'}};
 try{const response=await fetch('print-gallery.json',{cache:'no-cache'});if(!response.ok)throw Error();const data=await response.json();prints=data.prints;buildWorld();buildMap();applyFilters();setSimple();fit();new ResizeObserver(fit).observe($('viewport'));frame=requestAnimationFrame(animate)}catch(error){$('status').textContent='The print gallery could not load. Reload or return to Studios.';console.error(error)}
+
+// A held finger on a walk button or the view must not start text selection or the copy/share menu.
+for(const el of [document.querySelector('.walk-controls'),document.querySelector('.gallery-stage')])el.addEventListener('contextmenu',e=>e.preventDefault());
