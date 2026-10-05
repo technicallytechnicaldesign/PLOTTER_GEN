@@ -3,6 +3,7 @@
   "id": "orrery-brass",
   "title": "Brass machinery",
   "preset": "brass",
+  "content": {},
   "settings": {
     "seed": "14",
     "nplan": "6",
@@ -29,7 +30,7 @@
     "page": "190x250",
     "ticks": "split"
   },
-  "sourceHash": "568e0c0fe9e17b0a7e0e8659b325aab925ad780174f88d9ed3900373852b0912",
+  "sourceHash": "ccf4a1a1f03cdae521f3169cd9002333282e1a10807f5856dfc44b749a83a8e0",
   "svg": "site/art/orrery-brass.svg",
   "image": "site/art/orrery-brass.webp",
   "page": "190x250",

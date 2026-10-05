@@ -3,6 +3,7 @@
   "id": "web-moonhedge",
   "title": "Moonlit hedge",
   "preset": "moonhedge",
+  "content": {},
   "settings": {
     "seed": "8",
     "size": "0.8",
@@ -40,7 +41,7 @@
     "page": "250x190",
     "ticks": "split"
   },
-  "sourceHash": "4c558149df01750c435c2c7d4dc08bce39875573e470a5923185e75059d559eb",
+  "sourceHash": "e29d2c4a095fa7f208880f2d075741c0639629886f4ec90c3332bb4042c95069",
   "svg": "site/art/web-moonhedge.svg",
   "image": "site/art/web-moonhedge.webp",
   "page": "250x190",

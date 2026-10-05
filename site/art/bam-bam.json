@@ -3,6 +3,7 @@
   "id": "bam-bam",
   "title": "BAM!",
   "preset": "bam",
+  "content": {},
   "settings": {
     "seed": "4",
     "gears": "4",
@@ -37,7 +38,7 @@
     "frame": "on",
     "ticks": "split"
   },
-  "sourceHash": "0471fa9e05eb468758def041167e6ea18cfe989f51d2401316278d0c6549092c",
+  "sourceHash": "20b35aa036b7c4e789531e2b926bdc6ffa733aeaf86410669f03571e9e8b4d2b",
   "svg": "site/art/bam-bam.svg",
   "image": "site/art/bam-bam.webp",
   "page": "190x250",

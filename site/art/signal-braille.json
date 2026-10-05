@@ -3,6 +3,7 @@
   "id": "signal-braille",
   "title": "Six positions",
   "preset": "braille",
+  "content": {},
   "settings": {
     "msg": "READ WITH YOUR EYES",
     "ckey": "3",
@@ -23,7 +24,7 @@
     "marks": "on",
     "ticks": "split"
   },
-  "sourceHash": "4f8d94f3d253a4350a865956362639f8ccaae107433bab9e83d73e1601337873",
+  "sourceHash": "6ed361f89288df0ddde20ac867a0ae70ba8dec9f5311514601b673e257448e23",
   "svg": "site/art/signal-braille.svg",
   "image": "site/art/signal-braille.webp",
   "page": "190x250",

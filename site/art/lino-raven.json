@@ -3,6 +3,7 @@
   "id": "lino-raven",
   "title": "Raven on a branch",
   "preset": "raven",
+  "content": {},
   "settings": {
     "seed": "13",
     "density": "1",
@@ -36,7 +37,7 @@
     "surface": "backing",
     "page": "280x280"
   },
-  "sourceHash": "5a941d32bdcfaf4b6786f475fdafaaf3b14afa0354bb4e7719de936e63a67388",
+  "sourceHash": "804a96c9ab3de87bdc1c86a4b5e888d6e4754ba9f331127d9c9c7fbbaf5033d0",
   "svg": "site/art/lino-raven.svg",
   "image": "site/art/lino-raven.webp",
   "page": "280x280",

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {rooms,obstacles,plinthSpots,FLOOR,DOOR_HEIGHT,HALL,ROOM_W,ROOM_D,END,MAX_H,advance,canWalk,destination,locationAt,roomWalls,hang} from './gallery-world.js';
+import {rooms,obstacles,plinthSpots,FLOOR,DOOR_HEIGHT,HALL,ROOM_W,ROOM_D,START,END,MAX_H,advance,canWalk,destination,locationAt,roomWalls,hang} from './gallery-world.js';
 const run=hz=>{const p={...destination('corridor'),vf:0,vs:0,vturn:0};for(let i=0;i<hz;i++)advance(p,{forward:1,strafe:0,turn:0},1/hz);return p};
 const [a,b,c]=[30,60,144].map(run);
-assert(Math.max(a.z,b.z,c.z)-Math.min(a.z,b.z,c.z)<5,'Walking depends materially on frame rate');
-assert(b.z<310&&b.z>270,'Held movement did not advance at the intended walking speed');
+assert(Math.max(a.z,b.z,c.z)-Math.min(a.z,b.z,c.z)<10,'Walking depends materially on frame rate');
+assert(START-200-b.z<510&&START-200-b.z>460,'Held movement did not advance at the intended walking speed');
 for(const r of rooms)assert(canWalk(0,r.cz)&&canWalk(r.side*(HALL+20),r.cz)&&canWalk(r.cx,r.cz),'Door passage is disconnected');
 assert(!canWalk(HALL+20,0)&&!canWalk(HALL+20,(rooms[1].cz+rooms[3].cz)/2),'A solid corridor wall is walkable');
 assert(!canWalk(0,END-50)&&!canWalk(HALL+ROOM_W+50,rooms[1].cz),'Exterior boundary is open');

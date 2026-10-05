@@ -3,6 +3,7 @@
   "id": "weather-northsea",
   "title": "North Sea chart",
   "preset": "northsea",
+  "content": {},
   "settings": {
     "seed": "6",
     "wind": "0.3",
@@ -39,7 +40,7 @@
     "page": "250x190",
     "ticks": "split"
   },
-  "sourceHash": "bd3edd86d20c9644f161a86c1e562cf4fa2c0e8b5f578ec3e9418f1e8188c68e",
+  "sourceHash": "256e0ccf0c6fc186cc5b9fe553979917d48793745dc620fe31ecc3123de4c1fc",
   "svg": "site/art/weather-northsea.svg",
   "image": "site/art/weather-northsea.webp",
   "page": "250x190",

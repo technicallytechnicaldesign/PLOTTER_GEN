@@ -3,6 +3,7 @@
   "id": "wardrobe-everyday",
   "title": "Everyday",
   "preset": "everyday",
+  "content": {},
   "settings": {
     "height": "300",
     "stock": "1",
@@ -36,7 +37,7 @@
     "page": "280x280",
     "ticks": "split"
   },
-  "sourceHash": "8fa90e4cad0595b61f3ba7be744cf24bf97da20dfbf30d9471fd475f162a93c7",
+  "sourceHash": "11ef4ebe93a6f77395bbfc8fdf11defae9da85dc1e22633a160eafb2f3ad9c4f",
   "svg": "site/art/wardrobe-everyday.svg",
   "image": "site/art/wardrobe-everyday.webp",
   "page": "280x280",

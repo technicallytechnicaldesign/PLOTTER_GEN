@@ -3,6 +3,7 @@
   "id": "weave-swarm",
   "title": "Gear infestation",
   "preset": "swarm",
+  "content": {},
   "settings": {
     "seed": "11",
     "n": "260",
@@ -22,7 +23,7 @@
     "page": "190x250",
     "ticks": "split"
   },
-  "sourceHash": "543004ae16b0ec63261cb22a5e70169c5c42cb0e398dac3608df10c6a32d75eb",
+  "sourceHash": "2008b767f6aa5c447a9c1ca8fe529805cf6d094e2ea0dee26e8a1fd8f797e20e",
   "svg": "site/art/weave-swarm.svg",
   "image": "site/art/weave-swarm.webp",
   "page": "190x250",

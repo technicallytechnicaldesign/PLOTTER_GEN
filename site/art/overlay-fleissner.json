@@ -3,6 +3,7 @@
   "id": "overlay-fleissner",
   "title": "A quarter turn",
   "preset": "fleissner",
+  "content": {},
   "settings": {
     "msg": "TURN THE CARD A QUARTER",
     "ckey": "3",
@@ -29,7 +30,7 @@
     "opcol": "#111111",
     "page": "190x250"
   },
-  "sourceHash": "3eb9ca0642f9a3790ada79e596fbe45bbae43d86a51965b54be00c5fdbdb44e8",
+  "sourceHash": "9b5b72477e5368aa387e51bdf67ad9b8fc97fe2b731ebbed9abebea0af93a1d1",
   "svg": "site/art/overlay-fleissner.svg",
   "image": "site/art/overlay-fleissner.webp",
   "page": "190x250",

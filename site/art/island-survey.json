@@ -3,6 +3,7 @@
   "id": "island-survey",
   "title": "Unsurveyed island",
   "preset": "survey",
+  "content": {},
   "settings": {
     "seed": "42",
     "sea": "0.5",
@@ -32,7 +33,7 @@
     "page": "190x250",
     "ticks": "split"
   },
-  "sourceHash": "2dd214d155c817ffec5b73ce216b81c3986a079cf17f48edb4f5b2612fc8c6db",
+  "sourceHash": "993a0c8bfad2548b6b2979a0a85b9b94420946215515cf1e38d9e2b177c3693f",
   "svg": "site/art/island-survey.svg",
   "image": "site/art/island-survey.webp",
   "page": "190x250",
