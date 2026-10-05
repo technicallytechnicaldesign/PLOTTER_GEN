@@ -1,6 +1,6 @@
 # Print gallery
 
-**UID:** PLG-GAL-1AFF2EBC · **Version:** 2 · 2026-10-05
+**UID:** PLG-GAL-1AFF2EBC · **Version:** 3 · 2026-10-05
 
 Source is in `src/site/` (`gallery.js`, `gallery-world.js`, `gallery.css`, `print-gallery.json`). `site/` is the published copy. Check changes with `node src/site/gallery-world-test.mjs`.
 
@@ -22,6 +22,13 @@ Source is in `src/site/` (`gallery.js`, `gallery-world.js`, `gallery.css`, `prin
 - The plinth is solid: you walk around it, not through it. Clicking it opens a large copy of the box that you drag to turn.
 - Mechanical studies and Collected prints each have one placeholder box.
 - The horizon now sits at 38% from the top (a shift lens), so floors and plinths stay in view without tilting the walls.
+
+## v3: phone glitching, second pass
+
+- **Tiles.** Walls, floors and ceilings are cut into pieces of at most 640px. Each piece's background is sized to the whole surface, so patterns run on with no seams. iOS Safari draws big 3D planes that pass behind the viewer badly and drops textures over about 4096px; the corridor floor had reached 4850px.
+- **Culling.** Every tile, frame, peg line and plinth carries its floor footprint. Anything wholly behind the eye is set to `display:none`. A check with culling on and off gives pixel-identical views.
+- **A true stop.** Released movement used to decay towards zero without reaching it, so the scene was redrawn every frame, forever, at sub-pixel offsets. It now snaps to zero, and the camera only redraws when you move.
+- **Live site.** These changes are on the feature branch. GitHub Pages serves `main`, so they show on the live site only once merged.
 
 ## Later: photogrammetry
 

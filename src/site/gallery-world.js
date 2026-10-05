@@ -20,6 +20,8 @@ export function canWalk(x,z){
 export function advance(p,input,dt){
  dt=Math.min(.04,Math.max(0,dt));const ease=1-Math.exp(-12*dt),speed=input.fast?450:280;
  p.vf+=(input.forward*speed-p.vf)*ease;p.vs+=(input.strafe*speed-p.vs)*ease;p.vturn+=(input.turn*80-p.vturn)*ease;p.yaw+=p.vturn*dt;
+ // Released input settles to an exact stop, so an idle view stops redrawing.
+ if(!input.forward&&Math.abs(p.vf)<1)p.vf=0;if(!input.strafe&&Math.abs(p.vs)<1)p.vs=0;if(!input.turn&&Math.abs(p.vturn)<0.2)p.vturn=0;
  const a=p.yaw*Math.PI/180,dx=(Math.sin(a)*p.vf+Math.cos(a)*p.vs)*dt,dz=(-Math.cos(a)*p.vf+Math.sin(a)*p.vs)*dt;
  if(canWalk(p.x+dx,p.z))p.x+=dx;if(canWalk(p.x,p.z+dz))p.z+=dz;return p;
 }
