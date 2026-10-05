@@ -58,6 +58,8 @@ aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
 aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 aside fieldset.dock-folded > :not(legend) { display:none !important; }
 aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
 .dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
 .dock-bar span { margin-right:auto; font-style:italic; }
 .dock-bar button { font-size:0.76rem; padding:1px 8px; }
@@ -110,6 +112,7 @@ aside fieldset.dock-folded { padding-bottom:0; }
     bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
     bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
     aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
     // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
     const frame = main.firstElementChild;
     if (!frame) return;
@@ -128,6 +131,53 @@ aside fieldset.dock-folded { padding-bottom:0; }
     frame.appendChild(btn);
     apply();
     matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
 })();</script>
@@ -152,9 +202,9 @@ aside fieldset.dock-folded { padding-bottom:0; }
   </fieldset>
   <fieldset><legend>Outfit</legend>
     <label>Top <select id="top"><option value="tee">T-shirt</option><option value="jumper">jumper</option><option value="shirt">shirt with collar and buttons</option><option value="dress">dress</option><option value="coat">long coat</option><option value="none">none</option></select></label>
-    <label>Top pattern <select id="toppat"><option value="stripes">stripes</option><option value="dots">polka dots</option><option value="check">check</option><option value="hatch">hatched</option><option value="plain">plain</option></select></label>
+    <label data-when="top!=none">Top pattern <select id="toppat"><option value="stripes">stripes</option><option value="dots">polka dots</option><option value="check">check</option><option value="hatch">hatched</option><option value="plain">plain</option></select></label>
     <label>Bottoms <select id="bottom"><option value="trousers">trousers</option><option value="shorts">shorts</option><option value="skirt">skirt</option><option value="none">none</option></select></label>
-    <label>Bottoms pattern <select id="botpat"><option value="plain">plain</option><option value="stripes">stripes</option><option value="dots">polka dots</option><option value="check">check</option><option value="hatch">hatched</option></select></label>
+    <label data-when="bottom!=none">Bottoms pattern <select id="botpat"><option value="plain">plain</option><option value="stripes">stripes</option><option value="dots">polka dots</option><option value="check">check</option><option value="hatch">hatched</option></select></label>
     <label>Shoes <select id="shoes"><option value="shoes">shoes</option><option value="boots">boots</option><option value="none">none</option></select></label>
     <label>Hair <select id="hair"><option value="bob">bob</option><option value="crop">short crop</option><option value="long">long</option><option value="ponytail">ponytail</option><option value="bun">bun</option><option value="curly">curly</option><option value="pigtails">pigtails</option><option value="none">none</option></select></label>
     <label>Hat <select id="hat"><option value="none">none</option><option value="beanie">bobble beanie</option><option value="crown">crown</option><option value="sunhat">sun hat</option></select></label>
@@ -169,16 +219,16 @@ aside fieldset.dock-folded { padding-bottom:0; }
     <label>The doll too <select id="doll"><option value="off">no, clothes only</option><option value="on">yes, doll parts on this sheet</option></select></label>
     <label>Stitching along the edges <select id="stitch"><option value="on">on</option><option value="off">off</option></select></label>
     <label>Draw the outlines with a pen <select id="outlines"><option value="off">off</option><option value="on">on, their own layer</option></select></label>
-    <label>Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.6"></label>
+    <label data-when="outlines=on">Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.6"></label>
     <label>Assembly letters at the pin holes <select id="letters"><option value="on">on</option><option value="off">off</option></select></label>
     <label>Detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
   </fieldset>
   <fieldset><legend>Preview</legend>
     <label>Show <select id="view"><option value="dressed">the doll, dressed</option><option value="sheet">the sheet, as cut</option></select></label>
-    <label>Arms (degrees) <output id="o-arms"></output><input type="range" id="arms" min="-20" max="170" step="5" value="35"></label>
-    <label>Legs (degrees) <output id="o-legs"></output><input type="range" id="legs" min="-10" max="80" step="5" value="10"></label>
-    <label>Elbows and knees (degrees) <output id="o-bend"></output><input type="range" id="bend" min="0" max="120" step="5" value="20"></label>
-    <label>Head (degrees) <output id="o-tilt"></output><input type="range" id="tilt" min="-30" max="30" step="5" value="0"></label>
+    <label data-when="view=dressed">Arms (degrees) <output id="o-arms"></output><input type="range" id="arms" min="-20" max="170" step="5" value="35"></label>
+    <label data-when="view=dressed">Legs (degrees) <output id="o-legs"></output><input type="range" id="legs" min="-10" max="80" step="5" value="10"></label>
+    <label data-when="view=dressed; joints=full">Elbows and knees (degrees) <output id="o-bend"></output><input type="range" id="bend" min="0" max="120" step="5" value="20"></label>
+    <label data-when="view=dressed; neck=pinned">Head (degrees) <output id="o-tilt"></output><input type="range" id="tilt" min="-30" max="30" step="5" value="0"></label>
     <div class="row"><button id="wiggle">Wiggle it</button></div>
     <p class="hint">Preview only. The export is always the flat sheet of pieces.</p>
   </fieldset>

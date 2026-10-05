@@ -286,7 +286,6 @@ const toSVG = (r, only = null, ticks = false) => svgOf(r, penLayers(r), `PLG ove
 const moveWord = () => (MOTION[$("method").value] === "turn" ? ["Turn the grille", "Stop turning"] : ["Slide the clear sheet", "Stop sliding"]);
 function sync() {
   for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
-  document.querySelectorAll("[data-for]").forEach(el => (el.hidden = !el.dataset.for.split(" ").includes($("method").value)));
   $("animate").textContent = moveWord()[$("animate").dataset.on === "1" ? 1 : 0];
 }
 let pending = 0, anim = 0;

@@ -39,7 +39,7 @@ const penLayers = r => [
 ].filter(L => L.paths.length);
 const toSVG = (r, only = null, ticks = false) => svgOf(r, penLayers(r), `PLG cipher garden (UTP ${UTP_REV})`, only, ticks);
 
-function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } document.querySelectorAll("[data-for]").forEach(el => (el.hidden = !el.dataset.for.split(" ").includes($("method").value))); }
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 let pending = 0;
 function run() { sync(); $("stats").textContent = "drawing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
 
