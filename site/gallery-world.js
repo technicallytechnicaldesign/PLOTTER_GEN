@@ -19,13 +19,14 @@ export function canWalk(x,z){
  if(Math.abs(x)<=HALL-25&&z>=END+25&&z<=START-25)return true;
  return rooms.some(r=>(r.side*x>=HALL-25&&r.side*x<=HALL+60&&Math.abs(z-r.cz)<=DOOR_WIDTH/2-40)||(r.side*x>=HALL+30&&r.side*x<=HALL+ROOM_W-30&&Math.abs(z-r.cz)<=ROOM_D/2-30));
 }
-export function advance(p,input,dt){
+// `walk` lets another floor plan (inktober-world.js) reuse the same movement with its own walls.
+export function advance(p,input,dt,walk=canWalk){
  dt=Math.min(.04,Math.max(0,dt));const ease=1-Math.exp(-12*dt),speed=input.fast?900:520;
  p.vf+=(input.forward*speed-p.vf)*ease;p.vs+=(input.strafe*speed-p.vs)*ease;p.vturn+=(input.turn*80-p.vturn)*ease;p.yaw+=p.vturn*dt;
  // Released input settles to an exact stop, so an idle view stops redrawing.
  if(!input.forward&&Math.abs(p.vf)<1)p.vf=0;if(!input.strafe&&Math.abs(p.vs)<1)p.vs=0;if(!input.turn&&Math.abs(p.vturn)<0.2)p.vturn=0;
  const a=p.yaw*Math.PI/180,dx=(Math.sin(a)*p.vf+Math.cos(a)*p.vs)*dt,dz=(-Math.cos(a)*p.vf+Math.sin(a)*p.vs)*dt;
- if(canWalk(p.x+dx,p.z))p.x+=dx;if(canWalk(p.x,p.z+dz))p.z+=dz;return p;
+ if(walk(p.x+dx,p.z))p.x+=dx;if(walk(p.x,p.z+dz))p.z+=dz;return p;
 }
 // Arrive just inside the door, facing the far wall, so the whole room is in view.
 export function destination(id){const r=rooms.find(r=>r.id===id);return r?{x:r.side*(HALL+260),z:r.cz,yaw:r.side*90}:{x:0,z:START-200,yaw:0}}

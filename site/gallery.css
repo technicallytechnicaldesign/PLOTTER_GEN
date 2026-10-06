@@ -73,3 +73,14 @@
 #map-toggle[hidden]{display:none}
 @media(max-width:700px){#map-toggle{right:6px;top:6px;padding:8px 12px}}
 .gallery-header #simplify{margin-left:auto}
+
+/* Gallery tabs: the six-room print gallery and the one-room Inktober hall share one page shell. */
+.gallery-tabs{display:flex;gap:4px;padding:10px 4% 0;border-bottom:1px solid #aeb6bc;background:#fff;font:12px var(--font-mono)}
+.gallery-tabs a{padding:10px 16px;border:1px solid transparent;border-bottom:0;margin-bottom:-1px;color:#47545c;text-decoration:none;letter-spacing:.5px}
+.gallery-tabs a:hover{background:repeating-linear-gradient(135deg,transparent 0 5px,#80929522 5px 6px)}
+.gallery-tabs a[aria-current=page]{border-color:#aeb6bc;background:#fff;color:#20252a;font-weight:700}
+.gallery-tabs .ink-tab:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#15181c;margin-right:8px;vertical-align:1px}
+.ink-page .gallery-tabs .ink-tab[aria-current=page]{background:#15181c;color:#fff;border-color:#15181c}
+.ink-page .gallery-tabs .ink-tab[aria-current=page]:before{background:#c33325}
+.ink-page .gallery-header h1{letter-spacing:-1.5px}
+@media(max-width:700px){.gallery-tabs{padding:8px 12px 0}.gallery-tabs a{padding:9px 12px;font-size:11px}}
