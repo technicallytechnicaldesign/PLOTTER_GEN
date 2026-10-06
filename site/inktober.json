@@ -1,0 +1,503 @@
+{
+  "version": 1,
+  "year": 2026,
+  "note": "One entry per day. Add the prompt and a photo URL as each day is inked; frame is the sheet size in mm.",
+  "prints": [
+    {
+      "id": "ink-01",
+      "room": "hall",
+      "day": 1,
+      "date": "2026-10-01",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-02",
+      "room": "hall",
+      "day": 2,
+      "date": "2026-10-02",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-03",
+      "room": "hall",
+      "day": 3,
+      "date": "2026-10-03",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-04",
+      "room": "hall",
+      "day": 4,
+      "date": "2026-10-04",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-05",
+      "room": "hall",
+      "day": 5,
+      "date": "2026-10-05",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-06",
+      "room": "hall",
+      "day": 6,
+      "date": "2026-10-06",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-07",
+      "room": "hall",
+      "day": 7,
+      "date": "2026-10-07",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-08",
+      "room": "hall",
+      "day": 8,
+      "date": "2026-10-08",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-09",
+      "room": "hall",
+      "day": 9,
+      "date": "2026-10-09",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-10",
+      "room": "hall",
+      "day": 10,
+      "date": "2026-10-10",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-11",
+      "room": "hall",
+      "day": 11,
+      "date": "2026-10-11",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-12",
+      "room": "hall",
+      "day": 12,
+      "date": "2026-10-12",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-13",
+      "room": "hall",
+      "day": 13,
+      "date": "2026-10-13",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-14",
+      "room": "hall",
+      "day": 14,
+      "date": "2026-10-14",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-15",
+      "room": "hall",
+      "day": 15,
+      "date": "2026-10-15",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-16",
+      "room": "hall",
+      "day": 16,
+      "date": "2026-10-16",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-17",
+      "room": "hall",
+      "day": 17,
+      "date": "2026-10-17",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-18",
+      "room": "hall",
+      "day": 18,
+      "date": "2026-10-18",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-19",
+      "room": "hall",
+      "day": 19,
+      "date": "2026-10-19",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-20",
+      "room": "hall",
+      "day": 20,
+      "date": "2026-10-20",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-21",
+      "room": "hall",
+      "day": 21,
+      "date": "2026-10-21",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-22",
+      "room": "hall",
+      "day": 22,
+      "date": "2026-10-22",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-23",
+      "room": "hall",
+      "day": 23,
+      "date": "2026-10-23",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-24",
+      "room": "hall",
+      "day": 24,
+      "date": "2026-10-24",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-25",
+      "room": "hall",
+      "day": 25,
+      "date": "2026-10-25",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-26",
+      "room": "hall",
+      "day": 26,
+      "date": "2026-10-26",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-27",
+      "room": "hall",
+      "day": 27,
+      "date": "2026-10-27",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-28",
+      "room": "hall",
+      "day": 28,
+      "date": "2026-10-28",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-29",
+      "room": "hall",
+      "day": 29,
+      "date": "2026-10-29",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-30",
+      "room": "hall",
+      "day": 30,
+      "date": "2026-10-30",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-31",
+      "room": "hall",
+      "day": 31,
+      "date": "2026-10-31",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    }
+  ]
+}

@@ -13,7 +13,8 @@ const p={x:HALL-30,z:0,yaw:90,vf:0,vs:0,vturn:0};for(let i=0;i<180;i++)advance(p
 for(let i=0;i<120;i++)advance(b,{forward:0,strafe:0,turn:0},1/60);assert(Math.abs(b.vf)<.001,'Released keys did not stop');
 assert.equal(FLOOR-DOOR_HEIGHT/2+DOOR_HEIGHT/2,FLOOR,'Door does not meet floor');
 const manifest=JSON.parse(fs.readFileSync(new URL('./print-gallery.json',import.meta.url)));
-assert.equal(manifest.prints.filter(s=>!s.hang).length,24);assert(manifest.prints.filter(s=>s.hang==='plinth').every(s=>s.box&&['front','back','left','right','top'].every(f=>f in s.faces)),'A plinth piece lacks its box or faces');assert(manifest.prints.some(s=>s.hang==='peg'),'No peg garland pieces');assert(manifest.prints.every(s=>s.photo===null&&!s.studio&&!s.decoder),'Placeholder gallery contains fabricated print photos');
+assert.equal(manifest.prints.filter(s=>!s.hang).length,24);assert(manifest.prints.filter(s=>s.hang==='plinth').every(s=>s.box&&['front','back','left','right','top'].every(f=>f in s.faces)),'A plinth piece lacks its box or faces');assert(manifest.prints.some(s=>s.hang==='peg'),'No peg garland pieces');// A photo is either absent (an empty frame) or a real file in site/prints; links only ever come with a photo.
+assert(manifest.prints.every(s=>s.photo===null?!s.studio&&!s.decoder:/^prints\/[\w-]+\.jpg$/.test(s.photo)&&fs.existsSync(new URL('./'+s.photo,import.meta.url))),'A print photo is missing from site/prints, or an empty frame carries links');
 assert(new Set(manifest.prints.filter(s=>s.frame).map(s=>s.frame.width+'x'+s.frame.height)).size>=4,'Frames lack size and aspect variety');
 // Hanging: every frame sits inside its wall with a gap to the next, and none outgrows MAX_H.
 for(const r of rooms){const walls=roomWalls(r),hung=hang(manifest.prints.filter(s=>s.room===r.id&&!s.hang),walls);
@@ -25,4 +26,4 @@ for(const r of rooms)for(const at of plinthSpots(r,3))assert.equal(locationAt(at
 obstacles.push({x:rooms[0].cx,z:rooms[0].cz,r:200});assert(!canWalk(rooms[0].cx,rooms[0].cz)&&canWalk(destination(rooms[0].id).x,rooms[0].cz),'A plinth is walkable or blocks the door');obstacles.length=0;
 const script=fs.readFileSync(new URL('./gallery.js',import.meta.url),'utf8');assert(!script.includes("fetch('catalogue.json'"),'Gallery still loads generated specimens');
 assert.equal((script.match(/\$\('scene'\)\.innerHTML=/g)||[]).length,1,'Scene is replaced during navigation');
-console.log('PASS 6 fixed rooms, 24 photo placeholders, a peg line and plinths, frames hung inside their walls, varied frames, floor-level doors, connected passages, wall collisions, key release and 30/60/144 Hz walking parity.');
+console.log(`PASS 6 fixed rooms, 24 wall frames (${manifest.prints.filter(s=>s.photo).length} with photos, every one on disk),`+' a peg line and plinths, frames hung inside their walls, varied frames, floor-level doors, connected passages, wall collisions, key release and 30/60/144 Hz walking parity.');

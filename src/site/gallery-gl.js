@@ -37,7 +37,7 @@ function reserved(ctx, x, y, w, h, line1, line2) {
 }
 
 export function createGallery(host, world, onChange) {
-  const { rooms, FLOOR, CEILING, DOOR_WIDTH, DOOR_HEIGHT, HALL, ROOM_W, ROOM_D, START, END, SCALE, PLINTH_H, obstacles, plinthSpots, roomWalls, hang } = world;
+  const { rooms, FLOOR, CEILING, DOOR_WIDTH, DOOR_HEIGHT, HALL, ROOM_W, ROOM_D, START, END, SCALE, PLINTH_H, obstacles, plinthSpots, roomWalls, hang, HALL_TONE } = world;
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setClearColor(PAPER);
   renderer.domElement.className = 'gallery-canvas'; renderer.domElement.setAttribute('aria-hidden', 'true');
@@ -80,9 +80,11 @@ export function createGallery(host, world, onChange) {
   // ---- architecture ----
   floor(2 * HALL, START - END, 0, (START + END) / 2, true); floor(2 * HALL, START - END, 0, (START + END) / 2, false);
   wall(2 * HALL, tall, 0, 0, END, 0); wall(2 * HALL, tall, 0, 0, START, 180);
-  const sign = paint(320, 130, (c, W, H) => { c.fillStyle = PAPER; c.fillRect(0, 0, W, H); c.strokeStyle = '#48575e'; c.strokeRect(0.5, 0.5, W - 1, H - 1); c.strokeStyle = '#a8b3b8'; c.strokeRect(6.5, 6.5, W - 13, H - 13);
-    write(c, 'THE PRINT GALLERY', W / 2, 52, 24, '#283239'); write(c, 'Six rooms / real prints', W / 2, 86, 14, '#6b858a'); });
-  card(sign, 320, 130, place(new THREE.Group(), 0, -90, END + 20, 0));
+  // The far-wall sign. A world may bring its own (SIGN); `ink` turns it into a solid black block.
+  const S = world.SIGN || { w: 320, h: 130, title: 'THE PRINT GALLERY', sub: 'Six rooms / real prints' }, k = S.h / 130;
+  const sign = paint(S.w, S.h, (c, W, H) => { c.fillStyle = S.ink ? '#15181c' : PAPER; c.fillRect(0, 0, W, H); c.strokeStyle = S.ink ? '#15181c' : '#48575e'; c.strokeRect(0.5, 0.5, W - 1, H - 1); c.strokeStyle = S.ink ? '#f4f4f0' : '#a8b3b8'; c.strokeRect(6.5 * k, 6.5 * k, W - 13 * k, H - 13 * k);
+    write(c, S.title, W / 2, 52 * k, 24 * k, S.ink ? '#ffffff' : '#283239'); write(c, S.sub, W / 2, 86 * k, 14 * k, S.ink ? '#c9ced2' : '#6b858a'); });
+  card(sign, S.w, S.h, place(new THREE.Group(), 0, -90 - (S.h - 130) / 2, END + 20, 0));
   const doors = [];
   for (const side of [-1, 1]) {
     let start = START;
@@ -100,7 +102,7 @@ export function createGallery(host, world, onChange) {
       wall(ROOM_D, tall, side * (HALL + ROOM_W), 0, r.cz, face(side), r.tone);
       wall(ROOM_W, tall, r.cx, 0, r.cz - ROOM_D / 2, 0, r.tone); wall(ROOM_W, tall, r.cx, 0, r.cz + ROOM_D / 2, 180, r.tone);
     }
-    wall(start - END, tall, side * HALL, 0, (start + END) / 2, face(side));
+    wall(start - END, tall, side * HALL, 0, (start + END) / 2, face(side), HALL_TONE);
   }
 
   // ---- work ----
@@ -110,9 +112,10 @@ export function createGallery(host, world, onChange) {
       c.globalAlpha = 1; c.strokeStyle = '#a5adb0'; c.strokeRect(3.5, 3.5, w + 9, h + 9);
       hatch(c, 16, 16, w + 4, h + 4, 5, '#89959a');
       c.fillStyle = PAPER; c.fillRect(8, 8, w, h); c.strokeStyle = FRAME; c.lineWidth = 2; c.strokeRect(9, 9, w - 2, h - 2); c.lineWidth = 1;
-      if (img?.complete && img.naturalWidth) drawImage(c, img, 24, 24, w - 32, h - 32, false); else reserved(c, 24, 24, w - 32, h - 32, 'PRINT PHOTO', 'SPACE RESERVED');
+      if (img?.complete && img.naturalWidth) drawImage(c, img, 24, 24, w - 32, h - 32, false); else reserved(c, 24, 24, w - 32, h - 32, ...(s.reserved || ['PRINT PHOTO', 'SPACE RESERVED']));
+      if (s.mark === 'today') { c.strokeStyle = '#c33325'; c.lineWidth = 4; c.strokeRect(2, 2, w + 20, h + 20); c.lineWidth = 1; }
       c.fillStyle = PAPER; c.fillRect(8, h + 24, w, 46); c.fillStyle = '#aeb6bc'; c.fillRect(8, h + 26, w, 1);
-      write(c, s.title, 8, h + 40, 11, '#47545c', 'left'); write(c, url ? 'Physical print photograph' : 'Awaiting a print photograph', 8, h + 56, 9, '#47545c', 'left');
+      write(c, s.title, 8, h + 40, 11, '#47545c', 'left'); write(c, s.note || (url ? 'Physical print photograph' : 'Awaiting a print photograph'), 8, h + 56, 9, s.mark === 'today' ? '#c33325' : '#47545c', 'left');
     });
     img = photo(url, tex);
     const g = place(new THREE.Group(), x, -40, z, angle); card(tex, W, H, g, 4, -36, 0); g.userData.print = s.id; prints.set(s.id, g);
@@ -156,7 +159,10 @@ export function createGallery(host, world, onChange) {
     const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), boxMats); box.position.y = -(FLOOR - PLINTH_H - h / 2 - 1); g.add(box);
     g.userData.print = s.id; prints.set(s.id, g); spinners.push(box);
   }
+  const spots = new Map();
   function hangAll(all) {
+    // A world with one hall (inktober-world.js) hangs its 'hall' works in order along the two long walls.
+    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
     for (const r of rooms) {
       const works = all.filter(s => s.room === r.id), pegged = works.filter(s => s.hang === 'peg'); let walls = roomWalls(r);
       if (pegged.length) { garland(pegged, walls.find(w => w.id === 'far')); walls = walls.filter(w => w.id !== 'far'); }
@@ -196,5 +202,5 @@ export function createGallery(host, world, onChange) {
     return null;
   }
   const show = (id, on) => { const g = prints.get(id); if (g) g.visible = on; };
-  return { hangAll, resize, render, animating, pick, show };
+  return { hangAll, resize, render, animating, pick, show, spot: id => spots.get(id) };
 }

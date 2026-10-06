@@ -65,8 +65,10 @@ export async function buildSite({repo,here,pages}) {
   bakePuppets({catalogue,repo,here});
   fs.writeFileSync(path.join(out,'catalogue.json'),JSON.stringify(catalogue));
   fs.writeFileSync(path.join(out,'taxonomy.json'),JSON.stringify({shelves,poles,edges}));
-  for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','exhibit.js','gallery.js','gallery-world.js','gallery-gl.js','three.module.min.js','print-gallery.json','gallery.css','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
+  for(const name of ['site.css','bench.css','plot-animation.js','hero-motion.js','site.js','exhibit.js','gallery.js','gallery-world.js','inktober-world.js','inktober.json','inktober.html','gallery-gl.js','three.module.min.js','print-gallery.json','gallery.css','launch.html','launch.js'])fs.copyFileSync(path.join(here,'site',name),path.join(out,name));
   fs.copyFileSync(path.join(here,'site/gallery.html'),path.join(out,'gallery.html'));
+  // Print photographs for the gallery rooms (flattened by 02_WORK/print-photos/flatten.py) travel as a folder.
+  fs.cpSync(path.join(here,'site/prints'),path.join(out,'prints'),{recursive:true});
   const escape=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
   const fallback=pages.map(([p,,t,d])=>`<li><a href="${escape(p)}">${escape(t)}</a>: ${escape(d)}</li>`).join('\n');
   const revision=name=>crypto.createHash('sha256').update(fs.readFileSync(path.join(out,name))).digest('hex').slice(0,12);

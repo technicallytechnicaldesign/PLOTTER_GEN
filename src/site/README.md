@@ -105,3 +105,13 @@ Run `node 02_WORK/site/gallery-world-test.mjs` to check collision boundaries, do
 
 ## Generated studio pages
 `04_DOCS/worlds-studio.html` is written by PLOTTER_GEN_VIGIL's `02_WORK/vigil-comic/assemble.mjs` (the public twin of the private VIGIL worlds studio, with the story and the watcher's words left out). Edit its sources there and re-run that assembler; never edit the page here.
+
+## Print photos
+Photos of real prints live in `02_WORK/site/prints/` (web copies, about 1400 px wide) and are named in `print-gallery.json` as `prints/<name>.jpg`; the build copies the folder whole.
+Masters and originals live in `02_WORK/print-photos/`: run `python flatten.py <photo> <out.jpg> "TL TR BR BL" "l,t,r,b"` with the four corners of the drawn frame boxes, check the result, then make the web copy.
+`gallery-world-test.mjs` fails if a named photo is missing from `site/prints/`, or if an empty frame carries a studio or decoder link.
+
+## Inktober room
+`inktober.html` is a second tab on the gallery: one hall, 31 frames, driven by the same `gallery.js` and `gallery-gl.js` (`<body data-world="inktober">` swaps in `inktober-world.js` and `inktober.json`).
+Each day in `inktober.json` takes a `prompt` and a `photo` as it is inked; the frame title becomes `Day 06: <prompt>`, and today's frame is outlined red from the viewer's own date.
+Run `node 02_WORK/site/inktober-world-test.mjs`: it checks day order on the walls, every day reachable and faced, and the today/past/ahead labels.
