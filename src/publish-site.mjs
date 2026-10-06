@@ -33,6 +33,7 @@ export const PAGES = [
   ["jointed-animal-studio.html", "Scenes", "Jointed animal studio", "Cut-out rabbits, horses, dogs, cats, elephants and pigs with legs, heads and tails on split pins; spots, stripes or patches. Cut sizes untested."],
   ["vampire-doll-studio.html", "Scenes", "Vampire paper doll", "A jointed cut-out vampire with fangs, a tailcoat and a tall-collared cape that rides on the shoulder pins. Cut sizes untested."],
   ["spooky-garland-studio.html", "Scenes", "Spooky garland", "Ghosts, pumpkins and bats to string across a window, with jack-o-lantern faces drawn in pen or cut right through to glow. Cut sizes untested."],
+  ["poison-apple-studio.html", "Scenes", "Poison apple", "An Inktober apple in tattoo flash style, from candy apple to rotten to the core: drips, a skull in the shine, a worm, fumes and a ribbon banner. Pen widths untested."],
   ["pottery-puzzle-studio.html", "Scenes", "Pottery puzzle", "A decorated pot drawn in pen and broken into sherds on the cut layer, with a board sheet to rebuild it on. Cut sizes untested."],
   ["lino-decal-studio.html", "Vinyl", "Lino decals", "Ravens, crows and skulls carved like a lino block and cut from one colour of vinyl, as die-cut figures, moons, rings or carved blocks. Vinyl sizes untested."],
   ["gear-3d-studio.html", "Gears", "Gear 3D studio", "3D gears under a perspective lens on floors of rays, rings, ripples and Truchet ribbons."],
