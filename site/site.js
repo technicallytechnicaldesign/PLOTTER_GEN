@@ -1,6 +1,6 @@
 import {createReveal,revealProgress,moveReveal} from './exhibit.js';
 import {createDrawing,drawProgress} from './plot-animation.js?v=254b2f705023';
-import {createWeeding,weedProgress,createPuppet,puppetProgress,createGarland,garlandProgress} from './hero-motion.js?v=41cdb533acb5';
+import {createWeeding,weedProgress,createPuppet,puppetProgress,createGarland,garlandProgress} from './hero-motion.js?v=f534904a14da';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let catalogue=[], all=[], expanded=null, selected=null, filter='all', heroId=null, userPaused=false, inView=true, drawing=null, frame=0, lastTime=0;

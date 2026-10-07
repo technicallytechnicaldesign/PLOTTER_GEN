@@ -91,19 +91,14 @@
       "prompt": "ogre",
       "photo": "prints/inktober-06-ogre.webp",
       "render": true,
-      "sheet": {
-        "src": "prints/inktober-06-ogre-sheet.webp",
-        "cols": 9,
-        "rows": 6,
-        "frames": 54,
-        "fps": 15,
-        "still": 19
-      },
+      "hang": "peg",
+      "puppet": "prints/puppets/inktober-06-ogre/rig.json",
+      "reach": 0.225,
       "studio": "../ogre-jack-studio.html",
-      "description": "Tuesday 6 October 2026, prompt \"ogre\". Not plotted yet: the Ogre jack studio's own render, pulling its string on a loop. At rest it just stands there; pull, and the bent arms come up into claws while a RARRR! bubble swings out from behind it.",
+      "description": "Tuesday 6 October 2026, prompt \"ogre\". Not plotted yet: the Ogre jack studio's own render, hung on a peg from the ceiling and pulling its string on a loop. At rest it just stands there; pull, and the bent arms come up into claws while a RARRR! bubble swings out from behind it.",
       "frame": {
-        "width": 210,
-        "height": 219
+        "width": 280,
+        "height": 251
       },
       "content": {
         "nsfw": false,

@@ -28,6 +28,8 @@ export function weedProgress(d,progress){
 }
 const multiply=(a,b)=>[a[0]*b[0]+a[2]*b[1],a[1]*b[0]+a[3]*b[1],a[0]*b[2]+a[2]*b[3],a[1]*b[2]+a[3]*b[3],a[0]*b[4]+a[2]*b[5]+a[4],a[1]*b[4]+a[3]*b[5]+a[5]];
 export function puppetPose(data,seconds){
+ // a jumping jack on its string (ogre-jack-studio): yank, hold, let go, rest; each part turns from its hanging angle by its own pull angle
+ if(data.pull){const ph=(seconds/(data.pull.period||3.6))%1,t=ph<.18?(ph/.18)**.7:ph<.55?1:ph<.85?1-((ph-.55)/.3)**1.5:0;return Object.fromEntries(Object.entries(data.pull.angles).map(([k,a])=>[k,a*t]))}
  if(data.animal){const phase=seconds*4.2,w=Math.sin(phase),b=25*data.joints.length/5;return {fn:24*w,ff:-24*w,bn:-22*w,bf:22*w,fnk:b*Math.max(0,-w),ffk:b*Math.max(0,w),bnk:b*Math.max(0,w),bfk:b*Math.max(0,-w),head:6*Math.sin(2*phase),tail:25*Math.sin(3*phase)}}
  const phase=seconds*3.6,s=(1-Math.cos(phase))/2;
  return data.jack?{arm:12+135*s,leg:5+45*s,elbow:0,knee:0,tilt:0}:{arm:20+120*s,leg:5+30*(1-s),elbow:10+70*s,knee:10+40*(1-s),tilt:15*Math.sin(phase*.5)};
