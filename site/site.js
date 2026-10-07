@@ -47,7 +47,10 @@ function render(){
  previewCleanups.forEach(f=>f());previewCleanups=[];
  const tokens=$('search').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
  const matches=c=>(filter==='all'||c.shelf===filter)&&tokens.every(t=>haystack(c).includes(t));
- let visible=activeCollections().filter(c=>!c.season&&matches(c));
+ // A seasonal studio with a shelf also sits in that shelf's drawer and under its filter, so Inktober 2026 holds every Inktober
+ // studio even while one is on the seasonal shelf; searches and A-Z still list it once, in the seasonal section.
+ const doubled=c=>c.season&&c.shelf&&((view==='shelves'&&filter==='all'&&!tokens.length)||filter===c.shelf);
+ let visible=activeCollections().filter(c=>(!c.season||doubled(c))&&matches(c));
  if(view==='az')visible.sort((a,b)=>a.name.localeCompare(b.name));
  // Shelves fold together only while browsing everything; a search, a filter or A-Z lists studios one by one.
  const grouped=view==='shelves'&&filter==='all'&&!tokens.length,thematic=view==='thematic';
@@ -137,7 +140,7 @@ function setMode(next,updateURL=true){
  document.querySelector('footer p').textContent=cutting?'Cricut Explore 5 / SVG / vinyl cutting.':'Cricut Explore 5 / SVG / pen plotting.';
  document.querySelector('nav a[href="plot-decoder.html"]').hidden=cutting;
  $('search').placeholder=cutting?'Try ‘raven’, ‘bat’, ‘vinyl’…':'Try ‘woven’, ‘flags’, ‘maze’…';
- const shelfChips=taxonomy.shelves.filter(s=>activeCollections().some(c=>c.shelf===s.id&&!c.season)),themeButton=document.querySelector('#views [data-view="thematic"]');
+ const shelfChips=taxonomy.shelves.filter(s=>activeCollections().some(c=>c.shelf===s.id)),themeButton=document.querySelector('#views [data-view="thematic"]');
  $('filters').innerHTML=[['all','Everything'],...shelfChips.map(s=>[s.id,s.name])].map(([f,n])=>'<button data-filter="'+esc(f)+'" aria-pressed="'+(f==='all')+'">'+esc(n)+'</button>').join('');
  $('filters').hidden=!shelfChips.length;
  themeButton.hidden=!taxonomy.poles.length||!activeCollections().some(c=>c.axes);if(view==='thematic'&&themeButton.hidden)view='shelves';

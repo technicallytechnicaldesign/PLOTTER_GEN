@@ -208,6 +208,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label>How many drips <output id="o-drip"></output><input type="range" id="drip" min="0" max="100" step="1" value="60"></label>
     <label>Drip length <output id="o-dlen"></output><input type="range" id="dlen" min="0" max="100" step="1" value="50"></label>
     <label>Long and short <output id="o-dvar"></output><input type="range" id="dvar" min="0" max="100" step="1" value="60"></label>
+    <label>Drip wiggle <output id="o-dwig"></output><input type="range" id="dwig" min="0" max="100" step="5" value="35"></label>
     <label>Eye drips <output id="o-edrip"></output><input type="range" id="edrip" min="0" max="100" step="5" value="25"></label>
     <label>Ragged outline <output id="o-orag"></output><input type="range" id="orag" min="0" max="100" step="5" value="20"></label>
     <label>Ragged sockets <output id="o-rag"></output><input type="range" id="rag" min="0" max="100" step="5" value="35"></label>
@@ -226,6 +227,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
   <fieldset><legend>Lettering</legend>
     <label>Lettering <select id="letter"><option value="none">none</option><option value="arc">arched over the top</option><option value="ribbon">on a ribbon underneath</option></select></label>
     <label data-when="letter!=none">Text <input type="text" id="btext" value="BITE ME" maxlength="14"></label>
+    <label data-when="letter=ribbon">Ribbon raise (mm) <output id="o-rby"></output><input type="range" id="rby" min="-30" max="60" step="1" value="0"></label>
     <p class="hint" data-when="letter!=none">Capital letters, numbers and ! ? - . ' are drawn; anything else becomes a space. Long words get smaller letters to fit.</p>
   </fieldset>
   <fieldset><legend>Ink</legend>
@@ -235,7 +237,9 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label data-when="look=colour">Fill spacing (mm) <output id="o-sp"></output><input type="range" id="sp" min="0.5" max="2" step="0.05" value="0.8"></label>
     <label data-when="look=colour">Fill angle <output id="o-angle"></output><input type="range" id="angle" min="0" max="180" step="5" value="35"></label>
     <label>Contour detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
-    <p class="hint">Outline passes after the second only go on the shadow side, lower right. Black areas are close hatching in the line pen; whip shading is stippled dots in the thin pen on the coat's shadow side.</p>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option></select></label>
+    <label>Shadow hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
+    <p class="hint">Outline passes after the second only go on the shadow side, lower right. Dark areas are hatched in the line pen, never filled solid: 0.75 mm crosshatch read as an even dark tone on paper, and under 0.5 mm the lines flood and soak the paper. Whip shading is stippled dots in the thin pen on the coat's shadow side.</p>
   </fieldset>
   <fieldset><legend>Pens</legend>
     <label data-when="look=colour">Apple pen (preview) <select id="applecol"><option value="d7263d">red</option><option value="a3122a">cherry</option><option value="7b2d8b">purple</option><option value="1a1a1a">black</option></select></label>
@@ -273,7 +277,9 @@ const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(
 // Line and colour pens are 0.4 mm (the maker's pens, 2026-10-06); the thin pen is ASSUMED 0.3 until it is named.
 const PEN = { line: 0.4, shade: 0.3, apple: 0.4, poison: 0.4 };
 const PASS = 0.28;     // mm between outline passes: a 0.4 pen at 0.28 mm steps reads as one thick line
-const BLACK_SP = 0.35; // mm between hatch lines in solid black fills, a little under the pen width so they close up
+// Dark areas are crosshatch at o.hp (default 0.75 mm): a 0.4 pen held an even dark tone there on paper (MEASURED,
+// bench-log 2026-09-28), and anything under 0.5 mm floods and soaks the paper (primer, hatch pitch rule). The first
+// version hatched solid black at 0.35 mm, under one pen width, which the maker flagged as hard on pens and ink (2026-10-07).
 
 // ---------------- distance-field pieces (all in mm, y down) ----------------
 // Far apart (or one side infinite) smin is a plain min; the blend only runs inside the k band.
@@ -446,8 +452,11 @@ function build(o) {
   // The jaw edge wanders, so the drips do not all leave the coat at one height.
   const Ec = u => lerp(0.86 * R, 0.55 * R, form) - lerp(0.05, 0.25, form) * R * (u / R) ** 2 + 0.03 * R * sin(u / R * 7 + ph) + 0.015 * R * sin(u / R * 17 + ph * 2);
   const m = round(4 + 3 * dr), span = 1.64 * R, gap = span / m;
-  // Each drip is a tube along a slightly curving path (side drips follow the apple round underneath) whose width swells and
-  // necks. It ends one of three ways: a fat bulb, a tear (a neck pinching off with a drop hanging under it), or a thinning point.
+  // Each drip is a tube along a slightly curving path (side drips follow the apple round underneath). It moves like a real
+  // drip of something thick: broad where it leaves the coat, stretching thinner the further it runs (long drips have the
+  // thinnest necks), and the material gathers at the leading end in a round bulb wider than the neck above it; or the neck
+  // pinches to a thread with a drop about to fall. Short drips stay fat, rounded stubs. Constant-width tubes ending in points
+  // read as pillars, not liquid (maker, 2026-10-07). Drip wiggle lets each one meander as it runs.
   // Two drips (never side by side) always run long, so every apple has the jaw's long teeth.
   // Drip length sets the typical drip; Long and short spreads them (0: all alike, 100: stubs next to long teeth).
   const lenK = o.dlen / 100, varK = o.dvar / 100, baseL = R * (0.1 + 0.45 * lenK) * (0.35 + 0.65 * melt);
@@ -456,14 +465,15 @@ function build(o) {
     const u = -span / 2 + (i + 0.5) * gap + (r() - 0.5) * 0.15 * gap, w = gap * (0.24 + 0.15 * r());
     let L = baseL * lerp(1, 0.2 + 1.7 * r() ** 1.6, varK);
     if (i === li1 || i === li2) L = max(L, longL);
-    const roll = r(), end = roll < 0.45 ? "bulb" : roll < 0.75 ? "tear" : "point", bend = -Math.sign(u) * 0.12 * R * (u / R) ** 2, wob = (r() - 0.5) * 0.06 * R, ph3 = r() * TAU, swell = 0.05 + 0.08 * r();
-    const v0 = Ec(u) - 0.12 * R, v1 = Ec(u) + L, n = 14, pts = [], rad = [];
+    const roll = r(), stub = L < 0.16 * R, end = stub ? "stub" : roll < 0.62 ? "bulb" : "tear", bend = -Math.sign(u) * 0.12 * R * (u / R) ** 2, ph3 = r() * TAU, ph4 = r() * TAU, swell = 0.03 + 0.04 * r();
+    const neck = lerp(0.85, 0.52, sstep(0.16 * R, 0.6 * R, L)), wigA = (0.006 + 0.06 * o.dwig / 100) * R * min(1, L / (0.35 * R)), waves = 0.7 + 1.1 * r();
+    const v0 = Ec(u) - 0.12 * R, v1 = Ec(u) + L, n = 20, pts = [], rad = [];
     for (let j = 0; j <= n; j++) {
-      const t = j / n; pts.push([u + bend * t * t + wob * sin(t * PI * 1.4 + ph3) * t, lerp(v0, v1, t)]);
-      const rr = w * (1 + swell * sin(t * PI * 2.2 + ph3));
-      rad.push(rr * (end === "tear" ? 1 - 0.6 * sstep(0.55, 0.92, t) : end === "point" ? 1 - 0.55 * t ** 1.4 : 1 - 0.15 * t));
+      const t = j / n; pts.push([u + bend * t * t + wigA * sstep(0, 0.35, t) * sin(t * TAU * waves + ph3), lerp(v0, v1, t)]);
+      const base = w * (1 + swell * sin(t * PI * 3 + ph4));
+      rad.push(stub ? base * lerp(1.15, 0.9, t) : base * lerp(1.2, neck, sstep(0, 0.7, t)) * (end === "tear" ? 1 - 0.55 * sstep(0.62, 0.95, t) : 1 + (0.82 / neck - 1) * sstep(0.68, 1, t)));   // a gradual taper, then the stream swells back out into the bulb: a teardrop, not a ball on a stick (MEASURED rotten.png r7)
     }
-    const [eu, ev] = pts[n], cap = end === "bulb" ? w * (1 + 0.15 * r()) : end === "tear" ? w * 0.8 : w * 0.45, capV = end === "tear" ? ev + w * 0.7 : ev, xs = pts.map(q => q[0]);
+    const [eu, ev] = pts[n], cap = end === "bulb" ? w * (0.85 + 0.25 * r()) : end === "tear" ? w * 0.75 : w * 0.85, capV = end === "tear" ? ev + w * 0.7 : ev - (end === "bulb" ? 0.25 * w : 0), xs = pts.map(q => q[0]);
     return { u, w, L, pts, rad, end, eu, cap, capV, v1: capV, box: [min(...xs) - w * 1.6, v0 - w, max(...xs) + w * 1.6, capV + cap + 1] };
   });
   // Far from every drip, return the distance to their joint box: a lower bound, and exact enough for the smooth union.
@@ -473,8 +483,10 @@ function build(o) {
     let d = INF;
     for (const q of drips) {
       if (boxD(q.box, u, v) >= d) continue;
-      for (let j = 0; j < q.pts.length - 1; j++) { const [s, t] = seg(u, v, q.pts[j][0], q.pts[j][1], q.pts[j + 1][0], q.pts[j + 1][1]); d = min(d, s - lerp(q.rad[j], q.rad[j + 1], t)); }
-      d = min(d, circ(u, v, q.eu, q.capV, q.cap));
+      let dq = INF;
+      for (let j = 0; j < q.pts.length - 1; j++) { const [s, t] = seg(u, v, q.pts[j][0], q.pts[j][1], q.pts[j + 1][0], q.pts[j + 1][1]); dq = min(dq, s - lerp(q.rad[j], q.rad[j + 1], t)); }
+      const cb = circ(u, v, q.eu, q.capV, q.cap);
+      d = min(d, q.end === "bulb" ? smin(dq, cb, q.w * 0.6) : min(dq, cb));   // a bulb melts into its neck as a teardrop
     }
     return d;
   };  // The coat lumps out over the sides of the apple where it has run over the edge.
@@ -519,7 +531,7 @@ function build(o) {
     const u = (rb() - 0.5) * 1.3 * R, v = Ec(u) + R * (0.12 + 0.3 * rb()), rr = R * (0.018 + 0.015 * rb());
     if (dripD(u, v) > rr * 2 + 1 && A.d(...fromL(u, v)) < -rr * 2 - 1 && v > Ec(u) + 0.08 * R && blobs.every(q => hypot(q[0] - u, q[1] - v) > 0.08 * R)) blobs.push([u, v, rr]);
   }
-  const falls = drips.filter(q => q.end !== "point").sort((a, b) => b.v1 - a.v1).slice(0, p >= 80 ? 2 : p >= 30 ? 1 : 0).map(q => ({ u: q.eu, v: q.capV + q.cap + q.w * 0.9 * 2.3 + 0.06 * R, r: q.w * 0.75 }));
+  const falls = drips.filter(q => q.end !== "stub").sort((a, b) => b.v1 - a.v1).slice(0, p >= 80 ? 2 : p >= 30 ? 1 : 0).map(q => ({ u: q.eu, v: q.capV + q.cap + q.w * 0.9 * 2.3 + 0.06 * R, r: q.w * 0.75 }));
   const coatRaw = (x, y) => { const [u, v] = toL(x, y); let d = smin(coatTop(x, y, u, v), dripD(u, v), gap * 0.35); for (const [bu, bv, rr] of blobs) d = min(d, ell(u, v, bu, bv, rr, rr * 1.5, 0)); return d; };
   const coatD = (x, y) => { const [u, v] = toL(x, y); return max(coatRaw(x, y), -socketD(u, v), -noseD(u, v)); };
   const fallD = (x, y) => { const [u, v] = toL(x, y); let d = INF; for (const q of falls) d = min(d, tear(u, v, q.u, q.v, q.r)); return d; };
@@ -547,7 +559,7 @@ function build(o) {
   const txt = cleanText(o.btext), U = textUnits(txt);
   let ban = null, arc = null, textCap = 0;
   if (o.letter === "ribbon") {
-    const Wb = 1.7 * R, hb = 0.28 * R, archH = 0.12 * R, yb = yMax + 0.06 * R + hb / 2, c = x => yb + archH * (1 - (2 * x / Wb) ** 2);
+    const Wb = 1.7 * R, hb = 0.28 * R, archH = 0.12 * R, yb = yMax + 0.06 * R + hb / 2 - o.rby, c = x => yb + archH * (1 - (2 * x / Wb) ** 2);
     const tails = [-1, 1].map(s => { const xe = s * Wb / 2, yt = c(xe) + 0.16 * R, xin = xe - s * 0.12 * R, xo = xe + s * 0.38 * R; return { poly: [[xin, yt - hb / 2], [xo, yt - hb / 2], [xo - s * 0.12 * R, yt], [xo, yt + hb / 2], [xin, yt + hb / 2]], fold: [[xe, c(xe) + hb / 2], [xin, yt + hb / 2], [xe, yt + hb / 2]] }; });
     ban = { Wb, hb, archH, yb, c, tails };
   }
@@ -587,7 +599,7 @@ function build(o) {
       add(layer, ls);
     }
   };
-  const fillBlack = (inside, b, ang = 45, far = null) => add("line", hatch(inside, b, ang, BLACK_SP, 0.4, far), 0.01);
+  const fillBlack = (inside, b, ang = 45, far = null) => add("line", [...hatch(inside, b, ang, o.hp, 0.4, far), ...(o.dark === "cross" ? hatch(inside, b, ang + 90, o.hp, 0.4, far) : [])], 0.01);   // dark tone: crosshatch or single hatch
   const visSil = vis("sil"), shadeAmt = o.shade / 100;
 
   // Outer outline of the apple and its coat, then every coat edge inside the apple (drips, sockets, nose, loose drops).
@@ -735,6 +747,7 @@ function build(o) {
     ["fits inside the margins", bw <= PW - 2 * mg && bh <= PH - 2 * mg, `${bw.toFixed(0)} x ${bh.toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
     ["every coordinate is a number", finite, finite ? "yes" : "no"],
   ];
+  gates.push(["shadow hatch at least 0.5 mm apart", o.hp >= 0.5, o.hp + " mm"]);
   if (look === "colour") gates.push(["fill lines at least a pen width apart", o.sp >= PEN.apple, `${o.sp} mm for a ${PEN.apple} mm pen`]);
   if (o.letter !== "none" && U > 0) gates.push(["letters at least 3 mm tall", textCap >= 3, textCap.toFixed(1) + " mm"]);
   if (bw > PW - 2 * mg || bh > PH - 2 * mg) notes.push("make the apple narrower or the margin smaller");
@@ -751,7 +764,7 @@ function draw(r) {
   for (const key of ["apple", "poison", "shade", "line"]) {
     c.strokeStyle = c.fillStyle = col[key];
     for (const [q, cl, kind] of r.layers[key]) {
-      c.lineWidth = flash && kind === "fill" ? (key === "line" ? BLACK_SP : r.o.sp) * 1.15 : PEN[key];
+      c.lineWidth = flash && kind === "fill" ? (key === "line" ? r.o.hp : r.o.sp) * 1.15 : PEN[key];
       c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath();
       if (kind === "dot") c.fill(); else c.stroke();
     }
@@ -776,14 +789,14 @@ function toSVG(r, only = null, ticks = false) {
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["look", "rays", "sparkle", "sparkn", "poison", "drip", "dlen", "dvar", "rag", "edrip", "orag", "eyes", "stembase", "size", "taper", "tilt", "seed", "topper", "letter", "btext", "weight", "detailines", "shade", "sp", "angle", "detail", "applecol", "poisoncol", "view", "page", "margin"];
+const IDS = ["look", "rays", "sparkle", "sparkn", "poison", "drip", "dlen", "dvar", "dwig", "rag", "edrip", "orag", "eyes", "stembase", "size", "taper", "tilt", "seed", "topper", "letter", "btext", "rby", "weight", "detailines", "dark", "hp", "shade", "sp", "angle", "detail", "applecol", "poisoncol", "view", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null, pending = 0;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 const VIEW_ONLY = new Set(["view", "applecol", "poisoncol"]);
 function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
 
-const BASE = { look: "ink", rays: "on", sparkle: "off", sparkn: 6, poison: 75, drip: 60, dlen: 50, dvar: 60, rag: 35, edrip: 25, orag: 20, eyes: "hollow", stembase: "crease", size: 90, taper: 60, tilt: 3, seed: 13, topper: "stem", letter: "none", btext: "BITE ME", weight: 2, detailines: "on", shade: 0, sp: 0.8, angle: 35, detail: 1, applecol: "d7263d", poisoncol: "3fa34d", view: "pens", page: "190x250", margin: 10 };
+const BASE = { look: "ink", rays: "on", sparkle: "off", sparkn: 6, poison: 75, drip: 60, dlen: 50, dvar: 60, dwig: 35, rby: 0, rag: 35, edrip: 25, orag: 20, eyes: "hollow", stembase: "crease", size: 90, taper: 60, tilt: 3, seed: 13, topper: "stem", letter: "none", btext: "BITE ME", weight: 2, detailines: "on", dark: "cross", hp: 0.75, shade: 0, sp: 0.8, angle: 35, detail: 1, applecol: "d7263d", poisoncol: "3fa34d", view: "pens", page: "190x250", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   skull: P({}),
