@@ -22,6 +22,8 @@
     "coch": "45",
     "many": "4",
     "pots": "4",
+    "bar": "4",
+    "wgap": "1",
     "btext": "INKTOBER 04",
     "weight": "2",
     "shade": "55",
@@ -49,7 +51,7 @@
     "page": "190x250",
     "ticks": "split"
   },
-  "sourceHash": "f85f495922101818fbbb5b232f9caf60fa469460790d1ba624671eb20cfb9408",
+  "sourceHash": "0af02573941e59fd6498db2cdf0c6bcdba614e0b4c87e98204f3f52dd58e2f39",
   "svg": "site/art/cactus-specimen.svg",
   "image": "site/art/cactus-specimen.webp",
   "page": "190x250",
