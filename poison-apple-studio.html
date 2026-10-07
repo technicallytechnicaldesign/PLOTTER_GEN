@@ -237,7 +237,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label data-when="look=colour">Fill spacing (mm) <output id="o-sp"></output><input type="range" id="sp" min="0.5" max="2" step="0.05" value="0.8"></label>
     <label data-when="look=colour">Fill angle <output id="o-angle"></output><input type="range" id="angle" min="0" max="180" step="5" value="35"></label>
     <label>Contour detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
-    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option></select></label>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option><option value="fade">run-off: fades toward the light</option></select></label>
     <label>Shadow hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
     <p class="hint">Outline passes after the second only go on the shadow side, lower right. Dark areas are hatched in the line pen, never filled solid: 0.75 mm crosshatch read as an even dark tone on paper, and under 0.5 mm the lines flood and soak the paper. Whip shading is stippled dots in the thin pen on the coat's shadow side.</p>
   </fieldset>
@@ -438,6 +438,16 @@ function letters(txt, k, place) {
   return strokes;
 }
 
+// Run-off: a hatch that thins out toward the light (upper left) instead of sitting as one dark mass (maker, 2026-10-07,
+// after a wide-pitch print felt better than a close one). Along the light-to-shadow ramp across the box: nothing below lo,
+// dashes that lengthen from lo to hi, solid lines past hi. The crossing pass gets a later ramp, so it only joins in the dark.
+function runoff(lines, b, ang, lo, hi) {
+  const bw = max(1e-6, b[2] - b[0]), bh = max(1e-6, b[3] - b[1]), ca = cos(ang * D2R), sa = sin(ang * D2R), P = 2.4;
+  const densify = q => { const out = [q[0]]; for (let i = 1; i < q.length; i++) { const [ax, ay] = q[i - 1], [bx, by] = q[i], n = max(1, ceil(hypot(bx - ax, by - ay) / 0.3)); for (let k = 1; k <= n; k++) out.push([lerp(ax, bx, k / n), lerp(ay, by, k / n)]); } return out; };
+  const keep = (x, y) => { const t = ((x - b[0]) / bw + (y - b[1]) / bh) / 2; if (t >= hi) return true; if (t <= lo) return false; const s = x * ca + y * sa, f = (((s % P) + P) % P) / P; return f < (t - lo) / (hi - lo); };
+  return keepWhere(lines.map(([q]) => [densify(q), false]), keep).map(([q]) => [q, false, "fill"]);
+}
+
 // ---------------- the build ----------------
 function build(o) {
   const t0 = performance.now(), R = o.size / 2, p = o.poison, dr = o.drip / 100, rng = k => mulberry(o.seed * 1009 + k * 7919);
@@ -599,7 +609,10 @@ function build(o) {
       add(layer, ls);
     }
   };
-  const fillBlack = (inside, b, ang = 45, far = null) => add("line", [...hatch(inside, b, ang, o.hp, 0.4, far), ...(o.dark === "cross" ? hatch(inside, b, ang + 90, o.hp, 0.4, far) : [])], 0.01);   // dark tone: crosshatch or single hatch
+  const fillBlack = (inside, b, ang = 45, far = null) => {   // dark tone: crosshatch, single hatch, or run-off
+    const h1 = hatch(inside, b, ang, o.hp, 0.4, far), h2 = o.dark === "single" ? [] : hatch(inside, b, ang + 90, o.hp, 0.4, far);
+    add("line", o.dark === "fade" ? [...runoff(h1, b, ang, 0.1, 0.4), ...runoff(h2, b, ang + 90, 0.5, 0.78)] : [...h1, ...h2], 0.01);
+  };
   const visSil = vis("sil"), shadeAmt = o.shade / 100;
 
   // Outer outline of the apple and its coat, then every coat edge inside the apple (drips, sockets, nose, loose drops).
