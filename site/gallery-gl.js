@@ -44,7 +44,7 @@ export function createGallery(host, world, onChange) {
   renderer.domElement.className = 'gallery-canvas'; renderer.domElement.setAttribute('aria-hidden', 'true');
   host.prepend(renderer.domElement);
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(60, 1, 5, 24000), aniso = renderer.capabilities.getMaxAnisotropy();
-  const lineMat = new THREE.LineBasicMaterial({ color: INK }), solids = [], spinners = [], swingers = [], puppets = [], prints = new Map();
+  const lineMat = new THREE.LineBasicMaterial({ color: INK }), solids = [], spinners = [], swingers = [], puppets = [], movies = [], prints = new Map();
   const mats = new Map(), once = (key, make) => mats.get(key) || (mats.set(key, make()), mats.get(key));
   // Surfaces sit a hair behind their own outlines, so pen lines never fight the paper.
   const basic = opt => new THREE.MeshBasicMaterial({ polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, ...opt });
@@ -107,19 +107,27 @@ export function createGallery(host, world, onChange) {
   }
 
   // ---- work ----
+  // A studio render that moves (inktober.json `sheet`: its frames in a grid) is stepped through by the clock, since a canvas
+  // only has to draw an animated image's first frame; reduced motion holds the sheet's `still` frame.
+  function cell(ctx, img, sh, n, x, y, w, h) {
+    const cw = img.width / sh.cols, ch = img.height / sh.rows, k = Math.min(w / cw, h / ch), iw = cw * k, ih = ch * k;
+    ctx.drawImage(img, (n % sh.cols) * cw, Math.floor(n / sh.cols) * ch, cw, ch, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+  }
   function frame(s, w, h, x, z, angle) {
     let img = null;
-    const W = w + 24, H = h + 88, url = s.photo, tex = paint(W, H, (c) => {
+    const sh = s.sheet, movie = sh ? { n: sh.still ?? 0 } : null;
+    const W = w + 24, H = h + 88, url = sh ? sh.src : s.photo, tex = paint(W, H, (c) => {
       c.globalAlpha = 1; c.strokeStyle = '#a5adb0'; c.strokeRect(3.5, 3.5, w + 9, h + 9);
       hatch(c, 16, 16, w + 4, h + 4, 5, '#89959a');
       c.fillStyle = PAPER; c.fillRect(8, 8, w, h); c.strokeStyle = FRAME; c.lineWidth = 2; c.strokeRect(9, 9, w - 2, h - 2); c.lineWidth = 1;
-      if (img?.complete && img.naturalWidth) drawImage(c, img, 24, 24, w - 32, h - 32, false); else reserved(c, 24, 24, w - 32, h - 32, ...(s.reserved || ['PRINT PHOTO', 'SPACE RESERVED']));
+      if (img?.complete && img.naturalWidth) { if (sh) cell(c, img, sh, movie.n, 24, 24, w - 32, h - 32); else drawImage(c, img, 24, 24, w - 32, h - 32, false); } else reserved(c, 24, 24, w - 32, h - 32, ...(s.reserved || ['PRINT PHOTO', 'SPACE RESERVED']));
       if (s.mark === 'today') { c.strokeStyle = '#c33325'; c.lineWidth = 4; c.strokeRect(2, 2, w + 20, h + 20); c.lineWidth = 1; }
       c.fillStyle = PAPER; c.fillRect(8, h + 24, w, 46); c.fillStyle = '#aeb6bc'; c.fillRect(8, h + 26, w, 1);
       write(c, s.title, 8, h + 40, 11, '#47545c', 'left'); write(c, s.note || (url ? 'Physical print photograph' : 'Awaiting a print photograph'), 8, h + 56, 9, s.mark === 'today' ? '#c33325' : '#47545c', 'left');
     });
     img = photo(url, tex);
     const g = place(new THREE.Group(), x, -40, z, angle); card(tex, W, H, g, 4, -36, 0); g.userData.print = s.id; prints.set(s.id, g);
+    if (sh) movies.push(Object.assign(movie, { g, tex, sh, ready: () => img?.complete && img.naturalWidth }));
   }
   function garland(set, wall) {
     const L = wall.len * 0.9, gap = 40, k = Math.min(SCALE, (L - gap * (set.length + 1)) / set.reduce((t, s) => t + s.frame.width, 0));
@@ -210,12 +218,13 @@ export function createGallery(host, world, onChange) {
     if (!still.matches) {
       for (const b of spinners) b.rotation.y = time / 28000 * 2 * Math.PI;
       for (const s of swingers) s.rotation.z = s.userData.tilt + rad(1.5) * Math.sin(time / 6000 * Math.PI + s.userData.phase);
+      for (const m of movies) { const n = Math.floor(time / 1000 * (m.sh.fps || 12)) % m.sh.frames; if (n !== m.n && m.ready()) { m.n = n; m.tex.redraw(); } }
       for (const p of puppets) { const pose = puppetPose(p.rig, (time / 1000 + p.phase) * (p.rig.speed || 1)); for (const j of p.joints) j.g.rotation.z = -rad((pose[j.key] || 0) * (p.rig.amp?.[j.key] ?? 1)); }
     }
     renderer.render(scene, camera);
   }
   // Moving pieces only need frames while one is close enough to see.
-  const animating = p => !still.matches && [...spinners, ...swingers].some(o => { const v = o.getWorldPosition(new THREE.Vector3()); return o.visible && o.parent.visible && Math.hypot(v.x - p.x, v.z - p.z) < 4500; });
+  const animating = p => !still.matches && [...spinners, ...swingers, ...movies.map(m => m.g)].some(o => { const v = o.getWorldPosition(new THREE.Vector3()); return o.visible && o.parent.visible && Math.hypot(v.x - p.x, v.z - p.z) < 4500; });
   const ray = new THREE.Raycaster(), pickable = () => [...solids, ...doors, ...[...prints.values()].filter(g => g.visible)];
   function pick(clientX, clientY) {
     const r = renderer.domElement.getBoundingClientRect();

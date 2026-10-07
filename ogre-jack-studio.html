@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ogre jack studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Ogre jack studio</h1>
+  <p class="sub">Inktober day 6, ogre. A plot-and-cut jumping jack: at rest the ogre just stands there looking sheepish. Pull the string and up come the bent arms, claws over its head, while a spiky RARRR! bubble that was hiding behind its body swings up beside its head on the same pull.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="swamp">Swamp ogre</button><button data-preset="cave">Cave ogre</button><button data-preset="baby">Baby ogre</button><button data-preset="posh">Posh ogre</button><button data-preset="shy">Shy one, ROAR!</button><button data-preset="grr">Grumpy, bubble left</button><button data-preset="plain">Colour me in</button><button data-preset="mini">A4 mini</button></div>
+  </fieldset>
+  <fieldset><legend>The ogre</legend>
+    <label>Cast <select id="cast"><option value="swamp">swamp ogre, patched tunic</option><option value="cave">cave ogre, pelt and club</option><option value="baby">baby ogre, nappy and rattle</option><option value="posh">posh ogre, waistcoat and monocle</option></select></label>
+    <label>In its other hand <select id="prop"><option value="auto">whatever suits the cast</option><option value="none">nothing</option><option value="fish">a fish</option><option value="club">a club</option><option value="onion">an onion</option><option value="teacup">a teacup</option><option value="rattle">a rattle</option></select></label>
+    <label>Height (mm) <output id="o-height"></output><input type="range" id="height" min="150" max="300" step="5" value="230"></label>
+    <label>Build <output id="o-stock"></output><input type="range" id="stock" min="0.85" max="1.2" step="0.05" value="1"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="6"></label>
+  </fieldset>
+  <fieldset><legend>The scare</legend>
+    <label>Elbow bend (degrees) <output id="o-bend"></output><input type="range" id="bend" min="30" max="110" step="5" value="70"></label>
+    <label>Arm tab angle at rest (degrees) <output id="o-armtab"></output><input type="range" id="armtab" min="20" max="65" step="5" value="50"></label>
+    <label>Leg kick (degrees) <output id="o-kick"></output><input type="range" id="kick" min="0" max="80" step="5" value="45"></label>
+    <label>Shout bubble <select id="bubble"><option value="on">on, hidden behind the body</option><option value="off">off</option></select></label>
+    <label data-when="bubble=on">It shouts <select id="word"><option value="RARRR!">RARRR!</option><option value="ROAR!">ROAR!</option><option value="GRRR!">GRRR!</option><option value="RAWR!">RAWR!</option></select></label>
+    <label data-when="bubble=on">Bubble pops up <select id="bside"><option value="right">on the page's right</option><option value="left">on the page's left</option></select></label>
+    <label data-when="bubble=on">Bubble pin <select id="bpin"><option value="nose">through the nose, a brass nose stud</option><option value="brow">through the brow, a brass wart</option></select></label>
+    <label data-when="bubble=on">Bubble lean from upright (degrees) <output id="o-lean"></output><input type="range" id="lean" min="24" max="42" step="1" value="32"></label>
+    <label data-when="bubble=on">Bubble size <output id="o-bsize"></output><input type="range" id="bsize" min="0.75" max="1.1" step="0.05" value="0.95"></label>
+    <p class="hint">The rest pose is worked out from where each part's weight sits, so what you see is how it really hangs. The tabs are sized so the bubble finishes its swing on the same pull as the arms.</p>
+  </fieldset>
+  <fieldset><legend>Drawing</legend>
+    <label>Detail <output id="o-detail"></output><input type="range" id="detail" min="0.6" max="1.4" step="0.05" value="1"></label>
+    <label>Warts <output id="o-warts"></output><input type="range" id="warts" min="0" max="2" step="0.1" value="1"></label>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option><option value="fade">run-off: fades toward the light</option><option value="off">off, colour me in</option></select></label>
+    <label data-when="dark!=off">Shadow hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
+    <label>Accents in the colour pen <select id="accent"><option value="on">on (the shout)</option><option value="off">off</option></select></label>
+    <label>Draw the outlines with a pen <select id="outlines"><option value="off">off</option><option value="on">on, their own layer</option></select></label>
+    <label data-when="outlines=on">Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.6"></label>
+    <label>Assembly letters at the joints <select id="letters"><option value="on">on</option><option value="off">off</option></select></label>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="both">at rest and pulled, side by side</option><option value="sheet">the sheet, as cut</option><option value="built">put together</option></select></label>
+    <label data-when="view=built">Pull (%) <output id="o-pull"></output><input type="range" id="pull" min="0" max="100" step="1" value="0"></label>
+    <div class="row"><button id="wiggle">Pull the string</button></div>
+    <p class="hint">Preview only. The export is always the flat sheet of parts.</p>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per layer in job order: the pen layers, then the cut. The pen files carry four corner ticks at 1 mm and the cut file carries a trim rectangle at 1 mm, so every file lands in the same place in Design Space.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it goes together. Six parts: the body (with the head), two bent arms, two legs and the shout bubble. Stack them from the front: the body, then the legs and arms behind it on split pins A to D, and last of all the bubble, right at the back, on pin E through the nose (or the brow). The bubble has to be the back layer, because on its swing it passes the shoulder pins and would catch on their shanks. Tie one thread across the two arm tabs and one across the two leg tabs; tie a pull string to the middle of the arm thread, run it down past the feet and knot the middle of the leg thread onto it on the way. Then tie a short thread from the bubble's tab to the arm knot, just taut with the ogre at rest. Hang it from the hole in the head. Pull, and the arms swing up with their bend turned into a claw over the head while the bubble comes out from behind. The rest pose in the preview is worked out from each part's weight (the centre of its area hangs under its pin) and the pulled pose from the tab geometry: an arm turns until its tab points straight down, the bubble's tab is cut to the length that makes it finish on the same pull, and the legs' longer tabs turn them only by the kick you set. All of that is geometry, not yet a test: card stiffness, pin friction and thread stretch are ASSUMED negligible until the first one is built. Cut sizes are ASSUMED until the cut calibration sheet is read: pin hole 2.4 mm for a standard brass paper fastener, at least 3 mm of card round every hole, no part narrower than 5 mm, 3 mm between parts, ink gap 0.4 mm. The pen draws first and stops a small gap short of every cut line, then the blade cuts on the same mat load.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, asin, sign } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const rot = (v, a) => { const c = cos(a), s = sin(a); return [v[0] * c - v[1] * s, v[0] * s + v[1] * c]; };
+const add2 = (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k];
+
+// ---------------- cut sizes (ASSUMED until the cut calibration sheet is read) ----------------
+const PIN_HOLE_D = 2.4;     // ASSUMED: hole for a standard brass paper fastener (shank about 2 mm), cut-cal row A
+const STRING_HOLE_D = 1.6;  // ASSUMED: hole a thread can be pushed through
+const JOINT_MARGIN = 3.0;   // ASSUMED: card left round every hole, so the pin does not tear out
+const MIN_HALF = 2.5;       // ASSUMED: no part narrower than 5 mm
+const PART_GAP = 3.0;       // ASSUMED: space between parts on the sheet
+const INK_GAP = 0.4;        // ASSUMED: clear space between ink and any cut line
+const TRIM_INSET = 1.0;     // trim rectangle, mm from every page edge (the pen corner ticks sit at the same 1 mm)
+const JR = PIN_HOLE_D / 2 + JOINT_MARGIN + 0.8; // joint disc radius round each pin hole
+const TAB_R = STRING_HOLE_D / 2 + JOINT_MARGIN + 0.6; // card round the string hole at a tab's end
+const LIGHT = [0.55, 0.835]; // the shadow side: light comes from the upper left
+
+// ---------------- small stroke font (cap height 6, y down): assembly letters and the shout ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.75,3.9 L3.25,3.9", B: "M0,3 L2.3,3 A2.3,1.5,1.5,1.5,90,-90 L0,0 L0,6 L2.4,6 A2.4,4.5,1.6,1.5,90,-90 L2.3,3",
+  C: "A2.1,3,2.1,3,-50,-310", D: "M0,0 L0,6 L1.6,6 A1.6,3,2.4,3,90,-90 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3",
+  G: "A2.1,3,2.1,3,-50,-320 L4.2,3.3 L2.4,3.3", O: "A2,3,2,3,0,360", R: "M0,6 L0,0 L2.2,0 A2.2,1.5,1.7,1.5,-90,90 L0,3 M1.9,3 L4,6",
+  W: "M0,0 L1,6 L2,2.4 L3,6 L4,0", "!": "M2,0 L2,3.9 M2,5.4 L2,5.7",
+};
+function glyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+const letter = (ch, cx, cy, size, ang = 0) => (GLYPHS[ch] || []).map(s => s.map(([x, y]) => { const q = rot([(x - 2) * size / 6, (y - 3) * size / 6], ang); return [cx + q[0], cy + q[1]]; }));
+
+// ---------------- shapes: signed distance primitives ----------------
+const Circ = (x, y, r) => ({ t: "c", x, y, r: max(r, MIN_HALF) });
+const Limb = (ax, ay, ra, bx, by, rb) => ({ t: "k", ax, ay, ra: max(ra, MIN_HALF), bx, by, rb: max(rb, MIN_HALF) });
+const Box = (x, y, hw, hh, r, ang = 0) => ({ t: "b", x, y, hw: max(hw, MIN_HALF), hh: max(hh, MIN_HALF), r: min(max(r, 0.5), min(max(hw, MIN_HALF), max(hh, MIN_HALF))), ang });
+function primDist(p, x, y) {
+  if (p.t === "c") return hypot(x - p.x, y - p.y) - p.r;
+  if (p.t === "k") { const dx = p.bx - p.ax, dy = p.by - p.ay, L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - p.ax) * dx + (y - p.ay) * dy) / L2, 0, 1); return hypot(x - p.ax - t * dx, y - p.ay - t * dy) - (p.ra + (p.rb - p.ra) * t); }
+  const c = cos(-p.ang), s = sin(-p.ang), lx = (x - p.x) * c - (y - p.y) * s, ly = (x - p.x) * s + (y - p.y) * c;
+  const qx = abs(lx) - p.hw + p.r, qy = abs(ly) - p.hh + p.r;
+  return hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - p.r;
+}
+const smin = (a, b, k) => { if (k <= 0) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+const primBox = p => p.t === "c" ? [p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r] : p.t === "k" ? [min(p.ax - p.ra, p.bx - p.rb), min(p.ay - p.ra, p.by - p.rb), max(p.ax + p.ra, p.bx + p.rb), max(p.ay + p.ra, p.by + p.rb)] : [p.x - hypot(p.hw, p.hh), p.y - hypot(p.hw, p.hh), p.x + hypot(p.hw, p.hh), p.y + hypot(p.hw, p.hh)];
+
+// ---------------- iso-lines (marching squares) ----------------
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+const loopArea = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+function smooth(l, passes = 2) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
+// ---------------- the cast ----------------
+// hs head scale, belly and chest in u, armL/legL limb length, aw/lw limb girth
+const CAST = {
+  swamp: { hs: 1, belly: 1.22, chest: 1.55, armL: 1, legL: 1, aw: 1, lw: 1, ears: "droop", hair: "three", wear: "tunic", prop: "fish", tusk: 1, brow: 1, eyes: "beady" },
+  cave: { hs: 0.95, belly: 1.18, chest: 1.65, armL: 1.08, legL: 0.95, aw: 1.08, lw: 1.05, ears: "point", hair: "mop", wear: "pelt", prop: "club", tusk: 1.3, brow: 1.5, eyes: "beady", fur: 1 },
+  baby: { hs: 1.28, belly: 1.12, chest: 1.3, armL: 0.78, legL: 0.72, aw: 0.95, lw: 0.95, ears: "round", hair: "curl", wear: "nappy", prop: "rattle", tusk: 0.55, brow: 0.45, eyes: "big" },
+  posh: { hs: 0.95, belly: 1.3, chest: 1.5, armL: 1, legL: 0.95, aw: 0.95, lw: 0.95, ears: "droop", hair: "combover", wear: "waistcoat", prop: "teacup", tusk: 0.85, brow: 0.8, eyes: "monocle" },
+};
+
+// ---------------- the rig: parts, pivots and holes in their design frames (mm, y down, hips near 0,0) ----------------
+// Arms and legs are designed hanging straight down from their pins; the bubble is designed in its pulled pose, upright.
+function rig(o) {
+  const C = CAST[o.cast], hs = C.hs, st = o.stock, B = C.belly * st, rnd = mulberry(o.seed * 7919 + 3);
+  const jawBot = -2.62, jh = 0.42 * hs, jawC = jawBot - jh, hcY = jawC - 0.5 * hs, Rh = 0.9 * hs;
+  const hipY = -0.95 + 0.55 * B, legU = 1.3 * C.legL, topU = -(hcY - Rh), botU = hipY + legU + 0.58;
+  const u = o.height / (topU + botU), U = v => v * u;
+  const hc = [0, U(hcY)], top = U(hcY - Rh);
+  const parts = [];
+  const add = (name, kind, prims, extra = {}) => { const p = { name, kind, prims, holes: [], smooth: U(0.06), rest: 0, pull: 0, sgn: 1, ...extra }; parts.push(p); return p; };
+  const headPrims = [Circ(0, hc[1], U(Rh)), Box(0, U(jawC), U(0.98 * hs), U(jh), U(0.36 * hs))];
+  for (const sx of [1, -1]) {
+    if (C.ears === "droop") headPrims.push(Limb(-sx * U(0.82 * hs), hc[1], U(0.26 * hs), -sx * U(1.5 * hs), U(hcY + 0.42 * hs), U(0.09 * hs)));
+    else if (C.ears === "point") headPrims.push(Limb(-sx * U(0.8 * hs), U(hcY - 0.08 * hs), U(0.27 * hs), -sx * U(1.42 * hs), U(hcY - 0.6 * hs), U(0.07 * hs)));
+    else headPrims.push(Circ(-sx * U(0.96 * hs), hc[1], U(0.3 * hs)));
+  }
+  const torso = [Box(0, U(-2.3), U(C.chest * st), U(0.62), U(0.55)), Circ(0, U(-0.95), U(B))];
+  const P = o.bpin === "brow" ? [0, U(hcY - 0.4 * hs)] : [0, U(hcY + 0.3 * hs)];
+  const body = add("body", "body", [...torso, ...headPrims], { smooth: U(0.22) });
+  body.holes.push({ c: [0, top + JR * 0.95], r: STRING_HOLE_D / 2, kind: "hang" });
+  const bubbleRight = o.bside === "right";
+  const geo = { u, hs, hc, top, Rh: U(Rh), jawC: U(jawC), jawBot: U(jawBot), jh: U(jh), hcY, B: U(B), bellyY: U(-0.95), P, headPrims, C, nose: P, hipY: U(hipY) };
+  for (const sx of [1, -1]) {
+    const side = sx > 0 ? "left" : "right";
+    // arm: upper arm straight down, forearm bent outward by the elbow bend
+    const aw = C.aw, S = [-sx * U(C.chest * st - 0.22), U(-2.42)], la = U(1.15 * C.armL), lf = U(1.0 * C.armL), beta = o.bend * D2R;
+    const E = [S[0], S[1] + la], d = [-sx * sin(beta), cos(beta)], Hn = add2(E, d, lf), M = add2(Hn, d, U(0.12 * aw)), nrm = [-d[1], d[0]];
+    const prims = [Circ(S[0], S[1], JR), Limb(S[0], S[1], U(0.36 * aw), E[0], E[1], U(0.31 * aw)), Circ(E[0], E[1], U(0.31 * aw)), Limb(E[0], E[1], U(0.31 * aw), Hn[0], Hn[1], U(0.28 * aw)), Circ(M[0], M[1], U(0.4 * aw))];
+    const claws = [];
+    for (const k of [-1, 0, 1]) { const cd = rot(d, k * 0.42), b0 = add2(M, cd, U(0.25 * aw)), tip = add2(M, cd, U(0.72 * aw)); prims.push(Limb(b0[0], b0[1], U(0.15 * aw), tip[0], tip[1], MIN_HALF)); claws.push({ b0, tip, cd }); }
+    const propHand = bubbleRight === (sx === 1) || o.bubble !== "on" && sx === 1;
+    const prop = propHand ? (o.prop === "auto" ? C.prop : o.prop) : "none";
+    const ang = atan2(d[1], d[0]);
+    if (prop === "club") { const a = add2(M, d, U(0.2)), b = add2(M, d, U(1.35)); prims.push(Limb(a[0], a[1], U(0.12), b[0], b[1], U(0.28)), Circ(b[0], b[1], U(0.3))); }
+    else if (prop === "fish") { const t0 = add2(M, d, U(0.78)), c = add2(M, d, U(1.25)), nose = add2(M, d, U(1.72)); prims.push(Limb(M[0], M[1], U(0.07), t0[0], t0[1], U(0.08)), Limb(t0[0], t0[1], U(0.1), c[0], c[1], U(0.27)), Limb(c[0], c[1], U(0.27), nose[0], nose[1], U(0.1)));
+      for (const s of [-1, 1]) { const f = add2(add2(M, d, U(0.5)), nrm, s * U(0.26)); prims.push(Limb(t0[0], t0[1], U(0.07), f[0], f[1], U(0.09))); } }
+    else if (prop === "onion") { const c = add2(M, d, U(0.78)), s = add2(c, d, U(0.62)); prims.push(Circ(c[0], c[1], U(0.37)), Limb(c[0], c[1], U(0.12), s[0] + nrm[0] * U(0.08), s[1] + nrm[1] * U(0.08), U(0.05))); }
+    else if (prop === "teacup") { const c = add2(M, d, U(0.62)), hnd = add2(c, nrm, sx * U(0.33)), sau = add2(M, d, U(0.3)); prims.push(Box(c[0], c[1], U(0.3), U(0.25), U(0.1), ang + PI / 2), Circ(hnd[0], hnd[1], U(0.12)), Box(sau[0], sau[1], U(0.44), U(0.07), U(0.06), ang + PI / 2)); }
+    else if (prop === "rattle") { const s = add2(M, d, U(0.85)), b = add2(M, d, U(1.1)); prims.push(Limb(M[0], M[1], U(0.08), s[0], s[1], U(0.08)), Circ(b[0], b[1], U(0.3))); }
+    const arm = add("arm " + side, "arm", prims, { pivot: S, sgn: sx, joint: sx > 0 ? "A" : "B", smooth: U(0.08), info: { S, E, d, Hn, M, claws, prop, nrm, la, lf, sx } });
+    arm.holes.push({ c: S, r: PIN_HOLE_D / 2, kind: "pin", joint: arm.joint }); body.holes.push({ c: S, r: PIN_HOLE_D / 2, kind: "pin", joint: arm.joint }); body.prims.push(Circ(S[0], S[1], JR));
+    // leg: straight down, the foot turned out
+    const lw = C.lw, Hp = [-sx * U(0.55 * B), U(hipY)], Ak = [Hp[0], Hp[1] + U(legU)], out = -sx, toe = [Ak[0] + out * U(0.42), Ak[1] + U(0.3)];
+    const lp = [Circ(Hp[0], Hp[1], JR), Limb(Hp[0], Hp[1], U(0.42 * lw), Ak[0], Ak[1], U(0.33 * lw)), Limb(Ak[0], Ak[1] + U(0.08), U(0.32 * lw), toe[0], toe[1], U(0.26 * lw))];
+    const toes = [];
+    for (let k = 0; k < 3; k++) { const tc = [toe[0] + out * U(0.2 * lw), toe[1] + U((k - 1.2) * 0.12 * lw)]; lp.push(Circ(tc[0], tc[1], U(0.1 * lw))); toes.push(tc); }
+    const leg = add("leg " + side, "leg", lp, { pivot: Hp, sgn: sx, joint: sx > 0 ? "C" : "D", smooth: U(0.06), info: { Hp, Ak, toe, toes, out, sx } });
+    leg.holes.push({ c: Hp, r: PIN_HOLE_D / 2, kind: "pin", joint: leg.joint }); body.holes.push({ c: Hp, r: PIN_HOLE_D / 2, kind: "pin", joint: leg.joint }); body.prims.push(Circ(Hp[0], Hp[1], JR));
+  }
+  if (o.bubble === "on") {
+    const sb = bubbleRight ? 1 : -1, lam = o.lean * D2R, bs = o.bsize, hw = U(0.95 * bs), hh = U(0.55 * bs);
+    const dirB = [sb * sin(lam), -cos(lam)], L = max((P[1] - top + U(0.12) + hh * 1.3) / cos(lam), (hw * 1.42 + 4) / sin(lam)), Cb = add2(P, dirB, L);
+    const prims = [Circ(P[0], P[1], JR), Limb(P[0], P[1], JR, Cb[0], Cb[1], U(0.3 * bs)), Box(Cb[0], Cb[1], hw, hh, hh)];
+    const n = 13, spikes = [];
+    for (let k = 0; k < n; k++) { const a = TAU * (k + 0.25 + 0.5 * rnd()) / n, e = [hw * cos(a), hh * sin(a)], b0 = add2(Cb, e, 0.55), tip = add2(Cb, e, 1.28 + 0.12 * rnd()); prims.push(Limb(b0[0], b0[1], U(0.22 * bs), tip[0], tip[1], MIN_HALF)); spikes.push(tip); }
+    const bub = add("shout bubble", "bubble", prims, { pivot: P, sgn: 1, joint: "E", smooth: U(0.03), info: { Cb, hw, hh, sb, L, spikes } });
+    bub.holes.push({ c: P, r: PIN_HOLE_D / 2, kind: "pin", joint: "E" }); body.holes.push({ c: P, r: PIN_HOLE_D / 2, kind: "pin", joint: "E" });
+  }
+  return { parts, u, geo, body };
+}
+
+// ---------------- fields per part ----------------
+function partField(p, h) {
+  let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF;
+  for (const q of p.prims) { const b = primBox(q); bx0 = min(bx0, b[0]); by0 = min(by0, b[1]); bx1 = max(bx1, b[2]); by1 = max(by1, b[3]); }
+  const pad = 3 + p.smooth, x0 = bx0 - pad, y0 = by0 - pad, nx = ceil((bx1 - bx0 + 2 * pad) / h) + 1, ny = ceil((by1 - by0 + 2 * pad) / h) + 1, F = new Float32Array(nx * ny);
+  // each shape fills only the cells within REACH of its box, in shape order, so the field is exact wherever ink or a cut can land;
+  // cells further out keep 1e3, still outside, which is all the far field is read for
+  const k = p.smooth, REACH = k + 6;
+  F.fill(1e3);
+  for (const q of p.prims) {
+    const b = primBox(q), i0 = max(0, floor((b[0] - REACH - x0) / h)), i1 = min(nx - 1, ceil((b[2] + REACH - x0) / h)), j0 = max(0, floor((b[1] - REACH - y0) / h)), j1 = min(ny - 1, ceil((b[3] + REACH - y0) / h));
+    for (let j = j0; j <= j1; j++) { const y = y0 + j * h; for (let i = i0; i <= i1; i++) { const n = j * nx + i, a = F[n], d = primDist(q, x0 + i * h, y); F[n] = a >= 1e3 ? min(d, 1e3) : smin(a, d, k); } }
+  }
+  return { F, nx, ny, h, x0, y0 };
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+// ink may go where the card is at least INK_GAP inside the outline and INK_GAP clear of every hole
+const inkRoom = (p, x, y) => { let d = -sampleF(p.G, x, y); for (const H of p.holes) d = min(d, hypot(x - H.c[0], y - H.c[1]) - H.r); return d; };
+function clip(p, lines) {
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)) : 1;
+      for (let k = 0; k < n; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n;
+        if (inkRoom(p, x, y) > INK_GAP + 0.02) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; }
+      }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.02)).filter(r => r.length > 1);
+}
+
+// ---------------- the mechanics: how each part hangs, and how far the pull turns it ----------------
+function centroid(p, h) {
+  const G = partField(p, h); let sx = 0, sy = 0, n = 0;
+  for (let j = 0; j < G.ny; j++) for (let i = 0; i < G.nx; i++) if (G.F[j * G.nx + i] < 0) { sx += G.x0 + i * h; sy += G.y0 + j * h; n++; }
+  return [sx / n, sy / n];
+}
+// the turn that puts the centre of the part's area straight under its pin
+const hangAngle = p => { const c = centroid(p, 1), v = [c[0] - p.pivot[0], c[1] - p.pivot[1]]; return -atan2(-v[0], v[1]); };
+function mech(R, o) {
+  const aA = o.armtab * D2R, rA = JR * 1.7, travel = rA * (1 + sin(aA)), aL = 40 * D2R, kick = o.kick * D2R;
+  const hipX = min(...R.parts.filter(p => p.kind === "leg").map(p => abs(p.pivot[0]))), rLmax = hipX - TAB_R - 0.8;
+  const rL = clamp(kick > 0.01 ? travel / (sin(aL) - sin(aL - kick)) : JR + 2, JR + 2, max(JR + 2, rLmax));
+  // a shorter leg tab would turn the legs further than the kick, so the leg thread is tied this much slack and the legs start late
+  const legSlack = max(0, travel - rL * (sin(aL) - sin(aL - kick)));
+  const place = (p, cfg) => {
+    p.base = p.prims.slice();
+    let rest = hangAngle(p);
+    for (let it = 0; it < 3; it++) {
+      const c = cfg(rest), delta = c.pull - rest, tr = [(sign(delta) || 1) * cos(c.alpha), -sin(c.alpha)], td = rot(tr, -rest), tip = add2(p.pivot, td, c.r);
+      p.prims = [...p.base, Limb(p.pivot[0], p.pivot[1], JR, tip[0], tip[1], TAB_R)];
+      Object.assign(p, { tab: tip, rest, pull: c.pull, alpha: c.alpha, tabLen: c.r });
+      rest = hangAngle(p);
+    }
+    p.rest = rest; p.pull = cfg(rest).pull;
+    p.holes.push({ c: p.tab, r: STRING_HOLE_D / 2, kind: "string" });
+  };
+  for (const p of R.parts) {
+    if (p.kind === "arm") place(p, rest => ({ pull: rest + p.sgn * (PI / 2 + aA), alpha: aA, r: rA }));
+    else if (p.kind === "leg") place(p, rest => ({ pull: rest + p.sgn * kick, alpha: aL, r: rL }));
+    else if (p.kind === "bubble") place(p, rest => { const tr = abs(rest), al = clamp(tr - PI / 2, 15 * D2R, 70 * D2R); return { pull: 0, alpha: al, r: max(JR + 2, travel / (sin(al) - sin(al - tr))) }; });
+  }
+  return { travel, rA, rL, legSlack };
+}
+// pose: t = 0 at rest, 1 fully pulled
+const angAt = (p, t) => p.rest + (p.pull - p.rest) * t;
+const fwd = (p, t) => { if (!p.pivot) return q => q; const a = angAt(p, t), c = cos(a), s = sin(a), [px, py] = p.pivot; return q => [px + (q[0] - px) * c - (q[1] - py) * s, py + (q[0] - px) * s + (q[1] - py) * c]; };
+const inv = (p, t) => { if (!p.pivot) return q => q; const a = -angAt(p, t), c = cos(a), s = sin(a), [px, py] = p.pivot; return q => [px + (q[0] - px) * c - (q[1] - py) * s, py + (q[0] - px) * s + (q[1] - py) * c]; };
+// share of a part's area (cells passing keep) that no part in front of it covers, at pull t
+function visibleShare(R, p, t, front, keep = () => true) {
+  const G = p.G, k = max(1, round(1 / G.h)), f = fwd(p, t), invs = front.map(q => [q, inv(q, t)]);
+  let n = 0, seen = 0;
+  for (let j = 0; j < G.ny; j += k) for (let i = 0; i < G.nx; i += k) {
+    if (G.F[j * G.nx + i] >= 0) continue;
+    const x = G.x0 + i * G.h, y = G.y0 + j * G.h;
+    if (!keep(x, y)) continue;
+    n++;
+    const w = f([x, y]);
+    if (!invs.some(([q, iv]) => { const z = iv(w); return sampleF(q.G, z[0], z[1]) < 0; })) seen++;
+  }
+  return n ? seen / n : 1;
+}
+
+// ---------------- drawing helpers ----------------
+const circle = (x, y, r, n = 0) => { n = n || max(12, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+const arc = (x, y, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [x + rx * cos(a), y + ry * sin(a)]; });
+const curve = (f, a, b, n = 40) => Array.from({ length: n + 1 }, (_, i) => f(a + (b - a) * i / n));
+const spiral = (x, y, r, turns, a0 = 0) => curve(t => [x + r * t * cos(a0 + t * turns * TAU), y + r * t * sin(a0 + t * turns * TAU)], 0.15, 1, 30);
+function hatch(p, gap, ang, filter) {
+  const G = p.G, c = cos(ang), s = sin(ang), cx = G.x0 + G.nx * G.h / 2, cy = G.y0 + G.ny * G.h / 2, R = hypot(G.nx, G.ny) * G.h / 2, out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.3) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (filter(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } } if (run.length > 1) out.push(run); }
+  return out;
+}
+function grad(G, x, y) { const e = G.h; return [sampleF(G, x + e, y) - sampleF(G, x - e, y), sampleF(G, x, y + e) - sampleF(G, x, y - e)]; }
+const inset = (p, d) => contours(p.G, -d).map(l => { const q = smooth(l, 2); return [...q, q[0]]; });
+// a field from stroked polylines (radius r): used for the shout's letters
+function strokeField(strokes, r, h) {
+  let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF;
+  for (const s of strokes) for (const [x, y] of s) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); }
+  x0 -= r + 2; y0 -= r + 2; x1 += r + 2; y1 += r + 2;
+  const nx = ceil((x1 - x0) / h) + 1, ny = ceil((y1 - y0) / h) + 1, F = new Float32Array(nx * ny).fill(1e3), segs = [];
+  for (const s of strokes) { if (s.length === 1) segs.push([s[0], s[0]]); for (let i = 1; i < s.length; i++) segs.push([s[i - 1], s[i]]); }
+  for (const [a, b] of segs) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1e-9, R2 = r + 1.5;
+    const i0 = max(0, floor((min(a[0], b[0]) - R2 - x0) / h)), i1 = min(nx - 1, ceil((max(a[0], b[0]) + R2 - x0) / h)), j0 = max(0, floor((min(a[1], b[1]) - R2 - y0) / h)), j1 = min(ny - 1, ceil((max(a[1], b[1]) + R2 - y0) / h));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const x = x0 + i * h, y = y0 + j * h, t = clamp(((x - a[0]) * dx + (y - a[1]) * dy) / L2, 0, 1), n = j * nx + i; F[n] = min(F[n], hypot(x - a[0] - t * dx, y - a[1] - t * dy) - r); }
+  }
+  return { F, nx, ny, h, x0, y0 };
+}
+
+// ---------------- dark areas: hatched on the shadow side, never solid ----------------
+function shadow(p, o, D, extra = null) {
+  if (o.dark === "off") return [];
+  const det = o.detail, s = (x, y) => { const [gx, gy] = grad(p.G, x, y), g = hypot(gx, gy) || 1; return (gx * D[0] + gy * D[1]) / g; };
+  const depth = (x, y) => -sampleF(p.G, x, y);
+  const keep = o.dark === "fade"
+    ? (x, y) => { const k = s(x, y); if (k < 0.12) return false; const dd = depth(x, y); return dd > INK_GAP && dd < 4.6 * det * (k - 0.12) / 0.88; }
+    : (x, y) => { const k = s(x, y), dd = depth(x, y); return k > 0.3 && dd > INK_GAP && dd < (1.5 + 2.4 * k) * det; };
+  const both = extra ? (x, y) => keep(x, y) || extra(x, y) : keep;
+  const ang = atan2(D[1], D[0]) + PI / 4, out = hatch(p, o.hp, ang, both);
+  // the second direction only where the card is thick: crosshatch inside a thin shape plots as rows of X marks
+  if (o.dark === "cross") {
+    const thick = (x, y) => { const [gx, gy] = grad(p.G, x, y), g = hypot(gx, gy) || 1; return sampleF(p.G, x - gx / g * 3.2, y - gy / g * 3.2) < -1.2; };
+    out.push(...hatch(p, o.hp, ang - PI / 2, (x, y) => both(x, y) && thick(x, y)));
+  }
+  return out;
+}
+
+// ---------------- what each part draws ----------------
+function wart(L, rnd, x, y, r) { L.push(circle(x, y, r, 14)); if (rnd() < 0.6) { const a = -PI / 2 + (rnd() - 0.5) * 1.6; L.push([[x + cos(a) * r, y + sin(a) * r], [x + cos(a) * (r + 1.6), y + sin(a) * (r + 1.6)]]); } }
+function scatter(p, rnd, n, filter, rmin = 0.7, rmax = 1.3) {
+  const L = [], G = p.G;
+  for (let k = 0, tries = 0; k < n && tries < 400; tries++) {
+    const x = G.x0 + rnd() * G.nx * G.h, y = G.y0 + rnd() * G.ny * G.h, r = rmin + rnd() * (rmax - rmin);
+    if (inkRoom(p, x, y) < r + 2.2 || !filter(x, y)) continue;
+    wart(L, rnd, x, y, r); k++;
+  }
+  return L;
+}
+function decorBody(p, o, R, rnd) {
+  const g = R.geo, u = g.u, U = v => v * u, hs = g.hs, C = g.C, hc = g.hc, det = o.detail, L = [], Sh = [], Co = [];
+  // the jaw and chin, drawn where the head sits over the chest
+  const HG = partField({ prims: g.headPrims, smooth: 0 }, p.G.h * 1.5);
+  for (const l of contours(HG, 0)) L.push([...smooth(l, 1), l[0]]);
+  // the gut under the chest
+  L.push(arc(0, g.bellyY, g.B - U(0.06), g.B - U(0.06), 212, 328, 30));
+  // eyes and brow
+  const ex = U(0.3 * hs), ey = U(g.hcY - 0.05 * hs);
+  for (const s of [-1, 1]) {
+    if (C.eyes === "big") { L.push(circle(s * ex, ey, U(0.19 * hs)), circle(s * ex + U(0.03), ey + U(0.03), U(0.09 * hs))); L.push(circle(s * ex - U(0.06 * hs), ey - U(0.07 * hs), U(0.03 * hs), 10)); }
+    else { L.push(circle(s * ex, ey, U(0.1 * hs)), circle(s * ex + s * U(0.02), ey + U(0.01), U(0.04 * hs), 10)); }
+  }
+  if (C.eyes === "monocle") { L.push(circle(ex, ey, U(0.2 * hs))); L.push(curve(t => [ex + U(0.2 * hs) * cos(1.2) + t * U(0.35), ey + U(0.2 * hs) * sin(1.2) + U(0.5) * t * t], 0, 1, 16)); }
+  const browY = ey - U(0.2 * hs), nb = max(1, round(1 + 2 * C.brow));
+  for (let k = 0; k < nb; k++) L.push(curve(x => [x, browY - k * 0.75 + U(0.1 * hs) * (1 - abs(x) / U(0.55 * hs)) * (C.eyes === "big" ? -0.4 : 1) + U(0.025) * sin(x * 0.16 + k * 0.7)], -U(0.55 * hs), U(0.55 * hs), 30));
+  // nose round the pin (the brass head is the tip of the nose)
+  const P = [0, U(g.hcY + 0.3 * hs)], nr = U(0.27 * hs);
+  L.push(circle(P[0], P[1], nr), arc(P[0] - U(0.13 * hs), P[1] + U(0.12 * hs), U(0.07 * hs), U(0.05 * hs), 200, 340, 12), arc(P[0] + U(0.13 * hs), P[1] + U(0.12 * hs), U(0.07 * hs), U(0.05 * hs), 200, 340, 12));
+  // a brow pin wears a wart ring round its brass head
+  if (o.bpin === "brow" && o.bubble === "on") L.push(circle(g.nose[0], g.nose[1], JR - 0.6, 20));
+  // mouth: an underbite grin, the tusks rising from the lower lip
+  const my = g.jawC + U(0.1 * hs), mw = U(0.62 * hs), lip = x => my + U(0.06 * hs) * (1 - (x / mw) ** 2);
+  L.push(curve(x => [x, lip(x)], -mw, mw, 40), curve(x => [x, lip(x) + U(0.12 * hs) * (1 - (x / (mw * 0.8)) ** 2) + U(0.03)], -mw * 0.8, mw * 0.8, 30));
+  const tk = C.tusk;
+  for (const s of [-1, 1]) { const tx = s * U(0.38 * hs), b = lip(tx) + U(0.02); L.push([[tx - U(0.07 * hs), b], [tx + s * U(0.02), b - U(0.24 * hs * tk)], [tx + U(0.07 * hs), b], [tx - U(0.07 * hs), b]]); }
+  for (const s of [-1, 1]) L.push(arc(s * (mw + U(0.04)), my - U(0.02), U(0.07), U(0.08), s > 0 ? 100 : -100, s > 0 ? 250 : 80, 10));
+  // ears
+  for (const sx of [1, -1]) {
+    if (C.ears === "droop") L.push(curve(t => [-sx * U((0.92 + 0.48 * t) * hs), U(g.hcY + (0.02 + 0.34 * t) * hs) - U(0.06 * hs) * sin(PI * t)], 0, 1, 16));
+    else if (C.ears === "point") L.push(curve(t => [-sx * U((0.9 + 0.4 * t) * hs), U(g.hcY - (0.12 + 0.38 * t) * hs) + U(0.04 * hs) * sin(PI * t)], 0, 1, 16));
+    else L.push(arc(-sx * U(0.98 * hs), hc[1], U(0.15 * hs), U(0.17 * hs), sx > 0 ? 100 : -80, sx > 0 ? 260 : 80, 14));
+  }
+  // hair
+  const top = g.top;
+  if (C.hair === "three") for (const k of [-1, 0, 1]) L.push(spiral(k * U(0.16 * hs), top + U(0.14 * hs) + abs(k) * U(0.03), U(0.08 * hs), 1.3, k * 1.3));
+  else if (C.hair === "curl") L.push(spiral(U(0.05), top + U(0.2 * hs), U(0.14 * hs), 1.8));
+  else if (C.hair === "combover") for (let k = 0; k < 6; k++) L.push(arc(U(0.12 * hs), hc[1] + U(0.08 * hs), g.Rh - U(0.08 * hs) - k * 1.3, g.Rh - U(0.18 * hs) - k * 1.3, 205 + k * 3, 330 - k * 5, 28));
+  else if (C.hair === "mop") { const step = 1.25 / det; for (let a = -165; a <= -15; a += step / g.Rh * 180 / PI) { const r0 = g.Rh - 1.2, x = hc[0] + r0 * cos(a * D2R), y = hc[1] + r0 * sin(a * D2R), ln = U(0.12 * hs) + rnd() * U(0.1 * hs); Sh.push([[x, y], [x - cos(a * D2R) * ln + (rnd() - 0.5) * 1.2, y - sin(a * D2R) * ln]]); } }
+  // what it wears
+  const w = C.wear;
+  if (w === "tunic") {
+    L.push(arc(0, g.jawBot - U(0.06), U(0.72), U(0.3), 18, 162, 26));
+    const yb = U(-1.12), bw = U(1.8);
+    for (const off of [0, U(0.13)]) L.push(curve(x => [x, yb + off + U(0.13) * (1 - (x / U(1.3)) ** 2)], -bw, bw, 50));
+    for (let x = -bw; x < bw; x += 2.2 / det) { const y = yb + U(0.13) * (1 - (x / U(1.3)) ** 2); L.push([[x, y + 0.5], [x + 1.5, y + U(0.13) - 0.5]]); }
+    const kx = U(0.38), ky = yb + U(0.13) * (1 - (kx / U(1.3)) ** 2) + U(0.065);
+    L.push(circle(kx, ky, U(0.09)), [[kx - U(0.03), ky + U(0.08)], [kx - U(0.12), ky + U(0.5)]], [[kx + U(0.04), ky + U(0.08)], [kx + U(0.1), ky + U(0.45)]]);
+    const hy = U(-0.14), amp = U(0.06), per = U(0.2);
+    L.push(curve(x => [x, hy + amp * abs(((x / per) % 2 + 2) % 2 - 1) * 2 - amp], -bw, bw, 160));
+    L.push(spiral(0, U(0.1), U(0.06), 1.1));
+    for (let k = 0; k < 2; k++) {
+      const cx = (k ? 1 : -1) * U(0.35 + 0.35 * rnd()), cy = k ? U(-0.6 - 0.1 * rnd()) : U(-1.9 + 0.25 * rnd()), hw = U(0.2 + 0.08 * rnd()), hh = U(0.16 + 0.06 * rnd()), a = (rnd() - 0.5) * 0.4;
+      const pt = (x, y) => { const q = rot([x, y], a); return [cx + q[0], cy + q[1]]; };
+      L.push([pt(-hw, -hh), pt(hw, -hh), pt(hw, hh), pt(-hw, hh), pt(-hw, -hh)]);
+      const ih = 1.4, per2 = 2.2;
+      for (const [ax, ay, bx, by] of [[-hw + ih, -hh + ih, hw - ih, -hh + ih], [hw - ih, -hh + ih, hw - ih, hh - ih], [hw - ih, hh - ih, -hw + ih, hh - ih], [-hw + ih, hh - ih, -hw + ih, -hh + ih]]) {
+        const ln = hypot(bx - ax, by - ay); for (let t = 0; t < ln - 1; t += per2) L.push([pt(ax + (bx - ax) * t / ln, ay + (by - ay) * t / ln), pt(ax + (bx - ax) * min(ln, t + 1.2) / ln, ay + (by - ay) * min(ln, t + 1.2) / ln)]);
+      }
+    }
+  } else if (w === "pelt") {
+    const ly = U(-0.5), bw = U(1.8);
+    L.push(curve(x => [x, ly + U(0.05) * sin(x * 0.6) + U(0.04) * sin(x * 1.7)], -bw, bw, 80));
+    const s0 = [-U(1.1), U(-2.75)], s1 = [U(0.9), ly];
+    for (const off of [0, U(0.3)]) L.push([[s0[0] + off, s0[1]], [s1[0] + off, s1[1]]]);
+    for (let k = 0; k < round(12 * det); k++) { const x = (rnd() - 0.5) * U(2.4), y = ly + U(0.12) + rnd() * U(0.6), r = U(0.05 + 0.05 * rnd()); L.push(curve(t => [x + r * (1 + 0.3 * sin(3 * t)) * cos(t), y + r * 0.8 * (1 + 0.3 * cos(2 * t)) * sin(t)], 0, TAU, 14)); }
+    for (let k = 0; k < round(6 * det); k++) { const t = 0.1 + 0.8 * rnd(), x = s0[0] + (s1[0] - s0[0]) * t + U(0.15), y = s0[1] + (s1[1] - s0[1]) * t, r = U(0.045); L.push(circle(x, y, r, 10)); }
+    for (let k = 0; k < round(26 * det * (C.fur || 1)); k++) { const x = (rnd() - 0.5) * U(1.3), y = U(-2.45) + rnd() * U(1.4), a = PI / 2 + (x > 0 ? 0.5 : -0.5) + (rnd() - 0.5) * 0.6; Sh.push([[x, y], [x + cos(a) * 2.2, y + sin(a) * 2.2]]); }
+    L.push(spiral(0, U(-0.75), U(0.06), 1.1));
+  } else if (w === "nappy") {
+    const ny = U(-0.32);
+    L.push(curve(x => [x, ny + U(0.08) * (x / U(1)) ** 2], -U(1.6), U(1.6), 40), curve(x => [x, ny + U(0.12) + U(0.08) * (x / U(1)) ** 2], -U(1.6), U(1.6), 40));
+    const sp = [U(0.7), ny + U(0.35)];
+    L.push([[sp[0] - U(0.22), sp[1]], [sp[0] + U(0.18), sp[1]]], circle(sp[0] + U(0.22), sp[1], U(0.05), 10), arc(sp[0] - U(0.22), sp[1] - U(0.05), U(0.05), U(0.05), 90, 270, 8), [[sp[0] - U(0.22), sp[1] - U(0.1)], [sp[0] + U(0.15), sp[1] - U(0.1)]]);
+    for (let k = 0; k < 4; k++) L.push(curve(t => [U(-0.9 + k * 0.5), ny + U(0.22) + t * U(0.35)], 0, 1, 4));
+    L.push(spiral(0, U(-0.75), U(0.07), 1.2), arc(-U(0.5), U(-1.55), U(0.3), U(0.12), 20, 160, 12), arc(U(0.5), U(-1.55), U(0.3), U(0.12), 20, 160, 12));
+  } else if (w === "waistcoat") {
+    const vb = U(-1.45);
+    L.push([[-U(0.75), g.jawBot + U(0.02)], [0, vb], [U(0.75), g.jawBot + U(0.02)]]);
+    const bt = [0, g.jawBot + U(0.14)];
+    L.push([[bt[0] - U(0.32), bt[1] - U(0.13)], [bt[0] - U(0.06), bt[1]], [bt[0] - U(0.32), bt[1] + U(0.13)], [bt[0] - U(0.32), bt[1] - U(0.13)]], [[bt[0] + U(0.32), bt[1] - U(0.13)], [bt[0] + U(0.06), bt[1]], [bt[0] + U(0.32), bt[1] + U(0.13)], [bt[0] + U(0.32), bt[1] - U(0.13)]], circle(bt[0], bt[1], U(0.06), 12));
+    for (let k = 0; k < 4; k++) L.push(circle(0, vb + U(0.25 + k * 0.3), U(0.055), 12));
+    L.push([[-U(1.3), U(-0.25)], [0, U(0.05)], [U(1.3), U(-0.25)]]);
+    L.push([[U(0.5), U(-0.95)], [U(0.85), U(-0.98)]], curve(t => [U(0.06) + t * U(0.62), vb + U(0.55) + U(0.25) * sin(PI * t) - t * U(0.03)], 0, 1, 18), circle(U(0.68), U(-0.94), U(0.06), 10));
+    L.push([[-U(0.5), U(0.15)], [U(0.5), U(0.15)]]);
+  }
+  // warts on the head and belly
+  const nw = round(o.warts * 4 * det);
+  L.push(...scatter(p, rnd, nw, (x, y) => y < g.jawC && (abs(x) > U(0.55 * hs) || y < ey - U(0.4 * hs)) && hypot(x, y - hc[1]) < g.Rh - 2));
+  if (C.wear !== "waistcoat") L.push(...scatter(p, rnd, round(o.warts * 1.5), (x, y) => y > U(-2.2) && y < U(-0.3) && abs(x) > U(0.8)));
+  // the cast shadow under the chin, then the shadow side of the whole outline
+  const chin = (x, y) => { const hf = sampleF(HG, x, y); return y > g.jawC && hf > 0.6 && hf < U(0.2) * det && inkRoom(p, x, y) > INK_GAP; };
+  Sh.push(...shadow(p, o, LIGHT, chin));
+  return { line: L, shade: Sh, colour: Co };
+}
+function decorArm(p, o, R, rnd) {
+  const I = p.info, g = R.geo, u = g.u, U = v => v * u, C = g.C, det = o.detail, L = [], Sh = [], Co = [], { E, d, M, nrm, sx } = I;
+  // elbow crease on the inside of the bend, a bump of muscle on the upper arm
+  L.push(curve(t => add2(E, rot([sx, 0], -sx * 0.6 + t * sx * 0.9), U(0.12)), 0, 1, 10));
+  L.push(curve(t => [I.S[0] - sx * U(0.14) - sx * U(0.05) * sin(PI * t), I.S[1] + U(0.4) + t * U(0.5)], 0, 1, 8));
+  // knuckles and claw nails
+  for (const c of I.claws) {
+    const k = add2(M, c.cd, U(0.2)), pn = [-c.cd[1], c.cd[0]];
+    L.push(curve(t => add2(add2(k, pn, (t - 0.5) * U(0.16)), c.cd, -U(0.04) * sin(PI * t)), 0, 1, 8));
+    const n0 = add2(c.tip, c.cd, -U(0.12));
+    L.push(curve(t => add2(add2(n0, pn, (t - 0.5) * 3.2), c.cd, -1.2 * sin(PI * t)), 0, 1, 8));
+  }
+  if (C.wear === "waistcoat") { for (const off of [0.18, 0.26]) { const c = add2(I.Hn, d, -U(off)); L.push([add2(c, nrm, U(0.4)), add2(c, nrm, -U(0.4))]); } L.push(circle(...add2(add2(I.Hn, d, -U(0.22)), nrm, sx * U(0.12)), U(0.04), 10)); for (let k = 0; k < 3; k++) L.push(curve(t => [I.S[0] + (k - 1) * U(0.1) + U(0.03) * sin(t * 6), I.S[1] + U(0.3) + t * U(0.7)], 0, 1, 10)); }
+  if (C.eyes === "big") for (const off of [0.1, 0.18]) { const c = add2(I.Hn, d, -U(off)); L.push(curve(t => add2(add2(c, nrm, (t - 0.5) * U(0.4)), d, U(0.03) * sin(PI * t)), 0, 1, 10)); }
+  // hair: fur round the edge for the cave ogre, a few hairs for the rest
+  if (C.fur) { const ring = inset(p, 1.4)[0]; if (ring) for (let i = 0; i < ring.length; i += max(2, round(4 / det))) { const [x, y] = ring[i], [gx, gy] = grad(p.G, x, y), gg = hypot(gx, gy) || 1; Sh.push([[x, y], [x - gx / gg * 2.2, y - gy / gg * 2.2]]); } }
+  else if (C.wear !== "waistcoat" && C.eyes !== "big") for (let k = 0; k < round(5 * det); k++) { const t = 0.25 + 0.6 * rnd(), c = add2(add2(E, d, t * I.lf), nrm, (rnd() - 0.5) * U(0.3)); L.push(curve(s => add2(add2(c, d, s * 2.2), nrm, 0.7 * sin(s * 4)), 0, 1, 6)); }
+  L.push(...scatter(p, rnd, round(o.warts * 1.2), (x, y) => hypot(x - E[0], y - E[1]) > U(0.3) && hypot(x - M[0], y - M[1]) > U(0.5)));
+  // what it holds
+  const q = (a, b) => add2(add2(M, d, U(a)), nrm, U(b));
+  if (I.prop === "club") { for (const b of [-0.05, 0.05, 0.14]) L.push(curve(t => q(0.35 + t * 0.95, b * (0.6 + t) + 0.015 * sin(t * 9 + b * 30)), 0, 1, 20)); L.push(circle(...q(1.38, 0.08), U(0.06), 10), circle(...q(1.25, -0.12), U(0.04), 10), circle(...q(0.95, 0.02), U(0.035), 10)); }
+  else if (I.prop === "fish") { const e = q(1.55, 0.07); L.push(circle(e[0], e[1], U(0.05), 12), curve(t => q(1.42 + 0.03 * sin(PI * t), (t - 0.5) * 0.42), 0, 1, 10), [q(1.7, 0.03), q(1.62, 0)]); for (let a = 0.92; a < 1.36; a += 0.1 / det) for (let b = -0.14; b <= 0.141; b += 0.1) L.push(curve(t => q(a + 0.05 * sin(PI * t), b + (t - 0.5) * 0.08), 0, 1, 6)); for (const s of [-1, 1]) L.push([q(0.72, 0), q(0.56, s * 0.17)], [q(0.76, 0), q(0.62, s * 0.1)]); }
+  else if (I.prop === "onion") { for (const s of [-0.6, -0.3, 0, 0.3, 0.6]) L.push(curve(t => q(0.78 + 0.33 * cos(t), 0.33 * sin(t) * s), -1.4, 1.4, 16)); L.push(curve(t => q(1.12 + t * 0.45, 0.06 * t + 0.02 * sin(t * 6)), 0, 1, 10)); for (let k = -2; k <= 2; k++) L.push([q(0.46, k * 0.05), q(0.4, k * 0.07)]); }
+  else if (I.prop === "teacup") { L.push([q(0.83, -0.27), q(0.83, 0.27)], [q(0.68, -0.29), q(0.68, 0.29)], [q(0.6, -0.29), q(0.6, 0.29)]); L.push(curve(t => q(0.62 + 0.06 * sin(t * 2), 0.04 * cos(t)), 0, PI, 12)); }
+  else if (I.prop === "rattle") { const b = q(1.1, 0); for (const k of [-0.15, 0, 0.15]) L.push(curve(t => q(1.1 + k + 0.03 * cos(t), 0.28 * sin(t) * (1 - abs(k) * 2)), -1.5, 1.5, 14)); L.push(circle(b[0], b[1], U(0.06), 10)); }
+  Sh.push(...shadow(p, o, rot(LIGHT, -p.rest)));
+  return { line: L, shade: Sh, colour: Co };
+}
+function decorLeg(p, o, R, rnd) {
+  const I = p.info, g = R.geo, u = g.u, U = v => v * u, C = g.C, det = o.detail, L = [], Sh = [], { Hp, Ak, toes, out } = I;
+  const kn = add2(Hp, [0, 1], U(0.55 * (Ak[1] - Hp[1]) / u));
+  L.push(arc(kn[0], kn[1], U(0.16), U(0.08), 200, 340, 12), arc(kn[0], kn[1] + U(0.12), U(0.12), U(0.05), 20, 160, 10));
+  L.push(curve(t => [Ak[0] - U(0.3) + t * U(0.6), Ak[1] - U(0.02) + U(0.05) * sin(PI * t)], 0, 1, 10));
+  for (const tc of toes) L.push(arc(tc[0] + out * U(0.03), tc[1], U(0.05), U(0.045), out > 0 ? -80 : 100, out > 0 ? 80 : 260, 10));
+  for (let k = 0; k < 2; k++) { const y = (toes[k][1] + toes[k + 1][1]) / 2; L.push([[toes[k][0] - out * U(0.18), y], [toes[k][0] + out * U(0.02), y]]); }
+  if (C.wear === "waistcoat") { for (let k = -2; k <= 2; k++) L.push([[Hp[0] + k * 3, Hp[1] + U(0.4)], [Hp[0] + k * 2.6, Ak[1] - U(0.1)]]); L.push(curve(t => [Ak[0] - U(0.35) + t * U(0.85) * 1, Ak[1] + U(0.12) + U(0.04) * sin(PI * t)], 0, 1, 10)); }
+  if (C.eyes === "big") for (let k = 0; k < 2; k++) L.push(arc(Hp[0], Hp[1] + U(0.55 + k * 0.32), U(0.28), U(0.08), 20, 160, 12));
+  if (C.fur) { const ring = inset(p, 1.4)[0]; if (ring) for (let i = 0; i < ring.length; i += max(2, round(4 / det))) { const [x, y] = ring[i]; if (y > Ak[1] - U(0.1)) continue; const [gx, gy] = grad(p.G, x, y), gg = hypot(gx, gy) || 1; Sh.push([[x, y], [x - gx / gg * 2.2, y - gy / gg * 2.2]]); } }
+  else if (C.wear === "tunic") for (let k = 0; k < round(4 * det); k++) { const x = Hp[0] + (rnd() - 0.5) * U(0.4), y = kn[1] + U(0.2) + rnd() * U(0.35); L.push(curve(s => [x + 0.6 * sin(s * 5), y + s * 2], 0, 1, 6)); }
+  L.push(...scatter(p, rnd, round(o.warts * 0.8), (x, y) => y > kn[1] + U(0.2) && y < Ak[1] - U(0.1)));
+  Sh.push(...shadow(p, o, rot(LIGHT, -p.rest)));
+  return { line: L, shade: Sh, colour: [] };
+}
+function decorBubble(p, o, R, rnd) {
+  const I = p.info, L = [], Co = [], word = o.word, n = word.length;
+  const wide = [...word].map(ch => ch === "!" ? 0.42 : 0.86), sum = wide.reduce((a, b) => a + b, 0), s = min(I.hh * 1.0, 1.6 * I.hw / sum), strokes = [];
+  let x = I.Cb[0] - s * sum / 2;
+  for (let i = 0; i < n; i++) { strokes.push(...letter(word[i], x + s * wide[i] / 2 + (word[i] === "!" ? -s * 0.17 : 0), I.Cb[1] + (rnd() - 0.5) * s * 0.1, s * (0.92 + 0.12 * rnd()), (rnd() - 0.5) * 0.28)); x += s * wide[i]; }
+  const rs = s * 0.12, SF = strokeField(strokes, rs, 0.12), acc = o.accent === "on" ? Co : L;
+  // fat letters get a second line inside in the colour pen; thin ones (under 1.3 mm a side) are drawn in the colour pen instead, since the inner line breaks into crumbs
+  for (const l of contours(SF, 0)) (rs >= 1.3 ? L : acc).push([...smooth(l, 1), l[0]]);
+  if (rs >= 1.3) for (const l of contours(SF, -min(1.0, rs * 0.55))) if (abs(loopArea(l)) > 1.5) acc.push([...smooth(l, 1), l[0]]);
+  // a comic double line inside the bubble, and jolt marks by the spikes
+  for (const l of inset(p, 1.8)) L.push(l.filter(([x, y]) => hypot((x - I.Cb[0]) / I.hw, (y - I.Cb[1]) / I.hh) < 1.6));
+  for (const t of I.spikes) { const v = [t[0] - I.Cb[0], t[1] - I.Cb[1]], l = hypot(...v); L.push([add2(I.Cb, v, (l - 7) / l), add2(I.Cb, v, (l - 4.2) / l)]); }
+  return { line: L, shade: [], colour: Co };
+}
+
+// the pen outline of a part, d mm inside its cut line (or on it at 0), from the part's own distance field
+const outlineOf = (p, d, G = p.G) => d < 0.05 ? [p.outline] : contours(G, -d).filter(l => abs(loopArea(l)) > 1).map(l => smooth(l, 1));
+
+// ---------------- the sheet: each part turned to its tightest box, then packed ----------------
+function layout(parts, W, H, m) {
+  for (const p of parts) {
+    let best = null;
+    for (let a = 0; a < 180; a += 5) {
+      const r = a * D2R; let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF;
+      for (const q of p.outline) { const [x, y] = rot(q, r); x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); }
+      const area = (x1 - x0) * (y1 - y0);
+      if (!best || area < best.area - 1e-6) best = { area, r };
+    }
+    p.layA = best.r;
+  }
+  const placed = [], order = [...parts];
+  const box = (p, r) => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const q of p.outline) { const [x, y] = rot(q, r); x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+  let fits = true;
+  const areaOf = p => { const b = box(p, p.layA); return (b[2] - b[0]) * (b[3] - b[1]); };
+  order.sort((a, b) => areaOf(b) - areaOf(a));
+  for (const p of order) {
+    let pick = null;
+    for (let r = 0; r < PI - 1e-9; r += 5 * D2R) {
+      const b = box(p, r), w = b[2] - b[0], h = b[3] - b[1];
+      const xs = [m, ...placed.map(q => q.rect[2] + PART_GAP)], ys = [m, ...placed.map(q => q.rect[3] + PART_GAP)];
+      for (const y of ys) for (const x of xs) {
+        if (x + w > W - m + 1e-6 || y + h > H - m + 1e-6) continue;
+        if (placed.some(q => x < q.rect[2] + PART_GAP && q.rect[0] < x + w + PART_GAP && y < q.rect[3] + PART_GAP && q.rect[1] < y + h + PART_GAP)) continue;
+        if (!pick || y + h < pick.y + pick.h - 1e-6 || (abs(y + h - pick.y - pick.h) < 1e-6 && x < pick.x)) pick = { x, y, r, b, w, h };
+      }
+    }
+    if (!pick) { fits = false; const b = box(p, p.layA), y = max(m, ...placed.map(q => q.rect[3] + PART_GAP)); pick = { x: m, y, r: p.layA, b, w: b[2] - b[0], h: b[3] - b[1] }; }
+    p.layA = pick.r; p.lay = [pick.x - pick.b[0], pick.y - pick.b[1]]; p.rect = [pick.x, pick.y, pick.x + pick.w, pick.y + pick.h];
+    placed.push(p);
+  }
+  return fits;
+}
+
+// ---------------- build ----------------
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [], rnd = mulberry(o.seed * 101 + 7);
+  const R = rig(o), M = mech(R, o), h = max(0.2, o.height / 1000);
+  let onePiece = 0, minMargin = INF, minR = INF;
+  for (const p of R.parts) {
+    p.G = partField(p, h);
+    const loops = contours(p.G, 0).filter(l => abs(loopArea(l)) > 1);
+    if (loops.length === 1) onePiece++;
+    loops.sort((a, b) => abs(loopArea(b)) - abs(loopArea(a)));
+    p.outline = rdp([...smooth(loops[0] || [], 1), (loops[0] || [[0, 0]])[0]], 0.02).slice(0, -1);
+    for (const Hh of p.holes) minMargin = min(minMargin, -sampleF(p.G, Hh.c[0], Hh.c[1]) - Hh.r);
+    for (const q of p.prims) minR = min(minR, q.t === "c" ? q.r : q.t === "k" ? min(q.ra, q.rb) : min(q.hw, q.hh));
+  }
+  for (const p of R.parts) {
+    const d = p.kind === "body" ? decorBody(p, o, R, rnd) : p.kind === "arm" ? decorArm(p, o, R, rnd) : p.kind === "leg" ? decorLeg(p, o, R, rnd) : decorBubble(p, o, R, rnd);
+    p.ink = { line: clip(p, d.line), shade: clip(p, d.shade), colour: clip(p, d.colour) };
+    if (o.letters === "on") for (const Hh of p.holes) if (Hh.joint && !(p.kind === "body" && Hh.joint === "E")) {
+      let best = null;
+      for (let k = 0; k < 60 && !best; k++) { const a = k * 2.4, t = JR + 1.8 + k * 0.25, x = Hh.c[0] + cos(a) * t, y = Hh.c[1] + sin(a) * t; if ([[-1.5, -1.8], [1.5, -1.8], [-1.5, 1.8], [1.5, 1.8], [0, 0]].every(([ex, ey]) => inkRoom(p, x + ex, y + ey) > INK_GAP + 0.3)) best = [x, y]; }
+      if (best) p.ink.line.push(...clip(p, letter(Hh.joint, best[0], best[1], 2.6)));
+    }
+  }
+  const fits = layout(R.parts, W, H, m);
+  if (!fits) { const k = sqrt((W - 2 * m) * (H - 2 * m) / R.parts.reduce((a, p) => a + (p.rect[2] - p.rect[0]) * (p.rect[3] - p.rect[1]), 0)); notes.push(`the parts do not all fit on this page: try a height of about ${max(150, floor(o.height * min(1, k) * 0.92 / 5) * 5)} mm, or a bigger page`); }
+  const mv = p => { const c = cos(p.layA), s = sin(p.layA); return q => [q[0] * c - q[1] * s + p.lay[0], q[0] * s + q[1] * c + p.lay[1]]; };
+  const layers = { line: [], shade: [], colour: [], outline: [], cut: [] };
+  for (const p of R.parts) {
+    const f = mv(p);
+    for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) layers[k].push([l.map(f), false]);
+    layers.cut.push([p.outline.map(f), true]);
+    if (o.outlines === "on") for (const l of outlineOf(p, o.outlinein)) layers.outline.push([l.map(f), true]);
+    for (const Hh of p.holes) layers.cut.push([circle(Hh.c[0], Hh.c[1], Hh.r, 32).slice(0, -1).map(f), true]);
+  }
+  layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
+  // ---------------- the scare: what shows at rest and what shows on the pull ----------------
+  const body = R.body, arms = R.parts.filter(p => p.kind === "arm"), legs = R.parts.filter(p => p.kind === "leg"), bub = R.parts.find(p => p.kind === "bubble"), g = R.geo;
+  const front = [body, ...arms, ...legs];
+  const mech2 = { travel: M.travel, legSlack: M.legSlack, armRest: arms.map(p => p.rest / D2R * p.sgn), armPull: arms.map(p => p.pull / D2R * p.sgn) };
+  const handShare = arms.map(p => visibleShare(R, p, 0, [body], (x, y) => hypot(x - p.info.M[0], y - p.info.M[1]) < g.u * 0.75));
+  const browY = g.hc[1] - g.u * 0.25 * g.hs;
+  const clawTop = min(...arms.flatMap(p => p.info.claws.map(c => fwd(p, 1)(c.tip)[1])));
+  gates.push(["build time under 6000 ms", true, ""]);
+  if (bub) {
+    mech2.bubHidden = visibleShare(R, bub, 0, front); mech2.bubShows = visibleShare(R, bub, 1, front);
+    mech2.bubTravel = abs(bub.rest) / D2R; mech2.bubAlpha = bub.alpha / D2R;
+    gates.push(["the shout hides behind the ogre at rest (at most 6% shows)", mech2.bubHidden <= 0.06, `${(mech2.bubHidden * 100).toFixed(1)}% shows`]);
+    gates.push(["the shout shows when pulled (at least 75% in view)", mech2.bubShows >= 0.75, `${(mech2.bubShows * 100).toFixed(0)}% in view`]);
+    gates.push(["the bubble's tab starts at least 25 degrees off vertical and can turn it all the way", bub.alpha <= 65.01 * D2R && abs(bub.rest) - bub.alpha <= PI / 2 + 1e-6, `starts ${mech2.bubAlpha.toFixed(0)} degrees up, turns ${mech2.bubTravel.toFixed(0)} degrees`]);
+    const hang = body.holes.find(Hh => Hh.kind === "hang"), f1 = fwd(bub, 1);
+    let clear = INF; for (const q of bub.outline) { const w = f1(q); if (w[1] < hang.c[1]) clear = min(clear, abs(w[0] - hang.c[0])); }
+    gates.push(["the bubble clears the hanging thread", clear > 2, `${clear === INF ? "nothing above the hole" : clear.toFixed(1) + " mm"}`]);
+    let pinClear = INF;
+    for (const p of [...arms, ...legs]) for (let t = 0; t <= 1.0001; t += 0.05) { const z = inv(p, t)(g.nose); pinClear = min(pinClear, sampleF(p.G, z[0], z[1])); }
+    gates.push(["no arm or leg swings over the bubble's pin", pinClear > PIN_HOLE_D / 2 + 1, `closest ${pinClear.toFixed(1)} mm`]);
+  }
+  gates.push(["both hands show at rest (at least half of each)", min(...handShare) >= 0.5, handShare.map(v => (v * 100).toFixed(0) + "%").join(", ")]);
+  gates.push(["the claws rise above the brow when pulled", clawTop < browY, `${(browY - clawTop).toFixed(1)} mm above`]);
+  let tabGap = INF;
+  for (const pair of [arms, legs]) for (let t = 0; t <= 1.0001; t += 0.05) { const a = fwd(pair[0], t)(pair[0].tab), b = fwd(pair[1], t)(pair[1].tab); tabGap = min(tabGap, hypot(a[0] - b[0], a[1] - b[1]) - 2 * TAB_R); }
+  gates.push(["the two arm tabs and the two leg tabs never touch on the pull", tabGap >= 1, `closest ${tabGap.toFixed(1)} mm`]);
+  gates.push(["shadow hatch pitch at least 0.5 mm (no solid black)", o.dark === "off" || o.hp >= 0.5, o.dark === "off" ? "no hatching" : `${o.hp} mm`]);
+  // ---------------- the usual sheet gates ----------------
+  let gapMin = INF;
+  for (let i = 0; i < R.parts.length; i++) for (let j = i + 1; j < R.parts.length; j++) { const A = R.parts[i].rect, Bq = R.parts[j].rect; gapMin = min(gapMin, max(Bq[0] - A[2], A[0] - Bq[2], Bq[1] - A[3], A[1] - Bq[3])); }
+  let inkBad = 0, inkN = 0;
+  for (const p of R.parts) for (const k of ["line", "shade", "colour"]) for (const l of p.ink[k]) for (const [x, y] of l) { inkN++; if (inkRoom(p, x, y) < INK_GAP - 0.05) inkBad++; }
+  const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
+  const pen = ["line", "shade", "colour"].reduce((a, k) => a + layers[k].reduce((s, [q, cl]) => s + plen(q, cl), 0), 0) / 1000, cutm = layers.cut.reduce((s, [q, cl]) => s + plen(q, cl), 0) / 1000;
+  const pts = Object.values(layers).reduce((a, Lr) => a + Lr.reduce((s, [q]) => s + q.length, 0), 0);
+  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py] of q) if (px < m - 0.01 || py < m - 0.01 || px > W - m + 0.01 || py > H - m + 0.01) inside = false;
+  const bbox = Lr => { let a = INF, b = INF, c = -INF, d = -INF; for (const [q] of Lr) for (const [px, py] of q) { a = min(a, px); b = min(b, py); c = max(c, px); d = max(d, py); } return [a, b, c, d].map(v => v.toFixed(2)).join(","); };
+  const ms = performance.now() - t0, pins = R.parts.reduce((n, p) => n + p.holes.filter(Hh => Hh.kind === "pin").length, 0) / 2;
+  gates[gates.findIndex(x => x[0].startsWith("build time"))] = ["build time under 6000 ms", ms < 6000, `${ms.toFixed(0)} ms`];
+  gates.push(["total pen length under 150 m (about 45 minutes of plotting, assumed)", pen < 150, `${pen.toFixed(1)} m`]);
+  gates.push(["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]);
+  gates.push(["every part is one piece with one closed outline", onePiece === R.parts.length, `${onePiece} of ${R.parts.length}`]);
+  gates.push([`every hole has at least ${JOINT_MARGIN} mm of card round it (assumed)`, minMargin >= JOINT_MARGIN - 0.1, `least ${minMargin.toFixed(2)} mm`]);
+  gates.push([`no part narrower than ${2 * MIN_HALF} mm (assumed)`, minR >= MIN_HALF - 1e-9, `narrowest ${(2 * minR).toFixed(1)} mm`]);
+  gates.push([`parts at least ${PART_GAP} mm apart and inside the margin`, fits && inside && gapMin >= PART_GAP - 0.01, `closest ${gapMin.toFixed(1)} mm`]);
+  gates.push([`no ink within ${INK_GAP} mm of a cut line or hole (assumed)`, inkBad === 0, `${inkBad} of ${inkN} points`]);
+  const penBox = [[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET]].map(p => p.map(v => v.toFixed(2)).join(",")).join(",");
+  gates.push(["trim frame and pen corner ticks have the same bounding box", bbox([layers.cut.at(-1)]) === penBox, bbox([layers.cut.at(-1)])]);
+  return { W, H, o, ms, R, layers, gates, notes, pen, cutm, pins, mech: mech2 };
+}
+
+// ---------------- the put-together view ----------------
+const COL = { line: "#26200f", shade: "#6b6356", colour: "#b0126b" };
+function posedBox(r, t) {
+  let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF;
+  for (const p of r.R.parts) { const f = fwd(p, t); for (const q of p.outline) { const [x, y] = f(q); x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } }
+  return [x0, y0 - 14, x1, y1 + 22];
+}
+// draw ops for one pose; the canvas and the SVG preview both read them
+function sceneOps(r, t, ox, oy, sc) {
+  const ops = [], P = r.R.parts, by = k => P.filter(p => p.kind === k);
+  const drawPart = p => {
+    const f = fwd(p, t), g = q => { const w = f(q); return [ox + sc * w[0], oy + sc * w[1]]; };
+    ops.push({ pts: p.outline.map(g), closed: true, fill: "#fbf7ec", stroke: "#26200f", w: 0.35 });
+    for (const k of ["shade", "colour", "line"]) for (const l of p.ink[k]) ops.push({ pts: l.map(g), stroke: COL[k], w: k === "shade" ? 0.22 : 0.3 });
+    for (const Hh of p.holes) if (Hh.kind === "pin" && p.kind !== "body") ops.push({ dot: [...g(Hh.c), 2.1 * sc], fill: "#b8902f" });
+  };
+  for (const p of [...by("bubble"), ...by("leg"), ...by("arm")]) drawPart(p);
+  // threads: across the arm tabs, across the leg tabs, the bubble's to the arm knot, the pull string down past the feet
+  const tip = p => { const w = fwd(p, t)(p.tab); return [ox + sc * w[0], oy + sc * w[1]]; };
+  const arms = by("arm"), legs = by("leg"), bub = by("bubble")[0], th = { stroke: "#9a6a1c", w: 0.3 };
+  const a0 = tip(arms[0]), a1 = tip(arms[1]), knot = [(a0[0] + a1[0]) / 2, max(a0[1], a1[1]) + 3 * sc];
+  const l0 = tip(legs[0]), l1 = tip(legs[1]), lk = [knot[0], max(l0[1], l1[1], knot[1]) + 3 * sc];
+  // the pull string hangs a fixed length below the leg knot at rest and runs down by the string pull as it is pulled
+  const end = oy + sc * (posedBox(r, 0)[3] - 2) + sc * r.mech.travel * t;
+  ops.push({ pts: [a0, knot, a1], ...th }, { pts: [l0, lk, l1], ...th }, { pts: [knot, lk, [knot[0], end]], ...th }, { dot: [knot[0], end, 1.6 * sc], fill: "#9a6a1c" });
+  if (bub) ops.push({ pts: [tip(bub), knot], ...th });
+  drawPart(r.R.body);
+  const hang = r.R.body.holes.find(Hh => Hh.kind === "hang");
+  ops.push({ pts: [[ox + sc * hang.c[0], oy + sc * hang.c[1]], [ox + sc * hang.c[0], oy + sc * (hang.c[1] - 12)]], ...th });
+  return ops;
+}
+function scenes(r, ts, W, H) {
+  const boxes = ts.map(t => posedBox(r, t)), gap = 16, tw = boxes.reduce((a, b) => a + b[2] - b[0], 0) + gap * (ts.length - 1), th = max(...boxes.map(b => b[3] - b[1]));
+  const sc = min((W - 16) / tw, (H - 16) / th);
+  let x = (W - sc * tw) / 2; const ops = [];
+  ts.forEach((t, i) => { const b = boxes[i]; ops.push(...sceneOps(r, t, x - sc * b[0], (H - sc * th) / 2 - sc * b[1], sc)); x += sc * (b[2] - b[0] + gap); });
+  return ops;
+}
+function paint(c, ops) {
+  for (const op of ops) {
+    c.beginPath();
+    if (op.dot) { c.arc(op.dot[0], op.dot[1], op.dot[2], 0, TAU); c.fillStyle = op.fill; c.fill(); continue; }
+    op.pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (op.closed) c.closePath();
+    if (op.fill) { c.fillStyle = op.fill; c.fill(); }
+    c.strokeStyle = op.stroke; c.lineWidth = op.w; c.stroke();
+  }
+}
+// an SVG of the put-together ogre at rest and pulled: for the headless check and the site's specimen pictures
+function sceneSVG(r, ts = [0, 1], W = 300, H = 210) {
+  const f = v => v.toFixed(2);
+  const body = scenes(r, ts, W, H).map(op => op.dot ? `<circle cx="${f(op.dot[0])}" cy="${f(op.dot[1])}" r="${f(op.dot[2])}" fill="${op.fill}"/>` : `<path d="M${op.pts.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${op.closed ? " Z" : ""}" fill="${op.fill || "none"}" stroke="${op.stroke}" stroke-width="${op.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join("\n");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}mm" height="${H}mm" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="#f4efe3"/>\n${body}\n</svg>`;
+}
+
+// ---------------- draw + export ----------------
+let anim = 0, phase = 0;
+function draw(r, t = null) {
+  const cv = $("cv"), view = r.o.view, Wd = view === "both" ? 300 : r.W, Hd = view === "both" ? 210 : r.H;
+  const maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / Wd, max(1.2, (innerHeight - 90) / Hd));
+  cv.width = round(Wd * k * devicePixelRatio); cv.height = round(Hd * k * devicePixelRatio); cv.style.width = round(Wd * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, Wd, Hd); c.lineJoin = c.lineCap = "round";
+  if (view === "both" && t === null) paint(c, scenes(r, [0, 1], Wd, Hd));
+  else if (view === "built" || t !== null) paint(c, scenes(r, [t === null ? r.o.pull / 100 : t], Wd, Hd));
+  else {
+    for (const key of ["shade", "colour", "line", "outline"]) { c.strokeStyle = key === "outline" ? "#1d3a8a" : COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); }
+    c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); c.setLineDash([]);
+  }
+  const lenm = L => L.reduce((a, [q]) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + s; }, 0) / 1000;
+  const M = r.mech;
+  $("stats").innerHTML = `${r.o.cast} ogre: <b>${r.R.parts.length}</b> parts, <b>${r.pins}</b> split pins, string pull <b>${M.travel.toFixed(0)} mm</b>${M.legSlack > 0.5 ? `, leg thread tied with <b>${M.legSlack.toFixed(0)} mm</b> of slack` : ""} · ${r.ms.toFixed(0)} ms<br>`
+    + `arms hang at ${M.armRest.map(v => v.toFixed(0)).join(" / ")} degrees and pull to ${M.armPull.map(v => v.toFixed(0)).join(" / ")}${M.bubTravel ? ` · the shout turns ${M.bubTravel.toFixed(0)} degrees` : ""}<br>`
+    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · colour pen: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · ${r.layers.outline.length ? `outline pen: <b>${lenm(r.layers.outline).toFixed(1)} m</b> · ` : ""}cut: <b>${r.cutm.toFixed(1)} m</b>, ${r.layers.cut.length} paths<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade },
+  { name: "colour", colour: "b0126b", w: 0.4, paths: r.layers.colour }, { name: "outline", colour: "1d3a8a", w: 0.4, paths: r.layers.outline }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length);
+// Pen files carry four corner ticks at 1 mm. The cut layer carries its own closed trim rectangle at 1 mm, so its box matches, and never gets ticks (they would slice the card).
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG ogre jack studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["cast", "prop", "height", "stock", "seed", "bend", "armtab", "kick", "bubble", "word", "bside", "bpin", "lean", "bsize", "detail", "warts", "dark", "hp", "accent", "outlines", "outlinein", "letters", "view", "pull", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+const POSE_ONLY = new Set(["pull", "view"]);
+function run(k) { sync(); stopWiggle(); if (last && POSE_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+function stopWiggle() { if (anim) cancelAnimationFrame(anim); anim = 0; $("wiggle").textContent = "Pull the string"; }
+$("wiggle").onclick = () => {
+  if (anim) { stopWiggle(); if (last) draw(last); return; }
+  if (!last) return;
+  $("wiggle").textContent = "Stop"; phase = 0;
+  // a quick yank, a hold for the RARRR, then a slow let-go
+  const step = () => { phase = (phase + 1 / 150) % 1; const t = phase < 0.18 ? (phase / 0.18) ** 0.7 : phase < 0.55 ? 1 : phase < 0.85 ? 1 - ((phase - 0.55) / 0.3) ** 1.5 : 0;
+    draw({ ...last, o: { ...last.o, view: "built" } }, t); anim = requestAnimationFrame(step); };
+  anim = requestAnimationFrame(step);
+};
+
+const BASE = { cast: "swamp", prop: "auto", height: 230, stock: 1, seed: 6, bend: 70, armtab: 50, kick: 45, bubble: "on", word: "RARRR!", bside: "right", bpin: "nose", lean: 32, bsize: 0.95, detail: 1, warts: 1, dark: "cross", hp: 0.75, accent: "on", outlines: "off", outlinein: 0.6, letters: "on", view: "both", pull: 0, page: "280x280", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  swamp: P({}),
+  cave: P({ cast: "cave", seed: 3, stock: 1.05, bend: 75, height: 220 }),
+  baby: P({ cast: "baby", seed: 11, word: "RAWR!", bend: 60, warts: 0.4 }),
+  posh: P({ cast: "posh", seed: 21, dark: "fade" }),
+  shy: P({ seed: 14, prop: "onion", word: "ROAR!", bend: 85, dark: "single" }),
+  grr: P({ cast: "cave", seed: 8, height: 210, word: "GRRR!", bside: "left", bpin: "brow", prop: "fish" }),
+  plain: P({ dark: "off", warts: 0, accent: "off", seed: 2 }),
+  mini: P({ cast: "posh", height: 170, page: "190x250", detail: 0.85, seed: 5 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `ogre-${r.o.cast}-h${r.o.height}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, rig, sceneSVG, sceneOps, posedBox };
+run();
+</script>
+</body>
+</html>
