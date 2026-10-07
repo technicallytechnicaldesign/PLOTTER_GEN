@@ -2,7 +2,7 @@
 // draws the same rooms (CSS 3D leaves that to each browser's layer sorting, which phones get wrong).
 // Units are gallery-world.js px with y flipped: three.js y points up. Everything is unlit paper and pen lines.
 import * as THREE from './three.module.min.js';
-import { puppetPose } from './hero-motion.js?v=20261007-ogre2';
+import { puppetPose } from './hero-motion.js?v=20261007-ogre3';
 
 const INK = '#4c555b', FRAME = '#303a40', PAPER = '#ffffff', MUTED = '#69767d', DASH = '#a8b1b7';
 const MONO = (getComputedStyle(document.documentElement).getPropertyValue('--font-mono') || '').trim() || 'monospace';
@@ -208,7 +208,7 @@ export function createGallery(host, world, onChange) {
   const spots = new Map();
   function hangAll(all) {
     // A world with one hall (inktober-world.js) hangs its 'hall' works in order along the two long walls.
-    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
+    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else if (h.s.hang === 'plinth' && h.s.box) { const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
     for (const r of rooms) {
       const works = all.filter(s => s.room === r.id), pegged = works.filter(s => s.hang === 'peg'); let walls = roomWalls(r);
       if (pegged.length) { garland(pegged, walls.find(w => w.id === 'far')); walls = walls.filter(w => w.id !== 'far'); }

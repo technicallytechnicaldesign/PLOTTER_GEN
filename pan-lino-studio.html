@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lino decal studio</title>
+<title>Pan lino studio</title>
 <style>
 :root {
   --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
@@ -185,24 +185,19 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 </head>
 <body>
 <header>
-  <h1>Lino decal studio</h1>
-  <p class="sub">Ravens, crows, skulls and Pan the goat god carved like a lino block, then cut from one colour of vinyl. Every mark is a gouge: V-cuts for feathers, U-cups for coverts, a halo cut round each figure so it stands off the frame, and a wobble so the edges look hand-cut. The blade follows one filled outline, so what you see is what stays on the backing.</p>
+  <h1>Pan lino studio</h1>
+  <p class="sub">Inktober day 7, panic. The word comes from Pan, the goat-legged god of the wild who waited in the woods and frightened travellers out of their wits. Here he is carved like a lino block and cut from one colour of vinyl: goat legs bending the wrong way, a shaggy pelt, horns, flat goat pupils, arms folded or his pipes at his lips. Or a block of night woods where all you find of him is his eyes.</p>
 </header>
 <div class="wrap">
 <aside>
   <fieldset><legend>Presets</legend>
-    <div class="row"><button data-preset="raven">Raven on a branch</button><button data-preset="calling">Calling at the moon</button><button data-preset="crow">Crow in flight</button><button data-preset="bat">Bat at the moon</button><button data-preset="batup">Bat, wings up</button><button data-preset="colony">A colony of bats</button><button data-preset="murder">A murder of crows</button><button data-preset="hunched">Hunched raven</button><button data-preset="ragged">Ragged raven</button><button data-preset="skull">Skull</button><button data-preset="gaunt">Gaunt skull</button><button data-preset="scream">Screaming skull</button><button data-preset="solid">Solid skull</button><button data-preset="bones">Skull and bones</button><button data-preset="perched">Raven on a skull</button><button data-preset="panwoods">Pan, eyes in the woods</button><button data-preset="panwait">Pan, waiting</button><button data-preset="panpipes">Pan piping at the moon</button><button data-preset="sheet">Sticker sheet</button><button data-preset="sheetsr">Skulls and ravens sheet</button></div>
+    <div class="row"><button data-preset="waiting">Waiting, arms folded</button><button data-preset="piping">Piping at the moon</button><button data-preset="peek">Behind a tree</button><button data-preset="lurk">Eyes in the woods</button><button data-preset="goat">Wild goat horns, arched block</button><button data-preset="block">Cut out of the block</button><button data-preset="rough">Rough cut, crescent</button><button data-preset="sheet">Sticker sheet</button></div>
   </fieldset>
   <fieldset><legend>The block</legend>
-    <label>Motif <select id="comp"><option value="raven">raven on a branch</option><option value="calling">raven calling</option><option value="crow">crow in flight</option><option value="murder">a murder of crows</option><option value="bat">a bat</option><option value="colony">a colony of bats</option><option value="skull">skull</option><option value="bones">skull and crossbones</option><option value="perched">raven on a skull</option><option value="pan">Pan, the goat god</option><option value="peek">Pan behind a tree</option><option value="lurk">Pan, eyes in the woods</option><option value="mix">a mix (sheets)</option><option value="mixsr">skulls and ravens (sheets)</option></select></label>
-    <label data-when="comp=raven|perched|mix|mixsr">Raven <select id="ravenv"><option value="seed">the seed decides</option><option value="perched">perched</option><option value="hunched">hunched</option><option value="ragged">ragged</option><option value="calling">calling</option></select></label>
-    <label data-when="comp=bat|mix">Bat <select id="batv"><option value="seed">the seed decides</option><option value="spread">wings spread</option><option value="raised">wings raised</option></select></label>
-    <label data-when="comp=skull|bones|perched|mix|mixsr">Skull drawn as <select id="skulllook"><option value="line">lines on bare bone</option><option value="solid">a solid carved block</option></select></label>
-    <label data-when="comp=skull|bones|perched|mix|mixsr">Skull <select id="skullv"><option value="seed">the seed decides</option><option value="classic">classic</option><option value="gaunt">gaunt</option><option value="scream">screaming</option></select></label>
-    <label data-when="comp=pan|peek">Hands <select id="pose"><option value="folded">arms folded, waiting</option><option value="pipes">playing his pipes</option></select></label>
-    <label data-when="comp=pan|peek|lurk">Horns <select id="horns"><option value="ram">curled ram horns</option><option value="goat">swept wild goat horns</option><option value="straight">tall straight horns</option></select></label>
+    <label>Scene <select id="comp"><option value="pan">Pan, standing</option><option value="peek">Pan behind a tree</option><option value="lurk">eyes in the woods (a block of night)</option><option value="mix">a mix (sheets)</option></select></label>
+    <label>Hands <select id="pose"><option value="folded">arms folded, waiting</option><option value="pipes">playing his pipes</option></select></label>
+    <label>Horns <select id="horns"><option value="ram">curled ram horns</option><option value="goat">swept wild goat horns</option><option value="straight">tall straight horns</option></select></label>
     <label>Frame <select id="frame"><option value="none">none, die-cut</option><option value="moon">full moon behind</option><option value="crescent">crescent moon behind</option><option value="border">square border</option><option value="bcircle">carved block, round</option><option value="bsquare">carved block, square</option><option value="barch">carved block, arch</option></select></label>
-    <label data-when="comp=skull|bones|perched|mix|mixsr">Skull eyes <select id="eyes"><option value="hollow">hollow</option><option value="lit">something looking out</option></select></label>
     <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="13"></label>
     <div class="row"><button id="reroll">New seed</button></div>
   </fieldset>
@@ -247,7 +242,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <main>
   <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
   <div class="stats" id="stats">computing</div>
-  <p class="foot">How it is made: each figure is drawn as a few hand-placed curves filled black, then carved: the gouge marks are tapered slivers laid along the feathers, bone and bark, and a halo of clear space is cut round every figure before it is laid over a frame or another figure. Carved blocks flip it: the block is solid vinyl and the figure is cut out of it, so its carving comes back as fine vinyl lines. The whole decal is drawn into a fine grid, cleaned to the vinyl rules (gaps closed, slivers opened, specks and pinholes dropped), and traced back into one smooth outline, which is what the blade cuts. All vinyl sizes are ASSUMED until a weeding test is cut. Same seed, same carving.</p>
+  <p class="foot">How it is made: Pan is drawn as a few hand-placed curves filled black (head, goatee, ears, horns along a centre line, a V of a torso, goat legs as one tapering stroke with a hard bend at the hock, a pelt with a ragged hem, cloven hooves), then carved: long straight chisel strokes for the hair, rings across the horns, a fringe of spikes down the outside of each thigh, almond eyes with the flat pupil left standing, light from the upper left. A tree, when he hides behind one, gets a hairline of clear space round it so it reads in front of him. Eyes in the woods flips it: the block stays solid, the sky between the trunks is gouged out, and of him only his eyes, brow, the moonlit rim of a horn and his grin are cut. The engine is the lino decal studio's: the whole decal is drawn into a fine grid, cleaned to the vinyl rules (gaps closed, slivers opened, specks and pinholes dropped) and traced into one smooth outline for the blade. All vinyl sizes are ASSUMED until a weeding test is cut. Same seed, same carving.</p>
 </main>
 </div>
 
@@ -1232,7 +1227,7 @@ const SK = c => c.o.skulllook === "solid" ? skull : skullLine;
 // The skulls are work in progress, on hold for art direction: hidden on the public page unless the address carries ?wip.
 const WIP = typeof location !== "undefined" && /[?&]wip\b/.test(location.search || "");
 const SKULLY = new Set(["skull", "bones", "perched", "mixsr"]);
-const MIX = ["raven", "bat", "crow", "skull", "perched", "calling", "bones", "murder"].filter(m => WIP || !SKULLY.has(m)), MIXSR = ["skull", "raven"];
+const MIX = ["pan", "peek"], MIXSR = ["pan", "peek"];
 
 // ---------------- the grid: fill, morphology, cleaning, tracing ----------------
 function fillPoly(G, m, poly, val) {
@@ -1610,46 +1605,34 @@ function toSVG(r, only = null) {
   const group = L => L.fill
     ? `<g id="decal"><path d="${d(L.paths)}" fill="#${L.colour}" fill-rule="evenodd" stroke="none"/></g>`
     : `<g id="weed-box" fill="none" stroke="#${L.colour}" stroke-width="0.25">\n${L.paths.map(q => `<path d="${d([q])}"/>`).join("\n")}\n</g>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG lino decal studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG Pan lino studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["comp", "pose", "horns", "batv", "ravenv", "skullv", "skulllook", "style", "frame", "eyes", "seed", "density", "gouge", "wobble", "halo", "scraps", "band", "chatter", "size", "layout", "copies", "vinyl", "weed", "weedm", "minw", "mingap", "minisle", "minhole", "view", "colour", "surface", "page", "margin"];
+const IDS = ["comp", "pose", "horns", "style", "frame", "seed", "density", "gouge", "wobble", "halo", "scraps", "band", "chatter", "size", "layout", "copies", "vinyl", "weed", "weedm", "minw", "mingap", "minisle", "minhole", "view", "colour", "surface", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null, pending = 0;
 const VIEW_ONLY = new Set(["view", "colour", "surface"]);
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "carving"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
 
-const BASE = { comp: "raven", pose: "folded", horns: "ram", batv: "seed", ravenv: "seed", skullv: "seed", skulllook: "line", style: "engraved", frame: "none", eyes: "hollow", seed: 13, density: 1, gouge: 1, wobble: 0.25, halo: 1.4, scraps: 0.5, band: 3, chatter: 0.5, size: 140, layout: "single", copies: 6, vinyl: "adhesive", weed: "on", weedm: 3, minw: 0.8, mingap: 0.6, minisle: 2, minhole: 1, view: "vinyl", colour: "black", surface: "backing", page: "280x280", margin: 10 };
+const BASE = { comp: "pan", pose: "folded", horns: "ram", style: "engraved", frame: "none", seed: 13, density: 1, gouge: 1, wobble: 0.25, halo: 1.4, scraps: 0.5, band: 3, chatter: 0.5, size: 140, layout: "single", copies: 6, vinyl: "adhesive", weed: "on", weedm: 3, minw: 0.8, mingap: 0.6, minisle: 2, minhole: 1, view: "vinyl", colour: "black", surface: "backing", page: "280x280", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
-  raven: P({ ravenv: "perched" }),
-  hunched: P({ ravenv: "hunched", style: "rough", frame: "crescent", seed: 7, size: 150, colour: "bone", surface: "glass" }),
-  ragged: P({ ravenv: "ragged", style: "knife", seed: 58, colour: "red", surface: "kraft" }),
-  calling: P({ comp: "calling", frame: "moon", seed: 31, colour: "bone", surface: "glass" }),
-  crow: P({ comp: "crow", seed: 5 }),
-  bat: P({ comp: "bat", batv: "spread", frame: "moon", seed: 6, size: 150 }),
-  batup: P({ comp: "bat", batv: "raised", seed: 12, size: 140 }),
-  colony: P({ comp: "colony", frame: "crescent", seed: 21, size: 170, colour: "bone", surface: "glass" }),
-  murder: P({ comp: "murder", frame: "moon", seed: 8, size: 170, colour: "white", surface: "glass" }),
-  skull: P({ comp: "skull", skullv: "classic", frame: "border", chatter: 0.6, seed: 3, size: 140 }),
-  gaunt: P({ comp: "skull", skullv: "gaunt", eyes: "lit", frame: "border", chatter: 0.5, seed: 17, size: 140, colour: "bone", surface: "glass" }),
-  scream: P({ comp: "skull", skullv: "scream", frame: "bsquare", seed: 9, size: 150 }),
-  solid: P({ comp: "skull", skulllook: "solid", skullv: "classic", style: "rough", seed: 3, size: 120 }),
-  bones: P({ comp: "bones", frame: "border", seed: 21, size: 150, colour: "white", surface: "glass" }),
-  perched: P({ comp: "perched", frame: "barch", seed: 44, size: 180, colour: "red", surface: "laptop" }),
-  panwoods: P({ comp: "lurk", horns: "straight", seed: 5, size: 190, halo: 1, scraps: 0.2 }),
-  panwait: P({ comp: "pan", seed: 7, size: 170 }),
-  panpipes: P({ comp: "pan", pose: "pipes", frame: "moon", seed: 31, size: 170, colour: "bone", surface: "glass" }),
-  sheet: P({ comp: "mix", layout: "sheet", copies: 6, size: 80, seed: 2, gouge: 1.1 }),
-  sheetsr: P({ comp: "mixsr", layout: "sheet", copies: 6, size: 90, seed: 4, style: "rough", page: "300x600" }),
+  waiting: P({ comp: "pan", pose: "folded", seed: 7, size: 170 }),
+  piping: P({ comp: "pan", pose: "pipes", frame: "moon", seed: 31, size: 170, colour: "bone", surface: "glass" }),
+  peek: P({ comp: "peek", style: "knife", seed: 12, size: 170 }),
+  lurk: P({ comp: "lurk", horns: "straight", seed: 5, size: 190, halo: 1, scraps: 0.2 }),
+  goat: P({ comp: "pan", horns: "goat", frame: "barch", seed: 44, size: 200, colour: "red", surface: "kraft" }),
+  block: P({ comp: "pan", frame: "bsquare", seed: 9, size: 170, chatter: 0.6 }),
+  rough: P({ comp: "pan", horns: "goat", pose: "pipes", style: "rough", frame: "crescent", seed: 58, size: 180, colour: "white", surface: "glass" }),
+  sheet: P({ comp: "mix", layout: "sheet", copies: 4, size: 120, seed: 2 }),
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
 IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
 $("reroll").onclick = () => { $("seed").value = 1 + floor(Math.random() * 999); run(); };
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-const stem = r => `lino-${r.o.comp}-${r.o.frame}-s${r.o.seed}-${round(r.S)}mm${r.mirrored ? "-mirrored" : ""}`;
+const stem = r => `pan-${r.o.comp}-${r.o.frame}-s${r.o.seed}-${round(r.S)}mm${r.mirrored ? "-mirrored" : ""}`;
 $("export").onclick = () => { if (last) save(toSVG(last), stem(last) + ".svg"); };
 $("split").onclick = () => { if (!last) return; penLayers(last).forEach((L, i) => setTimeout(() => save(toSVG(last, L.name), `${stem(last)}-${L.name}.svg`), i * 500)); };
 $("loadbtn").onclick = () => $("loadsvg").click();
@@ -1661,11 +1644,6 @@ $("loadsvg").onchange = async e => {
   run();
 };
 addEventListener("resize", () => last && draw(last));
-if (!WIP && typeof document.querySelector === "function") {
-  for (const op of [...$("comp").options]) if (SKULLY.has(op.value)) op.remove();
-  for (const id of ["skulllook", "skullv", "eyes"]) $(id).closest("label").style.display = "none";
-  for (const b of document.querySelectorAll("[data-preset]")) if (["skull", "gaunt", "scream", "solid", "bones", "perched", "sheetsr"].includes(b.dataset.preset)) b.remove();
-}
 window.__studio = { build, read, PRESETS, penLayers, toSVG };
 run();
 </script>
