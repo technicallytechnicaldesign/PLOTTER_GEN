@@ -8,7 +8,7 @@
       "room": "hall",
       "day": 1,
       "date": "2026-10-01",
-      "prompt": null,
+      "prompt": "apple",
       "photo": null,
       "frame": {
         "width": 210,
@@ -24,7 +24,7 @@
       "room": "hall",
       "day": 2,
       "date": "2026-10-02",
-      "prompt": null,
+      "prompt": "relic",
       "photo": null,
       "frame": {
         "width": 210,
