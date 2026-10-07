@@ -241,7 +241,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label data-when="look=colour">Fill spacing (mm) <output id="o-sp"></output><input type="range" id="sp" min="0.5" max="2" step="0.05" value="0.8"></label>
     <label data-when="look=colour">Fill angle <output id="o-angle"></output><input type="range" id="angle" min="0" max="180" step="5" value="35"></label>
     <label>Contour detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
-    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option></select></label>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option><option value="fade">run-off: fades toward the light</option></select></label>
     <label>Shadow hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
     <p class="hint">Outline passes after the second only go on the shadow side, lower right. Dark areas are hatched in the line pen, never filled solid: 0.75 mm crosshatch read as an even dark tone on paper, and under 0.5 mm the lines flood and soak the paper. Whip shading and fluid tone are stippled dots in the thin pen.</p>
   </fieldset>
@@ -514,6 +514,16 @@ function valveShape(s) {
 }
 const RELICS = { cpu: cpuShape, ram: ramShape, board: boardShape, valve: valveShape };
 
+// Run-off: a hatch that thins out toward the light (upper left) instead of sitting as one dark mass (maker, 2026-10-07,
+// after a wide-pitch print felt better than a close one). Along the light-to-shadow ramp across the box: nothing below lo,
+// dashes that lengthen from lo to hi, solid lines past hi. The crossing pass gets a later ramp, so it only joins in the dark.
+function runoff(lines, b, ang, lo, hi) {
+  const bw = max(1e-6, b[2] - b[0]), bh = max(1e-6, b[3] - b[1]), ca = cos(ang * D2R), sa = sin(ang * D2R), P = 2.4;
+  const densify = q => { const out = [q[0]]; for (let i = 1; i < q.length; i++) { const [ax, ay] = q[i - 1], [bx, by] = q[i], n = max(1, ceil(hypot(bx - ax, by - ay) / 0.3)); for (let k = 1; k <= n; k++) out.push([lerp(ax, bx, k / n), lerp(ay, by, k / n)]); } return out; };
+  const keep = (x, y) => { const t = ((x - b[0]) / bw + (y - b[1]) / bh) / 2; if (t >= hi) return true; if (t <= lo) return false; const s = x * ca + y * sa, f = (((s % P) + P) % P) / P; return f < (t - lo) / (hi - lo); };
+  return keepWhere(lines.map(([q]) => [densify(q), false]), keep).map(([q]) => [q, false, "fill"]);
+}
+
 // ---------------- the build ----------------
 function build(o) {
   const t0 = performance.now(), marks = [], mark = n => marks.push(n + " " + (performance.now() - t0).toFixed(0)), R = o.size / 2, rng = k => mulberry(o.seed * 1009 + k * 7919);
@@ -673,7 +683,10 @@ function build(o) {
       add(layer, ls);
     }
   };
-  const fillBlack = (inside, b, ang = 45, far = null) => add("line", [...hatch(inside, b, ang, o.hp, 0.4, far), ...(o.dark === "cross" ? hatch(inside, b, ang + 90, o.hp, 0.4, far) : [])], 0.01);   // dark tone: crosshatch or single hatch
+  const fillBlack = (inside, b, ang = 45, far = null) => {   // dark tone: crosshatch, single hatch, or run-off
+    const h1 = hatch(inside, b, ang, o.hp, 0.4, far), h2 = o.dark === "single" ? [] : hatch(inside, b, ang + 90, o.hp, 0.4, far);
+    add("line", o.dark === "fade" ? [...runoff(h1, b, ang, 0.1, 0.4), ...runoff(h2, b, ang + 90, 0.5, 0.78)] : [...h1, ...h2], 0.01);
+  };
   const shadeAmt = o.shade / 100, ink = look === "ink", colour = look === "colour";
 
   mark("setup");
@@ -733,7 +746,8 @@ function build(o) {
     const sv = vis("struts"), rv = [];
     for (const sx of strutX) for (const ry of [gT + 0.16 * R, 0, gB - 0.16 * R]) rv.push([ring(sx, ry, 0.022 * R, 0.022 * R, 10), true]);
     if (det) add("line", keepWhere(rv, sv));
-    if (ink) fillBlack((x, y) => strutD(x, y) < -ins && sv(x, y) && x > 0, sb, 45);
+    // Bars shaded with lines down their length on the shadow (right) side: crosshatch in a 2 mm bar plotted as chevrons.
+    if (ink) { const step = max(0.5, o.hp * 0.7), bars = []; for (const sx of strutX) for (let dx = 0.005 * R; dx < 0.04 * R; dx += step) bars.push([Array.from({ length: 60 }, (_, i) => [sx + dx, lerp(gT, gB, i / 59)]), false]); add("line", keepWhere(bars, (x, y) => strutD(x, y) < -ins && sv(x, y))); }
     if (colour) add("metal", hatch((x, y) => strutD(x, y) < -ins && sv(x, y), sb, o.angle, o.sp), 0.01);
   }
   const vRel = vis("relic"), vGlass = vis("glass");
@@ -789,18 +803,25 @@ function build(o) {
     if (c.end === "plug") outline((x, y) => { const dx = x - c.ex, dy = y - c.ey, al = dx * c.tx + dy * c.ty, ac = -dx * c.ty + dy * c.tx; return abs(al - 0.2 * R) - 0.012 * R + max(0, abs(ac) - c.hw); }, c.box, nm, 1, "line", (x, y) => c.conn(x, y) < -0.3);
     if (c.end === "jack") add("line", keepWhere([[ring(c.ex + c.tx * 1.4 * c.hw, c.ey + c.ty * 1.4 * c.hw, 0.8 * c.hw, 0.8 * c.hw, 24), true], [ring(c.ex + c.tx * 1.4 * c.hw, c.ey + c.ty * 1.4 * c.hw, 0.25 * c.hw, 0.25 * c.hw, 12), true]], v));
     if (c.hose) {
-      const ribs = []; let acc = 0;
+      const ribs = []; let acc = 0, prev = null;
+      const crosses = (a, b, c, d) => { const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0; };
       for (let k = 1; k < c.pts.length; k++) {
         const [ax, ay] = c.pts[k - 1], [bx, by] = c.pts[k], L = hypot(bx - ax, by - ay); acc += L;
-        if (acc < 1.3 * c.r) continue; acc = 0;
-        const tx = (bx - ax) / (L || 1), ty = (by - ay) / (L || 1), nx = -ty, ny = tx;
+        if (acc < 1.3 * c.r) continue;
+        const tx = (bx - ax) / (L || 1), ty = (by - ay) / (L || 1), nx = -ty, ny = tx, A = [bx - nx * c.r, by - ny * c.r], B = [bx + nx * c.r, by + ny * c.r];
+        if (prev && (crosses(prev[0], prev[1], A, B) || min(hypot(A[0] - prev[0][0], A[1] - prev[0][1]), hypot(B[0] - prev[1][0], B[1] - prev[1][1])) < 0.9 * c.r)) continue;
+        acc = 0; prev = [A, B];
         ribs.push([bezPts([[bx - nx * c.r, by - ny * c.r], [bx + tx * 0.5 * c.r, by + ty * 0.5 * c.r], [bx + nx * c.r, by + ny * c.r]], 10), false]);   // 11 points: a 3-point rib lost both ends to the clip and vanished (MEASURED reliquary.png r3)
       }
       add("line", keepWhere(ribs, inT));
     } else {
-      const glint = (x, y) => abs(c.across(x, y) - 0.42 * c.r) > 0.2 * c.r;
-      if (look !== "line") fillBlack((x, y) => inT(x, y) && glint(x, y), c.box, 45, (x, y) => c.tubeD(x, y) + 0.3);
-      else add("line", keepWhere([[c.hl, false]], inT));
+      // Shaded along its length like an engraved cylinder: lines parallel to the cable on its shadow side, the lit side left
+      // as the glint. Crosshatch in a tube this narrow plotted as a row of X marks (MEASURED, bench-log 2026-10-07).
+      if (look !== "line") {
+        const step = max(0.5, o.hp * 0.7), n = max(1, floor(1.5 * c.r / step)), offs = Array.from({ length: n }, (_, i) => -0.05 - (i + 0.5) * step / c.r).filter(k => k > -0.95);
+        const along = k => c.pts.map((q, i) => { const a = c.pts[max(0, i - 1)], b = c.pts[min(c.pts.length - 1, i + 1)], gx = b[0] - a[0], gy = b[1] - a[1], gl = hypot(gx, gy) || 1; let nx = -gy / gl, ny = gx / gl; if (nx * 0.6 + ny * 0.8 > 0) { nx = -nx; ny = -ny; } return [q[0] + nx * k * c.r, q[1] + ny * k * c.r]; });   // k < 0: away from the glint, the shadow side
+        add("line", keepWhere(offs.map(k => [along(k), false]), inT));
+      } else add("line", keepWhere([[c.hl, false]], inT));
     }
     if (c.end === "plug" && look !== "line") fillBlack((x, y) => c.conn(x, y) < -ins && v(x, y) && c.tubeD(x, y) > 0.3 && (() => { const dx = x - c.ex, dy = y - c.ey, al = dx * c.tx + dy * c.ty; return al < 0.5 * R && abs(al - 0.2 * R) > 0.05 * R; })(), c.box, 45);
     if (c.end === "fray") {

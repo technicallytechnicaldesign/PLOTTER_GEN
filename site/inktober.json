@@ -9,10 +9,10 @@
       "day": 1,
       "date": "2026-10-01",
       "prompt": "apple",
-      "photo": null,
+      "photo": "prints/inktober-01-apple.jpg",
       "frame": {
         "width": 210,
-        "height": 297
+        "height": 204
       },
       "content": {
         "nsfw": false,
@@ -25,10 +25,10 @@
       "day": 2,
       "date": "2026-10-02",
       "prompt": "relic",
-      "photo": null,
+      "photo": "prints/inktober-02-relic.jpg",
       "frame": {
         "width": 210,
-        "height": 297
+        "height": 300
       },
       "content": {
         "nsfw": false,

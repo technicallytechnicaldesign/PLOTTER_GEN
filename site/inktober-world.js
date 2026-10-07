@@ -27,7 +27,7 @@ export function prepare(prints,now=new Date()){
   const title=`Day ${n}`+(s.prompt?`: ${s.prompt}`:'');
   const reserved=when==='today'?[`DAY ${n} / TODAY`,'READY FOR INK']:when==='ahead'?[`DAY ${n}`,'NOT YET']:[`DAY ${n}`,'AWAITING INK'];
   const note=s.photo?`${DAY[d.getDay()]} ${s.day} October`:when==='today'?'Today. Space for today\'s ink':`${DAY[d.getDay()]} ${s.day} October`;
-  const description=s.description||`${DAY[d.getDay()]} ${s.day} October 2026${s.prompt?`, prompt "${s.prompt}"`:''}. Space for a photograph of the day's ink.`;
+  const description=s.description||`${DAY[d.getDay()]} ${s.day} October 2026${s.prompt?`, prompt "${s.prompt}"`:''}. ${s.photo?'Plotted in ink, photographed on the desk.':'Space for a photograph of the day\'s ink.'}`;
   return {...s,title,reserved,note,description,mark:when==='today'?'today':null};
  });
 }
