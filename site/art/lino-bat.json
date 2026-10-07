@@ -26,6 +26,8 @@
     "batv": "spread",
     "skulllook": "line",
     "skullv": "seed",
+    "pose": "folded",
+    "horns": "ram",
     "frame": "moon",
     "eyes": "hollow",
     "style": "engraved",
@@ -37,7 +39,7 @@
     "surface": "backing",
     "page": "280x280"
   },
-  "sourceHash": "804a96c9ab3de87bdc1c86a4b5e888d6e4754ba9f331127d9c9c7fbbaf5033d0",
+  "sourceHash": "e8f87c0f458387db703ef3f1f56026ef92866d619a994fea5499ac8029b3ce4d",
   "svg": "site/art/lino-bat.svg",
   "image": "site/art/lino-bat.webp",
   "page": "280x280",

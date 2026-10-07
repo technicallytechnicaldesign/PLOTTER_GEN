@@ -73,7 +73,23 @@
       "day": 5,
       "date": "2026-10-05",
       "prompt": "smack",
-      "photo": null,
+      "photo": "prints/inktober-05-smack.png",
+      "render": true,
+      "hang": "plinth",
+      "box": {
+        "width": 55,
+        "height": 55,
+        "depth": 55
+      },
+      "faces": {
+        "front": "prints/smack-cube/front.png",
+        "right": "prints/smack-cube/right.png",
+        "back": "prints/smack-cube/back.png",
+        "left": "prints/smack-cube/left.png",
+        "top": "prints/smack-cube/top.png"
+      },
+      "studio": "../smack-studio.html",
+      "description": "Monday 5 October 2026, prompt \"smack\". Not folded yet: the Smack studio's own render of the smacked cube, each face drawn from the studio in the same light, turning on its plinth. Photographs of the real one go in when it is folded.",
       "frame": {
         "width": 210,
         "height": 297
@@ -110,11 +126,14 @@
       "room": "hall",
       "day": 7,
       "date": "2026-10-07",
-      "prompt": null,
-      "photo": null,
+      "prompt": "panic",
+      "photo": "prints/inktober-07-panic.png",
+      "render": true,
+      "studio": "../pan-lino-studio.html",
+      "description": "Wednesday 7 October 2026, prompt \"panic\". Not cut yet: the Pan lino studio's own render of Eyes in the woods, as it will come off the blade in black vinyl. Pan, who gave panic its name, holding on to the trees.",
       "frame": {
         "width": 210,
-        "height": 297
+        "height": 260
       },
       "content": {
         "nsfw": false,

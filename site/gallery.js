@@ -1,7 +1,7 @@
 // One script, two floor plans: <body data-world="inktober"> walks the single Inktober hall instead of the six rooms.
 const ink=document.body.dataset.world==='inktober';
-const world=await import(ink?'./inktober-world.js?v=20261007-ogre2':'./gallery-world.js?v=20261007-ogre2');
-const {createGallery}=await import('./gallery-gl.js?v=20261007-ogre2');
+const world=await import(ink?'./inktober-world.js?v=20261007-ogre3':'./gallery-world.js?v=20261007-ogre3');
+const {createGallery}=await import('./gallery-gl.js?v=20261007-ogre3');
 const HALL_NAME=world.HALL_NAME||'Entrance corridor';
 const {rooms,HALL,ROOM_W,ROOM_D,START,END,SCALE,locationAt,advance,destination}=world;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
