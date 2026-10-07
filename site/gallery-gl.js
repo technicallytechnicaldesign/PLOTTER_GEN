@@ -2,6 +2,7 @@
 // draws the same rooms (CSS 3D leaves that to each browser's layer sorting, which phones get wrong).
 // Units are gallery-world.js px with y flipped: three.js y points up. Everything is unlit paper and pen lines.
 import * as THREE from './three.module.min.js';
+import { puppetPose } from './hero-motion.js';
 
 const INK = '#4c555b', FRAME = '#303a40', PAPER = '#ffffff', MUTED = '#69767d', DASH = '#a8b1b7';
 const MONO = (getComputedStyle(document.documentElement).getPropertyValue('--font-mono') || '').trim() || 'monospace';
@@ -43,7 +44,7 @@ export function createGallery(host, world, onChange) {
   renderer.domElement.className = 'gallery-canvas'; renderer.domElement.setAttribute('aria-hidden', 'true');
   host.prepend(renderer.domElement);
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(60, 1, 5, 24000), aniso = renderer.capabilities.getMaxAnisotropy();
-  const lineMat = new THREE.LineBasicMaterial({ color: INK }), solids = [], spinners = [], swingers = [], prints = new Map();
+  const lineMat = new THREE.LineBasicMaterial({ color: INK }), solids = [], spinners = [], swingers = [], puppets = [], prints = new Map();
   const mats = new Map(), once = (key, make) => mats.get(key) || (mats.set(key, make()), mats.get(key));
   // Surfaces sit a hair behind their own outlines, so pen lines never fight the paper.
   const basic = opt => new THREE.MeshBasicMaterial({ polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, ...opt });
@@ -122,7 +123,9 @@ export function createGallery(host, world, onChange) {
   }
   function garland(set, wall) {
     const L = wall.len * 0.9, gap = 40, k = Math.min(SCALE, (L - gap * (set.length + 1)) / set.reduce((t, s) => t + s.frame.width, 0));
-    const sag = 70, yAt = u => sag * (1 - (2 * u / L - 1) ** 2) + 20, top = CEILING + 150;
+    // A paper doll rises above its peg (ears); drop the wire by the tallest reach so nothing meets the top of a wide view.
+    const lift = Math.max(0, ...set.map(s => (s.reach || 0) * s.frame.width * k));
+    const sag = 70, yAt = u => sag * (1 - (2 * u / L - 1) ** 2) + 20, top = CEILING + 150 + lift;
     const g = place(new THREE.Group(), wall.x, 0, wall.z, wall.angle), pts = [];
     for (let u = 0; u <= L; u += 10) pts.push(new THREE.Vector3(u - L / 2, -(top + yAt(u)), 0));
     g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
@@ -131,12 +134,34 @@ export function createGallery(host, world, onChange) {
     set.forEach((s, i) => {
       const w = ws[i], h = s.frame.height * k, u = x + w / 2; x += w + free; let img = null;
       const tex = paint(w, h, c => { c.fillStyle = PAPER; c.fillRect(0, 0, w, h); c.strokeStyle = '#c9d0d3'; c.strokeRect(0.5, 0.5, w - 1, h - 1); if (img?.complete && img.naturalWidth) drawImage(c, img, 0, 0, w, h, false); else reserved(c, 10, 10, w - 20, h - 20, 'PRINT PHOTO', 'SPACE RESERVED'); });
-      img = photo(s.photo, tex);
+      if (!s.puppet) img = photo(s.photo, tex);
       const pivot = new THREE.Group(); pivot.position.set(u - L / 2, -(top + yAt(u)), 2); g.add(pivot);
-      card(tex, w, h, pivot, 0, -h / 2 - 4, 0, true);
+      if (s.puppet) puppet(s, w, pivot, i); else card(tex, w, h, pivot, 0, -h / 2 - 4, 0, true);
       const peg = new THREE.Mesh(new THREE.BoxGeometry(10, 26, 6), basic({ color: '#d9c7a4' })); peg.position.set(0, 0, 3); outline(peg, peg.geometry); pivot.add(peg);
       pivot.userData.print = s.id; pivot.userData.tilt = rad(((i * 37) % 7 - 3) * 0.8); pivot.userData.phase = i * 1.3; pivot.rotation.z = pivot.userData.tilt;
       swingers.push(pivot); prints.set(s.id, pivot);
+    });
+  }
+  // A photographed paper doll cut into layers (print-photos/<set>/work/build_puppet.py): the peg holds it at its rig's
+  // `peg` point and each part turns on its brad with the studio's own animal wiggle (hero-motion.js puppetPose);
+  // the rig's `moves` limits which parts wiggle and `speed` slows the whole wiggle.
+  function puppet(s, w, pivot, i) {
+    const base = s.puppet.replace(/[^/]+$/, '');
+    fetch(s.puppet).then(r => r.json()).then(rig => {
+      const k = w / rig.size[0], W = rig.size[0] * k, H = rig.size[1] * k;
+      const at = (x, y) => [(x - rig.peg[0]) * k, -(y - rig.peg[1]) * k];
+      const layer = (src, parent, [ox, oy], z) => {
+        const tex = new THREE.TextureLoader().load(base + src, onChange); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = aniso;
+        const [cx, cy] = at(rig.size[0] / 2, rig.size[1] / 2), m = card(tex, W, H, parent, cx - ox, cy - oy, z, true);
+        m.material.alphaTest = 0.5; return m;
+      };
+      const joints = [], doll = new THREE.Group(); doll.rotation.z = -rad(rig.turn || 0); pivot.add(doll);   // turn: level a photo shot at a slant
+      rig.parts.forEach((p, n) => {
+        const o = at(...p.pivot), g = new THREE.Group(); g.position.set(o[0], o[1], 0); doll.add(g);
+        layer(p.src, g, o, p.under ? -0.6 : 0.6 + 0.3 * n); if (!rig.moves || rig.moves.includes(p.key)) joints.push({ g, key: p.key });
+      });
+      layer(rig.body, doll, [0, 0], 0);
+      puppets.push({ rig, joints, phase: i * 0.83 }); onChange();
     });
   }
   const FACE = { right: 0, left: 1, top: 2, front: 4, back: 5 };
@@ -185,6 +210,7 @@ export function createGallery(host, world, onChange) {
     if (!still.matches) {
       for (const b of spinners) b.rotation.y = time / 28000 * 2 * Math.PI;
       for (const s of swingers) s.rotation.z = s.userData.tilt + rad(1.5) * Math.sin(time / 6000 * Math.PI + s.userData.phase);
+      for (const p of puppets) { const pose = puppetPose(p.rig, (time / 1000 + p.phase) * (p.rig.speed || 1)); for (const j of p.joints) j.g.rotation.z = -rad((pose[j.key] || 0) * (p.rig.amp?.[j.key] ?? 1)); }
     }
     renderer.render(scene, camera);
   }

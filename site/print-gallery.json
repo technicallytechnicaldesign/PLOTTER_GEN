@@ -388,13 +388,15 @@
       }
     },
     {
-      "id": "paper-peg-01",
+      "id": "rabbit-blue-pocket-watch",
       "room": "paper",
-      "title": "On the peg line 01",
-      "photo": null,
+      "title": "Blue rabbit with pocket watch",
+      "description": "A plotted jointed rabbit, dressed by hand in a collage cape, hat, collar and pocket watch. On the peg line it wiggles the way the studio rig does.",
+      "photo": "prints/rabbit-blue-pocket-watch.jpg",
+      "puppet": "prints/puppets/rabbit-blue-pocket-watch/rig.json",
       "frame": {
-        "width": 120,
-        "height": 230
+        "width": 260,
+        "height": 277
       },
       "hang": "peg",
       "studio": null,
@@ -402,16 +404,19 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "reach": 0.39
     },
     {
-      "id": "paper-peg-02",
+      "id": "rabbit-pink-party-hat",
       "room": "paper",
-      "title": "On the peg line 02",
-      "photo": null,
+      "title": "Pink rabbit in a party hat",
+      "description": "A plotted jointed rabbit in a star-painted cape, collar and party hat, holding a little bunny teddy. On the peg line it wiggles the way the studio rig does.",
+      "photo": "prints/rabbit-pink-party-hat.jpg",
+      "puppet": "prints/puppets/rabbit-pink-party-hat/rig.json",
       "frame": {
-        "width": 150,
-        "height": 180
+        "width": 260,
+        "height": 244
       },
       "hang": "peg",
       "studio": null,
@@ -419,16 +424,19 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "reach": 0.259
     },
     {
-      "id": "paper-peg-03",
+      "id": "rabbit-yellow-crown",
       "room": "paper",
-      "title": "On the peg line 03",
-      "photo": null,
+      "title": "Yellow rabbit in a crown",
+      "description": "A plotted jointed rabbit in a paper crown, monocle and painted jacket. On the peg line it wiggles the way the studio rig does.",
+      "photo": "prints/rabbit-yellow-crown.jpg",
+      "puppet": "prints/puppets/rabbit-yellow-crown/rig.json",
       "frame": {
-        "width": 110,
-        "height": 250
+        "width": 260,
+        "height": 202
       },
       "hang": "peg",
       "studio": null,
@@ -436,7 +444,8 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "reach": 0.41
     },
     {
       "id": "paper-peg-04",
