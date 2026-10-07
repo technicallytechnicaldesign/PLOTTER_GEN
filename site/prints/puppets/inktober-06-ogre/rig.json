@@ -1,0 +1,78 @@
+{
+ "id": "inktober-06-ogre",
+ "title": "Ogre jack (swamp)",
+ "size": [
+  1098,
+  981
+ ],
+ "turn": 0,
+ "peg": [
+  602.2,
+  247
+ ],
+ "parts": [
+  {
+   "name": "arm-left",
+   "key": "arm-left",
+   "pivot": [
+    440.2,
+    477.9
+   ],
+   "z": -0.6,
+   "src": "arm-left.png"
+  },
+  {
+   "name": "leg-left",
+   "key": "leg-left",
+   "pivot": [
+    520.4,
+    738.8
+   ],
+   "z": -1.1,
+   "src": "leg-left.png"
+  },
+  {
+   "name": "arm-right",
+   "key": "arm-right",
+   "pivot": [
+    764.2,
+    477.9
+   ],
+   "z": -0.6,
+   "src": "arm-right.png"
+  },
+  {
+   "name": "leg-right",
+   "key": "leg-right",
+   "pivot": [
+    684,
+    738.8
+   ],
+   "z": -1.1,
+   "src": "leg-right.png"
+  },
+  {
+   "name": "shout-bubble",
+   "key": "shout-bubble",
+   "pivot": [
+    602.2,
+    378
+   ],
+   "z": -1.6,
+   "src": "shout-bubble.png"
+  }
+ ],
+ "body": "body.png",
+ "pull": {
+  "period": 3.6,
+  "angles": {
+   "arm-left": 140,
+   "leg-left": 45,
+   "arm-right": -140,
+   "leg-right": -45,
+   "shout-bubble": -147.59
+  }
+ },
+ "drop": 0.657,
+ "reach": 0.225
+}

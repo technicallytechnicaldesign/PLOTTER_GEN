@@ -2,7 +2,7 @@
 // draws the same rooms (CSS 3D leaves that to each browser's layer sorting, which phones get wrong).
 // Units are gallery-world.js px with y flipped: three.js y points up. Everything is unlit paper and pen lines.
 import * as THREE from './three.module.min.js';
-import { puppetPose } from './hero-motion.js';
+import { puppetPose } from './hero-motion.js?v=20261007-ogre2';
 
 const INK = '#4c555b', FRAME = '#303a40', PAPER = '#ffffff', MUTED = '#69767d', DASH = '#a8b1b7';
 const MONO = (getComputedStyle(document.documentElement).getPropertyValue('--font-mono') || '').trim() || 'monospace';
@@ -153,7 +153,7 @@ export function createGallery(host, world, onChange) {
   // A photographed paper doll cut into layers (print-photos/<set>/work/build_puppet.py): the peg holds it at its rig's
   // `peg` point and each part turns on its brad with the studio's own animal wiggle (hero-motion.js puppetPose);
   // the rig's `moves` limits which parts wiggle and `speed` slows the whole wiggle.
-  function puppet(s, w, pivot, i) {
+  function puppet(s, w, pivot, i, onRig = null) {
     const base = s.puppet.replace(/[^/]+$/, '');
     fetch(s.puppet).then(r => r.json()).then(rig => {
       const k = w / rig.size[0], W = rig.size[0] * k, H = rig.size[1] * k;
@@ -166,11 +166,24 @@ export function createGallery(host, world, onChange) {
       const joints = [], doll = new THREE.Group(); doll.rotation.z = -rad(rig.turn || 0); pivot.add(doll);   // turn: level a photo shot at a slant
       rig.parts.forEach((p, n) => {
         const o = at(...p.pivot), g = new THREE.Group(); g.position.set(o[0], o[1], 0); doll.add(g);
-        layer(p.src, g, o, p.under ? -0.6 : 0.6 + 0.3 * n); if (!rig.moves || rig.moves.includes(p.key)) joints.push({ g, key: p.key });
+        layer(p.src, g, o, p.z ?? (p.under ? -0.6 : 0.6 + 0.3 * n)); if (!rig.moves || rig.moves.includes(p.key)) joints.push({ g, key: p.key });
       });
       layer(rig.body, doll, [0, 0], 0);
-      puppets.push({ rig, joints, phase: i * 0.83 }); onChange();
+      puppets.push({ rig, joints, phase: i * 0.83 }); if (onRig) onRig(rig, k); onChange();
     });
+  }
+  // A paper doll on its own cord from the ceiling (hang: 'peg' in a hall): the cord sways from the ceiling, the peg holds the doll
+  // at its rig's `peg`, and the cord is cut so the doll at rest (rig `drop`, in widths below the peg) hangs round eye height.
+  function dangle(s, w, h, x, z, angle) {
+    const g = place(new THREE.Group(), x, 0, z, angle), swing = new THREE.Group(); swing.position.set(0, -CEILING, 160); g.add(swing);
+    const cordGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -1, 0)]), pivot = new THREE.Group();
+    swing.add(new THREE.Line(cordGeo, lineMat), pivot);
+    const hook = new THREE.Mesh(new THREE.BoxGeometry(18, 8, 18), basic({ color: '#d9c7a4' })); outline(hook, hook.geometry); swing.add(hook);
+    const peg = new THREE.Mesh(new THREE.BoxGeometry(10, 26, 6), basic({ color: '#d9c7a4' })); peg.position.set(0, 0, 3); outline(peg, peg.geometry); pivot.add(peg);
+    const hangAt = drop => { const len = -CEILING - Math.max(40, drop * w / 2 + 20); pivot.position.set(0, -len, 2); cordGeo.setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -len, 0)]); };
+    hangAt(h / w);
+    puppet(s, w, pivot, 0, rig => hangAt(rig.drop ?? h / w));
+    swing.userData.print = s.id; swing.userData.tilt = 0; swing.userData.phase = 0.7; swingers.push(swing); prints.set(s.id, swing);
   }
   const FACE = { right: 0, left: 1, top: 2, front: 4, back: 5 };
   function plinth(s, at) {
@@ -195,7 +208,7 @@ export function createGallery(host, world, onChange) {
   const spots = new Map();
   function hangAll(all) {
     // A world with one hall (inktober-world.js) hangs its 'hall' works in order along the two long walls.
-    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
+    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
     for (const r of rooms) {
       const works = all.filter(s => s.room === r.id), pegged = works.filter(s => s.hang === 'peg'); let walls = roomWalls(r);
       if (pegged.length) { garland(pegged, walls.find(w => w.id === 'far')); walls = walls.filter(w => w.id !== 'far'); }
