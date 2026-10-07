@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cactus</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Cactus</h1>
+  <p class="sub">Cacti grown by their own rule for Inktober day 4. Every areole turns the golden angle from the last, so the ribs and spirals come out in Fibonacci numbers by themselves. Five scenes share one plant: a specimen plate with its herbarium label, a saguaro that ages from seedling to standing bones, a windowsill of potted cacti, a desert night with an owl in a nest hole, and a prickly pear with its cochineal and the carmine they make.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="specimen">Barrel specimen</button><button data-preset="saguaro">Saguaro plate</button><button data-preset="bones">Saguaro bones</button></div>
+    <div class="row"><button data-preset="shelf">Windowsill</button><button data-preset="night">Desert night</button><button data-preset="pear">Prickly pear</button></div>
+    <div class="row"><button data-preset="colouring">Colouring page</button><button data-preset="bloom">In bloom (colour)</button></div>
+  </fieldset>
+  <fieldset><legend>Scene</legend>
+    <label>Scene <select id="scene"><option value="specimen">specimen plate with a label</option><option value="bones">a saguaro under the moon</option><option value="shelf">a windowsill of pots</option><option value="night">desert night</option><option value="pear">prickly pear and cochineal</option></select></label>
+    <label data-when="scene=specimen">Cactus <select id="form"><option value="barrel">barrel</option><option value="saguaro">saguaro</option><option value="column">column</option><option value="pear">prickly pear</option><option value="rosette">echeveria rosette (not a cactus)</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="21"></label>
+    <label>Height (mm) <output id="o-size"></output><input type="range" id="size" min="40" max="220" step="5" value="130"></label>
+    <label>Years <output id="o-years"></output><input type="range" id="years" min="0" max="100" step="1" value="55"></label>
+    <div class="scale"><span>seedling</span><span>grown</span><span>old</span><span>dying</span><span>bones</span></div>
+    <p class="hint">Years grows the plant: a barrel fattens, a saguaro puts out arms after 30, blooms in its prime, then past 70 the skin tears and the woody ribs show, and by 90 only the ribs stand, some fallen.</p>
+  </fieldset>
+  <fieldset><legend>Growth</legend>
+    <label>Ribs <output id="o-ribs"></output><input type="range" id="ribs" min="5" max="34" step="1" value="13"></label>
+    <label>Twist <output id="o-twist"></output><input type="range" id="twist" min="0" max="100" step="5" value="15"></label>
+    <label>Areole gap (mm) <output id="o-agap"></output><input type="range" id="agap" min="2" max="10" step="0.5" value="4.5"></label>
+    <label data-when="scene=specimen|bones|night">Arms <output id="o-arms"></output><input type="range" id="arms" min="0" max="6" step="1" value="3"></label>
+    <label data-when="scene=specimen|bones|night">Nest holes <output id="o-holes"></output><input type="range" id="holes" min="0" max="3" step="1" value="1"></label>
+    <p class="hint">Ribs of 5, 8, 13, 21 or 34 are the ones real cacti settle on. Neighbouring ribs step their areoles by the golden ratio, which lines them up into the spirals you see.</p>
+  </fieldset>
+  <fieldset><legend>Spines</legend>
+    <label>Spines per areole <output id="o-spines"></output><input type="range" id="spines" min="0" max="16" step="1" value="8"></label>
+    <label>Centre spines <output id="o-centrals"></output><input type="range" id="centrals" min="0" max="4" step="1" value="1"></label>
+    <label>Spine length (mm) <output id="o-slen"></output><input type="range" id="slen" min="0.8" max="12" step="0.2" value="3.4"></label>
+    <label>Spine shape <select id="sstyle"><option value="star">straight, in a star</option><option value="hooked">hooked centres (fishhook)</option><option value="bristle">fine bristles</option></select></label>
+  </fieldset>
+  <fieldset><legend>Flowers and fruit</legend>
+    <label>Flowers <output id="o-flowers"></output><input type="range" id="flowers" min="0" max="12" step="1" value="4"></label>
+    <label data-when="scene=pear or form=pear">Pads <output id="o-pads"></output><input type="range" id="pads" min="1" max="16" step="1" value="9"></label>
+    <label data-when="scene=pear or form=pear">Fruit <output id="o-fruit"></output><input type="range" id="fruit" min="0" max="14" step="1" value="6"></label>
+    <label data-when="scene=pear or form=pear">Cochineal <output id="o-coch"></output><input type="range" id="coch" min="0" max="100" step="5" value="45"></label>
+    <p class="hint" data-when="scene=pear or form=pear">Cochineal are scale insects that live on the pads under tufts of white wax. Crushed, they give carmine: the red pen draws their colonies, and the swatch and the bug on the plate say where the colour comes from.</p>
+  </fieldset>
+  <fieldset data-when="scene=night|bones"><legend>Sky</legend>
+    <label>Moon <select id="moon"><option value="crescent">crescent</option><option value="full">full</option><option value="none">none</option></select></label>
+    <label>Sky <select id="sky"><option value="stars">stars</option><option value="dark">stars in a hatched sky that fades to the horizon</option><option value="plain">plain</option></select></label>
+    <label data-when="scene=night">Saguaros <output id="o-many"></output><input type="range" id="many" min="1" max="7" step="1" value="4"></label>
+    <label data-when="scene=night">Owl in a nest hole <select id="owl"><option value="on">yes</option><option value="off">no</option></select></label>
+  </fieldset>
+  <fieldset data-when="scene=shelf"><legend>Windowsill</legend>
+    <label>Pots <output id="o-pots"></output><input type="range" id="pots" min="1" max="6" step="1" value="4"></label>
+    <label>Pot pattern <select id="pattern"><option value="mixed">a mix</option><option value="stripes">stripes</option><option value="zigzag">zigzag</option><option value="dots">dots</option><option value="plain">plain terracotta</option></select></label>
+    <label>Window behind <select id="window"><option value="on">yes</option><option value="off">no</option></select></label>
+  </fieldset>
+  <fieldset data-when="scene=specimen|pear"><legend>Label</legend>
+    <label>Label <select id="label"><option value="latin">a made-up Latin name</option><option value="text">my own text</option><option value="none">none</option></select></label>
+    <label data-when="label=text">Text <input type="text" id="btext" value="INKTOBER 04" maxlength="18"></label>
+    <label data-when="scene=specimen">Spiral inset <select id="inset"><option value="on">yes: the areole spirals from above</option><option value="off">no</option></select></label>
+    <p class="hint">Capital letters, numbers and ! ? - . ' are drawn; anything else becomes a space.</p>
+  </fieldset>
+  <fieldset><legend>Ink</legend>
+    <label>Style <select id="look"><option value="ink">black ink</option><option value="line">lines only, a colouring page</option><option value="colour">colour: green body, coloured flowers, fruit and pots</option></select></label>
+    <label>Outline weight (passes) <output id="o-weight"></output><input type="range" id="weight" min="1" max="4" step="1" value="2"></label>
+    <label data-when="look!=line">Rib shading <output id="o-shade"></output><input type="range" id="shade" min="0" max="100" step="5" value="55"></label>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option><option value="fade">run-off: fades toward the light</option></select></label>
+    <label>Shadow hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
+    <label data-when="look=colour">Fill spacing (mm) <output id="o-sp"></output><input type="range" id="sp" min="0.5" max="2" step="0.05" value="0.9"></label>
+    <label>Contour detail <output id="o-detail"></output><input type="range" id="detail" min="0.5" max="1.5" step="0.05" value="1"></label>
+    <p class="hint">Rib shading runs along the ribs on the shadow side, never across them, so a narrow rib never fills with X marks. Dark areas (holes, shadows, the night) are hatched in the line pen, never filled solid: under 0.5 mm the lines flood.</p>
+  </fieldset>
+  <fieldset><legend>Pens</legend>
+    <label data-when="look=colour">Body pen (preview) <select id="bodycol"><option value="3f8f4a">green</option><option value="6b8e23">olive</option><option value="2e7d6b">teal</option><option value="1a1a1a">black</option></select></label>
+    <label data-when="look=colour">Flower pen (preview) <select id="flowercol"><option value="e8457a">pink</option><option value="f2b705">yellow</option><option value="e2541c">orange</option><option value="7b2d8b">purple</option></select></label>
+    <label>Red pen: fruit, cochineal (preview) <select id="fruitcol"><option value="c2185b">carmine</option><option value="d7263d">red</option><option value="7b2d8b">purple</option></select></label>
+    <label data-when="look=colour">Pot pen (preview) <select id="potcol"><option value="c0632e">terracotta</option><option value="1e88e5">blue</option><option value="2e7d6b">teal</option></select></label>
+    <label>Preview <select id="view"><option value="pens">pens on paper</option><option value="flash">fills shown solid</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="250x190">250 x 190 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen in plotting order: colours first, then the thin pen, then the black line last so it sits on top. Each file carries four corner ticks at 1 mm, so they all land in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: a cactus is a few limbs, each a centreline with a radius along it (a barrel is one fat limb with a flat dome, a saguaro a trunk with arms that leave sideways and turn up). Ribs are lines at fixed angles round each limb, seen from the front, so they crowd toward the edges. Areoles sit on the ribs and step by the golden ratio from rib to rib; spines leave each areole in 3D and are projected, so the ones at the edge point out sideways. Prickly pear pads carry their areoles on a sunflower spiral (Vogel's model), and an echeveria grows its leaves the same way. A dying saguaro loses its skin in patches to a noise field and shows the woody rods inside; past 85 years the rods splay, break and fall. Pens are 0.4 mm for the line and colours and 0.3 mm for the thin pen (ASSUMED), none plotted yet.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------------- pens (ASSUMED widths until a test plot is measured) ----------------
+// Line and colour pens are 0.4 mm (the maker's pens, 2026-10-06); the thin pen is ASSUMED 0.3 until it is named.
+const PEN = { line: 0.4, shade: 0.3, body: 0.4, flower: 0.4, fruit: 0.4, pot: 0.4 };
+const PASS = 0.28;     // mm between outline passes: a 0.4 pen at 0.28 mm steps reads as one thick line
+// Dark areas are crosshatch at o.hp (default 0.75 mm): a 0.4 pen held an even dark tone there on paper (MEASURED,
+// bench-log 2026-09-28), and anything under 0.5 mm floods and soaks the paper (primer, hatch pitch rule). The first
+// version hatched solid black at 0.35 mm, under one pen width, which the maker flagged as hard on pens and ink (2026-10-07).
+
+// ---------------- distance-field pieces (all in mm, y down) ----------------
+// Far apart (or one side infinite) smin is a plain min; the blend only runs inside the k band.
+const smin = (a, b, k) => { if (!(abs(a - b) < k)) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return lerp(b, a, h) - k * h * (1 - h); };
+const smax = (a, b, k) => -smin(-a, -b, k);
+const circ = (x, y, cx, cy, r) => hypot(x - cx, y - cy) - r;
+// A rotated ellipse, approximate distance (exact on the outline).
+const ell = (x, y, cx, cy, rx, ry, a) => { const dx = x - cx, dy = y - cy, c = cos(a), s = sin(a), u = dx * c + dy * s, v = -dx * s + dy * c; return (hypot(u / rx, v / ry) - 1) * min(rx, ry); };
+function seg(x, y, ax, ay, bx, by) { const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - ax) * dx + (y - ay) * dy) / l2, 0, 1); return [hypot(x - ax - dx * t, y - ay - dy * t), t]; }
+function polyD(x, y, P) { let d = INF, s = 1; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const ax = P[j][0], ay = P[j][1], bx = P[i][0], by = P[i][1], ex = bx - ax, ey = by - ay, wx = x - ax, wy = y - ay, t = clamp((wx * ex + wy * ey) / (ex * ex + ey * ey || 1e-9), 0, 1), dx = wx - ex * t, dy = wy - ey * t; d = min(d, dx * dx + dy * dy); if ((ay > y) !== (by > y) && x < (bx - ax) * (y - ay) / (by - ay) + ax) s = -s; } return s * sqrt(d); }
+// A tube along a polyline whose radius runs r0 -> r1.
+function tube(x, y, pts, r0, r1) { let d = INF; const n = pts.length - 1; for (let i = 0; i < n; i++) { const [s, t] = seg(x, y, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]); d = min(d, s - lerp(r0, r1, (i + t) / n)); } return d; }
+const bez = (P, t) => { const u = 1 - t; return P.length === 3 ? [u * u * P[0][0] + 2 * u * t * P[1][0] + t * t * P[2][0], u * u * P[0][1] + 2 * u * t * P[1][1] + t * t * P[2][1]] : [u * u * u * P[0][0] + 3 * u * u * t * P[1][0] + 3 * u * t * t * P[2][0] + t * t * t * P[3][0], u * u * u * P[0][1] + 3 * u * u * t * P[1][1] + 3 * u * t * t * P[2][1] + t * t * t * P[3][1]]; };
+const bezPts = (P, n) => Array.from({ length: n + 1 }, (_, i) => bez(P, i / n));
+// Lower bound on the distance to anything inside box b (negative inside it).
+const boxD = (b, x, y) => max(b[0] - x, x - b[2], b[1] - y, y - b[3]);
+const grad = (f, x, y, e = 0.2) => { const gx = f(x + e, y) - f(x - e, y), gy = f(x, y + e) - f(x, y - e), l = hypot(gx, gy) || 1; return [gx / l, gy / l]; };
+// A four-point tattoo sparkle: an astroid, |x|^(2/3) + |y|^(2/3) = s^(2/3), so the sides curve in to sharp points.
+const star = (x, y, cx, cy, s) => (abs(x - cx) ** (2 / 3) + abs(y - cy) ** (2 / 3)) ** 1.5 - s;
+// A teardrop hanging point up: a ball with a thin tail merged on.
+const tear = (x, y, cx, cy, r) => smin(circ(x, y, cx, cy, r), seg(x, y, cx, cy, cx, cy - r * 2.3)[0] - 0.04 * r, r * 0.9);
+
+// The apple: a polar outline in its own leaning, slightly squashed frame (u, v). phi is 0 at the stem, positive to the right.
+// taper (0..1) narrows the base toward a heart, which is where a skull narrows to its jaw.
+function appleShape(R, rnd, tilt, taper) {
+  const asym = (rnd() - 0.5) * 0.05, shoulder = 0.05 + rnd() * 0.03 + 0.04 * taper, dimple = 0.12 + rnd() * 0.05, narrow = 0.06 + rnd() * 0.04 + 0.16 * taper, squash = 0.95 + rnd() * 0.04 + 0.12 * taper;   // a heart-shaped apple also stands taller
+  const ca = cos(tilt * D2R), sa = sin(tilt * D2R), k = sqrt(squash);
+  const rad = ph => { const a = abs(ph), s = ph < 0 ? -1 : 1; return R * (1 + (shoulder + s * asym) * exp(-(((a - 0.8) / 0.5) ** 2)) - narrow * sstep(1.2, 2.9, a) - dimple * exp(-((ph / 0.3) ** 2)) - 0.03 * exp(-(((a - PI) / 0.25) ** 2))); };
+  const toL = (x, y) => [ca * x + sa * y, (-sa * x + ca * y) / squash];
+  const fromL = (u, v) => { v *= squash; return [ca * u - sa * v, sa * u + ca * v]; };
+  // Radial distance: exact on the outline, close enough for the 0.3 mm outline passes (ASSUMED fine by eye at the dimple).
+  const d = (x, y) => { const [u, v] = toL(x, y); return (hypot(u, v) - rad(atan2(u, -v))) * k; };
+  const at = (ph, f = 1) => fromL(rad(ph) * f * sin(ph), -rad(ph) * f * cos(ph));
+  return { d, at, fromL, toL, rad };
+}
+
+// ---------------- contours: marching squares on a sampled grid, chained into polylines ----------------
+// Coarse to fine: a cell whose four coarse corners all sit well clear of the outline (same sign, farther than the cell
+// could close) is filled in from them; only cells near an outline are evaluated at full resolution.
+function sample(f, b, h) {
+  const x0 = b[0], y0 = b[1], nx = ceil((b[2] - b[0]) / h) + 2, ny = ceil((b[3] - b[1]) / h) + 2, v = new Float64Array(nx * ny);
+  const S = 4, H = h * S, cx = ceil((nx - 1) / S) + 1, cy = ceil((ny - 1) / S) + 1, c = new Float64Array(cx * cy), band = H * 1.6 + 2;
+  for (let j = 0; j < cy; j++) for (let i = 0; i < cx; i++) c[j * cx + i] = f(x0 + i * H, y0 + j * H);
+  for (let j = 0; j < ny; j++) {
+    const J = floor(j / S), J1 = min(J + 1, cy - 1), ty = (j - J * S) / S;
+    for (let i = 0; i < nx; i++) {
+      const I = floor(i / S), I1 = min(I + 1, cx - 1), a = c[J * cx + I], b2 = c[J * cx + I1], d = c[J1 * cx + I], e = c[J1 * cx + I1];
+      if ((a > band && b2 > band && d > band && e > band) || (a < -band && b2 < -band && d < -band && e < -band)) { const tx = (i - I * S) / S; v[j * nx + i] = lerp(lerp(a, b2, tx), lerp(d, e, tx), ty); }
+      else v[j * nx + i] = f(x0 + i * h, y0 + j * h);
+    }
+  }
+  return { x0, y0, nx, ny, h, v };
+}
+function iso(g, level = 0) {
+  const { x0, y0, nx, ny, h, v } = g, pt = new Map(), adj = new Map(), val = k => v[k] - level;
+  const P = id => { if (pt.has(id)) return; const k = id >> 1, i = k % nx, j = (k - i) / nx, a = val(k), b = val(id & 1 ? k + nx : k + 1), t = a / (a - b); pt.set(id, id & 1 ? [x0 + i * h, y0 + (j + t) * h] : [x0 + (i + t) * h, y0 + j * h]); };
+  const link = (a, b) => { P(a); P(b); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const k = j * nx + i, a = val(k) < 0, b = val(k + 1) < 0, c = val(k + nx + 1) < 0, d = val(k + nx) < 0;
+    if (a === b && b === c && c === d) continue;
+    const T = k * 2, Rt = (k + 1) * 2 + 1, B = (k + nx) * 2, L = k * 2 + 1, e = [];
+    if (a !== b) e.push(T); if (b !== c) e.push(Rt); if (d !== c) e.push(B); if (a !== d) e.push(L);
+    if (e.length === 2) link(e[0], e[1]);
+    else if ((val(k) + val(k + 1) + val(k + nx + 1) + val(k + nx)) / 4 < 0 === a) { link(T, Rt); link(B, L); } else { link(T, L); link(Rt, B); }
+  }
+  const seen = new Set(), out = [];
+  const walk = s => { const line = [s]; seen.add(s); let cur = s; for (;;) { const nb = adj.get(cur).find(n => !seen.has(n)); if (nb === undefined) break; seen.add(nb); line.push(nb); cur = nb; } return line.map(q => pt.get(q)); };
+  for (const [id, n] of adj) if (n.length === 1 && !seen.has(id)) out.push([walk(id), false]);
+  for (const id of adj.keys()) if (!seen.has(id)) out.push([walk(id), true]);
+  return out;
+}
+function simplify(p, tol = 0.03) {
+  if (p.length < 3) return p;
+  // A loop that closes on itself has no chord to measure from: split it at the point farthest from its start.
+  if (hypot(p[0][0] - p[p.length - 1][0], p[0][1] - p[p.length - 1][1]) < 1e-6) { let fi = 1, fd = 0; for (let i = 1; i < p.length - 1; i++) { const d = hypot(p[i][0] - p[0][0], p[i][1] - p[0][1]); if (d > fd) { fd = d; fi = i; } } if (fd < 1e-6) return p.slice(0, 1); return [...simplify(p.slice(0, fi + 1), tol), ...simplify(p.slice(fi), tol).slice(1)]; }
+  const keep = new Uint8Array(p.length), st = [[0, p.length - 1]]; keep[0] = keep[p.length - 1] = 1;
+  while (st.length) { const [a, b] = st.pop(), ax = p[a][0], ay = p[a][1], dx = p[b][0] - ax, dy = p[b][1] - ay, L = hypot(dx, dy) || 1e-9; let md = 0, mi = -1; for (let i = a + 1; i < b; i++) { const d = abs((p[i][0] - ax) * dy - (p[i][1] - ay) * dx) / L; if (d > md) { md = d; mi = i; } } if (md > tol) { keep[mi] = 1; st.push([a, mi], [mi, b]); } }
+  return p.filter((_, i) => keep[i]);
+}
+// Split polylines wherever pred fails; a closed loop that survives whole stays closed.
+function keepWhere(lines, pred) {
+  const out = [];
+  for (const [p, cl] of lines) {
+    const ok = p.map(q => pred(q[0], q[1]));
+    if (ok.every(Boolean)) { out.push([p, cl]); continue; }
+    const n = p.length, s = cl ? ok.indexOf(false) : 0, idx = cl ? Array.from({ length: n + 1 }, (_, i) => (s + i) % n) : Array.from({ length: n }, (_, i) => i);
+    let run = [];
+    for (const i of idx) { if (ok[i]) run.push(p[i]); else { if (run.length > 1) out.push([run, false]); run = []; } }
+    if (run.length > 1) out.push([run, false]);
+  }
+  return out;
+}
+// Parallel hatching clipped to inside(x,y), alternate lines reversed so the pen zigzags.
+// far(x,y), when given, is a lower bound on the distance to the region, so the march can stride across empty space.
+function hatch(inside, b, angDeg, sp, res = 0.4, far = null) {
+  const a = angDeg * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, out = [];
+  let o0 = INF, o1 = -INF, t0 = INF, t1 = -INF;
+  for (const [x, y] of [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]]) { const o = x * nx + y * ny, t = x * dx + y * dy; o0 = min(o0, o); o1 = max(o1, o); t0 = min(t0, t); t1 = max(t1, t); }
+  let flip = false;
+  for (let o = o0 + sp / 2; o < o1; o += sp) {
+    const P = t => [nx * o + dx * t, ny * o + dy * t], ins = t => { const q = P(t); return inside(q[0], q[1]); }, segs = [];
+    let prev = ins(t0), start = prev ? t0 : null;
+    for (let t = t0 + res; ; ) {
+      const tt = min(t, t1), cur = ins(tt);
+      if (cur !== prev) { let lo = tt - res, hi = tt; for (let k = 0; k < 7; k++) { const m = (lo + hi) / 2; if (ins(m) === prev) lo = m; else hi = m; } const tc = (lo + hi) / 2; if (cur) start = tc; else { if (tc - start > 0.25) segs.push([start, tc]); start = null; } prev = cur; }
+      if (tt >= t1) break;
+      let step = res; if (far && !cur) { const q = P(tt), d = far(q[0], q[1]) * 0.7; if (d > res) step = d; }
+      t = tt + step;
+    }
+    if (prev && start !== null && t1 - start > 0.25) segs.push([start, t1]);
+    if (segs.length) { if (flip) segs.reverse(); for (const [s, e] of segs) out.push([flip ? [P(e), P(s)] : [P(s), P(e)], false, "fill"]); flip = !flip; }
+  }
+  return out;
+}
+const dot = (x, y, r) => [0, 1, 2, 3, 4, 5].map(i => [x + r * cos(i * PI / 3), y + r * sin(i * PI / 3)]);
+function stipple(dens, b, cell, rnd, r = 0.16) { const out = []; for (let y = b[1]; y < b[3]; y += cell) for (let x = b[0]; x < b[2]; x += cell) { const px = x + rnd() * cell, py = y + rnd() * cell, roll = rnd(), p = dens(px, py); if (p > 0 && roll < p) out.push([dot(px, py, r), true, "dot"]); } return out; }
+const ring = (x, y, rx, ry, n = 40) => Array.from({ length: n + 1 }, (_, i) => [x + rx * cos(i / n * TAU), y + ry * sin(i / n * TAU)]);
+
+// ---------------- single-stroke capitals for the lettering (cap height 6, y down) ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.8,3.8 L3.2,3.8", B: "M0,0 L2.4,0 A2.4,1.5,1.3,1.5,-90,90 L0,3 M0,3 L2.6,3 A2.6,4.5,1.4,1.5,-90,90 L0,6 L0,0",
+  C: "A2,3,2,3,-45,-315", D: "M0,0 L1.5,0 A1.5,3,2.5,3,-90,90 L0,6 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2,3,2,3,-45,-315 L4,3.4 L2.2,3.4", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", I: "M1,0 L3,0 M2,0 L2,6 M1,6 L3,6", J: "M4,0 L4,4.3 A2.3,4.3,1.7,1.7,0,180",
+  K: "M0,0 L0,6 M4,0 L0,4 M1.4,2.6 L4,6", L: "M0,0 L0,6 L4,6", M: "M0,6 L0,0 L2,3.5 L4,0 L4,6", N: "M0,6 L0,0 L4,6 L4,0", O: "A2,3,2,3,0,360",
+  P: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2", Q: "A2,3,2,3,0,360 M2.6,4.4 L4,6.3", R: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2 M2,3.2 L4,6",
+  S: "A2,1.5,1.8,1.5,-20,-270 A2,4.5,2,1.5,-90,160", T: "M0,0 L4,0 M2,0 L2,6", U: "M0,0 L0,4 A2,4,2,2,180,0 L4,0", V: "M0,0 L2,6 L4,0",
+  W: "M0,0 L1,6 L2,2.5 L3,6 L4,0", X: "M0,0 L4,6 M4,0 L0,6", Y: "M0,0 L2,3 L4,0 M2,3 L2,6", Z: "M0,0 L4,0 L0,6 L4,6",
+  0: "A2,3,2,3,0,360 M3.2,1 L0.8,5", 1: "M0.8,1.2 L2,0 L2,6 M0.8,6 L3.2,6", 2: "A2,1.8,1.8,1.8,-160,20 L0,6 L4,6", 3: "A2,1.5,1.7,1.5,-160,90 A2,4.5,1.9,1.5,-90,160",
+  4: "M3,6 L3,0 L0,4.2 L4,4.2", 5: "M4,0 L0.4,0 L0,2.8 A2,4.1,2,1.9,-125,155", 6: "M3.2,0 L0.1,4 M4,4.3 A2,4.3,2,1.7,0,360", 7: "M0,0 L4,0 L1.5,6",
+  8: "M3.6,1.5 A2,1.5,1.6,1.5,0,360 M4,4.5 A2,4.5,2,1.5,0,360", 9: "M3.6,1.7 A2,1.7,1.6,1.7,0,360 M3.6,1.9 L1,6",
+  "!": "M2,0 L2,4.2 M2,5.6 L2,6", "?": "A2,1.6,1.8,1.6,-160,60 L2,3.8 L2,4.4 M2,5.6 L2,6", "-": "M0.8,3 L3.2,3", ".": "M2,5.6 L2,6", "'": "M2,0 L2,1.6",
+};
+function glyph(src) {
+  const S = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; S.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; S.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return S;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+const ADV = 5.4, SPACE = 3.6;
+const textUnits = s => [...s].reduce((a, ch) => a + (GLYPHS[ch] ? ADV : SPACE), 0) - (s.length ? ADV - 4 : 0);
+const cleanText = s => [...(s || "").toUpperCase()].map(ch => GLYPHS[ch] || ch === " " ? ch : " ").join("").trim();
+// Lay text out along a path: place(x) gives [px, py, angle] for a distance x along it. Two passes 0.28 mm apart make the strokes bold.
+function letters(txt, k, place) {
+  const U = textUnits(txt), strokes = []; let x = -U * k / 2;
+  for (const ch of txt) {
+    const G = GLYPHS[ch]; if (!G) { x += SPACE * k; continue; }
+    const [px, py, th] = place(x + 2 * k), ct = cos(th), st = sin(th);
+    for (const pass of [0, 0.28]) for (const S of G) strokes.push([S.map(([gx, gy]) => { const dx = (gx - 2) * k + pass, dy = (gy - 3) * k; return [px + dx * ct - dy * st, py + dx * st + dy * ct]; }), false]);
+    x += ADV * k;
+  }
+  return strokes;
+}
+
+// Run-off: a hatch that thins out toward the light (upper left) instead of sitting as one dark mass (maker, 2026-10-07,
+// after a wide-pitch print felt better than a close one). Along the light-to-shadow ramp across the box: nothing below lo,
+// dashes that lengthen from lo to hi, solid lines past hi. The crossing pass gets a later ramp, so it only joins in the dark.
+function runoff(lines, b, ang, lo, hi) {
+  const bw = max(1e-6, b[2] - b[0]), bh = max(1e-6, b[3] - b[1]), ca = cos(ang * D2R), sa = sin(ang * D2R), P = 2.4;
+  const densify = q => { const out = [q[0]]; for (let i = 1; i < q.length; i++) { const [ax, ay] = q[i - 1], [bx, by] = q[i], n = max(1, ceil(hypot(bx - ax, by - ay) / 0.3)); for (let k = 1; k <= n; k++) out.push([lerp(ax, bx, k / n), lerp(ay, by, k / n)]); } return out; };
+  const keep = (x, y) => { const t = ((x - b[0]) / bw + (y - b[1]) / bh) / 2; if (t >= hi) return true; if (t <= lo) return false; const s = x * ca + y * sa, f = (((s % P) + P) % P) / P; return f < (t - lo) / (hi - lo); };
+  return keepWhere(lines.map(([q]) => [densify(q), false]), keep).map(([q]) => [q, false, "fill"]);
+}
+
+// Run-off along any ramp: tf(x, y) gives 0 (light) .. 1 (dark); nothing below lo, dashes that lengthen to hi, solid past it.
+function runoffT(lines, tf, ang, lo, hi) {
+  const ca = cos(ang * D2R), sa = sin(ang * D2R), P = 2.4;
+  const densify = q => { const out = [q[0]]; for (let i = 1; i < q.length; i++) { const [ax, ay] = q[i - 1], [bx, by] = q[i], n = max(1, ceil(hypot(bx - ax, by - ay) / 0.3)); for (let k = 1; k <= n; k++) out.push([lerp(ax, bx, k / n), lerp(ay, by, k / n)]); } return out; };
+  const keep = (x, y) => { const t = tf(x, y); if (t >= hi) return true; if (t <= lo) return false; const s = x * ca + y * sa, f = (((s % P) + P) % P) / P; return f < (t - lo) / (hi - lo); };
+  return keepWhere(lines.map(([q]) => [densify(q), false]), keep).map(([q]) => [q, false, "fill"]);
+}
+
+// ---------------- the cactus engine ----------------
+// Every new areole turns the golden angle from the last (Vogel's model of phyllotaxis), which is why the spirals,
+// and the ribs they settle into, come in Fibonacci numbers.
+const GOLD = PI * (3 - sqrt(5)), PHI_F = (sqrt(5) - 1) / 2;
+const frac = v => v - floor(v);
+// A tube along a polyline, radius r0 -> r1, built once: it starts at the segment whose box is nearest and skips any
+// segment whose box is already farther than the best distance found, so a long rod costs a few segments, not forty.
+function tubeF(pts, r0, r1) {
+  const n = pts.length - 1, B = new Float64Array(n * 4), rmax = max(r0, r1);
+  for (let i = 0; i < n; i++) { const [ax, ay] = pts[i], [bx, by] = pts[i + 1]; B[i * 4] = min(ax, bx); B[i * 4 + 1] = min(ay, by); B[i * 4 + 2] = max(ax, bx); B[i * 4 + 3] = max(ay, by); }
+  const bd = (i, x, y) => hypot(max(B[i * 4] - x, 0, x - B[i * 4 + 2]), max(B[i * 4 + 1] - y, 0, y - B[i * 4 + 3]));
+  const one = (i, x, y) => { const [sd, t] = seg(x, y, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]); return sd - lerp(r0, r1, (i + t) / n); };
+  return (x, y) => {
+    let i0 = 0, b0 = INF; for (let i = 0; i < n; i++) { const v = bd(i, x, y); if (v < b0) { b0 = v; i0 = i; } }
+    let d = one(i0, x, y);
+    for (let i = 0; i < n; i++) if (i !== i0 && bd(i, x, y) - rmax < d) d = min(d, one(i, x, y));
+    return d;
+  };
+}
+// The outline of a tube as one closed loop: the left edge up, a round cap, the right edge down, a round cap.
+function tubeLoop(pts, r0, r1, step = 0.4) {
+  const n = pts.length - 1, nrm = pts.map((_, i) => { const a = pts[max(0, i - 1)], b = pts[min(n, i + 1)], l = hypot(b[0] - a[0], b[1] - a[1]) || 1; return [-(b[1] - a[1]) / l, (b[0] - a[0]) / l]; });
+  const rad = i => lerp(r0, r1, i / n), side = sg => pts.map(([x, y], i) => [x + sg * nrm[i][0] * rad(i), y + sg * nrm[i][1] * rad(i)]);
+  const cap = (i, from) => { const [x, y] = pts[i], a0 = atan2(nrm[i][1], nrm[i][0]) + from, r = rad(i); return Array.from({ length: 9 }, (_, k) => [x + r * cos(a0 - PI * k / 8), y + r * sin(a0 - PI * k / 8)]); };
+  const loop = [...side(1), ...cap(n, 0).slice(1, -1), ...side(-1).reverse(), ...cap(0, PI).slice(1, -1)];
+  loop.push(loop[0]);
+  const out = [loop[0]]; for (let i = 1; i < loop.length; i++) { const [ax, ay] = loop[i - 1], [bx, by] = loop[i], m = max(1, ceil(hypot(bx - ax, by - ay) / step)); for (let k = 1; k <= m; k++) out.push([lerp(ax, bx, k / m), lerp(ay, by, k / m)]); }
+  return out;
+}
+// A pointed leaf, petal or fruit from a base point along angle a: length l, half-width w, widest at fraction pk of its length.
+function leafD(x, y, bx, by, a, l, w, pk = 0.5) {
+  const ca = cos(a), sa = sin(a), dx = x - bx, dy = y - by, u = dx * ca + dy * sa, v = -dx * sa + dy * ca;
+  if (u <= 0) return hypot(u, v); if (u >= l) return hypot(u - l, v);
+  const e = Math.log(0.5) / Math.log(clamp(pk, 0.05, 0.95)), prof = w * sin(PI * (u / l) ** e) ** 0.75;
+  return (abs(v) - prof) * 0.8;
+}
+// Smooth 2D value noise on a cell grid (mm), seeded.
+function noise2(rnd, cell) {
+  const N = 64, g = Float64Array.from({ length: N * N }, rnd), at = (i, j) => g[((j % N + N) % N) * N + ((i % N + N) % N)];
+  return (x, y) => { const fx = x / cell, fy = y / cell, i = floor(fx), j = floor(fy), u = fx - i, v = fy - j, su = u * u * (3 - 2 * u), sv = v * v * (3 - 2 * v); return lerp(lerp(at(i, j), at(i + 1, j), su), lerp(at(i, j + 1), at(i + 1, j + 1), su), sv); };
+}
+// A dome over the last fraction k of a limb: radius falls to 0 at the tip; p < 0.5 flattens it (a barrel's crown).
+const dome = (s, k, p = 0.5) => { if (k <= 0) return 1; const u = (s - (1 - k)) / k; return u <= 0 ? 1 : max(0, 1 - u * u) ** p; };
+
+// A limb: a centreline from base to tip (y down), a radius along it (s = 0 at the base, 1 at the tip), ribs round it.
+// base(s) is the radius without the top; round = true caps it with a half sphere (an exact capsule distance), or
+// round = [k, p] gives a flatter dome over the last fraction k (a barrel's crown).
+function makeLimb(name, pts, base, ribs, twist, phase, cut = INF, round = true) {
+  const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const L = cum[cum.length - 1] || 1e-6, capK = round === true ? min(0.5, base(1) / L) : round[0], rad = s => base(s) * dome(s, capK, round === true ? 0.5 : round[1]), capS = 1 - capK; let rmax = 0; for (let i = 0; i <= 60; i++) rmax = max(rmax, rad(i / 60));
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]), box = [min(...xs) - rmax - 1, min(...ys) - rmax - 1, max(...xs) + rmax + 1, max(...ys) + rmax + 1];
+  // Centre, tangent toward the tip and the normal to the right of an upright limb, at s.
+  const frame = s => { const want = clamp(s, 0, 1) * L; let i = 1; while (i < cum.length - 1 && cum[i] < want) i++; const a = pts[i - 1], b = pts[i], l = cum[i] - cum[i - 1] || 1e-9, t = clamp((want - cum[i - 1]) / l, 0, 1), tx = (b[0] - a[0]) / l, ty = (b[1] - a[1]) / l; return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), tx, ty, -ty, tx]; };
+  let capC = null; if (round === true) { const f = frame(capS); capC = [f[0], f[1], f[2], f[3], base(capS)]; }
+  const d = (x, y) => {
+    const bd = boxD(box, x, y); if (bd > 2) return bd;
+    let v = INF; for (let i = 0; i < pts.length - 1; i++) { const [sd, t] = seg(x, y, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]), s = (cum[i] + t * (cum[i + 1] - cum[i])) / L; v = min(v, sd - (capC ? base(min(s, capS)) : rad(s))); }
+    if (capC) { const [cx, cy, tx, ty, r] = capC; v = min(max(v, (x - cx) * tx + (y - cy) * ty), circ(x, y, cx, cy, r)); }   // body below the cap plane, half sphere above
+    return max(v, y - cut);   // cut: a trunk stands flat on the ground
+  };
+  const theta = (k, s) => phase + TAU * k / ribs + twist * s * L / max(1, rmax);
+  const surf = (s, th, f = 1) => { const [cx, cy, , , nx, ny] = frame(s), r = rad(s) * sin(th) * f; return [cx + nx * r, cy + ny * r]; };
+  return { name, pts, rad, ribs, twist, phase, L, rmax, box, frame, d, theta, surf };
+}
+
+// The limbs of one plant, base at (x0, y0), height H. Front to back: trunk first, then its arms.
+function plantLimbs(form, x0, y0, H, o, rnd, id) {
+  const yrs = o.years / 100, ribs = o.ribs, tw = o.twist / 100 * 0.5, ph = rnd() * TAU, lean = (rnd() - 0.5) * 0.08;
+  if (form === "barrel") {
+    const h = H * lerp(0.45, 1, sstep(0, 0.6, yrs)), R = h * 0.5;   // a barrel fattens as it grows
+    const rad = s => R * (0.78 + 0.22 * sin(PI * min(1, 0.12 + s * 0.95)));
+    return { limbs: [makeLimb(id + "-t", [[x0, y0], [x0 + lean * h, y0 - h]], rad, ribs, tw, ph, y0, [0.4, 0.38])], R, h };
+  }
+  if (form === "column") {
+    const h = H * lerp(0.35, 1, sstep(0, 0.55, yrs)), R = H * 0.1, bend = (rnd() - 0.5) * 0.12 * h;
+    const pts = Array.from({ length: 9 }, (_, i) => { const t = i / 8; return [x0 + lean * h * t + bend * sin(PI * t), y0 - h * t]; });
+    return { limbs: [makeLimb(id + "-t", pts, s => R * (0.9 + 0.1 * sstep(0, 0.12, s)), ribs, tw, ph, y0)], R, h };
+  }
+  // Saguaro: a trunk, and arms after about 30 years that leave sideways, droop a little and turn up.
+  const h = H * lerp(0.3, 1, sstep(0, 0.6, yrs)), R = H * 0.075;
+  const trunk = makeLimb(id + "-t", Array.from({ length: 9 }, (_, i) => [x0 + lean * h * i / 8, y0 - h * i / 8]), s => R * (0.86 + 0.14 * sstep(0, 0.1, s)), ribs, tw, ph, y0);
+  const limbs = [trunk], na = round(o.arms * sstep(0.28, 0.62, yrs)), grow = sstep(0.28, 0.8, yrs);
+  let side = rnd() < 0.5 ? -1 : 1;
+  for (let i = 0; i < na; i++) {
+    const sa = 0.32 + 0.38 * rnd(), [ax, ay] = trunk.frame(sa), Ra = R * (0.66 + 0.1 * rnd()), out = R * (1.45 + 0.7 * rnd()), rise = h * (0.14 + 0.3 * rnd()) * grow + Ra;
+    const P = [[ax, ay], [ax + side * out * 1.05, ay + Ra * 0.7], [ax + side * out, ay - Ra * 0.2], [ax + side * out, ay - Ra * 0.8]];
+    const pts = [...bezPts(P, 12), ...Array.from({ length: 6 }, (_, k) => [ax + side * out + side * 0.04 * rise * (k + 1) / 6, ay - Ra * 0.8 - rise * (k + 1) / 6])];
+    const armL = rise + out;
+    limbs.push(makeLimb(id + "-a" + i, pts, s => Ra * (0.85 + 0.15 * sstep(0, 0.25, s)), max(5, round(ribs * 0.8)), tw, ph + i));
+    side = -side;
+  }
+  return { limbs, R, h };
+}
+
+// Prickly pear pads: each new pad buds from the top edge of an older one, a little smaller, turned a little.
+function pearPads(x0, y0, H, o, rnd) {
+  const a0 = H * 0.17, pads = [{ cx: x0, cy: y0 - a0 * 0.92, a: a0, b: a0 * 0.66, ang: (rnd() - 0.5) * 0.25, gen: 0, kids: 0 }];
+  for (let tries = 0; pads.length < o.pads && tries < o.pads * 60; tries++) {
+    const par = pads[floor(rnd() * pads.length)]; if (par.gen > 4 || par.kids > 2) continue;
+    const t = (rnd() - 0.5) * 1.7, ux = sin(par.ang), uy = -cos(par.ang), lx = par.b * sin(t), ly = par.a * cos(t);
+    const ax = par.cx + ux * ly + cos(par.ang) * lx, ay = par.cy + uy * ly + sin(par.ang) * lx;
+    const ang = par.ang + t * 0.75 + (rnd() - 0.5) * 0.35, a = par.a * (0.74 + 0.2 * rnd()), b = a * (0.6 + 0.12 * rnd());
+    const cx = ax + sin(ang) * a * 0.88, cy = ay - cos(ang) * a * 0.88;
+    if (cy > y0 - a * 0.5 || abs(cx - x0) > H * 0.62) continue;
+    if (pads.some(q => hypot(q.cx - cx, q.cy - cy) < 0.95 * min(q.a, a) + 0.3 * min(q.b, b))) continue;
+    par.kids++; pads.push({ cx, cy, a, b, ang, gen: par.gen + 1, kids: 0 });
+  }
+  for (const q of pads) { q.z = rnd(); q.d = (x, y) => ell(x, y, q.cx, q.cy, q.b, q.a, q.ang); q.box = [q.cx - q.a - 1, q.cy - q.a - 1, q.cx + q.a + 1, q.cy + q.a + 1]; }
+  return pads;
+}
+
+// Latin names for the label, made up from the seed.
+function latinName(form, rnd) {
+  const genus = { barrel: ["FEROCACTUS", "ECHINOCACTUS"], saguaro: ["CARNEGIEA"], column: ["CEREUS", "CLEISTOCACTUS"], pear: ["OPUNTIA"], rosette: ["ECHEVERIA"] }[form] || ["CACTUS"];
+  const syl = ["MA", "RI", "LU", "NO", "VE", "SI", "TA", "GRA", "CU", "PHI", "LO", "XA", "MOR", "DEN", "SPI", "NA"], end = ["ENSIS", "IANA", "ATUS", "ULA", "OIDES", "INUS"];
+  const pick = a => a[floor(rnd() * a.length)];
+  return pick(genus) + " " + pick(syl) + pick(syl) + pick(end);
+}
+
+// ---------------- the build ----------------
+function build(o) {
+  const t0 = performance.now(), rng = k => mulberry(o.seed * 1009 + k * 7919);
+  const [PW, PH] = o.page.split("x").map(Number), mg = o.margin, CB = [mg, mg, PW - mg, PH - mg], notes = [], look = o.look, colour = look === "colour", lines = look === "line";
+  const h = clamp(0.28 / o.detail, 0.12, 0.6), passes = o.weight, yrs = o.years / 100;
+  const decay = sstep(0.7, 0.9, yrs), bones = sstep(0.86, 1, yrs);
+  const stat = { areoleMin: INF, spineMin: INF, rodMin: INF, textCap: INF, spines: 0, areoles: 0, spineSkip: 0, crowd: 0 };
+  const items = [];   // everything that can hide something: { name, z, f, box, draw }
+  const put = it => (items.push(it), it);
+
+  // ---- a plant (limbs), its flowers and holes ----
+  const plant = (form, x0, y0, H, z, id, opt = {}) => {
+    const rp = rng(100 + items.length), P = plantLimbs(form, x0, y0, H, o, rp, id), small = opt.far ?? false;
+    const holes = [];
+    if (form === "saguaro" && decay < 0.6) for (let i = 0; i < o.holes; i++) holes.push({ s: 0.3 + 0.4 * rp(), th: (rp() - 0.5) * 0.9, owl: opt.owl && i === 0 });
+    if (opt.owl && !holes.length && form === "saguaro" && decay < 0.6) holes.push({ s: 0.55, th: -0.2, owl: true });
+    P.lean = (mulberry(o.seed * 7)() < 0.5 ? -1 : 1) * bones * 0.12; P.fallen = 0;
+    P.limbs.forEach((lb, i) => {
+      if (i > 0 && mulberry(o.seed * 131 + i * 17)() < 0.5 * bones) { P.fallen++; return; }   // this arm has dropped into the heap
+      decayLimb(lb, P, i);
+      let f = lb.d, box = lb.box;
+      if (decay > 0) {
+        const rods = lb.rods, rodD = (x, y) => { let v = INF; for (const r of rods) v = min(v, r.f(x, y)); return v; };
+        f = bones > 0.97 ? rodD : (x, y) => min(lb.tear(x, y), rodD(x, y));
+        box = rods.reduce((b, r) => [min(b[0], r.rb[0]), min(b[1], r.rb[1]), max(b[2], r.rb[2]), max(b[3], r.rb[3])], lb.box);
+      }
+      put({ name: lb.name, z: z - i * 0.001, f, box, draw: () => drawLimb(lb, P, i === 0 ? holes : [], small, rp, form) });
+    });
+    // Flowers while in its prime: a ring round a barrel's crown, crowns on a saguaro's tips, from the sides of a column.
+    const bloom = sstep(0.25, 0.4, yrs) * (1 - sstep(0.72, 0.8, yrs));
+    if (o.flowers > 0 && bloom > 0.5 && !small) {
+      const fl = [], fs = P.R * (form === "barrel" ? 0.42 : 0.62);
+      if (form === "barrel") { const lb = P.limbs[0]; for (let i = 0; i < o.flowers; i++) { const th = (i - (o.flowers - 1) / 2) / max(1, o.flowers) * 2.2, s = 0.9 - 0.05 * abs(th), [px, py] = lb.surf(s, th); fl.push([px, py, -PI / 2 + th * 0.45, fs * (0.85 + 0.3 * rp())]); } }
+      else if (form === "saguaro") { for (let i = 0; i < o.flowers; i++) { const lb = P.limbs[i % P.limbs.length], k = floor(i / P.limbs.length), th = (k % 2 ? 1 : -1) * (0.2 + 0.35 * k), [px, py] = lb.surf(0.985 - 0.01 * k, th), [, , tx, ty] = lb.frame(0.99); fl.push([px, py, atan2(ty, tx) + th * 0.6, fs * (0.8 + 0.3 * rp())]); } }
+      else if (form === "column") { const lb = P.limbs[0]; for (let i = 0; i < o.flowers; i++) { const sd = i % 2 ? 1 : -1, s = 0.55 + 0.4 * rp(), [px, py] = lb.surf(s, sd * PI / 2 * 0.96), [, , tx, ty, nx, ny] = lb.frame(s); fl.push([px, py, atan2(ty * 0.6 + ny * sd, tx * 0.6 + nx * sd), fs * 1.1]); } }
+      fl.forEach((q, i) => flower(id + "-f" + i, ...q, z + 0.01 + i * 0.0001));
+    }
+    return P;
+  };
+  // A flower: two rows of pointed petals fanned round the opening direction, middle petals in front.
+  const flower = (name, x, y, ang, size, z) => {
+    const pet = [];
+    for (const [n, spread, l, w, row] of [[5, 0.85, 1, 0.3, 0], [6, 1.3, 0.85, 0.3, 1]]) for (let i = 0; i < n; i++) { const a = ang + (n > 1 ? (i / (n - 1) - 0.5) * 2 * spread : 0); pet.push({ a, l: size * l, w: size * w, row, front: abs(a - ang) + row }); }
+    pet.sort((p, q) => p.front - q.front);
+    for (const p of pet) p.f = (px, py) => leafD(px, py, x, y, p.a, p.l, p.w, 0.6);
+    const f = (px, py) => { let v = INF; for (const p of pet) v = min(v, p.f(px, py)); return v; }, box = [x - size * 1.1, y - size * 1.1, x + size * 1.1, y + size * 1.1];
+    put({ name, z, f, box, draw: () => {
+      const vs = vis(name);
+      pet.forEach((p, i) => { const front = pet.slice(0, i); outline(p.f, box, name, 1, "line", (px, py) => front.every(q => q.f(px, py) > 0.3)); add("shade", keepWhere([[Array.from({ length: 12 }, (_, k) => [x + cos(p.a) * p.l * (0.15 + 0.6 * k / 11), y + sin(p.a) * p.l * (0.15 + 0.6 * k / 11)]), false]], (px, py) => vs(px, py) && front.every(q => q.f(px, py) > 0.3))); });
+      if (colour) add("flower", hatch((px, py) => f(px, py) < -0.35 && vs(px, py), box, ang / D2R + 90, o.sp));
+    } });
+  };
+
+  // ---- drawing helpers (set up once the draw order is known) ----
+  let objs = [], order = {};
+  const vis = (name, gap2 = 0.35) => { const e = order[name] ?? objs.length; return (x, y) => { for (let i = 0; i < e; i++) { const [, f, b] = objs[i]; if (boxD(b, x, y) < gap2 && f(x, y) < gap2) return false; } return true; }; };
+  const allD = (x, y) => { let v = INF; for (const [, f, b] of objs) { const bd = boxD(b, x, y); v = min(v, bd > 12 ? bd : f(x, y)); } return v; };
+  const layers = { line: [], shade: [], body: [], flower: [], fruit: [], pot: [] };
+  const add = (layer, ls, tol = 0.03) => { for (const [q, cl, kind] of ls) if (q.length > 1) layers[layer].push([simplify(q, tol), cl, kind]); };
+  const outline = (f, b, name, n, layer = "line", keep = null) => {
+    const g = sample(f, b, h);
+    for (let i = 0; i < n; i++) {
+      let ls = iso(g, -i * PASS);
+      if (i >= 2) ls = keepWhere(ls, (x, y) => { const [gx, gy] = grad(f, x, y); return gx * 0.6 + gy * 0.8 > 0.05; });
+      ls = keepWhere(ls, vis(name)); if (keep) ls = keepWhere(ls, keep);
+      add(layer, ls);
+    }
+  };
+  const fillDark = (inside, b, ang = 45) => {   // dark tone: crosshatch, single hatch, or run-off; never solid
+    if (lines) return;
+    const h1 = hatch(inside, b, ang, o.hp), h2 = o.dark === "single" ? [] : hatch(inside, b, ang + 90, o.hp);
+    add("line", o.dark === "fade" ? [...runoff(h1, b, ang, 0.1, 0.4), ...runoff(h2, b, ang + 90, 0.5, 0.78)] : [...h1, ...h2], 0.01);
+  };
+  const polyline = (f, a, b, n) => Array.from({ length: n + 1 }, (_, i) => f(lerp(a, b, i / n)));
+  // Straight segments subdivided, so clipping can cut them where they pass behind something.
+  const dense = (q, st = 0.5) => { const out = [q[0]]; for (let i = 1; i < q.length; i++) { const n = max(1, ceil(hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]) / st)); for (let k = 1; k <= n; k++) out.push([lerp(q[i - 1][0], q[i][0], k / n), lerp(q[i - 1][1], q[i][1], k / n)]); } return out; };
+  // Split a sampled line into the runs where ok(point) holds.
+  const runs = (pts, ok) => { const out = []; let run = []; for (const p of pts) { if (ok(p)) run.push([p[0], p[1]]); else { if (run.length > 1) out.push([run, false]); run = []; } } if (run.length > 1) out.push([run, false]); return out; };
+
+  // ---- a dying saguaro: the skin rots in patches (a noise field) and shows the woody rods inside. As the bones take
+  // over the skeleton leans, each rod splays its own way and may kink, rods snap at ragged heights, a third fall out,
+  // and the arms droop. (Real saguaro ribs are free rods once the flesh has gone: they lean and drop one by one.)
+  function decayLimb(lb, P, ai) {
+    const sk = noise2(rng(300 + lb.name.length + floor(lb.box[0])), max(4, P.R * 0.9)), by0 = P.limbs[0].pts[0][1], thr = decay * 1.25 - 0.05;
+    const skinV = (x, y) => sk(x, y) + 0.6 * (1 - sstep(0, P.h * 0.2, by0 - y));   // the base keeps its skin longest
+    lb.skinV = skinV; lb.thr = thr;
+    lb.skinAt = decay <= 0 ? () => true : (x, y) => skinV(x, y) > thr;
+    lb.tear = (x, y) => max(lb.d(x, y), (thr - skinV(x, y)) * P.R * 0.6);
+    lb.rods = [];
+    if (decay <= 0) return;
+    const rr = rng(400 + floor(lb.box[0] * 7)), N = lb.ribs, w = max(0.6, P.R * 0.075);
+    // An arm's rods start where the arm leaves the trunk, so they stay joined to it however the skeleton leans.
+    let s0 = 0.015; if (ai > 0) { const T = P.limbs[0]; while (s0 < 0.6) { const [fx, fy] = lb.frame(s0); if (T.d(fx, fy) > 0) break; s0 += 0.01; } }
+    for (let k = 0; k < N; k++) {
+      const th = lb.phase + TAU * k / N, c = cos(th), sn = sin(th);
+      const gone = rr() < 0.3 * bones, tall = rr() < 0.2, top = 1 - bones * (tall ? 0.05 : 0.08 + 0.75 * rr() ** 0.8);
+      const spl = bones * P.R * (0.3 + 1.3 * rr()) * (sn + (rr() - 0.5) * 0.8 < 0 ? -1 : 1), kink = 0.3 + 0.5 * rr(), kb = bones * P.R * (rr() - 0.5) * 1.2, wv = rr() * TAU;
+      if (gone) continue;
+      const ss = Array.from({ length: 41 }, (_, j) => lerp(s0, max(s0 + 0.05, min(top, 0.985)), j / 40));
+      const pts = ss.map(s => {
+        const [cx, cy, , , nx, ny] = lb.frame(s), r = lb.rad(s) * 0.84 * sn + spl * s * s + kb * max(0, s - kink) + P.R * 0.04 * sin(s * 9 + wv);
+        const x = cx + nx * r, y = cy + ny * r + (ai > 0 ? bones * 0.5 * lb.L * max(0, s - 0.3) ** 2 : 0);   // a dead arm sags
+        return [x + P.lean * (by0 - y), y];
+      });
+      const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]), rb = [min(...xs) - w - 1, min(...ys) - w - 1, max(...xs) + w + 1, max(...ys) + w + 1];
+      const tf = tubeF(pts, w, w * 0.75), broken = top < 0.97;
+      lb.rods.push({ c, sn, w, pts, ss, rb, broken, f: (x, y) => { const bd = boxD(rb, x, y); return bd > 1 ? bd : tf(x, y); } });
+    }
+    lb.rods.sort((a, b) => b.c - a.c);
+  }
+
+  // ---- a limb: outline, ribs, rib shading, areoles and spines; or, dying, torn skin over woody rods ----
+  function drawLimb(lb, P, holes, far, rp, form) {
+    const name = lb.name, vs = vis(name), N = lb.ribs, B = lb.box, inLimb = (x, y) => lb.d(x, y) < -0.3;
+    const skinV = lb.skinV, skinAt = lb.skinAt;
+    const holeD = (x, y) => { let v = INF; for (const q of holes) { const [hx, hy] = lb.surf(q.s, q.th); v = min(v, ell(x, y, hx, hy, P.R * 0.3 * cos(q.th) + 0.6, P.R * 0.4, 0)); } return v; };
+    const clear = (x, y) => vs(x, y) && skinAt(x, y) && holeD(x, y) > 0.4;
+    // Rods first (woody ribs), only where the skin is gone.
+    if (decay > 0) {
+      const rods = lb.rods;
+      rods.forEach((r, i) => {
+        const b = r.rb, trunkD = () => INF;   // the trunk's own object hides an arm's rods while its skin stands
+        const front = rods.slice(0, i), keep = (x, y) => vs(x, y) && (bones > 0.3 || !skinAt(x, y)) && trunkD(x, y) > 0.3 && front.every(q => q.f(x, y) > 0.3);   // skin, where it is left, hides every rod; an arm's rods end at the trunk
+        add("line", keepWhere([[tubeLoop(r.pts, r.w, r.w * 0.75), false]], keep));
+        if (r.w * 2 >= 1.6 && !lines) add("shade", keepWhere([[r.pts.map(([x, y], j) => { const [, , , , nx, ny] = lb.frame(r.ss[j]); return [x + nx * r.w * 0.45, y + ny * r.w * 0.45]; }), false]], (x, y) => keep(x, y) && r.f(x, y) < -0.2));
+        // A snapped rod ends in splinters.
+        if (r.broken && bones > 0.2) { const n = r.pts.length - 1, [tx, ty] = r.pts[n], [qx, qy] = r.pts[n - 3], l = hypot(tx - qx, ty - qy) || 1, a = atan2(ty - qy, tx - qx), rs = rng(900 + i + floor(tx * 3)); add("line", keepWhere(Array.from({ length: 3 }, (_, m) => { const aa = a + (m - 1) * 0.45 + (rs() - 0.5) * 0.2, L = r.w * (1.2 + 1.6 * rs()), bx = tx + cos(a + PI / 2) * r.w * (m - 1) * 0.7, by = ty + sin(a + PI / 2) * r.w * (m - 1) * 0.7; return [[[bx, by], [bx + cos(aa) * L * 0.5, by + sin(aa) * L * 0.5], [bx + cos(aa) * L, by + sin(aa) * L]], false]; }), (x, y) => vs(x, y) && trunkD(x, y) > 0.3 && front.every(q => q.f(x, y) > 0.3)), 0.01); }
+        stat.rodMin = min(stat.rodMin, r.w * 2 * 0.75);
+      });
+    }
+    if (bones > 0.97) return;
+    // The skin's outline (torn where it has rotted away) and the torn edges inside it.
+    outline(lb.d, B, name, far ? 1 : passes, "line", decay > 0 ? (x, y) => skinAt(x, y) : null);
+    if (decay > 0) { const tear = (x, y) => max(lb.d(x, y), (decay * 1.25 - 0.05 - skinV(x, y)) * P.R * 0.6); outline(tear, B, name, 1, "line", (x, y) => lb.d(x, y) < -0.4); }
+    // A far plant is a silhouette: a tone of lines along its length, no ribs or spines.
+    if (far) { if (!lines) { const [, , tx, ty] = lb.frame(0.5); add("shade", hatch((x, y) => lb.d(x, y) < -0.4 && clear(x, y), B, atan2(ty, tx) / D2R, o.hp * 2)); } }
+    // Ribs: lines at fixed angles round the limb, on the side facing us; with twist they spiral.
+    else for (let k = 0; k < N; k++) {
+      const pts = polyline(s => { const th = lb.theta(k, s); return [...lb.surf(s, th), cos(th)]; }, 0.02, 0.995, 90);
+      add("shade", keepWhere(runs(pts, p => p[2] > 0.12), (x, y) => clear(x, y) && inLimb(x, y)));
+    }
+    // Rib shading: lines along the valleys on the shadow side (right), more of them as the side turns away.
+    const S = lines || far ? 0 : o.shade / 100;
+    if (S > 0) for (let k = 0; k < N; k++) for (const [j, thr] of [[2, 0.2], [1, 0.5], [3, 0.75]]) {
+      const pts = polyline(s => { const th = lb.theta(k, s) + TAU / N * j / 4; return [...lb.surf(s, th), cos(th) > 0.08 && S * sstep(0.1, 0.9, sin(th)) > thr]; }, 0.03, 0.97, 70);
+      add("shade", keepWhere(runs(pts, p => p[2]), (x, y) => clear(x, y) && inLimb(x, y)));
+    }
+    // Colour: the body hatched along its length in the body pen.
+    if (colour) { const [, , tx, ty] = lb.frame(0.5); add("body", hatch((x, y) => lb.d(x, y) < -0.35 && clear(x, y), B, atan2(ty, tx) / D2R, o.sp)); }
+    // Nest holes: dark inside (hatched), with an owl looking out of the first one if asked.
+    for (const q of holes) {
+      const [hx, hy] = lb.surf(q.s, q.th), rx = P.R * 0.3 * cos(q.th) + 0.6, ry = P.R * 0.4, hf = (x, y) => ell(x, y, hx, hy, rx, ry, 0), hb = [hx - rx - 1, hy - ry - 1, hx + rx + 1, hy + ry + 1];
+      outline(hf, hb, name, 2);
+      if (q.owl) {
+        const hr = min(rx, ry) * 0.82, oy = hy + ry * 0.15, head = (x, y) => circ(x, y, hx, oy, hr), eye = sgn => (x, y) => circ(x, y, hx + sgn * hr * 0.42, oy - hr * 0.05, hr * 0.33);
+        fillDark((x, y) => hf(x, y) < -0.2 && head(x, y) > 0.3 && vs(x, y), hb, 45);
+        outline(head, hb, name, 1, "line", (x, y) => hf(x, y) < 0);
+        for (const sg of [-1, 1]) { outline(eye(sg), hb, name, 1); add("line", [[dot(hx + sg * hr * 0.42, oy - hr * 0.05, hr * 0.12), true, "dot"]]); }
+        add("line", [[[[hx - hr * 0.12, oy + hr * 0.25], [hx, oy + hr * 0.45], [hx + hr * 0.12, oy + hr * 0.25]], false]]);
+        add("shade", keepWhere(Array.from({ length: 7 }, (_, i) => { const a = PI * (0.25 + 0.5 * i / 6); return [[[hx + cos(a) * hr * 0.55, oy + sin(a) * hr * 0.75], [hx + cos(a) * hr * 0.8, oy + sin(a) * hr * 0.95]], false]; }), (x, y) => hf(x, y) < -0.3));
+      } else fillDark((x, y) => hf(x, y) < -0.2 && vs(x, y), hb, 45);
+    }
+    if (far) return;
+    // Areoles on the ribs, stepped by the golden ratio from rib to rib, and their spines, projected from 3D.
+    const g = o.agap, rs = rp, nr = o.spines, nc = o.centrals, hooked = o.sstyle === "hooked", bristle = o.sstyle === "bristle", near = [], cell = 4, grid = new Map();
+    for (let k = 0; k < N; k++) {
+      const off = frac(k * PHI_F);
+      for (let i = 0; ; i++) {
+        const s = (i + off) * g / lb.L + 0.02; if (s > 0.985) break;
+        const th = lb.theta(k, s), c = cos(th); if (c < 0.22) continue;
+        const [px, py] = lb.surf(s, th); if (!clear(px, py) || (decay > 0 && skinV(px, py) < decay * 1.25 + 0.08)) continue;   // a lone areole on a scrap of skin reads as a spider
+        const sn = sin(th), [, , tx, ty, nx, ny] = lb.frame(s), young = sstep(0, 0.1, 1 - s), ls0 = o.slen * (0.4 + 0.6 * young) * (bristle ? 0.6 : 1);
+        stat.areoles++;
+        // Every rib meets at the crown, so areoles crowd there: one closer than 1.1 mm to another is left out.
+        { let dmin = INF; for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const q of grid.get((floor(px / cell) + a) + "," + (floor(py / cell) + b)) || []) dmin = min(dmin, hypot(q[0] - px, q[1] - py)); if (dmin < 1.1) { stat.crowd++; stat.areoles--; continue; } stat.areoleMin = min(stat.areoleMin, dmin); const key = floor(px / cell) + "," + floor(py / cell); (grid.get(key) || grid.set(key, []).get(key)).push([px, py]); }
+        near.push([ring(px, py, 0.42, 0.42 * max(0.4, c), 10), true]);
+        const proj = (u, v, w, len) => { const l = hypot(u, v, w) || 1, a = (u * c + w * sn) / l * len, b = v / l * len; return [nx * a + tx * b, ny * a + ty * b]; };
+        const spikes = [], n = bristle ? nr * 2 : nr;
+        for (let j = 0; j < n; j++) { const phi = j / max(1, n) * TAU + rs() * 0.5, len = ls0 * (0.7 + 0.45 * rs()); spikes.push([proj(cos(phi), sin(phi), bristle ? 0.6 : 0.35, len), false]); }
+        for (let j = 0; j < nc; j++) { const phi = rs() * TAU; spikes.push([proj(0.35 * cos(phi), 0.35 * sin(phi), 1, ls0 * 1.5), hooked]); }
+        for (const [[dx, dy], hook] of spikes) {
+          const L = hypot(dx, dy); if (L < 0.7) { stat.spineSkip++; continue; }   // edge-on, it would plot as a dot
+          stat.spineMin = min(stat.spineMin, L); stat.spines++;
+          const ux = dx / L, uy = dy / L, q = [[px + ux * 0.5, py + uy * 0.5], [px + dx, py + dy]];
+          if (hook) { const hr = min(1.2, L * 0.25), a0 = atan2(uy, ux), Cx = px + dx - uy * hr, Cy = py + dy + ux * hr; for (let m = 1; m <= 4; m++) { const a = a0 - PI / 2 + m * 0.8; q.push([Cx + hr * cos(a), Cy + hr * sin(a)]); } }
+          add("shade", keepWhere([[q.length > 2 ? q : [q[0], [(q[0][0] + q[1][0]) / 2, (q[0][1] + q[1][1]) / 2], q[1]], false]], vs), 0.01);
+        }
+      }
+    }
+    add("line", near, 0.01);
+  }
+
+  // ---- shared pieces of the scenes ----
+  const moonAt = (x, y, r) => put({ name: "moon", z: -50, f: (px, py) => circ(px, py, x, y, r), box: [x - r - 1, y - r - 1, x + r + 1, y + r + 1], draw: () => {
+    const f = (px, py) => circ(px, py, x, y, r), b = [x - r - 1, y - r - 1, x + r + 1, y + r + 1], vs = vis("moon"), rm = rng(61);
+    outline(f, b, "moon", 2);
+    if (o.moon === "crescent") fillDark((px, py) => f(px, py) < -0.3 && circ(px, py, x - r * 0.42, y - r * 0.18, r * 0.95) < 0 && vs(px, py), b, 45);
+    const lit = (px, py) => o.moon !== "crescent" || circ(px, py, x - r * 0.42, y - r * 0.18, r * 0.95) > 0.4;
+    for (let i = 0; i < 6; i++) { const a = rm() * TAU, d = r * 0.6 * sqrt(rm()), cr = r * (0.06 + 0.1 * rm()), cx = x + d * cos(a), cy = y + d * sin(a); add("shade", keepWhere([[ring(cx, cy, cr, cr, 20), false]], (px, py) => vs(px, py) && lit(px, py) && f(px, py) < -0.5)); }
+  } });
+  const ground = (gy, x0, x1, opt = {}) => {
+    const rg = rng(71), nz = noise2(rng(72), 30), vs = vis("__bg");
+    add("line", keepWhere([[polyline(x => [x, gy + 1.2 * (nz(x, 0) - 0.5)], x0, x1, 120), false]], vs));
+    if (opt.mesa) { const my = gy - (CB[3] - CB[1]) * 0.06; add("shade", keepWhere([[polyline(x => { const t = (x - x0) / (x1 - x0), m = sstep(0.12, 0.16, t) * (1 - sstep(0.3, 0.34, t)) + 0.6 * sstep(0.58, 0.61, t) * (1 - sstep(0.8, 0.84, t)); return [x, my + 4 - m * (CB[3] - CB[1]) * 0.07 + 0.6 * nz(x, 9)]; }, x0, x1, 160), false]], vs)); }
+    // pebbles and grass tufts on the ground
+    const n = opt.pebbles ?? 26, yMax = opt.yMax ?? CB[3];
+    for (let i = 0; i < n; i++) { const x = lerp(x0 + 4, x1 - 4, rg()), y = gy + 3 + (yMax - gy - 6) * rg() ** 1.4, r = 0.5 + 1.2 * rg(); if (!vs(x, y) || allD(x, y) < 3) continue; if (rg() < 0.6) add("shade", [[ring(x, y, r * 1.3, r * 0.7, 12), true]]); else add("shade", Array.from({ length: 5 }, (_, k) => { const a = -PI / 2 + (k - 2) * 0.35; return [[[x, y], [x + cos(a) * r * 2.4, y + sin(a) * r * 2.4]], false]; })); }
+  };
+  const shadowUnder = (x, y, rx) => { const f = (px, py) => ell(px, py, x + rx * 0.35, y + rx * 0.08, rx, rx * 0.16, 0), b = [x - rx, y - rx * 0.4, x + rx * 1.4, y + rx * 0.5], vs = vis("__bg"); fillDark((px, py) => f(px, py) < 0 && vs(px, py), b, 30); };
+  const stars = (n, region, avoid = 4) => {
+    const rs = rng(81), placed = [];
+    for (let i = 0; i < n * 30 && placed.length < n; i++) {
+      const x = lerp(region[0], region[2], rs()), y = lerp(region[1], region[3], rs()), s = 0.8 + 2.2 * rs() ** 2;
+      if (allD(x, y) < s + avoid || placed.some(q => hypot(q[0] - x, q[1] - y) < q[2] + s + 5)) continue;
+      placed.push([x, y, s]);
+      if (s < 1.3) add("shade", [[dot(x, y, 0.3), true, "dot"]]);
+      else { const f = (px, py) => star(px, py, x, y, s), b = [x - s - 1, y - s - 1, x + s + 1, y + s + 1]; outline(f, b, "__bg", 1); if (s > 2) fillDark((px, py) => f(px, py) < -0.2, b, 45); }
+    }
+    return placed;
+  };
+  // Pots: a tapered body under a rim band, patterned.
+  const pot = (name, x, y, w, hgt, z, pattern) => {
+    const wt = w / 2, wb = w * 0.36, rimH = hgt * 0.2, body = [[x - wt * 0.94, y - hgt + rimH], [x + wt * 0.94, y - hgt + rimH], [x + wb, y], [x - wb, y]];
+    const bodyD = (px, py) => polyD(px, py, body), rimD = (px, py) => max(abs(px - x) - wt, abs(py - (y - hgt + rimH / 2)) - rimH / 2);
+    const f = (px, py) => min(bodyD(px, py), rimD(px, py)), b = [x - wt - 1, y - hgt - 1, x + wt + 1, y + 1];
+    put({ name, z, f, box: b, draw: () => {
+      const vs = vis(name), inBody = (px, py) => bodyD(px, py) < -0.5 && rimD(px, py) > 0.4 && vs(px, py);
+      outline(rimD, b, name, passes); outline(bodyD, b, name, passes, "line", (px, py) => rimD(px, py) > 0.3);
+      const rp = rng(500 + floor(x)), pat = pattern === "mixed" ? ["stripes", "zigzag", "dots", "plain"][floor(rp() * 4)] : pattern, pen = colour ? "pot" : "line";
+      const top = y - hgt + rimH, bandY = k => top + (y - top) * k;
+      if (pat === "stripes") for (const k of [0.25, 0.32, 0.62]) add(pen, keepWhere([[polyline(px => [px, bandY(k)], x - wt, x + wt, 40), false]], inBody));
+      if (pat === "zigzag") { const n = 9, yy = bandY(0.42), amp = (y - top) * 0.1; add(pen, keepWhere([[Array.from({ length: n * 2 + 1 }, (_, i) => [x - wt + i * wt / n, yy + (i % 2 ? amp : -amp)]), false]], inBody)); }
+      if (pat === "dots") for (let r = 0; r < 3; r++) for (let i = 0; i < 9; i++) { const px = x - wt + (i + 0.5 + (r % 2) * 0.5) * w / 9, py = bandY(0.25 + r * 0.22); if (inBody(px, py) && bodyD(px, py) < -1.5) add(pen, [[ring(px, py, 0.9, 0.9, 12), true]]); }
+      if (colour) add("pot", hatch((px, py) => f(px, py) < -0.4 && vs(px, py), b, 90, o.sp));
+      if (!lines) add("shade", hatch((px, py) => inBody(px, py) && px > x + wt * 0.35, b, 100, 1.1));
+    } });
+    return { top: y - hgt + rimH * 0.4 };
+  };
+  // Echeveria: leaves on the golden angle, outer ones older and longer, inner ones standing up; seen from a little above.
+  const rosette = (name, x, y, R, z) => {
+    const n = 26, leaves = [];
+    for (let i = n - 1; i >= 0; i--) { const t = (i + 1) / n, a = i * GOLD, l = R * (0.3 + 0.7 * sqrt(t)), lift = (1 - t) * 0.9, tip = [x + cos(a) * l * (1 - 0.6 * lift), y + sin(a) * l * 0.42 - l * lift * 0.9]; leaves.push({ a: atan2(tip[1] - y, tip[0] - x), l: hypot(tip[0] - x, tip[1] - y), w: l * 0.3, depth: tip[1] + (1 - t) * R * 0.2 }); }
+    leaves.sort((p, q) => q.depth - p.depth);
+    for (const p of leaves) p.f = (px, py) => leafD(px, py, x, y, p.a, p.l, p.w, 0.68);
+    const f = (px, py) => { let v = INF; for (const p of leaves) v = min(v, p.f(px, py)); return v; }, b = [x - R - 2, y - R - 2, x + R + 2, y + R * 0.6 + 2];
+    put({ name, z, f, box: b, draw: () => {
+      const vs = vis(name);
+      leaves.forEach((p, i) => { const front = leaves.slice(0, i); outline(p.f, b, name, 1, "line", (px, py) => front.every(q => q.f(px, py) > 0.3)); if (!lines) add("shade", keepWhere([[polyline(t => [x + cos(p.a) * p.l * t, y + sin(p.a) * p.l * t], 0.3, 0.85, 10), false]], (px, py) => vs(px, py) && front.every(q => q.f(px, py) > 0.3))); });
+      if (colour) add("body", hatch((px, py) => f(px, py) < -0.35 && vs(px, py), b, 70, o.sp));
+    } });
+  };
+  // Prickly pear: pads with areoles on a sunflower spiral, glochid tufts, a few long spines, fruit on the top edges, cochineal.
+  const pear = (x0, y0, H, z, id, nPads = o.pads) => {
+    const rp = rng(600 + id.length * 31), pads = pearPads(x0, y0, H, { ...o, pads: nPads }, rp), coch = id === "pp" ? o.coch : 0, byZ = [...pads].sort((a, b) => b.z - a.z);
+    const tops = pads.filter(q => q.kids === 0), fruit = [];
+    for (let i = 0; i < o.fruit && tops.length; i++) { const q = tops[i % tops.length], t = (rp() - 0.5) * 1.3, ux = sin(q.ang), uy = -cos(q.ang), bx = q.cx + ux * q.a * cos(t) * 0.97 + cos(q.ang) * q.b * sin(t) * 0.97, by = q.cy + uy * q.a * cos(t) * 0.97 + sin(q.ang) * q.b * sin(t) * 0.97, a = atan2(uy, ux) + t * 0.9; if (fruit.some(f => hypot(f.bx - bx, f.by - by) < q.a * 0.3)) continue; fruit.push({ bx, by, a, l: q.a * 0.42, w: q.a * 0.15 }); }
+    fruit.forEach((fr, i) => { fr.f = (px, py) => leafD(px, py, fr.bx, fr.by, fr.a, fr.l, fr.w, 0.62); const b = [fr.bx - fr.l - 1, fr.by - fr.l - 1, fr.bx + fr.l + 1, fr.by + fr.l + 1]; put({ name: id + "-fr" + i, z: z + 0.05, f: fr.f, box: b, draw: () => {
+      const nm = id + "-fr" + i, vs = vis(nm); outline(fr.f, b, nm, passes);
+      const [tx, ty] = [fr.bx + cos(fr.a) * fr.l, fr.by + sin(fr.a) * fr.l]; add("line", keepWhere([[ring(tx - cos(fr.a) * fr.w * 0.3, ty - sin(fr.a) * fr.w * 0.3, fr.w * 0.35, fr.w * 0.18, 14), true]], vs));
+      for (let k = 0; k < 6; k++) { const u = 0.25 + 0.55 * (k % 3) / 2, v = (floor(k / 3) - 0.5) * 0.9, px = fr.bx + cos(fr.a) * fr.l * u - sin(fr.a) * fr.w * v, py = fr.by + sin(fr.a) * fr.l * u + cos(fr.a) * fr.w * v; if (vs(px, py)) add("line", [[dot(px, py, 0.3), true, "dot"]]); }
+      add(colour || look === "ink" ? "fruit" : "line", hatch((px, py) => fr.f(px, py) < -0.35 && vs(px, py), b, fr.a / D2R + 90, colour ? o.sp : 1.2));
+    } }); });
+    byZ.forEach((q, i) => put({ name: id + "-p" + i, z: z - i * 0.001, f: q.d, box: q.box, draw: () => {
+      const nm = id + "-p" + i, vs = vis(nm), axis = q.ang / D2R - 90;
+      outline(q.d, q.box, nm, passes);
+      // Areoles on Vogel's sunflower spiral, squeezed into the pad's ellipse.
+      const n = max(6, floor(PI * q.a * q.b / (o.agap * o.agap) * 0.8)), rs = rng(700 + i), ca = cos(q.ang), sa = sin(q.ang), pts = [];
+      for (let k = 0; k < n; k++) { const r = sqrt((k + 0.5) / n) * 0.9, th = k * GOLD, lx = q.b * r * cos(th), ly = q.a * r * sin(th), px = q.cx + ca * lx - sa * ly, py = q.cy + sa * lx + ca * ly; if (!vs(px, py)) continue; pts.push([px, py]); stat.areoles++; }
+      for (let k = 0; k < pts.length; k++) for (let m = k + 1; m < min(pts.length, k + 12); m++) stat.areoleMin = min(stat.areoleMin, hypot(pts[k][0] - pts[m][0], pts[k][1] - pts[m][1]));
+      for (const [px, py] of pts) {
+        add("line", [[ring(px, py, 0.4, 0.4, 10), true]], 0.01);
+        const tuft = []; for (let j = 0; j < 4; j++) { const a = -PI / 2 + q.ang + (j - 1.5) * 0.45; tuft.push([[[px + cos(a) * 0.5, py + sin(a) * 0.5], [px + cos(a) * 1.1, py + sin(a) * 1.1]], false]); }
+        add("shade", keepWhere(tuft, vs), 0.01);
+        if (o.spines > 0 && rs() < 0.45) for (let j = 0; j < max(1, floor(o.spines / 4)); j++) { const a = atan2(py - q.cy, px - q.cx) + (rs() - 0.5) * 1.6, L = o.slen * (0.7 + 0.5 * rs()); stat.spineMin = min(stat.spineMin, L); stat.spines++; add("shade", keepWhere([[[[px + cos(a) * 0.5, py + sin(a) * 0.5], [px + cos(a) * (L * 0.5), py + sin(a) * (L * 0.5)], [px + cos(a) * L, py + sin(a) * L]], false]], vs), 0.01); }
+      }
+      // Shading along the pad on its shadow side; colour fill in the body pen.
+      const S = lines ? 0 : o.shade / 100;
+      if (S > 0) add("shade", hatch((px, py) => q.d(px, py) < -0.6 && vs(px, py) && ((px - q.cx) * 0.6 + (py - q.cy) * 0.8) / q.b > lerp(0.75, 0.05, S), q.box, axis, lerp(2.2, 1, S)));
+      if (colour) add("body", hatch((px, py) => q.d(px, py) < -0.35 && vs(px, py), q.box, axis, o.sp));
+      // Cochineal: tufts of white wax in colonies near the pad's lower edge, drawn in the red pen.
+      const nc = round(coch / 100 * 3 * (0.4 + rs())), rc = rng(800 + i);
+      for (let c = 0; c < nc; c++) {
+        const t = (rc() - 0.5) * 2.4 + PI, r = 0.45 + 0.35 * rc(), cx = q.cx + ca * q.b * r * sin(t) - sa * q.a * r * cos(t), cy = q.cy + sa * q.b * r * sin(t) + ca * q.a * r * cos(t), nb = 3 + floor(rc() * 5);
+        for (let k = 0; k < nb; k++) { const bx = cx + (rc() - 0.5) * 6, by = cy + (rc() - 0.5) * 4, br = 0.7 + 0.9 * rc(), ph = rc() * TAU; const loop = Array.from({ length: 19 }, (_, m) => { const a = m / 18 * TAU, rr = br * (1 + 0.25 * sin(a * 5 + ph)); return [bx + rr * cos(a), by + rr * sin(a) * 0.8]; }); add(colour || look === "ink" ? "fruit" : "line", keepWhere([[loop, true]], (px, py) => vs(px, py) && q.d(px, py) < -0.5)); }
+      }
+    } }));
+    const xs = pads.map(q => q.cx), w = max(...xs) - min(...xs) + pads[0].a * 2;
+    return { pads, w, R: pads[0].b };
+  };
+
+  // ---- the scenes ----
+  const PWc = CB[2] - CB[0], PHc = CB[3] - CB[1], cx = (CB[0] + CB[2]) / 2;
+  let labelBox = null, inset = null, bug = null, latin = "", form = o.form, stage = "";
+  const after = [];   // drawing that needs the final order but owns no shape (ground, label, inset)
+  if (o.scene === "specimen" || o.scene === "pear") {
+    if (o.scene === "pear") form = "pear";
+    const LH = o.label === "none" ? 0 : 26, gy = CB[3] - LH - (LH ? 12 : 6), H = min(o.size, gy - CB[1] - 6);
+    latin = latinName(form, rng(5));
+    if (form === "pear") pear(cx, gy, H, 1, "pp");
+    else if (form === "rosette") rosette("ros", cx, gy - H * 0.22, min(H * 0.5, PWc * 0.45), 1);
+    else plant(form, cx, gy, H, 1, "m");
+    after.push(() => { ground(gy, cx - PWc * 0.36, cx + PWc * 0.36, { pebbles: 10, yMax: CB[3] - LH - 2 }); shadowUnder(cx, gy, PWc * 0.22); });
+    if (LH) labelBox = [cx - PWc * 0.42, CB[3] - LH, cx + PWc * 0.42, CB[3]];
+    if (o.scene === "specimen" && o.inset === "on" && form !== "pear") inset = [CB[2] - 22, CB[1] + 22, 20];
+    if (o.scene === "pear") { bug = [CB[0] + 20, CB[1] + 18]; }
+  } else if (o.scene === "bones") {
+    form = "saguaro";
+    const gy = CB[3] - 18, H = min(o.size, gy - CB[1] - 10);
+    const SP = plant("saguaro", cx, gy, H, 1, "m");
+    // Anything lying on the ground is nudged back inside the margins, whatever angle it fell at.
+    const onPage = (pts, pad) => { const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]), dx = max(0, CB[0] + pad - min(...xs)) - max(0, max(...xs) - CB[2] + pad), dy = -max(0, max(...ys) - CB[3] + pad); return pts.map(([x, y]) => [x + dx, y + dy]); };
+    if (o.moon !== "none") moonAt(cx + PWc * 0.22, CB[1] + PHc * 0.2, PWc * 0.13);
+    // Fallen rods lie on the ground once the skeleton starts to collapse; a fallen arm lies as a curved bundle.
+    const rf = rng(91), nf = round(bones * 11);
+    // A fallen arm's length is held to the page, so the heap never runs past the margin.
+    for (let a = 0; a < SP.fallen; a++) {
+      const side = a % 2 ? 1 : -1, x0 = cx + side * (SP.R * 1.6 + PWc * 0.06 * rf()), y0 = gy + 4 + 5 * rf(), L = min(H * (0.28 + 0.15 * rf()), (side > 0 ? CB[2] - x0 : x0 - CB[0]) - 6), bend = (rf() - 0.5) * 0.6, w = max(0.6, SP.R * 0.075 * 0.66);
+      for (let k = 0; k < 5; k++) {
+        const off = (k - 2) * w * 2.6, pts = onPage(polyline(t => { const ang = side * (0.05 + bend * t * t); return [x0 + side * L * t * cos(ang) * (1 - 0.06 * k * t), y0 + off + L * t * sin(ang) * 0.3 + 0.5 * sin(t * 6 + k)]; }, 0, 1 - 0.12 * rf(), 24), w + 1), tf = tubeF(pts, w, w * 0.8), xs = pts.map(q => q[0]), ys = pts.map(q => q[1]), bb = [min(...xs) - 2, min(...ys) - 2, max(...xs) + 2, max(...ys) + 2], nm = "arm-fall" + a + "-" + k;
+        put({ name: nm, z: 2.5 + a * 0.1 - k * 0.01, f: (px, py) => boxD(bb, px, py) > 1 ? boxD(bb, px, py) : tf(px, py), box: bb, draw: () => add("line", keepWhere([[tubeLoop(pts, w, w * 0.8), false]], vis(nm))) });
+      }
+    }
+    // Strips of dead skin hanging off the rods, ragged at the bottom.
+    if (bones > 0.3) for (let i = 0, nt = 2 + floor(rf() * 3); i < nt; i++) {
+      const tr = SP.limbs[0], s0 = 0.3 + 0.5 * rf(), th = (rf() - 0.5) * 1.6, [ax0, ay] = tr.surf(s0, th), ax = ax0 + SP.lean * (tr.pts[0][1] - ay), sw = SP.R * (0.35 + 0.3 * rf()), sl = SP.R * (1 + 1.4 * rf()), tilt = (rf() - 0.5) * 0.25, nm = "tatter" + i;
+      const at = (u, v) => [ax + u * sw / 2 + v * sin(tilt), ay + v * cos(tilt) - u * sw / 2 * sin(tilt) * 0.3];
+      const poly = [at(-1, 0), at(1, 0.15 * sl / sl)];
+      for (let k = 1; k <= 6; k++) poly.push(at(1 - 0.08 * k + 0.1 * sin(k * 2.1), sl * k / 6 * (0.85 + 0.15 * rf())));
+      for (let k = 0; k <= 6; k++) poly.push(at(0.5 - k / 6 * 1.5 + (k % 2 ? 0.05 : -0.05), sl * (k % 2 ? 0.82 + 0.1 * rf() : 1 - 0.05 * rf())));
+      for (let k = 5; k >= 1; k--) poly.push(at(-1 + 0.06 * k, sl * k / 6 * 0.9));
+      const f = (px, py) => polyD(px, py, poly), xs = poly.map(q => q[0]), ys = poly.map(q => q[1]), bb = [min(...xs) - 2, min(...ys) - 2, max(...xs) + 2, max(...ys) + 2];
+      put({ name: nm, z: 1.5 + i * 0.01, f, box: bb, draw: () => {
+        const vs = vis(nm), ins = (px, py) => f(px, py) < -0.4 && vs(px, py);
+        outline(f, bb, nm, 1);
+        for (const u of [-0.35, 0.3]) add("shade", keepWhere([[polyline(v => at(u + 0.05 * sin(v * 0.4), v), 0.5, sl * 0.8, 20), false]], ins));
+        if (!lines) add("shade", hatch((px, py) => ins(px, py) && (px - ax) * cos(tilt) > sw * 0.15, bb, 90 + tilt / D2R, 1.0));
+      } });
+    }
+    for (let i = 0; i < nf; i++) { const L = min(H * (0.1 + 0.35 * rf()), PWc * 0.6), x = lerp(CB[0] + L / 2 + 3, CB[2] - L / 2 - 3, 0.5 + (rf() - 0.5) * 0.75), y = gy + 2 + rf() * 10, a = (rf() - 0.5) * 0.9, w = max(0.6, H * 0.075 * 0.075), pts = onPage(polyline(t => [x - cos(a) * L / 2 + cos(a) * L * t, y - sin(a) * L / 2 + sin(a) * L * t + 0.6 * sin(t * 7)], 0, 1, 20), w + 1), tf = tubeF(pts, w, w * 0.8), f = (px, py) => tf(px, py); put({ name: "fall" + i, z: 2 + i * 0.01, f, box: [min(...pts.map(q => q[0])) - 2, min(...pts.map(q => q[1])) - 2, max(...pts.map(q => q[0])) + 2, max(...pts.map(q => q[1])) + 2], draw: () => add("line", keepWhere([[tubeLoop(pts, w, w * 0.8), false]], vis("fall" + i))) }); }
+    after.push(() => { ground(gy, CB[0] + 2, CB[2] - 2, { pebbles: 30 }); shadowUnder(cx, gy, PWc * 0.2); });
+  } else if (o.scene === "night") {
+    form = "saguaro";
+    const hz = CB[1] + PHc * 0.6, rn = rng(95), n = o.many;
+    if (o.moon !== "none") moonAt(CB[0] + PWc * 0.75, CB[1] + PHc * 0.16, PWc * 0.1);
+    const fx = CB[0] + PWc * (0.3 + 0.12 * rn()), slots = Array.from({ length: n - 1 }, (_, i) => CB[0] + PWc * (i + 0.5 + (rn() - 0.5) * 0.5) / max(1, n - 1));
+    const spots = [{ z: 1, x: fx }, ...slots.map(x => ({ z: 0.15 + 0.5 * rn(), x }))].sort((a, b) => b.z - a.z);
+    spots.forEach((sp, i) => { const gy = hz + (CB[3] - 8 - hz) * sp.z ** 1.6, H = sp.z === 1 ? min(o.size, gy - CB[1] - 30) : (hz - CB[1]) * lerp(0.25, 0.75, sp.z); plant("saguaro", sp.x, gy, H, sp.z, "n" + i, { far: sp.z < 0.6, owl: i === 0 && o.owl === "on" }); });
+    after.push(() => { ground(hz, CB[0], CB[2], { mesa: true, pebbles: 40 }); });
+  } else {   // shelf
+    form = "pots";
+    const sill = CB[3] - 26, n = o.pots, rs = rng(97), kinds = ["barrel", "column", "rosette", "saguaro", "pear", "barrel"], w = PWc / n;
+    const sillD = (x, y) => max(abs(x - cx) - PWc / 2, abs(y - (sill + 5)) - 5);
+    put({ name: "sill", z: 5, f: sillD, box: [CB[0] - 1, sill - 1, CB[2] + 1, sill + 11], draw: () => { outline(sillD, [CB[0] - 1, sill - 1, CB[2] + 1, sill + 11], "sill", passes); if (!lines) fillDark((x, y) => y > sill + 11 && y < sill + 16 && x > CB[0] && x < CB[2] && vis("__bg")(x, y), [CB[0], sill + 10, CB[2], sill + 17], 0); } });
+    for (let i = 0; i < n; i++) {
+      const x = CB[0] + w * (i + 0.5), pw = min(w * 0.8, 62), ph = pw * (0.72 + 0.18 * rs()), kind = kinds[(i + floor(o.seed % 6)) % kinds.length];
+      const pt = pot("pot" + i, x, sill, pw, ph, 3 + i * 0.01, o.pattern);
+      const Hp = min(o.size * (0.6 + 0.5 * rs()), pt.top - CB[1] - 6);
+      if (kind === "rosette") rosette("ros" + i, x, pt.top + 2, pw * 0.55, 2 + i * 0.01);
+      else if (kind === "pear") pear(x, pt.top + 4, Hp * 1.1, 2 + i * 0.01, "pp" + i, min(o.pads, 4));
+      else plant(kind, x, pt.top + 4, kind === "barrel" ? min(Hp, pw * 0.95) : Hp, 2 + i * 0.01, "s" + i);
+    }
+    if (o.window === "on") after.push(() => { const vs = vis("__bg"), top = CB[1] + 4, l = CB[0] + 6, r = CB[2] - 6; add("line", keepWhere([[dense([[l, sill], [l, top], [r, top], [r, sill]]), false], [dense([[cx, top], [cx, sill]]), false], [dense([[l, top + (sill - top) * 0.45], [r, top + (sill - top) * 0.45]]), false]], vs)); add("shade", keepWhere([[dense([[l + 3, sill], [l + 3, top + 3], [r - 3, top + 3], [r - 3, sill]]), false]], vs)); for (let k = 0; k < 3; k++) { const gx = l + 14 + k * 5; add("shade", keepWhere([[[[gx, top + 16], [gx + 9, top + 7]], false]], vs)); } });
+  }
+
+  // ---- order, then draw everything front to back ----
+  items.sort((a, b) => b.z - a.z);
+  objs = items.map(it => [it.name, it.f, it.box]); order = Object.fromEntries(objs.map(([n], i) => [n, i]));
+  for (const it of items) it.draw();
+  for (const f of after) f();
+  // Sky: stars, and a hatched sky that fades toward the horizon.
+  if (o.scene === "night" || o.scene === "bones") {
+    const hz = o.scene === "night" ? CB[1] + PHc * 0.6 : CB[3] - 18, sky = [CB[0], CB[1], CB[2], hz - 4];
+    const placed = o.sky === "plain" ? [] : stars(o.scene === "night" ? 26 : 14, sky);
+    if (o.sky === "dark" && !lines) { const vs = vis("__bg"), ins = (x, y) => y < hz - 2 && x > CB[0] && x < CB[2] && y > CB[1] && vs(x, y) && allD(x, y) > 1.2 && placed.every(q => hypot(q[0] - x, q[1] - y) > q[2] + 1.5); const hl = hatch(ins, sky, 0, o.hp * 1.6); add("line", runoffT(hl, (x, y) => (hz - y) / (hz - CB[1]), 0, 0.15, 0.85), 0.01); }
+  }
+  // Label: a double box with the name and a second line.
+  if (labelBox) {
+    const [l, t, r, b] = labelBox, vs = vis("__bg"), box = (x0, y0, x1, y1) => [[[x0, y0], [x1, y0], [x1, y1], [x0, y1]], true];
+    add("line", [box(l, t, r, b)]); add("shade", [box(l + 1.5, t + 1.5, r - 1.5, b - 1.5)]);
+    const lines1 = [o.label === "latin" ? latin : cleanText(o.btext) || " ", o.scene === "pear" ? "WITH DACTYLOPIUS COCCUS" : `${o.ribs} RIBS - INKTOBER 04`].map(cleanText);
+    const fit = (txt, cap, wmax) => min(cap, wmax / max(1, textUnits(txt)) * 6);
+    const c1 = fit(lines1[0], 5, (r - l) * 0.86), c2 = fit(lines1[1], 3.2, (r - l) * 0.86);
+    add("line", letters(lines1[0], c1 / 6, x => [(l + r) / 2 + x, t + 9, 0]), 0.01);
+    add("shade", letters(lines1[1], c2 / 6, x => [(l + r) / 2 + x, t + 18.5, 0]), 0.01);
+    stat.textCap = min(c1, c2);
+  }
+  // Spiral inset: the areole pattern seen from above, with its two families of spirals.
+  {
+    const [ix, iy, ir] = inset || [0, 0, 0];
+    if (inset) {
+      const n = 120, fib = [3, 5, 8, 13, 21, 34], pts = Array.from({ length: n }, (_, i) => { const r = ir * 0.92 * sqrt((i + 0.5) / n), a = i * GOLD; return [ix + r * cos(a), iy + r * sin(a)]; });
+      const fa = fib.reduce((best, f) => abs(f - o.ribs) < abs(best - o.ribs) ? f : best, 13), fb = fib[fib.indexOf(fa) - 1] || 8;
+      add("line", [[ring(ix, iy, ir, ir, 60), true]]);
+      for (const F of [fa, fb]) for (let i = 0; i + F < n; i++) add("shade", [[[pts[i], pts[i + F]], false]], 0.01);
+      for (const [x, y] of pts) add("line", [[dot(x, y, 0.35), true, "dot"]]);
+      const cap = 3.2, txt = `${fb} AND ${fa}`; add("shade", letters(txt, cap / 6, x => [ix + x, iy + ir + 6, 0]), 0.01); stat.textCap = min(stat.textCap, cap);
+    }
+  }
+  // Pear plate: the cochineal bug, enlarged, and a carmine swatch.
+  if (bug) {
+    const cands = [[CB[0] + 16, CB[1] + 14], [CB[2] - 16, CB[1] + 14]], room = ([x, y]) => min(...[[-12, -8], [12, -8], [0, 0], [-12, 30], [12, 30], [0, 26]].map(([a, b]) => allD(x + a, y + b)));
+    const [bx, by] = room(cands[0]) >= room(cands[1]) ? cands[0] : cands[1];
+    if (room([bx, by]) < 2) notes.push("the bug and swatch touch the pads: lower the height");
+    const pen = lines ? "line" : "fruit", body = (x, y) => ell(x, y, bx, by, 7, 4.6, 0.2), b = [bx - 12, by - 9, bx + 12, by + 9];
+    outline(body, b, "__bg", 1, pen);
+    for (let k = -2; k <= 2; k++) add(pen, keepWhere([[polyline(t => [bx + k * 2.6 + sin(t * PI) * 0.6, by - 4.6 + t * 9.2], 0, 1, 10), false]], (x, y) => body(x, y) < -0.4));
+    for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { const x = bx - 3 + k * 3; add(pen, [[[[x, by + s * 4.3], [x - 1.2, by + s * 6.2], [x - 0.6, by + s * 7.6]], false]]); }
+    const sx = bx - 7, sy = by + 14, sw = 14;
+    add("line", [[[[sx, sy], [sx + sw, sy], [sx + sw, sy + 9], [sx, sy + 9]], true]]);
+    if (!lines) add(pen, hatch((x, y) => x > sx + 0.6 && x < sx + sw - 0.6 && y > sy + 0.6 && y < sy + 8.4, [sx, sy, sx + sw, sy + 9], 45, colour ? o.sp : 0.9));
+    add("shade", letters("CARMINE", 2.8 / 6, x => [sx + sw / 2 + x, sy + 13, 0]), 0.01); stat.textCap = min(stat.textCap, 2.8);
+  }
+
+  // ---- gates ----
+  let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF, finite = true;
+  for (const Lr of Object.values(layers)) for (const [q] of Lr) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) { finite = false; continue; } bx0 = min(bx0, x); by0 = min(by0, y); bx1 = max(bx1, x); by1 = max(by1, y); }
+  const inside = bx0 >= CB[0] - 0.5 && by0 >= CB[1] - 0.5 && bx1 <= CB[2] + 0.5 && by1 <= CB[3] + 0.5;
+  const gates = [
+    ["fits inside the margins", inside, `${(bx1 - bx0).toFixed(0)} x ${(by1 - by0).toFixed(0)} mm, ${inside ? "inside" : "over"} the ${CB[2] - CB[0]} x ${CB[3] - CB[1]} margin box`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    ["shadow hatch at least 0.5 mm apart", o.hp >= 0.5, o.hp + " mm"],
+  ];
+  if (stat.areoles) gates.push(["areoles at least 1.1 mm apart", stat.areoleMin >= 1.1 || !isFinite(stat.areoleMin), (isFinite(stat.areoleMin) ? stat.areoleMin.toFixed(2) + " mm" : "none close") + ", " + stat.areoles + " areoles" + (stat.crowd ? ", " + stat.crowd + " crowded at a crown left out" : "")]);
+  if (stat.spines) gates.push(["spines at least 0.7 mm long on paper", stat.spineMin >= 0.7, stat.spineMin.toFixed(2) + " mm, " + stat.spines + " spines" + (stat.spineSkip ? ", " + stat.spineSkip + " edge-on ones left out" : "")]);
+  if (isFinite(stat.rodMin)) gates.push(["woody rods at least 1 mm wide", stat.rodMin >= 1, stat.rodMin.toFixed(2) + " mm"]);
+  if (isFinite(stat.textCap)) gates.push(["letters at least 2.8 mm tall", stat.textCap >= 2.8, stat.textCap.toFixed(1) + " mm"]);
+  if (colour) gates.push(["fill lines at least a pen width apart", o.sp >= PEN.body, `${o.sp} mm for a ${PEN.body} mm pen`]);
+  if (!inside) notes.push("lower the height or the margin");
+  if (stat.areoleMin < 1.1) notes.push("raise the areole gap");
+  stage = yrs < 0.15 ? "seedling" : yrs < 0.3 ? "young" : yrs < 0.72 ? (o.flowers && yrs > 0.25 && yrs < 0.8 ? "in its prime" : "grown") : yrs < 0.86 ? "dying" : "bones";
+  return { o, W: PW, H: PH, layers, gates, notes, stage: o.scene + ", " + stage, ms: performance.now() - t0 };
+}
+
+// ---------------- preview, export ----------------
+const COLS = o => ({ line: "#141414", shade: "#3a3a3a", body: "#" + o.bodycol, flower: "#" + o.flowercol, fruit: "#" + o.fruitcol, pot: "#" + o.potcol });
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = COLS(r.o), flash = r.o.view === "flash";
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of ["body", "pot", "flower", "fruit", "shade", "line"]) {
+    c.strokeStyle = c.fillStyle = col[key];
+    for (const [q, cl, kind] of r.layers[key]) {
+      c.lineWidth = flash && kind === "fill" ? (key === "line" ? r.o.hp : r.o.sp) * 1.15 : PEN[key];
+      c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath();
+      if (kind === "dot") c.fill(); else c.stroke();
+    }
+  }
+  const lenm = L => L.reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000;
+  const extra = ["body", "flower", "fruit", "pot"].filter(k => r.layers[k].length).map(k => ` · ${k} pen: <b>${lenm(r.layers[k]).toFixed(1)} m</b>`).join("");
+  $("stats").innerHTML = `<b>${r.stage}</b> · ${r.ms.toFixed(0)} ms<br>`
+    + `line 0.4: <b>${lenm(r.layers.line).toFixed(1)} m</b> · thin 0.3: <b>${lenm(r.layers.shade).toFixed(1)} m</b>${extra}<br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+// Plot order: colours under the black, the bold line last.
+const penLayers = r => [
+  { name: "body", colour: r.o.bodycol, w: PEN.body, paths: r.layers.body }, { name: "pot", colour: r.o.potcol, w: PEN.pot, paths: r.layers.pot },
+  { name: "flower", colour: r.o.flowercol, w: PEN.flower, paths: r.layers.flower }, { name: "fruit", colour: r.o.fruitcol, w: PEN.fruit, paths: r.layers.fruit },
+  { name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line },
+].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG cactus${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["scene", "form", "seed", "size", "years", "ribs", "twist", "agap", "arms", "holes", "spines", "centrals", "slen", "sstyle", "flowers", "pads", "fruit", "coch", "moon", "sky", "many", "owl", "pots", "pattern", "window", "label", "btext", "inset", "look", "weight", "shade", "dark", "hp", "sp", "detail", "bodycol", "flowercol", "fruitcol", "potcol", "view", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["view", "bodycol", "flowercol", "fruitcol", "potcol"]);
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
+
+const BASE = { scene: "specimen", form: "barrel", seed: 21, size: 130, years: 55, ribs: 13, twist: 15, agap: 4.5, arms: 3, holes: 1, spines: 8, centrals: 1, slen: 3.4, sstyle: "star", flowers: 4, pads: 9, fruit: 6, coch: 45, moon: "crescent", sky: "stars", many: 4, owl: "on", pots: 4, pattern: "mixed", window: "on", label: "latin", btext: "INKTOBER 04", inset: "on", look: "ink", weight: 2, shade: 55, dark: "cross", hp: 0.75, sp: 0.9, detail: 1, bodycol: "3f8f4a", flowercol: "e8457a", fruitcol: "c2185b", potcol: "c0632e", view: "pens", page: "190x250", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  specimen: P({ size: 110, sstyle: "hooked", centrals: 2, slen: 4.2 }),
+  saguaro: P({ form: "saguaro", size: 170, ribs: 13, years: 50, flowers: 6, spines: 6, slen: 2.2, agap: 4, inset: "off", seed: 8 }),
+  bones: P({ scene: "bones", years: 94, size: 175, ribs: 13, arms: 3, seed: 8, sky: "stars", moon: "full" }),
+  shelf: P({ scene: "shelf", size: 110, pots: 4, ribs: 13, agap: 3.5, slen: 2.2, spines: 6, years: 45, flowers: 2, seed: 33 }),
+  night: P({ scene: "night", size: 150, many: 5, years: 60, flowers: 0, spines: 6, slen: 2, agap: 4.5, sky: "dark", seed: 12 }),
+  pear: P({ scene: "pear", size: 135, pads: 10, fruit: 7, coch: 55, spines: 4, slen: 4, agap: 5.5, flowers: 0, seed: 40 }),
+  colouring: P({ look: "line", form: "column", size: 150, ribs: 8, flowers: 3, spines: 5, years: 45, sstyle: "star", seed: 5 }),
+  bloom: P({ look: "colour", size: 110, flowers: 7, years: 40, ribs: 21, agap: 3.5, spines: 6, slen: 2.6, seed: 77 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `cactus-${r.o.scene}-${r.o.scene === "specimen" ? r.o.form + "-" : ""}y${r.o.years}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>

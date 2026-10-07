@@ -41,10 +41,10 @@
       "day": 3,
       "date": "2026-10-03",
       "prompt": "miniature",
-      "photo": null,
+      "photo": "prints/inktober-03-miniature.jpg",
       "frame": {
         "width": 210,
-        "height": 297
+        "height": 287
       },
       "content": {
         "nsfw": false,
@@ -56,7 +56,7 @@
       "room": "hall",
       "day": 4,
       "date": "2026-10-04",
-      "prompt": null,
+      "prompt": "cactus",
       "photo": null,
       "frame": {
         "width": 210,
