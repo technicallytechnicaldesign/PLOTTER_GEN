@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Miniature kit</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Miniature kit</h1>
+  <p class="sub">Inktober day 3, miniature. The Meatsack figure comes as a model kit, parts and augments still on the sprue. One part is a chip, and a loupe over it shows what the chip really is: an isometric city where the figure's memory, language, habits and fears are kept, with a cathedral core at the centre. Somewhere in that city someone is holding a loupe of their own.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="kit">Some assembly required</button><button data-preset="dense">Dense city</button><button data-preset="cathedral">The cathedral</button></div>
+    <div class="row"><button data-preset="sparse">Few parts, big lens</button><button data-preset="colouring">Colouring page</button><button data-preset="colour">Colour</button></div>
+  </fieldset>
+  <fieldset><legend>Look</legend>
+    <label>Style <select id="look"><option value="ink">ink: crosshatched shadows</option><option value="line">lines only, a colouring page</option><option value="colour">colour: plastic sprue, glowing core</option></select></label>
+    <label>City lines <select id="citypen"><option value="thin">thin pen</option><option value="line">line pen</option></select></label>
+  </fieldset>
+  <fieldset><legend>The kit</legend>
+    <label>Kit name <input type="text" id="kit" value="MEATSACK 1:72" maxlength="18"></label>
+    <label>Part size (mm per head) <output id="o-scale"></output><input type="range" id="scale" min="4" max="14" step="0.5" value="10"></label>
+    <label>Augments <output id="o-acc"></output><input type="range" id="acc" min="0" max="5" step="1" value="5"></label>
+    <label>Ejector pin marks <select id="ejector"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Sprue height (% of page) <output id="o-sprueh"></output><input type="range" id="sprueh" min="30" max="60" step="1" value="44"></label>
+  </fieldset>
+  <fieldset><legend>The loupe</legend>
+    <label>Lens radius (mm) <output id="o-lsize"></output><input type="range" id="lsize" min="30" max="75" step="1" value="56"></label>
+    <label>Across the page (%) <output id="o-lx"></output><input type="range" id="lx" min="30" max="70" step="1" value="56"></label>
+    <label>Handle angle <output id="o-langle"></output><input type="range" id="langle" min="0" max="355" step="5" value="200"></label>
+    <label>Lens bulge <output id="o-bulge"></output><input type="range" id="bulge" min="0" max="100" step="5" value="45"></label>
+    <label>Callout to the chip <select id="callout"><option value="on">dashed line and ring</option><option value="off">none</option></select></label>
+  </fieldset>
+  <fieldset><legend>The city</legend>
+    <label>Grid (finer = smaller buildings) <output id="o-lots"></output><input type="range" id="lots" min="6" max="14" step="1" value="10"></label>
+    <label>Zoom <output id="o-zoom"></output><input type="range" id="zoom" min="60" max="180" step="5" value="85"></label>
+    <label>Building height <output id="o-height"></output><input type="range" id="height" min="20" max="100" step="5" value="55"></label>
+    <label>Parks (% of blocks) <output id="o-plaza"></output><input type="range" id="plaza" min="0" max="80" step="5" value="25"></label>
+    <label>Packets on the streets <output id="o-packets"></output><input type="range" id="packets" min="0" max="40" step="1" value="14"></label>
+    <label>Core <select id="core"><option value="cathedral">a cathedral with a spire</option><option value="ziggurat">a stepped ziggurat</option><option value="tower">one tall tower</option></select></label>
+    <label>Bond wires to the package <select id="bond"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Windows <select id="windows"><option value="on">on the lit faces</option><option value="off">off</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="11"></label>
+  </fieldset>
+  <fieldset><legend>Districts</legend>
+    <label>Names on signposts <select id="signs"><option value="on">on</option><option value="off">off</option></select></label>
+    <label data-when="signs=on">District names <input type="text" id="words" value="MEMORY,LANGUAGE,HABIT,FEAR,NAME,DREAMS" maxlength="80"></label>
+    <label data-when="signs=on">Core name <input type="text" id="coreword" value="SELF" maxlength="14"></label>
+    <label data-when="signs=on">Sign letters (mm) <output id="o-lab"></output><input type="range" id="lab" min="2" max="4" step="0.1" value="2.6"></label>
+    <p class="hint" data-when="signs=on">Comma separated; each name gets a slice of the city round the core. Capital letters, numbers and ! ? - . ' are drawn.</p>
+  </fieldset>
+  <fieldset><legend>Easter egg</legend>
+    <label>Someone with a loupe <select id="egg"><option value="on">on a plaza, looking closer</option><option value="off">off</option></select></label>
+  </fieldset>
+  <fieldset><legend>Instructions</legend>
+    <label>Assembly strip <select id="strip"><option value="on">four steps along the bottom</option><option value="off">off</option></select></label>
+    <label data-when="strip=on">Last step <input type="text" id="last" value="INSERT SELF" maxlength="18"></label>
+    <label data-when="strip=on">Small print <input type="text" id="small" value="SELF NOT INCLUDED" maxlength="24"></label>
+  </fieldset>
+  <fieldset><legend>Ink</legend>
+    <label>Outline weight (passes) <output id="o-weight"></output><input type="range" id="weight" min="1" max="3" step="1" value="2"></label>
+    <label>City shadows <select id="cityshade"><option value="single">single hatch, lighter</option><option value="cross">crosshatch, darker</option><option value="none">none</option></select></label>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option></select></label>
+    <label>Shadow hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
+    <label data-when="look=colour">Fill spacing (mm) <output id="o-sp"></output><input type="range" id="sp" min="0.5" max="2" step="0.05" value="0.8"></label>
+    <label data-when="look=colour">Fill angle <output id="o-angle"></output><input type="range" id="angle" min="0" max="180" step="5" value="35"></label>
+    <p class="hint">Dark areas are hatched, never filled solid: 0.75 mm crosshatch read as an even dark tone on paper, and under 0.5 mm the lines flood and soak the paper. Shaded faces of the city are crosshatched, lit faces carry windows.</p>
+  </fieldset>
+  <fieldset><legend>Pens</legend>
+    <label data-when="look=colour">Plastic pen (preview) <select id="plasticcol"><option value="7d8a96">grey</option><option value="3fa34d">green</option><option value="1e88e5">blue</option></select></label>
+    <label data-when="look=colour">Glow pen (preview) <select id="glowcol"><option value="e8a317">amber</option><option value="d7263d">red</option><option value="7b2d8b">purple</option></select></label>
+    <label>Preview <select id="view"><option value="pens">pens on paper</option><option value="flash">fills shown solid</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen in plotting order: colours first, then the thin pen, then the black line last so it sits on top. Each file carries four corner ticks at 1 mm, so they all land in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: the kit is one distance field, frame, runners, gates and parts merged, so it outlines the way a moulded sprue does. The parts use the Meatsack studio's body proportions (head units), packed in rows. The city is an isometric die drawn front to back: every building's outline and hatching is clipped by the ones already drawn in front of it. It is then cut to the lens and pushed through a bulge that magnifies the middle and squeezes the rim, the way glass does. Pens are 0.4 mm for the line and colours and 0.3 mm for the thin pen (ASSUMED), none plotted yet.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+
+// ---------------- distance-field pieces (all in mm, y down) ----------------
+// Far apart (or one side infinite) smin is a plain min; the blend only runs inside the k band.
+const smin = (a, b, k) => { if (!(abs(a - b) < k)) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return lerp(b, a, h) - k * h * (1 - h); };
+const smax = (a, b, k) => -smin(-a, -b, k);
+const circ = (x, y, cx, cy, r) => hypot(x - cx, y - cy) - r;
+// A rotated ellipse, approximate distance (exact on the outline).
+const ell = (x, y, cx, cy, rx, ry, a) => { const dx = x - cx, dy = y - cy, c = cos(a), s = sin(a), u = dx * c + dy * s, v = -dx * s + dy * c; return (hypot(u / rx, v / ry) - 1) * min(rx, ry); };
+function seg(x, y, ax, ay, bx, by) { const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - ax) * dx + (y - ay) * dy) / l2, 0, 1); return [hypot(x - ax - dx * t, y - ay - dy * t), t]; }
+function polyD(x, y, P) { let d = INF, s = 1; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const ax = P[j][0], ay = P[j][1], bx = P[i][0], by = P[i][1], ex = bx - ax, ey = by - ay, wx = x - ax, wy = y - ay, t = clamp((wx * ex + wy * ey) / (ex * ex + ey * ey || 1e-9), 0, 1), dx = wx - ex * t, dy = wy - ey * t; d = min(d, dx * dx + dy * dy); if ((ay > y) !== (by > y) && x < (bx - ax) * (y - ay) / (by - ay) + ax) s = -s; } return s * sqrt(d); }
+// A tube along a polyline whose radius runs r0 -> r1.
+function tube(x, y, pts, r0, r1) { let d = INF; const n = pts.length - 1; for (let i = 0; i < n; i++) { const [s, t] = seg(x, y, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]); d = min(d, s - lerp(r0, r1, (i + t) / n)); } return d; }
+const bez = (P, t) => { const u = 1 - t; return P.length === 3 ? [u * u * P[0][0] + 2 * u * t * P[1][0] + t * t * P[2][0], u * u * P[0][1] + 2 * u * t * P[1][1] + t * t * P[2][1]] : [u * u * u * P[0][0] + 3 * u * u * t * P[1][0] + 3 * u * t * t * P[2][0] + t * t * t * P[3][0], u * u * u * P[0][1] + 3 * u * u * t * P[1][1] + 3 * u * t * t * P[2][1] + t * t * t * P[3][1]]; };
+const bezPts = (P, n) => Array.from({ length: n + 1 }, (_, i) => bez(P, i / n));
+// Lower bound on the distance to anything inside box b (negative inside it).
+const boxD = (b, x, y) => max(b[0] - x, x - b[2], b[1] - y, y - b[3]);
+const grad = (f, x, y, e = 0.2) => { const gx = f(x + e, y) - f(x - e, y), gy = f(x, y + e) - f(x, y - e), l = hypot(gx, gy) || 1; return [gx / l, gy / l]; };
+// A four-point tattoo sparkle: an astroid, |x|^(2/3) + |y|^(2/3) = s^(2/3), so the sides curve in to sharp points.
+const star = (x, y, cx, cy, s) => (abs(x - cx) ** (2 / 3) + abs(y - cy) ** (2 / 3)) ** 1.5 - s;
+// A teardrop hanging point up: a ball with a thin tail merged on.
+const tear = (x, y, cx, cy, r) => smin(circ(x, y, cx, cy, r), seg(x, y, cx, cy, cx, cy - r * 2.3)[0] - 0.04 * r, r * 0.9);
+
+
+// ---------------- contours: marching squares on a sampled grid, chained into polylines ----------------
+// Coarse to fine: a cell whose four coarse corners all sit well clear of the outline (same sign, farther than the cell
+// could close) is filled in from them; only cells near an outline are evaluated at full resolution.
+function sample(f, b, h) {
+  const x0 = b[0], y0 = b[1], nx = ceil((b[2] - b[0]) / h) + 2, ny = ceil((b[3] - b[1]) / h) + 2, v = new Float64Array(nx * ny);
+  const S = 4, H = h * S, cx = ceil((nx - 1) / S) + 1, cy = ceil((ny - 1) / S) + 1, c = new Float64Array(cx * cy), band = H * 1.6 + 2;
+  for (let j = 0; j < cy; j++) for (let i = 0; i < cx; i++) c[j * cx + i] = f(x0 + i * H, y0 + j * H);
+  for (let j = 0; j < ny; j++) {
+    const J = floor(j / S), J1 = min(J + 1, cy - 1), ty = (j - J * S) / S;
+    for (let i = 0; i < nx; i++) {
+      const I = floor(i / S), I1 = min(I + 1, cx - 1), a = c[J * cx + I], b2 = c[J * cx + I1], d = c[J1 * cx + I], e = c[J1 * cx + I1];
+      if ((a > band && b2 > band && d > band && e > band) || (a < -band && b2 < -band && d < -band && e < -band)) { const tx = (i - I * S) / S; v[j * nx + i] = lerp(lerp(a, b2, tx), lerp(d, e, tx), ty); }
+      else v[j * nx + i] = f(x0 + i * h, y0 + j * h);
+    }
+  }
+  return { x0, y0, nx, ny, h, v };
+}
+function iso(g, level = 0) {
+  const { x0, y0, nx, ny, h, v } = g, pt = new Map(), adj = new Map(), val = k => v[k] - level;
+  const P = id => { if (pt.has(id)) return; const k = id >> 1, i = k % nx, j = (k - i) / nx, a = val(k), b = val(id & 1 ? k + nx : k + 1), t = a / (a - b); pt.set(id, id & 1 ? [x0 + i * h, y0 + (j + t) * h] : [x0 + (i + t) * h, y0 + j * h]); };
+  const link = (a, b) => { P(a); P(b); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const k = j * nx + i, a = val(k) < 0, b = val(k + 1) < 0, c = val(k + nx + 1) < 0, d = val(k + nx) < 0;
+    if (a === b && b === c && c === d) continue;
+    const T = k * 2, Rt = (k + 1) * 2 + 1, B = (k + nx) * 2, L = k * 2 + 1, e = [];
+    if (a !== b) e.push(T); if (b !== c) e.push(Rt); if (d !== c) e.push(B); if (a !== d) e.push(L);
+    if (e.length === 2) link(e[0], e[1]);
+    else if ((val(k) + val(k + 1) + val(k + nx + 1) + val(k + nx)) / 4 < 0 === a) { link(T, Rt); link(B, L); } else { link(T, L); link(Rt, B); }
+  }
+  const seen = new Set(), out = [];
+  const walk = s => { const line = [s]; seen.add(s); let cur = s; for (;;) { const nb = adj.get(cur).find(n => !seen.has(n)); if (nb === undefined) break; seen.add(nb); line.push(nb); cur = nb; } return line.map(q => pt.get(q)); };
+  for (const [id, n] of adj) if (n.length === 1 && !seen.has(id)) out.push([walk(id), false]);
+  for (const id of adj.keys()) if (!seen.has(id)) out.push([walk(id), true]);
+  return out;
+}
+function simplify(p, tol = 0.03) {
+  if (p.length < 3) return p;
+  // A loop that closes on itself has no chord to measure from: split it at the point farthest from its start.
+  if (hypot(p[0][0] - p[p.length - 1][0], p[0][1] - p[p.length - 1][1]) < 1e-6) { let fi = 1, fd = 0; for (let i = 1; i < p.length - 1; i++) { const d = hypot(p[i][0] - p[0][0], p[i][1] - p[0][1]); if (d > fd) { fd = d; fi = i; } } if (fd < 1e-6) return p.slice(0, 1); return [...simplify(p.slice(0, fi + 1), tol), ...simplify(p.slice(fi), tol).slice(1)]; }
+  const keep = new Uint8Array(p.length), st = [[0, p.length - 1]]; keep[0] = keep[p.length - 1] = 1;
+  while (st.length) { const [a, b] = st.pop(), ax = p[a][0], ay = p[a][1], dx = p[b][0] - ax, dy = p[b][1] - ay, L = hypot(dx, dy) || 1e-9; let md = 0, mi = -1; for (let i = a + 1; i < b; i++) { const d = abs((p[i][0] - ax) * dy - (p[i][1] - ay) * dx) / L; if (d > md) { md = d; mi = i; } } if (md > tol) { keep[mi] = 1; st.push([a, mi], [mi, b]); } }
+  return p.filter((_, i) => keep[i]);
+}
+// Split polylines wherever pred fails; a closed loop that survives whole stays closed.
+function keepWhere(lines, pred) {
+  const out = [];
+  for (const [p, cl] of lines) {
+    const ok = p.map(q => pred(q[0], q[1]));
+    if (ok.every(Boolean)) { out.push([p, cl]); continue; }
+    const n = p.length, s = cl ? ok.indexOf(false) : 0, idx = cl ? Array.from({ length: n + 1 }, (_, i) => (s + i) % n) : Array.from({ length: n }, (_, i) => i);
+    let run = [];
+    for (const i of idx) { if (ok[i]) run.push(p[i]); else { if (run.length > 1) out.push([run, false]); run = []; } }
+    if (run.length > 1) out.push([run, false]);
+  }
+  return out;
+}
+// Parallel hatching clipped to inside(x,y), alternate lines reversed so the pen zigzags.
+// far(x,y), when given, is a lower bound on the distance to the region, so the march can stride across empty space.
+function hatch(inside, b, angDeg, sp, res = 0.4, far = null) {
+  const a = angDeg * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, out = [];
+  let o0 = INF, o1 = -INF, t0 = INF, t1 = -INF;
+  for (const [x, y] of [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]]) { const o = x * nx + y * ny, t = x * dx + y * dy; o0 = min(o0, o); o1 = max(o1, o); t0 = min(t0, t); t1 = max(t1, t); }
+  let flip = false;
+  for (let o = o0 + sp / 2; o < o1; o += sp) {
+    const P = t => [nx * o + dx * t, ny * o + dy * t], ins = t => { const q = P(t); return inside(q[0], q[1]); }, segs = [];
+    let prev = ins(t0), start = prev ? t0 : null;
+    for (let t = t0 + res; ; ) {
+      const tt = min(t, t1), cur = ins(tt);
+      if (cur !== prev) { let lo = tt - res, hi = tt; for (let k = 0; k < 7; k++) { const m = (lo + hi) / 2; if (ins(m) === prev) lo = m; else hi = m; } const tc = (lo + hi) / 2; if (cur) start = tc; else { if (tc - start > 0.25) segs.push([start, tc]); start = null; } prev = cur; }
+      if (tt >= t1) break;
+      let step = res; if (far && !cur) { const q = P(tt), d = far(q[0], q[1]) * 0.7; if (d > res) step = d; }
+      t = tt + step;
+    }
+    if (prev && start !== null && t1 - start > 0.25) segs.push([start, t1]);
+    if (segs.length) { if (flip) segs.reverse(); for (const [s, e] of segs) out.push([flip ? [P(e), P(s)] : [P(s), P(e)], false, "fill"]); flip = !flip; }
+  }
+  return out;
+}
+const dot = (x, y, r) => [0, 1, 2, 3, 4, 5].map(i => [x + r * cos(i * PI / 3), y + r * sin(i * PI / 3)]);
+function stipple(dens, b, cell, rnd, r = 0.16) { const out = []; for (let y = b[1]; y < b[3]; y += cell) for (let x = b[0]; x < b[2]; x += cell) { const px = x + rnd() * cell, py = y + rnd() * cell, roll = rnd(), p = dens(px, py); if (p > 0 && roll < p) out.push([dot(px, py, r), true, "dot"]); } return out; }
+const ring = (x, y, rx, ry, n = 40) => Array.from({ length: n + 1 }, (_, i) => [x + rx * cos(i / n * TAU), y + ry * sin(i / n * TAU)]);
+
+// ---------------- single-stroke capitals for the lettering (cap height 6, y down) ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.8,3.8 L3.2,3.8", B: "M0,0 L2.4,0 A2.4,1.5,1.3,1.5,-90,90 L0,3 M0,3 L2.6,3 A2.6,4.5,1.4,1.5,-90,90 L0,6 L0,0",
+  C: "A2,3,2,3,-45,-315", D: "M0,0 L1.5,0 A1.5,3,2.5,3,-90,90 L0,6 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2,3,2,3,-45,-315 L4,3.4 L2.2,3.4", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", I: "M1,0 L3,0 M2,0 L2,6 M1,6 L3,6", J: "M4,0 L4,4.3 A2.3,4.3,1.7,1.7,0,180",
+  K: "M0,0 L0,6 M4,0 L0,4 M1.4,2.6 L4,6", L: "M0,0 L0,6 L4,6", M: "M0,6 L0,0 L2,3.5 L4,0 L4,6", N: "M0,6 L0,0 L4,6 L4,0", O: "A2,3,2,3,0,360",
+  P: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2", Q: "A2,3,2,3,0,360 M2.6,4.4 L4,6.3", R: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2 M2,3.2 L4,6",
+  S: "A2,1.5,1.8,1.5,-20,-270 A2,4.5,2,1.5,-90,160", T: "M0,0 L4,0 M2,0 L2,6", U: "M0,0 L0,4 A2,4,2,2,180,0 L4,0", V: "M0,0 L2,6 L4,0",
+  W: "M0,0 L1,6 L2,2.5 L3,6 L4,0", X: "M0,0 L4,6 M4,0 L0,6", Y: "M0,0 L2,3 L4,0 M2,3 L2,6", Z: "M0,0 L4,0 L0,6 L4,6",
+  0: "A2,3,2,3,0,360 M3.2,1 L0.8,5", 1: "M0.8,1.2 L2,0 L2,6 M0.8,6 L3.2,6", 2: "A2,1.8,1.8,1.8,-160,20 L0,6 L4,6", 3: "A2,1.5,1.7,1.5,-160,90 A2,4.5,1.9,1.5,-90,160",
+  4: "M3,6 L3,0 L0,4.2 L4,4.2", 5: "M4,0 L0.4,0 L0,2.8 A2,4.1,2,1.9,-125,155", 6: "M3.2,0 L0.1,4 M4,4.3 A2,4.3,2,1.7,0,360", 7: "M0,0 L4,0 L1.5,6",
+  8: "M3.6,1.5 A2,1.5,1.6,1.5,0,360 M4,4.5 A2,4.5,2,1.5,0,360", 9: "M3.6,1.7 A2,1.7,1.6,1.7,0,360 M3.6,1.9 L1,6",
+  "!": "M2,0 L2,4.2 M2,5.6 L2,6", "?": "A2,1.6,1.8,1.6,-160,60 L2,3.8 L2,4.4 M2,5.6 L2,6", "-": "M0.8,3 L3.2,3", ".": "M2,5.6 L2,6", "'": "M2,0 L2,1.6",
+};
+function glyph(src) {
+  const S = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; S.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; S.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return S;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+const ADV = 5.4, SPACE = 3.6;
+const textUnits = s => [...s].reduce((a, ch) => a + (GLYPHS[ch] ? ADV : SPACE), 0) - (s.length ? ADV - 4 : 0);
+const cleanText = s => [...(s || "").toUpperCase()].map(ch => GLYPHS[ch] || ch === " " ? ch : " ").join("").trim();
+// Lay text out along a path: place(x) gives [px, py, angle] for a distance x along it. Two passes 0.28 mm apart make the strokes bold.
+function letters(txt, k, place) {
+  const U = textUnits(txt), strokes = []; let x = -U * k / 2;
+  for (const ch of txt) {
+    const G = GLYPHS[ch]; if (!G) { x += SPACE * k; continue; }
+    const [px, py, th] = place(x + 2 * k), ct = cos(th), st = sin(th);
+    for (const pass of [0, 0.28]) for (const S of G) strokes.push([S.map(([gx, gy]) => { const dx = (gx - 2) * k + pass, dy = (gy - 3) * k; return [px + dx * ct - dy * st, py + dx * st + dy * ct]; }), false]);
+    x += ADV * k;
+  }
+  return strokes;
+}
+
+
+// ---------------- pens (ASSUMED widths until a test plot is measured, as on the apple and the relic) ----------------
+const PEN = { line: 0.4, shade: 0.3, plastic: 0.4, glow: 0.4 };
+const PASS = 0.28;     // mm between outline passes
+// Dark areas are crosshatch at o.hp (default 0.75 mm): a 0.4 pen held an even dark tone there on paper (MEASURED,
+// bench-log 2026-09-28), and anything under 0.5 mm floods and soaks the paper (primer, hatch pitch rule). No solid black.
+const rbox = (x, y, cx, cy, hx, hy, r = 0) => { const qx = abs(x - cx) - hx + r, qy = abs(y - cy) - hy + r; return hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - r; };
+const cap = (x, y, ax, ay, ra, bx, by, rb) => { const [d, t] = seg(x, y, ax, ay, bx, by); return d - lerp(ra, rb, t); };
+const C30 = cos(PI / 6), S30 = 0.5;
+const cross2 = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+function hull(P) {   // monotone chain; interior points give cross2 > 0 along it
+  const p = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cross2(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cross2(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+const inHull = (H, x, y) => { for (let i = 0; i < H.length; i++) if (cross2(H[i], H[(i + 1) % H.length], [x, y]) < -1e-9) return false; return true; };
+const bbOf = P => [min(...P.map(p => p[0])), min(...P.map(p => p[1])), max(...P.map(p => p[0])), max(...P.map(p => p[1]))];
+const dens = (q, step, closed = false) => { const pts = closed ? [...q, q[0]] : q, out = [pts[0]]; for (let i = 1; i < pts.length; i++) { const [ax, ay] = pts[i - 1], [bx, by] = pts[i], n = max(1, ceil(hypot(bx - ax, by - ay) / step)); for (let k = 1; k <= n; k++) out.push([lerp(ax, bx, k / n), lerp(ay, by, k / n)]); } return out; };
+const chaikin = (P, n = 2) => { let p = P; for (let k = 0; k < n; k++) { const q = []; for (let i = 0; i < p.length; i++) { const a = p[i], b = p[(i + 1) % p.length]; q.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]); } p = q; } return p; };
+const mirror = a => a.slice().reverse().map(([x, y]) => [-x, y]);
+const dashLine = (a, b, d = 1.6, g = 1.1) => { const L = hypot(b[0] - a[0], b[1] - a[1]), out = []; for (let t = 0; t < L; t += d + g) { const t1 = min(L, t + d); out.push([[lerp(a[0], b[0], t / L), lerp(a[1], b[1], t / L)], [lerp(a[0], b[0], t1 / L), lerp(a[1], b[1], t1 / L)]]); } return out.map(q => [q, false]); };
+// Text centred on (x, y), along angle ang.
+GLYPHS[":"] = glyph("M2,1.5 L2,2.1 M2,4.3 L2,4.9"); GLYPHS["/"] = glyph("M3.6,0 L0.4,6");
+// Text centred on (x, y), along angle ang. Two passes 0.28 mm apart (bold) from 2.5 mm up; smaller text is one pass, or it blobs.
+const write = (s, capH, x, y, ang = 0) => capH >= 2.5 ? letters(cleanText(s), capH / 6, t => [x + t * cos(ang), y + t * sin(ang), ang]) : single(cleanText(s), capH, x, y, ang);
+function single(txt, capH, x0, y0, ang) { const k = capH / 6, U = textUnits(txt), out = [], ca = cos(ang), sa = sin(ang); let x = -U * k / 2; for (const ch of txt) { const G = GLYPHS[ch]; if (!G) { x += SPACE * k; continue; } for (const S of G) out.push([S.map(([gx, gy]) => { const dx = x + gx * k, dy = (gy - 3) * k; return [x0 + dx * ca - dy * sa, y0 + dx * sa + dy * ca]; }), false]); x += ADV * k; } return out; }
+const textW = (s, capH) => textUnits(cleanText(s)) * capH / 6;
+
+// ---------------- kit parts: the Meatsack figure's proportions in head units (s mm each), each centred on its own origin ----------------
+function bodyParts(s) {
+  const S = (P, cy) => P.map(([x, y]) => [x * s, (y - cy) * s]);
+  const hp = [[0, 0], [0.22, 0.02], [0.355, 0.17], [0.375, 0.38], [0.35, 0.58], [0.3, 0.76], [0.2, 0.93], [0.08, 1.0]];
+  const headP = chaikin(S([...hp, [0, 1.012], ...mirror(hp.slice(1))], 0.5), 2);
+  const half = [[0.18, 1.27], [0.5, 1.37], [0.8, 1.5], [0.8, 1.9], [0.74, 2.35], [0.62, 2.85], [0.635, 3.1]];
+  const torsoP = chaikin(S([[0, 1.25], ...half, [0, 3.2], ...mirror(half)], 2.0), 2);
+  const ph = [[0.6, 2.95], [0.64, 3.12], [0.67, 3.3], [0.66, 3.58], [0.5, 3.76]];
+  const pelvisP = chaikin(S([[0, 2.95], ...ph, [0, 3.86], ...mirror(ph)], 3.4), 2);
+  const u = v => v * s;
+  return [
+    { name: "head", f: (x, y) => polyD(x, y, headP), big: false },
+    { name: "torso", f: (x, y) => smin(smin(polyD(x, y, torsoP), cap(x, y, 0, u(0.86 - 2), u(0.165), 0, u(1.4 - 2), u(0.21)), u(0.16)), min(circ(x, y, u(-0.86), u(-0.4), u(0.19)), circ(x, y, u(0.86), u(-0.4), u(0.19))), u(0.16)), big: true },
+    { name: "pelvis", f: (x, y) => polyD(x, y, pelvisP), big: true },
+    ...["R", "L"].map(n => ({ name: "thigh" + n, f: (x, y) => cap(x, y, 0, u(-0.975), u(0.29), 0, u(0.975), u(0.16)), big: true })),
+    ...["R", "L"].map(n => ({ name: "shin" + n, f: (x, y) => smin(min(cap(x, y, 0, u(-1), u(0.18), 0, u(-0.54), u(0.18)), cap(x, y, 0, u(-0.54), u(0.18), 0, u(0.63), u(0.1))), min(ell(x, y, u(0.05), u(0.88), u(0.22), u(0.14), 0), cap(x, y, 0, u(0.58), u(0.1), u(0.05), u(0.83), u(0.17))), u(0.05)), big: false })),
+    ...["R", "L"].map(n => ({ name: "upperArm" + n, f: (x, y) => cap(x, y, 0, u(-0.68), u(0.18), 0, u(0.68), u(0.14)), big: false })),
+    ...["R", "L"].map(n => ({ name: "forearm" + n, f: (x, y) => smin(cap(x, y, 0, u(-0.8), u(0.14), 0, u(0.3), u(0.095)), min(ell(x, y, 0, u(0.58), u(0.115), u(0.26), 0), cap(x, y, u(0.06), u(0.38), u(0.035), u(0.16), u(0.62), u(0.03))), u(0.03)), big: false })),
+  ];
+}
+function augments(s) {
+  const u = v => v * s;
+  const strap = Array.from({ length: 21 }, (_, i) => { const a = lerp(200, 340, i / 20) * D2R; return [u(0.95) * cos(a), u(0.25) + u(0.95) * sin(a)]; });
+  const coil = Array.from({ length: 61 }, (_, i) => { const t = i / 60; return [u(0.28) * sin(t * TAU * 3.5), u((t - 0.5) * 2)]; });
+  const aug = [
+    { name: "ocular", f: (x, y) => min(circ(x, y, 0, u(0.25), u(0.5)), tube(x, y, strap, u(0.07), u(0.07))),
+      lines: [[ring(0, u(0.25), u(0.32), u(0.32), 36), true], [Array.from({ length: 8 }, (_, i) => { const a = lerp(3.6, 4.4, i / 7); return [u(0.2) * cos(a), u(0.25) + u(0.2) * sin(a)]; }), false]] },
+    { name: "jack", f: (x, y) => min(rbox(x, y, 0, 0, u(0.18), u(0.42), u(0.04)), rbox(x, y, -u(0.08), -u(0.56), u(0.025), u(0.14)), rbox(x, y, u(0.08), -u(0.56), u(0.025), u(0.14)), cap(x, y, 0, u(0.4), u(0.08), 0, u(1.0), u(0.08))),
+      lines: [[[[-u(0.16), u(0.12)], [u(0.16), u(0.12)]], false], [[[-u(0.16), u(0.2)], [u(0.16), u(0.2)]], false]] },
+    { name: "coil", f: (x, y) => min(tube(x, y, coil, u(0.05), u(0.05)), rbox(x, y, 0, -u(1.05), u(0.1), u(0.08)), rbox(x, y, coil[60][0], u(1.05), u(0.1), u(0.08))), lines: [] },
+    { name: "halo", f: (x, y) => { const r = hypot(x, y), t = sstep(-0.3, 0.3, cos(10 * atan2(y, x))); return max(r - u(0.5) * (0.84 + 0.16 * t), u(0.27) - r); }, lines: [[ring(0, 0, u(0.36), u(0.36), 40), true]] },
+    { name: "augarm", f: (x, y) => smin(min(circ(x, y, 0, -u(0.62), u(0.2)), cap(x, y, 0, -u(0.6), u(0.16), 0, u(0.5), u(0.11))), ell(x, y, 0, u(0.78), u(0.13), u(0.28), 0), u(0.04)),
+      lines: [[[[-u(0.15), -u(0.2)], [u(0.15), -u(0.2)]], false], [[[-u(0.13), u(0.18)], [u(0.13), u(0.18)]], false], [ring(-u(0.07), -u(0.4), u(0.025), u(0.025), 8), true], [ring(u(0.07), -u(0.4), u(0.025), u(0.025), 8), true], [ring(0, -u(0.62), u(0.09), u(0.09), 16), true]] },
+  ];
+  const a = u(0.42), p = u(0.15), pl = u(0.1);
+  const chip = { name: "chip", chip: true, f: (x, y) => { const k = clamp(round(x / p), -2, 2), k2 = clamp(round(y / p), -2, 2); return min(rbox(x, y, 0, 0, a, a, u(0.04)), rbox(x - k * p, abs(y), 0, a + pl / 2, u(0.03), pl / 2 + u(0.02)), rbox(abs(x), y - k2 * p, a + pl / 2, 0, pl / 2 + u(0.02), u(0.03))); },
+    lines: [[[[-u(0.26), -u(0.26)], [u(0.26), -u(0.26)], [u(0.26), u(0.26)], [-u(0.26), u(0.26)], [-u(0.26), -u(0.26)]], false], [ring(-u(0.17), -u(0.17), u(0.03), u(0.03), 8), true]], dark: (x, y) => rbox(x, y, 0, 0, u(0.12), u(0.12)) };
+  return { aug, chip };
+}
+// Half extents of a part, measured off its own field.
+function extentOf(f, R) { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; const st = R / 50; for (let y = -R; y <= R; y += st) for (let x = -R; x <= R; x += st) if (f(x, y) < 0) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [max(-x0, x1) + st, max(-y0, y1) + st]; }
+
+// ---------------- the city: an isometric die drawn front to back, in its own millimetres centred on the lens ----------------
+function buildCity(o, rL, rng) {
+  const out = [];   // [pts, closed, pen, kind]
+  const thin = o.citypen === "thin" ? "shade" : "line", ink = o.look === "ink", colour = o.look === "colour";
+  const n = o.lots, D = o.zoom / 100 * 1.2 * rL / C30, ringW = 0.07 * D, inner = D - 2 * ringW, c = inner / n, gap = 0.17 * c;
+  const yOff = 0.16 * rL, hb = c * 1.15 * o.height / 55, tD = 0.05 * D;
+  const P = (u, v, h) => [(u - v) * C30, (u + v) * S30 - h + yOff];
+  const r = rng(21), items = [];
+  // ---- a chip's floor plan, not a grid of towers (it read as "LOTS OF BUILDINGS", maker 2026-10-07): bond pads round
+  // the edge, a 3 x 3 of blocks round the core with some edge blocks merged, bus channels of parallel traces between
+  // them, and three kinds of block: memory arrays (rows of identical low cells), logic (a few towers on standard-cell
+  // rows) and parks (open ground with a meandering resistor, a spiral inductor and capacitor ponds).
+  const words = (o.words || "").split(",").map(w => cleanText(w)).filter(Boolean);
+  const coreH = (n % 2 ? 1.5 : 1) * c, bus = 0.9 * c, edge = 0.25 * c;   // core half size, channel width, clearance inside the pad ring
+  const box = (u0, u1, v0, v1, h0, h1, kind = "bld", extra = {}) => {
+    const C = [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], corners = [...C.map(([u, v]) => P(u, v, h0)), ...C.map(([u, v]) => P(u, v, h1))];
+    return { kind, key: u1 + v1 + 0.002 * h1, H: hull(corners), u0, u1, v0, v1, h0, h1, ...extra };
+  };
+  const ground = [];   // circuitry on the die's surface, drawn after (behind) everything standing on it
+  const gl = (pts, cl = false) => ground.push([pts.map(([u, v]) => P(u, v, 0)), cl]);
+  const grect = (u0, u1, v0, v1) => gl([[u0, v0], [u1, v0], [u1, v1], [u0, v1], [u0, v0]]);
+  const gcirc = (u, v, rr, nn = 18) => gl(Array.from({ length: nn + 1 }, (_, i) => [u + rr * cos(i / nn * TAU), v + rr * sin(i / nn * TAU)]));
+  // Blocks: columns and rows cut at the core's channels; four edge blocks may merge with a neighbouring corner.
+  const cuts = [-inner / 2 + edge, -coreH - bus / 2, coreH + bus / 2, inner / 2 - edge];
+  const cellRect = (i, j) => [cuts[i] + (i > 0 ? bus / 2 : 0), cuts[i + 1] - (i < 2 ? bus / 2 : 0), cuts[j] + (j > 0 ? bus / 2 : 0), cuts[j + 1] - (j < 2 ? bus / 2 : 0)];
+  let cells = [];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (i !== 1 || j !== 1) cells.push({ ij: [[i, j]], rc: cellRect(i, j) });
+  for (const [mi, mj] of [[1, 0], [0, 1], [2, 1], [1, 2]]) {
+    if (r() > 0.45) continue;
+    const a = cells.find(q => q.ij.length === 1 && q.ij[0][0] === mi && q.ij[0][1] === mj); if (!a) continue;
+    const corners = cells.filter(q => q.ij.length === 1 && q.ij.some(([i, j]) => abs(i - mi) + abs(j - mj) === 1 && i !== 1 && j !== 1));
+    const b = corners[floor(r() * corners.length)]; if (!b) continue;
+    const R0 = a.rc, R1 = b.rc;
+    cells = cells.filter(q => q !== a && q !== b);
+    cells.push({ ij: [...a.ij, ...b.ij], rc: [min(R0[0], R1[0]), max(R0[1], R1[1]), min(R0[2], R1[2]), max(R0[3], R1[3])] });
+  }
+  cells.sort((p, q) => atan2((p.rc[2] + p.rc[3]) / 2, (p.rc[0] + p.rc[1]) / 2) - atan2((q.rc[2] + q.rc[3]) / 2, (q.rc[0] + q.rc[1]) / 2));
+  // A set mix, not a coin per block (one seed came out nearly all park, MEASURED kit.png r4): the asked share of parks,
+  // at least one for the easter egg, the rest alternating memory and logic, then shuffled round the core.
+  const nPark = clamp(round(cells.length * o.plaza / 100), 1, cells.length - 1), kinds = cells.map((_, k) => k < nPark ? "park" : (k - nPark) % 2 ? "logic" : "array");
+  for (let k = kinds.length - 1; k > 0; k--) { const j = floor(r() * (k + 1)); [kinds[k], kinds[j]] = [kinds[j], kinds[k]]; }
+  const regions = cells.map((q, k) => ({ rc: q.rc, kind: kinds[k], name: words[k] || "", items: [] }));
+  for (const R of regions) {
+    const [u0, u1, v0, v1] = R.rc, W = u1 - u0, Hh = v1 - v0;
+    grect(u0, u1, v0, v1);   // the block's edge, a low kerb on the die
+    if (R.kind === "array") {   // memory: rows of identical low cells, a taller decoder strip down one side
+      const pa = max(0.72 * c, 2.2), cw = 0.62 * pa, ha = hb * 0.34 * (0.9 + 0.2 * r()), dec = 0.6 * pa;
+      for (let u = u0 + dec + 0.25 * pa; u + cw <= u1 - 0.15 * pa; u += pa) for (let v = v0 + 0.2 * pa; v + cw <= v1 - 0.15 * pa; v += pa) R.items.push(box(u, u + cw, v, v + cw, 0, ha, "bld", { region: R }));
+      for (let v = v0 + 0.2 * pa; v + cw <= v1 - 0.15 * pa; v += pa) R.items.push(box(u0 + 0.15 * pa, u0 + 0.15 * pa + dec * 0.55, v, v + cw, 0, ha * 2.2, "bld", { region: R }));
+    } else if (R.kind === "logic") {   // logic: standard-cell rows on the ground, a few towers standing on them
+      for (let v = v0 + 0.35 * c; v < v1 - 0.2 * c; v += 0.42 * c) gl([[u0 + 0.2 * c, v], [u1 - 0.2 * c, v]]);
+      const g2 = 1.45 * c, slots = [];
+      for (let u = u0 + 0.25 * c; u + 1.05 * c <= u1 - 0.2 * c; u += g2) for (let v = v0 + 0.25 * c; v + 1.05 * c <= v1 - 0.2 * c; v += g2) slots.push([u, v]);
+      const k = min(slots.length, round(slots.length * (0.45 + 0.3 * r())));   // a good share of the slots: two to five towers read as empty (MEASURED kit.png r3)
+      for (let t = 0; t < k; t++) {
+        const [su, sv] = slots.splice(floor(r() * slots.length), 1)[0], fw = (0.8 + 0.25 * r()) * c, H = hb * (0.9 + 1.6 * r()), roll = r();
+        if (roll < 0.3) R.items.push(box(su, su + fw, sv, sv + fw, 0, H * 0.45, "bld", { region: R }), box(su + 0.22 * fw, su + 0.78 * fw, sv + 0.22 * fw, sv + 0.78 * fw, H * 0.45, H, "bld", { region: R, top: true, win: true }));
+        else if (roll < 0.5) R.items.push(box(su + 0.2 * fw, su + 0.8 * fw, sv + 0.2 * fw, sv + 0.8 * fw, 0, H * 1.3, "bld", { region: R, mast: hb * 0.5, win: true }));
+        else R.items.push(box(su, su + fw, sv, sv + fw, 0, H, "bld", { region: R, win: r() < 0.6 }));
+      }
+    } else {   // park: a meandering resistor, a square spiral inductor, capacitor ponds and via trees
+      const mu = (u0 + u1) / 2, mv = (v0 + v1) / 2;
+      { const a0 = u0 + 0.3 * c, a1 = W > Hh ? mu - 0.2 * c : u1 - 0.3 * c, b0 = v0 + 0.3 * c, b1 = W > Hh ? v1 - 0.3 * c : mv - 0.2 * c, M = [], st = 0.32 * c;   // the resistor
+        let flip = false; for (let v = b0; v <= b1; v += st) { M.push(flip ? [a1, v] : [a0, v], flip ? [a0, v] : [a1, v]); flip = !flip; }
+        gl(M);
+        R.egg = [u1 - 0.9 * c, v1 - 0.7 * c]; }   // the front corner: the sign keeps the back one
+      { const cu = W > Hh ? (mu + u1) / 2 : mu * 0.6 + u0 * 0.4, cv = W > Hh ? (v0 + mv) / 2 : (mv + v1) / 2, S = [], st = 0.22 * c, turns = 4;   // the inductor
+        let a = st * turns * 2, x = cu - a / 2, y = cv - a / 2; S.push([x, y]);
+        for (let t = 0; t < turns * 4; t++) { const dx = [1, 0, -1, 0][t % 4], dy = [0, 1, 0, -1][t % 4], len = a - st * floor((t + 1) / 2) * 1; x += dx * len; y += dy * len; S.push([x, y]); if (len < st) break; }
+        gl(S); }
+      { const pu = W > Hh ? (mu + u1) / 2 : u1 - 1.0 * c, pv = W > Hh ? v1 - 0.9 * c : (mv + v1) / 2, pw = 0.55 * c;   // a capacitor pond, two plates and still water
+        grect(pu - pw, pu + pw, pv - pw * 0.7, pv + pw * 0.7); grect(pu - pw * 0.8, pu + pw * 0.8, pv - pw * 0.5, pv + pw * 0.5);
+        for (let t = -0.35; t <= 0.36; t += 0.18) gl([[pu - pw * 0.7, pv + t * pw], [pu + pw * 0.7, pv + t * pw]]); }
+      for (let t = 0; t < 5; t++) gcirc(lerp(u0 + 0.4 * c, u1 - 0.4 * c, r()), lerp(v0 + 0.4 * c, v1 - 0.4 * c, r()), 0.14 * c, 12);
+    }
+    for (const it of R.items) items.push(it);
+  }
+  // Bus channels: parallel traces along each cut, with vias, the roads of the chip.
+  for (const t of [cuts[1], cuts[2]]) for (let k = -2; k <= 2; k++) {
+    const o2 = t + k * 0.15 * c;
+    gl([[o2, -inner / 2 + edge], [o2, inner / 2 - edge]]); gl([[-inner / 2 + edge, o2], [inner / 2 - edge, o2]]);
+  }
+  for (let t = 0; t < 14; t++) { const along = lerp(-inner / 2 + c, inner / 2 - c, r()), at = cuts[1 + floor(r() * 2)] + (floor(r() * 5) - 2) * 0.15 * c; if (r() < 0.5) gcirc(at, along, 0.1 * c, 10); else gcirc(along, at, 0.1 * c, 10); }
+  // The bond-pad ring: a row of pads round the die edge, each with a short lead inward.
+  { const pn = 2 * n, ps = 0.32 * ringW, pr = inner / 2 + ringW * 0.5;
+    for (let k = 0; k < pn; k++) { const t = -inner / 2 + (k + 0.5) * inner / pn;
+      for (const [su, sv] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const cu = su ? su * pr : t, cv = sv ? sv * pr : t; grect(cu - ps, cu + ps, cv - ps, cv + ps); gl(su ? [[su * (pr - ps), t], [su * (inner / 2 - edge * 0.2), t]] : [[t, sv * (pr - ps)], [t, sv * (inner / 2 - edge * 0.2)]]); } } }
+  // The core.
+  const cs = coreH - gap, coreTop = [];
+  if (o.core === "cathedral") {
+    const h1 = hb * 1.3, h2 = h1 + hb * 1.5, k = 0.3 * cs;
+    items.push(box(-cs, cs, -cs, cs, 0, h1, "core", { lancet: true }), box(-cs + k, cs - k, -cs + k, cs - k, h1, h2, "core", { lancet: true }));
+    const pk = 0.12 * cs;
+    for (const [pu, pv] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const cu = pu * (cs - k * 0.5), cv = pv * (cs - k * 0.5); items.push(box(cu - pk, cu + pk, cv - pk, cv + pk, h1, h2 + hb * 0.5, "core", { mast: hb * 0.35 })); }
+    items.push({ kind: "spire", key: 0.001 + h2, base: [[-cs + k, -cs + k], [cs - k, -cs + k], [cs - k, cs - k], [-cs + k, cs - k]], hb0: h2, apex: h2 + hb * 3.4 });
+    coreTop.push(P(0, 0, h2 + hb * 3.4));
+  } else if (o.core === "ziggurat") {
+    let h = 0; for (let t = 0; t < 4; t++) { const k = cs * (1 - 0.22 * t), hh = hb * 0.9; items.push(box(-k, k, -k, k, h, h + hh, "core")); h += hh; }
+    coreTop.push(P(0, 0, h));
+  } else { const k = 0.55 * cs, h = hb * 5.5; items.push(box(-k, k, -k, k, 0, h, "core", { mast: hb * 1.2 })); coreTop.push(P(0, 0, h + hb * 1.2)); }
+  // Packets: little cubes riding the buses, with speed lines behind them.
+  for (let t = 0; t < o.packets; t++) {
+    const along = lerp(-inner / 2 + c, inner / 2 - c, r()), at = cuts[1 + floor(r() * 2)] + (floor(r() * 5) - 2) * 0.15 * c, su = r() < 0.5, s2 = 0.13 * c;
+    const [pu, pv] = su ? [along, at] : [at, along];
+    if (abs(pu) < coreH + 0.3 * c && abs(pv) < coreH + 0.3 * c) continue;
+    items.push(box(pu - s2, pu + s2, pv - s2, pv + s2, 0, 0.26 * c, "packet", { dir: su ? [1, 0] : [0, 1] }));
+  }
+  // Signposts first: they stand in front of everything.
+  const signs = [];
+  if (o.signs === "on") {
+    const capH = o.lab, pad = 0.7;
+    for (const R of regions) {
+      if (!R.name) continue;
+      const tall = R.items.slice().sort((a, b) => (b.h1 + (b.mast || 0)) - (a.h1 + (a.mast || 0)))[0], mu = (R.rc[0] + R.rc[1]) / 2, mv = (R.rc[2] + R.rc[3]) / 2;
+      const A = tall && R.kind === "logic" ? P((tall.u0 + tall.u1) / 2, (tall.v0 + tall.v1) / 2, tall.h1 + (tall.mast || 0)) : R.kind === "park" ? P(R.rc[0] + 0.6 * c, R.rc[2] + 0.6 * c, 0) : P(mu, mv, tall ? tall.h1 : 0);   // park signs stand at the back corner, clear of the figure
+      signs.push({ A, text: R.name, capH, pad });
+    }
+    if (o.coreword) signs.push({ A: coreTop[0], text: cleanText(o.coreword), capH: o.lab * 1.15, pad: 0.9, core: true });
+  }
+  const occ = [];   // occluders, front first: [hull, bbox]
+  const visible = (x, y) => { for (const [H, b] of occ) if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && inHull(H, x, y)) return false; return true; };
+  const push = (q, closed, pen, kind) => { if (q.length > 1) out.push([q, closed, pen, kind]); };
+  const keep = (lines, pen, extra = null, kind) => { for (const [q, cl] of keepWhere(lines.map(([q, cl]) => [dens(q, 0.3, cl), false]), (x, y) => visible(x, y) && (!extra || extra(x, y)))) push(q, false, pen, kind); };
+  const hatchPoly = (Q, ang, pitch, pen) => { const b = bbOf(Q); for (const [q] of hatch((x, y) => polyD(x, y, Q) < -0.2 && visible(x, y), b, ang, pitch, 0.3)) push(q, false, pen, "fill"); };
+  const dark = (Q, pen = thin, mode = o.dark) => { if (!ink || mode === "none") return; hatchPoly(Q, 45, o.hp, pen); if (mode === "cross") hatchPoly(Q, 135, o.hp, pen); };
+  const cityDark = Q => dark(Q, thin, o.cityshade);   // every block crosshatched read near black and costs a lot of ink (MEASURED kit.png r1)
+  const placedSigns = [];
+  for (const s of signs) {
+    const w = textW(s.text, s.capH) + 2 * s.pad, hgt = s.capH + 2 * s.pad, cx = s.A[0];
+    let top = s.A[1] - 3.2 - hgt;
+    // Stack a sign above any it would overlap (two districts close together doubled up, MEASURED dense.png r2).
+    for (let guard = 0; guard < 12; guard++) { const hit = placedSigns.find(q => cx - w / 2 < q[2] + 1 && cx + w / 2 > q[0] - 1 && top < q[3] + 1 && top + hgt > q[1] - 1); if (!hit) break; top = hit[1] - 1.2 - hgt; }
+    placedSigns.push([cx - w / 2, top, cx + w / 2, top + hgt]);
+    const cy = top + hgt / 2;
+    const plate = [[cx - w / 2, top], [cx + w / 2, top], [cx + w / 2, top + hgt], [cx - w / 2, top + hgt]];
+    push([...plate, plate[0]], false, "line", "sign");
+    if (s.core) { const k = 0.5; push([[cx - w / 2 - k, top - k], [cx + w / 2 + k, top - k], [cx + w / 2 + k, top + hgt + k], [cx - w / 2 - k, top + hgt + k], [cx - w / 2 - k, top - k]], false, "line", "sign"); }
+    for (const [q, cl] of write(s.text, s.capH, cx, cy)) push(q, cl, "line", "text");
+    push([[cx, top + hgt], [cx, s.A[1]]], false, "line", "sign");
+    occ.push([hull([[cx - w / 2 - 0.6, top - 0.6], [cx + w / 2 + 0.6, top - 0.6], [cx + w / 2 + 0.6, top + hgt + 0.6], [cx - w / 2 - 0.6, top + hgt + 0.6]]), [cx - w / 2 - 0.6, top - 0.6, cx + w / 2 + 0.6, top + hgt + 0.6]]);
+    occ.push([hull([[cx - 0.35, top + hgt], [cx + 0.35, top + hgt], [cx + 0.35, s.A[1]], [cx - 0.35, s.A[1]]]), [cx - 0.35, top + hgt, cx + 0.35, s.A[1]]]);
+  }
+  // The easter egg: someone on the plaza, bent over a loupe of their own, with a city in it.
+  const eggR = o.egg === "on" ? regions.filter(R => R.kind === "park").sort((a, b) => { const m = R => hypot((R.rc[0] + R.rc[1] + R.rc[2] + R.rc[3]) / 2 - 0.3 * inner, ((R.rc[0] + R.rc[1]) - (R.rc[2] + R.rc[3])) / 2); return m(a) - m(b); })[0] : null;
+  if (eggR) {
+    const G = P(eggR.egg[0], eggR.egg[1], 0), FH = max(4.6, 1.25 * c), hr = FH * 0.12;
+    const head = [G[0], G[1] - FH + hr], hip = [G[0], G[1] - FH * 0.45], sh = [G[0], G[1] - FH * 0.74], hand = [G[0] + FH * 0.32, G[1] - FH * 0.58], lc = [G[0] + FH * 0.5, G[1] - FH * 0.45], lr = FH * 0.17;
+    const fig = [[ring(head[0], head[1], hr, hr, 16), true], [[sh, hip], false], [[hip, [G[0] - FH * 0.12, G[1]]], false], [[hip, [G[0] + FH * 0.1, G[1]]], false], [[sh, hand], false], [[sh, [G[0] - FH * 0.18, G[1] - FH * 0.5]], false],
+      [ring(lc[0], lc[1], lr, lr, 18), true], [[hand, [lc[0] - lr * 0.7, lc[1] - lr * 0.7]], false],
+      // the city inside their loupe: a tiny rhombus with a block on it
+      [[[lc[0] - lr * 0.6, lc[1] + lr * 0.15], [lc[0], lc[1] - lr * 0.2], [lc[0] + lr * 0.6, lc[1] + lr * 0.15], [lc[0], lc[1] + lr * 0.5], [lc[0] - lr * 0.6, lc[1] + lr * 0.15]], false],
+      [[[lc[0] - lr * 0.15, lc[1] + lr * 0.05], [lc[0] - lr * 0.15, lc[1] - lr * 0.3], [lc[0] + lr * 0.15, lc[1] - lr * 0.4], [lc[0] + lr * 0.15, lc[1] - lr * 0.05]], false]];
+    for (const [q, cl] of fig) push(dens(q, 0.2, cl), cl, "line", "egg");
+    const fb = [G[0] - FH * 0.3, G[1] - FH - 0.2, lc[0] + lr + 0.3, G[1] + 0.2];
+    occ.push([hull([[fb[0], fb[1]], [fb[2], fb[1]], [fb[2], fb[3]], [fb[0], fb[3]]]), fb]);
+  }
+  items.sort((a, b) => b.key - a.key);   // front first
+  for (const it of items) {
+    if (it.kind === "spire") {
+      const A = P(0, 0, it.apex), B = it.base.map(([u, v]) => P(u, v, it.hb0)), H = hull([...B, A]);
+      keep([[H, true], [[A, B[2]], false]], thin);
+      if (colour) for (const [q] of hatch((x, y) => polyD(x, y, [A, B[1], B[2]]) < -0.2 && visible(x, y), bbOf([A, B[1], B[2]]), o.angle, o.sp, 0.3)) push(q, false, "glow", "fill");
+      else cityDark([A, B[1], B[2]]);
+      occ.push([H, bbOf(H)]); continue;
+    }
+    const { u0, u1, v0, v1, h0, h1 } = it;
+    const top = [P(u0, v0, h1), P(u1, v0, h1), P(u1, v1, h1), P(u0, v1, h1)], right = [P(u1, v0, h0), P(u1, v1, h0), P(u1, v1, h1), P(u1, v0, h1)], left = [P(u0, v1, h0), P(u1, v1, h0), P(u1, v1, h1), P(u0, v1, h1)];
+    const N = P(u1, v1, h1), pen = it.kind === "packet" ? "line" : thin;
+    keep([[it.H, true], [[N, P(u0, v1, h1)], false], [[N, P(u1, v0, h1)], false], [[N, P(u1, v1, h0)], false]], pen);
+    if (it.kind === "packet") {   // speed lines trailing back along the street
+      const [du, dv] = it.dir, mu = (u0 + u1) / 2, mv = (v0 + v1) / 2, sl = [];
+      for (const k of [-0.5, 0, 0.5]) { const ou = dv * k * (u1 - u0), ov = du * k * (v1 - v0); sl.push([[P(mu - du * (u1 - u0) * 0.9 + ou, mv - dv * (v1 - v0) * 0.9 + ov, 0.12 * c), P(mu - du * (u1 - u0) * 2.6 + ou, mv - dv * (v1 - v0) * 2.6 + ov, 0.12 * c)], false]); }
+      keep(sl, "shade");
+      if (colour) for (const [q] of hatch((x, y) => inHull(it.H, x, y) && visible(x, y), bbOf(it.H), o.angle, o.sp, 0.2)) push(q, false, "glow", "fill");
+    } else {
+      if (colour && it.kind === "core") { for (const Q of [right, left, top]) for (const [q] of hatch((x, y) => polyD(x, y, Q) < -0.2 && visible(x, y), bbOf(Q), o.angle, o.sp, 0.3)) push(q, false, "glow", "fill"); }
+      else cityDark(right);
+      // Windows on the lit face, a parapet on the roof, a mast on the slim towers.
+      if (o.windows === "on" && h1 - h0 > 4 && u1 - u0 > 1.4 && (it.kind === "core" || it.win)) {
+        const W = []; for (let h = h0 + 0.9; h < h1 - 0.6; h += 1.25) for (let u = u0 + 0.45; u < u1 - 0.75; u += 1.0) W.push([[P(u, v1, h), P(u + 0.45, v1, h)], false]);
+        keep(W, thin, (x, y) => polyD(x, y, left) < -0.25);
+      }
+      if (it.lancet) {   // tall pointed windows down both lit and shaded faces
+        const Lw = [], nw = max(2, floor((u1 - u0) / 1.6)), wh = (h1 - h0) * 0.62, wb = h0 + (h1 - h0) * 0.16;
+        for (let q = 0; q < nw; q++) { const t0 = (q + 0.3) / nw, t1 = (q + 0.7) / nw, tm = (t0 + t1) / 2;
+          for (const fc of ["l", "r"]) { const at = (t, hh) => fc === "l" ? P(lerp(u0, u1, t), v1, hh) : P(u1, lerp(v0, v1, t), hh); Lw.push([[at(t0, wb), at(t0, wb + wh), at(tm, wb + wh + 0.22 * (u1 - u0) / nw), at(t1, wb + wh), at(t1, wb)], false]); } }
+        keep(Lw, thin);
+      }
+      if (u1 - u0 > 2.4 && !it.mast) { const k = 0.12 * (u1 - u0); keep([[[P(u0 + k, v0 + k, h1), P(u1 - k, v0 + k, h1), P(u1 - k, v1 - k, h1), P(u0 + k, v1 - k, h1)], true]], thin); }
+      if (it.mast) { const m = P((u0 + u1) / 2, (v0 + v1) / 2, h1); keep([[[m, [m[0], m[1] - it.mast]], false]], thin); }
+    }
+    occ.push([it.H, bbOf(it.H)]);
+    if (it.mast) { const m = P((u0 + u1) / 2, (v0 + v1) / 2, h1); occ.push([hull([[m[0] - 0.2, m[1]], [m[0] + 0.2, m[1]], [m[0] + 0.2, m[1] - it.mast], [m[0] - 0.2, m[1] - it.mast]]), [m[0] - 0.2, m[1] - it.mast, m[0] + 0.2, m[1]]]); }
+  }
+  // The ground: the die's top (ring road, avenue dashes, plazas), then its thick front edges.
+  const hD = D / 2, rim = [[-hD, -hD], [hD, -hD], [hD, hD], [-hD, hD]], g = rim.map(([u, v]) => P(u, v, 0)), gi = rim.map(([u, v]) => P(u * inner / D, v * inner / D, 0));
+  ground.push([g, true], [gi, true]);
+  keep(ground, thin);
+  const sideR = [P(hD, -hD, 0), P(hD, hD, 0), P(hD, hD, -tD), P(hD, -hD, -tD)], sideL = [P(-hD, hD, 0), P(hD, hD, 0), P(hD, hD, -tD), P(-hD, hD, -tD)];
+  keep([[sideR, true], [sideL, true]], thin);
+  dark(sideR);
+  const plateH = hull([...g, P(hD, -hD, -tD), P(hD, hD, -tD), P(-hD, hD, -tD)]);
+  occ.push([plateH, bbOf(plateH)]);
+  // Behind the die: the package, its pads and the bond wires arching out to them.
+  if (o.bond === "on") {
+    const ext = hD + 0.14 * D, sub = [[-ext, -ext], [ext, -ext], [ext, ext], [-ext, ext]].map(([u, v]) => P(u, v, -tD)), wires = [[sub, true]];
+    for (let k = 0; k < 2 * n; k++) {
+      const t = -hD + (k + 0.5) * D / (2 * n);
+      for (const side of [0, 1]) {
+        const E = side ? [t, -hD] : [-hD, t], Pd = side ? [t, -hD - 0.1 * D] : [-hD - 0.1 * D, t];
+        wires.push([Array.from({ length: 13 }, (_, i) => { const s = i / 12; return P(lerp(E[0], Pd[0], s), lerp(E[1], Pd[1], s), lerp(0, -tD, s) + 0.06 * D * sin(PI * s) * (1 - s * 0.3)); }), false]);
+        const pr = 0.012 * D; wires.push([[P(Pd[0] - pr, Pd[1] - pr, -tD), P(Pd[0] + pr, Pd[1] - pr, -tD), P(Pd[0] + pr, Pd[1] + pr, -tD), P(Pd[0] - pr, Pd[1] + pr, -tD)], true]);
+      }
+    }
+    keep(wires, thin);
+  }
+  return { out, D };
+}
+
+// ---------------- the build ----------------
+function build(o) {
+  const t0 = performance.now(), rng = k => mulberry(o.seed * 1009 + k * 7919);
+  const [PW, PH] = o.page.split("x").map(Number), mg = o.margin, notes = [], ink = o.look === "ink", colour = o.look === "colour";
+  const layers = { line: [], shade: [], plastic: [], glow: [] };
+  const add = (layer, lines, tol = 0.03) => { for (const [q, cl, kind] of lines) if (q.length > 1) layers[layer].push([simplify(q, tol), cl, kind]); };
+  const passes = o.weight, h = 0.22;
+
+  // ---- layout: the instruction strip at the foot, the loupe above it, the sprue at the top ----
+  const stripH = o.strip === "on" ? 24 : 0, stripTop = PH - mg - stripH;
+  const fx0 = mg, fx1 = PW - mg, fy0 = mg + 3; let fy1 =   // the kit name plate stands 3 mm proud of the frame
+    mg + (PH - 2 * mg) * o.sprueh / 100;
+  const rL = o.lsize, rim = max(4, 0.12 * rL), Lc = [PW * o.lx / 100, stripTop - (stripH ? 5 : 0) - rim - rL], la = o.langle * D2R, hr = 0.12 * rL;
+  const hA = [Lc[0] + (rL + rim * 0.5) * cos(la), Lc[1] + (rL + rim * 0.5) * sin(la)], reach = (() => { let L = 0.85 * rL; const ok = t => { const x = Lc[0] + (rL + rim + t) * cos(la), y = Lc[1] + (rL + rim + t) * sin(la); return x - hr >= mg && x + hr <= PW - mg && y - hr >= mg && y + hr <= PH - mg; }; while (L > 0.25 * rL && !ok(L)) L -= 0.5; return L; })(), hE = [Lc[0] + (rL + rim + reach) * cos(la), Lc[1] + (rL + rim + reach) * sin(la)];   // shortened to stay on the page (it ran off the left edge, MEASURED kit.png r1)
+  const lensD = (x, y) => circ(x, y, Lc[0], Lc[1], rL + rim), handleD = (x, y) => cap(x, y, hA[0], hA[1], hr * 0.85, hE[0], hE[1], hr);
+  const loupeD = (x, y) => min(lensD(x, y), handleD(x, y));
+
+  // ---- the sprue: pack the parts in rows under runners, then merge frame, runners, gates, tags and parts into one field ----
+  let s = o.scale, placed = null;
+  for (let tries = 0; tries < 30; tries++) {
+    const parts = [...bodyParts(s).map((p, i) => ({ ...p, tag: "A" + (i + 1) })), ...augments(s).aug.slice(0, o.acc).map((p, i) => ({ ...p, tag: "B" + (i + 1) })), { ...augments(s).chip, tag: "C1" }];
+    for (const p of parts) { const [hw, hh] = extentOf(p.f, 2.6 * s); p.hw = hw; p.hh = hh; }
+    const order = [parts.find(p => p.chip), ...parts.filter(p => !p.chip).sort((a, b) => b.hh - a.hh)],   // the chip always rides the top row, clear of the loupe (it was hidden under a big lens, MEASURED sparse.png r2)
+      inX0 = fx0 + 4, inX1 = fx1 - 4, padX = 4, gateL = 3.2, rows = [];
+    let x = inX0 + 7, rowTop = fy0 + 11, rowH = 0, ok = true, row = [];
+    for (const p of order) {
+      if (x + 2 * p.hw > inX1) { rows.push({ top: rowTop, parts: row }); rowTop += gateL + rowH + 5; x = inX0 + 7; rowH = 0; row = []; }
+      p.cx = x + p.hw; p.cy = rowTop + gateL + p.hh; x += 2 * p.hw + padX + 7; rowH = max(rowH, 2 * p.hh); row.push(p);
+    }
+    rows.push({ top: rowTop, parts: row });
+    if (rowTop + gateL + rowH + 3 > fy1 - 3) ok = false;
+    if (ok) { placed = { parts, rows, bottom: rowTop + gateL + rowH }; break; }
+    s *= 0.94;
+  }
+  if (!placed) notes.push("parts do not fit the sprue: make it taller or the parts smaller");
+  if (s < o.scale - 0.01) notes.push(`parts shrunk to ${s.toFixed(1)} mm per head to fit the sprue`);
+  if (placed) fy1 = min(fy1, placed.bottom + 6);   // the frame hugs its parts (an empty band read as wasted sprue, MEASURED kit.png r1)
+  const prims = [];
+  const fxc = (fx0 + fx1) / 2, fyc = (fy0 + fy1) / 2;
+  prims.push({ f: (x, y) => abs(rbox(x, y, fxc, fyc, (fx1 - fx0) / 2 - 1.5, (fy1 - fy0) / 2 - 1.5, 2)) - 1.5, b: [fx0, fy0, fx1, fy1] });
+  const plateW = textW(o.kit, 3) + 6;
+  prims.push({ f: (x, y) => rbox(x, y, fxc, fy0 + 1.5, plateW / 2, 3.6, 1), b: [fxc - plateW / 2, fy0 - 3, fxc + plateW / 2, fy0 + 6] });
+  const tags = [];
+  // Gates: every part is held at two points, a gate up to the runner above and one down to the runner or frame below,
+  // like an injection-moulded kit (maker 2026-10-07). Each gate looks along the part's width for real material to land
+  // on: aiming at the bounding box's top centre left the jack's and the eyepiece's gates hanging in air (MEASURED kit.png r3).
+  const contact = (p, down) => {
+    let best = null;
+    for (const k of [0, 0.15, -0.15, 0.3, -0.3, 0.45, -0.45]) {
+      const dx = k * p.hw;
+      for (let t = 0; t <= 2 * p.hh + 1; t += 0.1) {
+        const y = down ? p.cy - p.hh - 0.5 + t : p.cy + p.hh + 0.5 - t;
+        if (p.f(dx, y - p.cy) < -0.35) { const reach = t; if (!best || reach < best[2] - 0.4) best = [p.cx + dx, y, reach]; break; }
+      }
+    }
+    return best || [p.cx, down ? p.cy - p.hh : p.cy + p.hh, 0];
+  };
+  if (placed) placed.rows.forEach((rw, ri) => {
+    const below = ri + 1 < placed.rows.length ? placed.rows[ri + 1].top : fy1 - 2;
+    prims.push({ f: (x, y) => rbox(x, y, fxc, rw.top, (fx1 - fx0) / 2 - 2, 1.0, 0.5), b: [fx0, rw.top - 1.2, fx1, rw.top + 1.2] });
+    for (const p of rw.parts) {
+      const [gx, gy] = contact(p, true), [bx, by] = contact(p, false), tx = gx - textW(p.tag, 2.2) / 2 - 3.6;
+      prims.push({ f: (x, y) => cap(x, y, gx, rw.top, 0.5, gx, gy + 0.3, 0.4), b: [gx - 1, rw.top - 1, gx + 1, gy + 1] });
+      prims.push({ f: (x, y) => cap(x, y, bx, by - 0.3, 0.4, bx, below, 0.5), b: [bx - 1, by - 1, bx + 1, below + 1] });
+      p.gates = [[gx, gy], [bx, by]];
+      const tw = textW(p.tag, 2.2) / 2 + 0.9;
+      prims.push({ f: (x, y) => rbox(x, y, tx, rw.top, tw, 1.9, 0.8), b: [tx - tw - 1, rw.top - 2.5, tx + tw + 1, rw.top + 2.5] });
+      tags.push([p.tag, tx, rw.top]);
+      prims.push({ f: (x, y) => p.f(x - p.cx, y - p.cy), b: [p.cx - p.hw - 0.5, p.cy - p.hh - 0.5, p.cx + p.hw + 0.5, p.cy + p.hh + 0.5] });
+    }
+  });
+  const sprueD = (x, y) => { let d = INF; for (const p of prims) { if (boxD(p.b, x, y) >= d) continue; d = min(d, p.f(x, y)); } return d; };
+  const sb = [fx0 - 1, fy0 - 4, fx1 + 1, fy1 + 1];
+  const visSprue = (x, y) => loupeD(x, y) > 0.4;
+  const outline = (f, b, n, layer, keepF) => { const g = sample(f, b, h); for (let i = 0; i < n; i++) add(layer, keepWhere(iso(g, -i * PASS), keepF)); };
+  outline(sprueD, sb, passes, "line", visSprue);
+  for (const [t, x, y] of tags) add("line", keepWhere(write(t, 2.2, x, y), visSprue), 0.01);
+  add("line", keepWhere(write(o.kit, 3, fxc, fy0 + 1.5), visSprue), 0.01);
+  if (placed) for (const p of placed.parts) {
+    const L = (p.lines || []).map(([q, cl]) => [dens(q.map(([x, y]) => [x + p.cx, y + p.cy]), 0.3, cl), false]);
+    add("line", keepWhere(L, (x, y) => visSprue(x, y) && p.f(x - p.cx, y - p.cy) < -0.25));
+    if (o.ejector === "on" && p.big) add("line", keepWhere([[ring(p.cx + p.hw * 0.25, p.cy + p.hh * 0.3, 0.9, 0.9, 16), true]], visSprue));
+    const inP = (x, y) => p.f(x - p.cx, y - p.cy) < -PASS * 2 - 0.2 && visSprue(x, y), pb = [p.cx - p.hw, p.cy - p.hh, p.cx + p.hw, p.cy + p.hh];
+    if (p.dark && o.look !== "line") { const dk = (x, y) => p.dark(x - p.cx, y - p.cy) < -0.1 && visSprue(x, y); add("line", hatch(dk, pb, 45, o.hp, 0.2), 0.01); if (o.dark === "cross") add("line", hatch(dk, pb, 135, o.hp, 0.2), 0.01); }
+    if (ink) add("shade", hatch((x, y) => inP(x, y) && x > p.cx + 0.2 * p.hw, pb, 45, o.hp * 1.6, 0.25), 0.01);   // a little shadow down the right of each part
+    if (colour) add("plastic", hatch(inP, pb, o.angle, o.sp, 0.25), 0.01);
+    if (p.chip) placed.chipAt = [p.cx, p.cy, max(p.hw, p.hh)];
+  }
+  if (colour) add("plastic", hatch((x, y) => sprueD(x, y) < -0.6 && visSprue(x, y) && !placed.parts.some(p => boxD([p.cx - p.hw, p.cy - p.hh, p.cx + p.hw, p.cy + p.hh], x, y) < 0), sb, o.angle, o.sp, 0.25), 0.01);
+
+  // ---- the callout: a dashed ring round the chip, a dashed line to the lens ----
+  if (o.callout === "on" && placed && placed.chipAt) {
+    const [cx, cy, rr] = placed.chipAt, R0 = rr * 1.7 + 1.5, dx = Lc[0] - cx, dy = Lc[1] - cy, L = hypot(dx, dy), ux = dx / L, uy = dy / L;
+    const ringPts = ring(cx, cy, R0, R0, 72), dashes = [];
+    for (let i = 0; i < 72; i += 3) dashes.push([ringPts.slice(i, i + 2), false]);
+    const a = [cx + ux * R0, cy + uy * R0], b = [cx + ux * (L - rL - rim), cy + uy * (L - rL - rim)];
+    add("line", keepWhere([...dashes.map(([q]) => [dens(q, 0.3), false]), ...dashLine(a, b, 2, 1.4).map(([q]) => [dens(q, 0.3), false])], (x, y) => loupeD(x, y) > 0.4));
+  }
+
+  // ---- the loupe: rim with knurling, glass glare, handle with ferrule and grip rings ----
+  outline(lensD, [Lc[0] - rL - rim - 1, Lc[1] - rL - rim - 1, Lc[0] + rL + rim + 1, Lc[1] + rL + rim + 1], passes, "line", () => true);
+  outline((x, y) => circ(x, y, Lc[0], Lc[1], rL), [Lc[0] - rL - 1, Lc[1] - rL - 1, Lc[0] + rL + 1, Lc[1] + rL + 1], 1, "line", () => true);
+  const knurl = []; for (let k = 0; k < 120; k++) { const a = k / 120 * TAU; knurl.push([[[Lc[0] + (rL + rim * 0.62) * cos(a), Lc[1] + (rL + rim * 0.62) * sin(a)], [Lc[0] + (rL + rim - 0.4) * cos(a), Lc[1] + (rL + rim - 0.4) * sin(a)]], false]); }
+  add("line", knurl);
+  const rimIn = (x, y) => { const d = hypot(x - Lc[0], y - Lc[1]); return d > rL + 0.5 && d < rL + rim * 0.55 && handleD(x, y) > 0.3; };
+  const rb = [Lc[0] - rL - rim, Lc[1] - rL - rim, Lc[0] + rL + rim, Lc[1] + rL + rim];
+  if (ink) { add("shade", hatch(rimIn, rb, 45, o.hp, 0.3), 0.01); if (o.dark === "cross") add("shade", hatch(rimIn, rb, 135, o.hp, 0.3), 0.01); }
+  if (colour) add("plastic", hatch(rimIn, rb, o.angle, o.sp, 0.3), 0.01);
+  const hb = [min(hA[0], hE[0]) - hr - 1, min(hA[1], hE[1]) - hr - 1, max(hA[0], hE[0]) + hr + 1, max(hA[1], hE[1]) + hr + 1];
+  outline(handleD, hb, passes, "line", (x, y) => lensD(x, y) > 0.3);
+  { const ux = cos(la), uy = sin(la), nx = -uy, ny = ux, gr = [];
+    for (let t = 4; t < reach + rim; t += t < 9 ? 2.5 : 3.2) { const cx = hA[0] + ux * (t + rim * 0.5), cy = hA[1] + uy * (t + rim * 0.5), w = hr * 1.05; gr.push([[[cx - nx * w, cy - ny * w], [cx + nx * w, cy + ny * w]], false]); }
+    add("line", keepWhere(gr.map(([q]) => [dens(q, 0.2), false]), (x, y) => handleD(x, y) < -0.3 && lensD(x, y) > 0.3));
+    const shadow = (x, y) => handleD(x, y) < -0.6 && lensD(x, y) > 0.3 && ((x - hA[0]) * nx + (y - hA[1]) * ny) > 0;
+    if (ink) add("shade", hatch(shadow, hb, 45, o.hp, 0.3), 0.01);
+  }
+
+  // ---- the city in the lens: built flat, cut to the glass, then pushed through the bulge ----
+  const { out } = buildCity(o, rL, rng);
+  const k = o.bulge / 100 * 0.9, glare = (x, y) => { const d = hypot(x, y) / rL, a = atan2(y, x) / D2R; return d > 0.74 && d < 0.84 && a > -150 && a < -110; };
+  const warp = ([x, y]) => { const d = hypot(x, y), rn = d / rL; if (d < 1e-9) return [Lc[0], Lc[1]]; const g = rn * (1 + k) / (1 + k * rn * rn), sc = rL * g / d; return [Lc[0] + x * sc, Lc[1] + y * sc]; };
+  const inGlass = (x, y) => hypot(x, y) < rL - 0.6 && !glare(x, y);
+  for (const [q, cl, pen, kind] of out) {
+    const pts = dens(q, 0.35, cl);
+    for (const [run] of keepWhere([[pts, false]], inGlass)) add(pen, [[run.map(warp), false, kind === "fill" ? "fill" : undefined]], kind === "fill" ? 0.01 : 0.02);
+  }
+  // the glare: a thin crescent left clear, its edge drawn
+  add("line", [[Array.from({ length: 16 }, (_, i) => warp([rL * 0.74 * cos(lerp(-149, -111, i / 15) * D2R), rL * 0.74 * sin(lerp(-149, -111, i / 15) * D2R)])), false], [Array.from({ length: 16 }, (_, i) => warp([rL * 0.84 * cos(lerp(-149, -111, i / 15) * D2R), rL * 0.84 * sin(lerp(-149, -111, i / 15) * D2R)])), false]]);
+
+  // ---- the instruction strip ----
+  if (stripH) {
+    const W = PW - 2 * mg, n = 4, gw = 3, pw = (W - gw * (n - 1)) / n, caps = ["REMOVE PARTS", "FIT AUGMENTS", "INSTALL CHIP", o.last || "INSERT SELF"];
+    for (let i = 0; i < n; i++) {
+      const x0 = mg + i * (pw + gw), y0 = stripTop, x1 = x0 + pw, y1 = PH - mg, cx = (x0 + x1) / 2;
+      add("line", [[[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], false], [ring(x0 + 3.6, y0 + 3.6, 2.4, 2.4, 20), true]]);
+      add("line", write(String(i + 1), 2.2, x0 + 3.6, y0 + 3.6), 0.01);
+      const capH = min(2.4, (pw - 3) / max(1, textUnits(cleanText(caps[i]))) * 6);
+      add("line", write(caps[i], capH, cx, y1 - 3.2), 0.01);
+      const iy = y0 + 9.5, I = [];
+      if (i === 0) { I.push([[[cx - 9, iy - 4], [cx + 9, iy - 4]], false], [[[cx - 9, iy - 3], [cx + 9, iy - 3]], false], [[[cx, iy - 3], [cx, iy - 1]], false], [ring(cx, iy + 2.6, 2.2, 3.4, 24), true], [[[cx - 3.5, iy - 3.8], [cx + 3.5, iy - 0.6]], false], [[[cx - 3.5, iy - 0.6], [cx + 3.5, iy - 3.8]], false]); }
+      if (i === 1) { I.push([ring(cx - 4, iy, 3.4, 4.8, 28), true], [ring(cx + 6, iy, 2.4, 2.4, 20), true], [ring(cx + 6, iy, 1.3, 1.3, 14), true], [[[cx + 2.5, iy], [cx - 0.2, iy]], false], [[[cx + 0.6, iy - 0.8], [cx - 0.2, iy], [cx + 0.6, iy + 0.8]], false]); }
+      if (i === 2) { I.push([[[cx - 2.5, iy - 2.5], [cx + 2.5, iy - 2.5], [cx + 2.5, iy + 2.5], [cx - 2.5, iy + 2.5], [cx - 2.5, iy - 2.5]], false]); for (let t = -1.5; t <= 1.5; t += 1) I.push([[[cx + t, iy - 2.5], [cx + t, iy - 3.5]], false], [[[cx + t, iy + 2.5], [cx + t, iy + 3.5]], false], [[[cx - 2.5, iy + t], [cx - 3.5, iy + t]], false], [[[cx + 2.5, iy + t], [cx + 3.5, iy + t]], false]); I.push([[[cx + 5, iy], [cx + 9, iy]], false], [[[cx + 8.2, iy - 0.8], [cx + 9, iy], [cx + 8.2, iy + 0.8]], false]); }
+      if (i === 3) { const hd = ring(cx, iy - 0.5, 3.2, 4.2, 40); for (let t = 0; t < 40; t += 2) I.push([hd.slice(t, t + 2), false]); I.push(...write("?", 3, cx, iy - 0.3)); }
+      add("line", I.map(([q, cl]) => [q, cl]), 0.01);
+    }
+    if (o.small) add("line", write(o.small, 2, PW - mg - textW(o.small, 2) / 2, stripTop - 2.4), 0.01);
+  }
+
+  // ---- gates ----
+  let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF, finite = true;
+  for (const Lr of Object.values(layers)) for (const [q] of Lr) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) { finite = false; continue; } bx0 = min(bx0, x); by0 = min(by0, y); bx1 = max(bx1, x); by1 = max(by1, y); }
+  // Held: both of a part's gates end inside the part, so nothing floats on the sprue (it did, maker's photo 2026-10-07).
+  const held = p => !!p.gates && p.gates.length === 2 && p.gates.every(([gx, gy]) => p.f(gx - p.cx, gy - p.cy) < 0);
+  const gates = [
+    ["fits inside the margins", bx0 >= mg - 0.5 && by0 >= mg - 0.5 && bx1 <= PW - mg + 0.5 && by1 <= PH - mg + 0.5, `${(bx1 - bx0).toFixed(0)} x ${(by1 - by0).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    ["every part held at two points", !!placed && placed.parts.every(held), placed ? placed.parts.filter(held).length + " of " + placed.parts.length + " parts, both gates landing on the part" : "no"],
+    ["every part fits on the sprue", !!placed, placed ? `${placed.parts.length} parts at ${s.toFixed(1)} mm per head` : "no"],
+    ["shadow hatch at least 0.5 mm apart", o.hp >= 0.5, o.hp + " mm"],
+  ];
+  if (o.signs === "on") gates.push(["sign letters at least 2 mm tall", o.lab >= 2, o.lab + " mm"]);
+  if (colour) gates.push(["fill lines at least a pen width apart", o.sp >= PEN.plastic, `${o.sp} mm for a ${PEN.plastic} mm pen`]);
+  if (bx1 > PW - mg + 0.5 || bx0 < mg - 0.5) notes.push("turn the handle or move the loupe across to keep it on the page");
+  return { o, W: PW, H: PH, layers, gates, notes, stage: `${o.lots} x ${o.lots} city`, ms: performance.now() - t0 };
+}
+
+// ---------------- preview, export ----------------
+const COLS = o => ({ line: "#141414", shade: "#3a3a3a", plastic: "#" + o.plasticcol, glow: "#" + o.glowcol });
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = COLS(r.o), flash = r.o.view === "flash";
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of ["plastic", "glow", "shade", "line"]) {
+    c.strokeStyle = c.fillStyle = col[key];
+    for (const [q, cl, kind] of r.layers[key]) {
+      c.lineWidth = flash && kind === "fill" ? (key === "line" || key === "shade" ? r.o.hp : r.o.sp) * 1.15 : PEN[key];
+      c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke();
+    }
+  }
+  const lenm = L => L.reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000;
+  $("stats").innerHTML = `<b>${r.stage}</b> · ${r.ms.toFixed(0)} ms<br>`
+    + `line 0.4: <b>${lenm(r.layers.line).toFixed(1)} m</b> · thin 0.3: <b>${lenm(r.layers.shade).toFixed(1)} m</b>`
+    + ["plastic", "glow"].filter(k => r.layers[k].length).map(k => ` · ${k} pen: <b>${lenm(r.layers[k]).toFixed(1)} m</b>`).join("") + "<br>"
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "plastic", colour: r.o.plasticcol, w: PEN.plastic, paths: r.layers.plastic }, { name: "glow", colour: r.o.glowcol, w: PEN.glow, paths: r.layers.glow },
+  { name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line },
+].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG miniature kit${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["look", "citypen", "kit", "scale", "acc", "ejector", "sprueh", "lsize", "lx", "langle", "bulge", "callout", "lots", "zoom", "height", "plaza", "packets", "core", "bond", "windows", "seed", "signs", "words", "coreword", "lab", "egg", "strip", "last", "small", "weight", "dark", "cityshade", "hp", "sp", "angle", "plasticcol", "glowcol", "view", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["view", "plasticcol", "glowcol"]);
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
+
+const BASE = { look: "ink", citypen: "thin", kit: "MEATSACK 1:72", scale: 10, acc: 5, ejector: "on", sprueh: 44, lsize: 56, lx: 56, langle: 200, bulge: 45, callout: "on", lots: 10, zoom: 85, height: 55, plaza: 25, packets: 14, core: "cathedral", bond: "on", windows: "on", seed: 11, signs: "on", words: "MEMORY,LANGUAGE,HABIT,FEAR,NAME,DREAMS", coreword: "SELF", lab: 2.6, egg: "on", strip: "on", last: "INSERT SELF", small: "SELF NOT INCLUDED", weight: 2, dark: "cross", cityshade: "single", hp: 0.75, sp: 0.8, angle: 35, plasticcol: "7d8a96", glowcol: "e8a317", view: "pens", page: "190x250", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  kit: P({}),
+  dense: P({ lots: 14, zoom: 100, height: 70, packets: 30, seed: 27, plaza: 15 }),
+  cathedral: P({ lots: 8, zoom: 160, height: 45, core: "cathedral", seed: 5, packets: 8 }),
+  sparse: P({ acc: 2, lsize: 66, langle: 320, lx: 52, sprueh: 36, lots: 9, seed: 41, core: "ziggurat" }),
+  colouring: P({ look: "line", citypen: "line", windows: "off", bond: "off", seed: 9, lots: 8, packets: 6 }),
+  colour: P({ look: "colour", seed: 33, core: "tower", packets: 20 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `miniature-kit-${r.o.core}-${r.o.look}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
