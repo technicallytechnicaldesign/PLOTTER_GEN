@@ -1,7 +1,7 @@
 // One script, two floor plans: <body data-world="inktober"> walks the single Inktober hall instead of the six rooms.
 const ink=document.body.dataset.world==='inktober';
-const world=await import(ink?'./inktober-world.js?v=20261007-rabbits3':'./gallery-world.js?v=20261007-rabbits3');
-const {createGallery}=await import('./gallery-gl.js?v=20261007-rabbits3');
+const world=await import(ink?'./inktober-world.js?v=20261007-ogre1':'./gallery-world.js?v=20261007-ogre1');
+const {createGallery}=await import('./gallery-gl.js?v=20261007-ogre1');
 const HALL_NAME=world.HALL_NAME||'Entrance corridor';
 const {rooms,HALL,ROOM_W,ROOM_D,START,END,SCALE,locationAt,advance,destination}=world;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -52,7 +52,7 @@ function engage(action){if(!keys.has(action))pulses.set(action,performance.now()
 function stop(){keys.clear();pulses.clear();p.vf=p.vs=p.vturn=0;drag=null}
 function jump(id){stop();const h=gl?.spot?.(id);Object.assign(p,h?world.viewing(h):destination(id));camera();$('viewport').focus({preventScroll:true})}
 function applyFilters(){
- const visible=prints.filter(admitted),real=visible.filter(s=>s.photo);
+ const visible=prints.filter(admitted),real=visible.filter(s=>s.photo&&!s.render);
  $('count').textContent=ink?`${real.length} of ${visible.length} days inked`:`${real.length} print photographs / ${visible.filter(s=>!s.photo).length} reserved spaces`;
  for(const s of prints){const on=admitted(s);gl.show(s.id,on);const b=$('scene').querySelector(`[data-print="${CSS.escape(s.id)}"]`);if(b)b.closest('li').hidden=!on}dirty=true;
  $('flat').innerHTML=visible.map(s=>`<button data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}"><span class="flat-photo">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:`<span class="flat-reserved" style="width:${dims(s).width*Math.min(1,250/dims(s).width,250/dims(s).height)}px;aspect-ratio:${dims(s).width}/${dims(s).height}">${placeholder()}</span>`}</span><span class="flat-title">${esc(s.title)}<br>${esc(ink?s.note:rooms.find(r=>r.id===s.room)?.name)}</span></button>`).join('');

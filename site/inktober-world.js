@@ -26,8 +26,9 @@ export function prepare(prints,now=new Date()){
   const d=new Date(s.date+'T12:00:00'),n=String(s.day).padStart(2,'0'),when=s.date===today?'today':s.date<today?'past':'ahead';
   const title=`Day ${n}`+(s.prompt?`: ${s.prompt}`:'');
   const reserved=when==='today'?[`DAY ${n} / TODAY`,'READY FOR INK']:when==='ahead'?[`DAY ${n}`,'NOT YET']:[`DAY ${n}`,'AWAITING INK'];
-  const note=s.photo?`${DAY[d.getDay()]} ${s.day} October`:when==='today'?'Today. Space for today\'s ink':`${DAY[d.getDay()]} ${s.day} October`;
-  const description=s.description||`${DAY[d.getDay()]} ${s.day} October 2026${s.prompt?`, prompt "${s.prompt}"`:''}. ${s.photo?'Plotted in ink, photographed on the desk.':'Space for a photograph of the day\'s ink.'}`;
+  // a `render` is the studio's own picture hung until the ink is done: it says so, and does not count as inked
+  const note=s.render?`${DAY[d.getDay()]} ${s.day} October, studio render`:s.photo?`${DAY[d.getDay()]} ${s.day} October`:when==='today'?'Today. Space for today\'s ink':`${DAY[d.getDay()]} ${s.day} October`;
+  const description=s.description||`${DAY[d.getDay()]} ${s.day} October 2026${s.prompt?`, prompt "${s.prompt}"`:''}. ${s.render?'The studio\'s own render, hung until the ink is done.':s.photo?'Plotted in ink, photographed on the desk.':'Space for a photograph of the day\'s ink.'}`;
   return {...s,title,reserved,note,description,mark:when==='today'?'today':null};
  });
 }
