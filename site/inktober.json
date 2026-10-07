@@ -57,10 +57,10 @@
       "day": 4,
       "date": "2026-10-04",
       "prompt": "cactus",
-      "photo": null,
+      "photo": "prints/inktober-04-cactus.jpg",
       "frame": {
         "width": 210,
-        "height": 297
+        "height": 299
       },
       "content": {
         "nsfw": false,
@@ -72,7 +72,7 @@
       "room": "hall",
       "day": 5,
       "date": "2026-10-05",
-      "prompt": null,
+      "prompt": "smack",
       "photo": null,
       "frame": {
         "width": 210,

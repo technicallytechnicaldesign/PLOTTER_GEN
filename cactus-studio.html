@@ -194,7 +194,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <aside>
   <fieldset><legend>Presets</legend>
     <div class="row"><button data-preset="specimen">Barrel specimen</button><button data-preset="saguaro">Saguaro plate</button><button data-preset="bones">Saguaro bones</button></div>
-    <div class="row"><button data-preset="shelf">Windowsill</button><button data-preset="night">Desert night</button><button data-preset="pear">Prickly pear</button></div>
+    <div class="row"><button data-preset="shelf">Windowsill</button><button data-preset="shelfcut">Windowsill, cut-out window</button><button data-preset="night">Desert night</button><button data-preset="pear">Prickly pear</button></div>
     <div class="row"><button data-preset="colouring">Colouring page</button><button data-preset="bloom">In bloom (colour)</button></div>
   </fieldset>
   <fieldset><legend>Scene</legend>
@@ -236,7 +236,10 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
   <fieldset data-when="scene=shelf"><legend>Windowsill</legend>
     <label>Pots <output id="o-pots"></output><input type="range" id="pots" min="1" max="6" step="1" value="4"></label>
     <label>Pot pattern <select id="pattern"><option value="mixed">a mix</option><option value="stripes">stripes</option><option value="zigzag">zigzag</option><option value="dots">dots</option><option value="plain">plain terracotta</option></select></label>
-    <label>Window behind <select id="window"><option value="on">yes</option><option value="off">no</option></select></label>
+    <label>Window behind <select id="window"><option value="on">yes</option><option value="cut">cut-out friendly: thick bars, the glass a closed void</option><option value="off">no</option></select></label>
+    <label data-when="window=cut">Bar width (mm) <output id="o-bar"></output><input type="range" id="bar" min="2.5" max="10" step="0.5" value="4"></label>
+    <label data-when="window=cut">Gap round the plants (mm) <output id="o-wgap"></output><input type="range" id="wgap" min="0.5" max="4" step="0.25" value="1"></label>
+    <p class="hint" data-when="window=cut">Each pane of glass is one closed outline that runs round the plants (the gap is measured from the ink itself, spines and flowers included, so nothing drawn is cut off). In Design Space select the pane outlines, or use the cut file from the split export, and cut them out to layer the sill over a scene or another colour.</p>
   </fieldset>
   <fieldset data-when="scene=specimen|pear"><legend>Label</legend>
     <label>Label <select id="label"><option value="latin">a made-up Latin name</option><option value="text">my own text</option><option value="none">none</option></select></label>
@@ -280,7 +283,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <script>
 "use strict";
 // Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
-const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp } = Math, INF = Infinity;
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp, SQRT2 } = Math, INF = Infinity;
 const $ = id => document.getElementById(id);
 const TAU = PI * 2, D2R = PI / 180;
 const clamp = (v, a, b) => max(a, min(b, v));
@@ -647,7 +650,7 @@ function build(o) {
   let objs = [], order = {};
   const vis = (name, gap2 = 0.35) => { const e = order[name] ?? objs.length; return (x, y) => { for (let i = 0; i < e; i++) { const [, f, b] = objs[i]; if (boxD(b, x, y) < gap2 && f(x, y) < gap2) return false; } return true; }; };
   const allD = (x, y) => { let v = INF; for (const [, f, b] of objs) { const bd = boxD(b, x, y); v = min(v, bd > 12 ? bd : f(x, y)); } return v; };
-  const layers = { line: [], shade: [], body: [], flower: [], fruit: [], pot: [] };
+  const layers = { line: [], shade: [], body: [], flower: [], fruit: [], pot: [], cut: [] };
   const add = (layer, ls, tol = 0.03) => { for (const [q, cl, kind] of ls) if (q.length > 1) layers[layer].push([simplify(q, tol), cl, kind]); };
   const outline = (f, b, name, n, layer = "line", keep = null) => {
     const g = sample(f, b, h);
@@ -951,6 +954,43 @@ function build(o) {
       else if (kind === "pear") pear(x, pt.top + 4, Hp * 1.1, 2 + i * 0.01, "pp" + i, min(o.pads, 4));
       else plant(kind, x, pt.top + 4, kind === "barrel" ? min(Hp, pw * 0.95) : Hp, 2 + i * 0.01, "s" + i);
     }
+    // Cut-out friendly window: each pane is a closed void, the pane less everything drawn in front of it grown by a gap;
+    // the bars and frame are what is left between the voids. Drawn in the line pen and given to the cut layer.
+    // The plants are measured from what is actually drawn (their insides plus every ink line, spines included) with a
+    // distance transform: the objects' own distance functions are only a box bound outside their boxes (MEASURED: the
+    // column trunk read 2.78 mm at two points a box edge apart), which traced rectangles.
+    if (o.window === "cut") after.push(() => {
+      const top = CB[1] + 4, l = CB[0] + 6, r = CB[2] - 6, bw = o.bar, yb = top + (sill - top) * 0.45, halo = o.wgap + PEN.line / 2;
+      const panes = [[l + bw, top + bw, cx - bw / 2, yb - bw / 2], [cx + bw / 2, top + bw, r - bw, yb - bw / 2], [l + bw, yb + bw / 2, cx - bw / 2, sill], [cx + bw / 2, yb + bw / 2, r - bw, sill]];
+      const bb = [l - 2, top - 2, r + 2, sill + 2], hg = 0.25, nx = ceil((bb[2] - bb[0]) / hg) + 2, ny = ceil((bb[3] - bb[1]) / hg) + 2, D = new Float64Array(nx * ny).fill(1e9);
+      const X = i => bb[0] + i * hg, Y = j => bb[1] + j * hg, cell = (x, y) => { const i = round((x - bb[0]) / hg), j = round((y - bb[1]) / hg); return i < 0 || j < 0 || i >= nx || j >= ny ? -1 : j * nx + i; };
+      for (const [, f, b] of objs) for (let j = max(0, floor((b[1] - bb[1]) / hg)); j <= min(ny - 1, ceil((b[3] - bb[1]) / hg)); j++) for (let i = max(0, floor((b[0] - bb[0]) / hg)); i <= min(nx - 1, ceil((b[2] - bb[0]) / hg)); i++) if (f(X(i), Y(j)) < 0) D[j * nx + i] = 0;
+      for (const L of Object.values(layers)) for (const [q] of L) for (let k = 1; k < q.length; k++) { const [ax, ay] = q[k - 1], [bx2, by2] = q[k], m = max(1, ceil(hypot(bx2 - ax, by2 - ay) / (hg * 0.5))); for (let t = 0; t <= m; t++) { const c = cell(lerp(ax, bx2, t / m), lerp(ay, by2, t / m)); if (c >= 0) D[c] = 0; } }
+      // two-pass chamfer distance (3-4 weights, in cells), then into mm
+      const a1 = 1, a2 = SQRT2, chamfer = D => {
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const k = j * nx + i; let d = D[k]; if (i > 0) d = min(d, D[k - 1] + a1); if (j > 0) { d = min(d, D[k - nx] + a1); if (i > 0) d = min(d, D[k - nx - 1] + a2); if (i < nx - 1) d = min(d, D[k - nx + 1] + a2); } D[k] = d; }
+      for (let j = ny - 1; j >= 0; j--) for (let i = nx - 1; i >= 0; i--) { const k = j * nx + i; let d = D[k]; if (i < nx - 1) d = min(d, D[k + 1] + a1); if (j < ny - 1) { d = min(d, D[k + nx] + a1); if (i < nx - 1) d = min(d, D[k + nx + 1] + a2); if (i > 0) d = min(d, D[k + nx - 1] + a2); } D[k] = d; } };
+      chamfer(D);
+      // smooth the outline for the blade: shrink the void by sm, then grow it back by sm, so notches between spines
+      // narrower than 2 sm close up as card and the cut runs in easy curves
+      const sm = 1.2, E = new Float64Array(nx * ny);
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { let pd = INF; for (const b of panes) pd = min(pd, boxD(b, X(i), Y(j))); E[j * nx + i] = max(pd + sm, halo + sm - D[j * nx + i] * hg) < 0 ? 0 : 1e9; }
+      chamfer(E);
+      const v = new Float64Array(nx * ny);
+      for (let k = 0; k < v.length; k++) v[k] = E[k] * hg - sm;
+      const g = { x0: bb[0], y0: bb[1], nx, ny, h: hg, v };
+      const area = q => abs(q.reduce((a, p, i) => { const n = q[(i + 1) % q.length]; return a + p[0] * n[1] - n[0] * p[1]; }, 0)) / 2;
+      const all = iso(g, 0).filter(([, cl]) => cl), loops = all.filter(([q]) => area(q) >= 6).map(([q]) => [simplify(q, 0.04), true]);
+      add("line", keepWhere([[dense([[l, sill], [l, top], [r, top], [r, sill]]), false]], vis("__bg")));
+      add("line", loops); layers.cut.push(...loops);
+      // loose pieces: card the voids would cut free, found by flooding the solid in from the edge of the window
+      const seen = new Uint8Array(nx * ny), st = [];
+      for (let i = 0; i < nx; i++) for (const j of [0, ny - 1]) st.push(j * nx + i);
+      for (let j = 0; j < ny; j++) for (const i of [0, nx - 1]) st.push(j * nx + i);
+      while (st.length) { const k = st.pop(); if (seen[k] || v[k] < 0) continue; seen[k] = 1; const i = k % nx, j = (k - i) / nx; if (i > 0) st.push(k - 1); if (i < nx - 1) st.push(k + 1); if (j > 0) st.push(k - nx); if (j < ny - 1) st.push(k + nx); }
+      let loose = 0; for (let k = 0; k < v.length; k++) if (v[k] >= 0 && !seen[k]) loose++;
+      stat.window = { loops: loops.length, small: all.length - loops.length, loose: loose * hg * hg, bar: bw, halo };
+    });
     if (o.window === "on") after.push(() => { const vs = vis("__bg"), top = CB[1] + 4, l = CB[0] + 6, r = CB[2] - 6; add("line", keepWhere([[dense([[l, sill], [l, top], [r, top], [r, sill]]), false], [dense([[cx, top], [cx, sill]]), false], [dense([[l, top + (sill - top) * 0.45], [r, top + (sill - top) * 0.45]]), false]], vs)); add("shade", keepWhere([[dense([[l + 3, sill], [l + 3, top + 3], [r - 3, top + 3], [r - 3, sill]]), false]], vs)); for (let k = 0; k < 3; k++) { const gx = l + 14 + k * 5; add("shade", keepWhere([[[[gx, top + 16], [gx + 9, top + 7]], false]], vs)); } });
   }
 
@@ -1016,6 +1056,10 @@ function build(o) {
   if (stat.spines) gates.push(["spines at least 0.7 mm long on paper", stat.spineMin >= 0.7, stat.spineMin.toFixed(2) + " mm, " + stat.spines + " spines" + (stat.spineSkip ? ", " + stat.spineSkip + " edge-on ones left out" : "")]);
   if (isFinite(stat.rodMin)) gates.push(["woody rods at least 1 mm wide", stat.rodMin >= 1, stat.rodMin.toFixed(2) + " mm"]);
   if (isFinite(stat.textCap)) gates.push(["letters at least 2.8 mm tall", stat.textCap >= 2.8, stat.textCap.toFixed(1) + " mm"]);
+  if (stat.window) {
+    gates.push(["cut-out window leaves no loose pieces", stat.window.loose < 0.5, `${stat.window.loops} pane outline${stat.window.loops === 1 ? "" : "s"} to cut, ${stat.window.loose.toFixed(1)} mm² of card cut free${stat.window.small ? ", " + stat.window.small + " slivers under 6 mm² left as card" : ""}`]);
+    gates.push(["window bars at least 2.5 mm", stat.window.bar >= 2.5, `${stat.window.bar} mm bars, plants kept ${o.wgap} mm clear of their ink (ASSUMED card strength)`]);
+  }
   if (colour) gates.push(["fill lines at least a pen width apart", o.sp >= PEN.body, `${o.sp} mm for a ${PEN.body} mm pen`]);
   if (!inside) notes.push("lower the height or the margin");
   if (stat.areoleMin < 1.1) notes.push("raise the areole gap");
@@ -1025,7 +1069,8 @@ function build(o) {
 
 // ---------------- preview, export ----------------
 const COLS = o => ({ line: "#141414", shade: "#3a3a3a", body: "#" + o.bodycol, flower: "#" + o.flowercol, fruit: "#" + o.fruitcol, pot: "#" + o.potcol });
-function draw(r) {
+function draw(r) { drawBase(r); drawCut(r); }
+function drawBase(r) {
   const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = COLS(r.o), flash = r.o.view === "flash";
   cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
   c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
@@ -1044,34 +1089,39 @@ function draw(r) {
     + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
     + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
 }
+// The cut-out window's pane outlines, previewed as a red dashed cut.
+function drawCut(r) { if (!r.layers.cut.length) return; const cv = $("cv"), c = cv.getContext("2d"); c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); for (const [q] of r.layers.cut) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.stroke(); } c.setLineDash([]); }
 // Plot order: colours under the black, the bold line last.
 const penLayers = r => [
   { name: "body", colour: r.o.bodycol, w: PEN.body, paths: r.layers.body }, { name: "pot", colour: r.o.potcol, w: PEN.pot, paths: r.layers.pot },
   { name: "flower", colour: r.o.flowercol, w: PEN.flower, paths: r.layers.flower }, { name: "fruit", colour: r.o.fruitcol, w: PEN.fruit, paths: r.layers.fruit },
   { name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line },
+  // the cut carries a trim rectangle at 1 mm, so its box matches the pen files' corner ticks when Design Space imports it
+  { name: "cut", colour: "ff0000", w: 0.2, cut: true, paths: r.layers.cut.length ? [...r.layers.cut, [[[1, 1], [r.W - 1, 1], [r.W - 1, r.H - 1], [1, r.H - 1]], true]] : [] },
 ].filter(L => L.paths.length);
 const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
 function toSVG(r, only = null, ticks = false) {
-  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
-    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
   return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG cactus${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["scene", "form", "seed", "size", "years", "ribs", "twist", "agap", "arms", "holes", "spines", "centrals", "slen", "sstyle", "flowers", "pads", "fruit", "coch", "moon", "sky", "many", "owl", "pots", "pattern", "window", "label", "btext", "inset", "look", "weight", "shade", "dark", "hp", "sp", "detail", "bodycol", "flowercol", "fruitcol", "potcol", "view", "page", "margin"];
+const IDS = ["scene", "form", "seed", "size", "years", "ribs", "twist", "agap", "arms", "holes", "spines", "centrals", "slen", "sstyle", "flowers", "pads", "fruit", "coch", "moon", "sky", "many", "owl", "pots", "pattern", "window", "bar", "wgap", "label", "btext", "inset", "look", "weight", "shade", "dark", "hp", "sp", "detail", "bodycol", "flowercol", "fruitcol", "potcol", "view", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null, pending = 0;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 const VIEW_ONLY = new Set(["view", "bodycol", "flowercol", "fruitcol", "potcol"]);
 function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
 
-const BASE = { scene: "specimen", form: "barrel", seed: 21, size: 130, years: 55, ribs: 13, twist: 15, agap: 4.5, arms: 3, holes: 1, spines: 8, centrals: 1, slen: 3.4, sstyle: "star", flowers: 4, pads: 9, fruit: 6, coch: 45, moon: "crescent", sky: "stars", many: 4, owl: "on", pots: 4, pattern: "mixed", window: "on", label: "latin", btext: "INKTOBER 04", inset: "on", look: "ink", weight: 2, shade: 55, dark: "cross", hp: 0.75, sp: 0.9, detail: 1, bodycol: "3f8f4a", flowercol: "e8457a", fruitcol: "c2185b", potcol: "c0632e", view: "pens", page: "190x250", margin: 10 };
+const BASE = { scene: "specimen", form: "barrel", seed: 21, size: 130, years: 55, ribs: 13, twist: 15, agap: 4.5, arms: 3, holes: 1, spines: 8, centrals: 1, slen: 3.4, sstyle: "star", flowers: 4, pads: 9, fruit: 6, coch: 45, moon: "crescent", sky: "stars", many: 4, owl: "on", pots: 4, pattern: "mixed", window: "on", bar: 4, wgap: 1, label: "latin", btext: "INKTOBER 04", inset: "on", look: "ink", weight: 2, shade: 55, dark: "cross", hp: 0.75, sp: 0.9, detail: 1, bodycol: "3f8f4a", flowercol: "e8457a", fruitcol: "c2185b", potcol: "c0632e", view: "pens", page: "190x250", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   specimen: P({ size: 110, sstyle: "hooked", centrals: 2, slen: 4.2 }),
   saguaro: P({ form: "saguaro", size: 170, ribs: 13, years: 50, flowers: 6, spines: 6, slen: 2.2, agap: 4, inset: "off", seed: 8 }),
   bones: P({ scene: "bones", years: 94, size: 175, ribs: 13, arms: 3, seed: 8, sky: "stars", moon: "full" }),
   shelf: P({ scene: "shelf", size: 110, pots: 4, ribs: 13, agap: 3.5, slen: 2.2, spines: 6, years: 45, flowers: 2, seed: 33 }),
+  shelfcut: P({ scene: "shelf", size: 110, pots: 4, ribs: 13, agap: 3.5, slen: 2.2, spines: 6, years: 45, flowers: 2, seed: 33, window: "cut" }),
   night: P({ scene: "night", size: 150, many: 5, years: 60, flowers: 0, spines: 6, slen: 2, agap: 4.5, sky: "dark", seed: 12 }),
   pear: P({ scene: "pear", size: 135, pads: 10, fruit: 7, coch: 55, spines: 4, slen: 4, agap: 5.5, flowers: 0, seed: 40 }),
   colouring: P({ look: "line", form: "column", size: 150, ribs: 8, flowers: 3, spines: 5, years: 45, sstyle: "star", seed: 5 }),

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="190mm" height="250mm" viewBox="0 0 190 250">
 <title>PLG cactus</title>
-<desc id="plg-settings">{"scene":"pear","form":"barrel","seed":40,"size":135,"years":55,"ribs":13,"twist":15,"agap":5.5,"arms":3,"holes":1,"spines":4,"centrals":1,"slen":4,"sstyle":"star","flowers":0,"pads":10,"fruit":7,"coch":55,"moon":"crescent","sky":"stars","many":4,"owl":"on","pots":4,"pattern":"mixed","window":"on","label":"latin","btext":"INKTOBER 04","inset":"on","look":"ink","weight":2,"shade":55,"dark":"cross","hp":0.75,"sp":0.9,"detail":1,"bodycol":"3f8f4a","flowercol":"e8457a","fruitcol":"c2185b","potcol":"c0632e","view":"pens","page":"190x250","margin":10}</desc>
+<desc id="plg-settings">{"scene":"pear","form":"barrel","seed":40,"size":135,"years":55,"ribs":13,"twist":15,"agap":5.5,"arms":3,"holes":1,"spines":4,"centrals":1,"slen":4,"sstyle":"star","flowers":0,"pads":10,"fruit":7,"coch":55,"moon":"crescent","sky":"stars","many":4,"owl":"on","pots":4,"pattern":"mixed","window":"on","bar":4,"wgap":1,"label":"latin","btext":"INKTOBER 04","inset":"on","look":"ink","weight":2,"shade":55,"dark":"cross","hp":0.75,"sp":0.9,"detail":1,"bodycol":"3f8f4a","flowercol":"e8457a","fruitcol":"c2185b","potcol":"c0632e","view":"pens","page":"190x250","margin":10}</desc>
 <g id="pen-fruit" stroke="#c2185b" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M92.771,81.452 L94.321,81.490" fill="none"/>
 <path d="M95.457,82.718 L91.576,82.623" fill="none"/>
