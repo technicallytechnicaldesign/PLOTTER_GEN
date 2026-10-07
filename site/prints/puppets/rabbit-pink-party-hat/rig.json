@@ -1,0 +1,88 @@
+{
+ "id": "rabbit-pink-party-hat",
+ "title": "Pink rabbit in a party hat",
+ "size": [
+  640,
+  601
+ ],
+ "turn": 14,
+ "peg": [
+  233.8,
+  250.1
+ ],
+ "animal": true,
+ "moves": [
+  "head",
+  "tail"
+ ],
+ "speed": 0.5,
+ "amp": {
+  "tail": 0.35
+ },
+ "joints": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "parts": [
+  {
+   "name": "tail",
+   "key": "tail",
+   "pivot": [
+    42.6,
+    364.8
+   ],
+   "under": true,
+   "static": false,
+   "src": "tail.png"
+  },
+  {
+   "name": "back-leg",
+   "key": "bn",
+   "pivot": [
+    158.6,
+    430.6
+   ],
+   "under": false,
+   "static": false,
+   "src": "back-leg.png"
+  },
+  {
+   "name": "head",
+   "key": "head",
+   "pivot": [
+    396.8,
+    286.5
+   ],
+   "under": false,
+   "static": false,
+   "src": "head.png"
+  },
+  {
+   "name": "cape",
+   "key": null,
+   "pivot": [
+    233.8,
+    330.3
+   ],
+   "under": false,
+   "static": true,
+   "src": "cape.png"
+  },
+  {
+   "name": "front-leg",
+   "key": "fn",
+   "pivot": [
+    398.7,
+    405.6
+   ],
+   "under": false,
+   "static": false,
+   "src": "front-leg.png"
+  }
+ ],
+ "body": "body.png",
+ "reach": 0.259
+}
