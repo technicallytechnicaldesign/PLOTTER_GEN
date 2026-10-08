@@ -258,7 +258,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <main>
   <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
   <div class="stats" id="stats">computing</div>
-  <p class="foot">How it is made: two layers. The apple underneath is a polar outline with two shoulders, a stem dimple and a base that narrows with Heart shape. The coat on top is one distance field: everything above a jaw edge that climbs toward the cheeks, smoothly merged with a row of drips that hang off that edge, lumped out over the sides of the apple, minus two tilted sockets and a nose that points up. Wherever the coat is not, the apple shows. Bone ridges are offset contours of the sockets, kept to short arcs. Pens are 0.4 mm for the line and colours (the maker's) and 0.3 mm for the thin pen (ASSUMED), none plotted yet.</p>
+  <p class="foot">How it is made: two layers. The apple underneath is a polar outline with two shoulders, a stem dimple and a base that narrows with Heart shape. The coat on top is one distance field: everything above a jaw edge that climbs toward the cheeks, smoothly merged with a row of drips that hang off that edge, lumped out over the sides of the apple, minus two tilted sockets and a nose that points up. Wherever the coat is not, the apple shows. Bone ridges are offset contours of the sockets, kept to short arcs. Pens are 0.4 mm for the line and colours and 0.3 mm for the thin pen (ASSUMED), none plotted yet.</p>
 </main>
 </div>
 
@@ -274,12 +274,12 @@ const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t 
 const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
 // ---------------- pens (ASSUMED widths until a test plot is measured) ----------------
-// Line and colour pens are 0.4 mm (the maker's pens, 2026-10-06); the thin pen is ASSUMED 0.3 until it is named.
+// Line and colour pens are 0.4 mm (my pens, 2026-10-06); the thin pen is ASSUMED 0.3 until it is named.
 const PEN = { line: 0.4, shade: 0.3, apple: 0.4, poison: 0.4 };
 const PASS = 0.28;     // mm between outline passes: a 0.4 pen at 0.28 mm steps reads as one thick line
 // Dark areas are crosshatch at o.hp (default 0.75 mm): a 0.4 pen held an even dark tone there on paper (MEASURED,
 // bench-log 2026-09-28), and anything under 0.5 mm floods and soaks the paper (primer, hatch pitch rule). The first
-// version hatched solid black at 0.35 mm, under one pen width, which the maker flagged as hard on pens and ink (2026-10-07).
+// version hatched solid black at 0.35 mm, under one pen width, which proved hard on pens and ink (2026-10-07).
 
 // ---------------- distance-field pieces (all in mm, y down) ----------------
 // Far apart (or one side infinite) smin is a plain min; the blend only runs inside the k band.

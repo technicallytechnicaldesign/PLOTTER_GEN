@@ -276,7 +276,7 @@ export function drawGlyphAt(ch, cx, cy, h, ang, out) {
   }
 }
 // Settings travel inside every exported SVG (<desc id="plg-settings">) so a plot can be rebuilt and read later.
-// The message and every key or passphrase are left out: they stay with the maker. msgLen is the message length, which the layout depends on.
+// The message and every key or passphrase are left out: they stay with whoever made the plot. msgLen is the message length, which the layout depends on.
 export const SECRET_KEYS = /^(msg|ckey|pkey)$/;
 export function settingsOf(o) {
   const out = {}; for (const [k, v] of Object.entries(o)) if (!SECRET_KEYS.test(k)) out[k] = v;
