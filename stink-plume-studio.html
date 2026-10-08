@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stink plume studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Stink plume studio</h1>
+  <p class="sub">Inktober day 8, stinky. Something stinky sits at the bottom of the sheet and its smell rises off it as pen lines: a plume that starts out smooth and turns to swirls as it climbs, the cartoon stink lines that curl over at the top, or a contour map of the smell itself. Flies loop through it.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="corpse">Corpse flower</button><button data-preset="sock">The sock that stands up</button><button data-preset="stilton">Blue cheese, smell map</button><button data-preset="fishbone">Fishbone</button><button data-preset="bin">Bin day</button><button data-preset="emmental">Holey cheese</button><button data-preset="kipper">Kipper, smell map</button><button data-preset="titan">Titan in a gale</button><button data-preset="lifecycle">Corpse flower, bud to collapse</button><button data-preset="bud">In bud</button><button data-preset="slump">The morning after</button><button data-preset="wheel">Cheese wheel, smell map</button><button data-preset="brie">Brie, ripening</button></div>
+  </fieldset>
+  <fieldset><legend>The stinky thing</legend>
+    <label>Source <select id="source"><option value="corpse">corpse flower, the titan arum</option><option value="cheese">cheese on a board</option><option value="sock">an old sock, standing up</option><option value="fish">a fish on a plate</option><option value="bin">a dustbin, lid up</option></select></label>
+    <label data-when="source=cheese">Cheese <select id="cheese"><option value="holey">holey, with eyes</option><option value="blue">blue, veined</option><option value="brie">brie, ripening from the rind in</option></select></label>
+    <label data-when="source=cheese">Cut <select id="cut"><option value="wedge">a wedge</option><option value="wheel">a whole wheel, a wedge cut out</option></select></label>
+    <label data-when="source=cheese; cheese=holey">Eye size <output id="o-eyes"></output><input type="range" id="eyes" min="0.5" max="2" step="0.05" value="1"></label>
+    <label data-when="source=fish">Fish <select id="fish"><option value="whole">whole, a few days old</option><option value="bones">picked to the bones</option></select></label>
+    <label>Show <select id="view"><option value="one">one</option><option value="row">a row, ageing left to right</option></select></label>
+    <label data-when="view=one">Age <output id="o-age"></output><input type="range" id="age" min="0" max="1" step="0.01" value="0.5"></label>
+    <label data-when="view=row">How many <output id="o-row"></output><input type="range" id="row" min="3" max="6" step="1" value="5"></label>
+    <p class="hint" data-when="source=corpse">Age runs the corpse flower's life: a bud in its bracts, opening, the night it blooms and stinks, then the collapse. It only smells while it is open.</p>
+    <p class="hint" data-when="source=cheese">Age ripens the cheese: darker rind, then mould spots and cracks; blue veins spread; a brie's chalky core shrinks and it starts to run.</p>
+    <label>Height (% of the page) <output id="o-size"></output><input type="range" id="size" min="20" max="65" step="1" value="52"></label>
+    <label data-when="view=one">Left or right <output id="o-offset"></output><input type="range" id="offset" min="-0.6" max="0.6" step="0.05" value="0"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="8"></label>
+  </fieldset>
+  <fieldset><legend>The smell</legend>
+    <label>Style <select id="style"><option value="plume">plume, streamlines that thin out</option><option value="wisps">cartoon stink lines</option><option value="map">smell map, contours</option></select></label>
+    <label data-when="style=plume">Line spacing (mm) <output id="o-gap"></output><input type="range" id="gap" min="1.4" max="4" step="0.1" value="1.8"></label>
+    <label data-when="style=plume">Thins out with height <output id="o-fade"></output><input type="range" id="fade" min="0" max="2.5" step="0.1" value="1.2"></label>
+    <label data-when="style=plume">Top of the plume <select id="tail"><option value="dash">breaks into dashes</option><option value="solid">solid to the end</option></select></label>
+    <label data-when="style=wisps">Stink lines <output id="o-wisps"></output><input type="range" id="wisps" min="1" max="9" step="1" value="3"></label>
+    <label data-when="style=wisps">Wiggle (mm) <output id="o-wiggle"></output><input type="range" id="wiggle" min="1" max="7" step="0.2" value="3"></label>
+    <label data-when="style=map">Contours <output id="o-levels"></output><input type="range" id="levels" min="4" max="24" step="1" value="12"></label>
+    <label>Spread <output id="o-spread"></output><input type="range" id="spread" min="0.05" max="0.6" step="0.01" value="0.32"></label>
+    <label>Turbulence <output id="o-turb"></output><input type="range" id="turb" min="0" max="2.5" step="0.05" value="1.2"></label>
+    <label data-when="turb&gt;0">Swirl size (mm) <output id="o-swirl"></output><input type="range" id="swirl" min="8" max="60" step="1" value="26"></label>
+    <label>Wind <output id="o-wind"></output><input type="range" id="wind" min="-1" max="1" step="0.05" value="0.15"></label>
+    <label>Reach (share of the sky) <output id="o-reach"></output><input type="range" id="reach" min="0.3" max="1" step="0.05" value="0.95"></label>
+    <p class="hint">Near the source the smell rises smooth; turbulence takes over as it climbs. Smell lines stop short of the source and the flies, and never come closer than 0.6 mm.</p>
+  </fieldset>
+  <fieldset><legend>Flies</legend>
+    <label>Flies <output id="o-flies"></output><input type="range" id="flies" min="0" max="9" step="1" value="5"></label>
+    <label data-when="flies&gt;0">Fly size (mm) <output id="o-flysize"></output><input type="range" id="flysize" min="3" max="8" step="0.5" value="5"></label>
+    <label data-when="flies&gt;0">Flight path (mm) <output id="o-trail"></output><input type="range" id="trail" min="0" max="150" step="5" value="70"></label>
+  </fieldset>
+  <fieldset><legend>Drawing</legend>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option><option value="off">off, colour me in</option></select></label>
+    <label data-when="dark!=off">Hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.8"></label>
+    <label>Smell pen <select id="ink"><option value="green">green</option><option value="yellow">mustard yellow</option><option value="purple">purple</option><option value="black">black</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen in job order: line, shade, then the smell. Each carries four corner ticks at 1 mm so they land in the same place in Design Space.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How the smell is drawn. The plume is a velocity field: straight up off the source, spreading as it rises, bent by the wind, with curl noise (swirls that never pile up or empty out) faded in with height, so it leaves the source smooth and breaks up higher up. Streamlines are seeded one line-spacing apart from the lines already drawn and stop when they come too close to another (Jobard and Lefer), and the spacing widens with height so the smell thins out. The smell map is the same idea as a concentration: a chain of puffs, each wider and fainter than the last, swirled by the same noise and contoured. Pen widths untested.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp, sign } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------------- pen sizes (ASSUMED until a pen test sheet is read) ----------------
+const MIN_GAP = 0.6;  // ASSUMED: smell lines never closer than this, so a 0.4 pen leaves paper between them
+const INK_GAP = 0.8;  // ASSUMED: smell stops this far short of the source and the flies
+const STEP = 0.4;     // streamline step, mm
+const RES = 0.25;     // mask raster cell, mm
+
+// ---------------- noise: gradient noise, two octaves ----------------
+function makeNoise(seed) {
+  const rand = mulberry(seed * 9973 + 1), perm = Array.from({ length: 256 }, (_, i) => i);
+  for (let i = 255; i > 0; i--) { const j = floor(rand() * (i + 1)); [perm[i], perm[j]] = [perm[j], perm[i]]; }
+  const p = new Uint8Array(512), gx = new Float64Array(256), gy = new Float64Array(256);
+  for (let i = 0; i < 512; i++) p[i] = perm[i & 255];
+  for (let i = 0; i < 256; i++) { const a = rand() * TAU; gx[i] = cos(a); gy[i] = sin(a); }
+  const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+  const n = (x, y) => {
+    const xi = floor(x), yi = floor(y), xf = x - xi, yf = y - yi, X = xi & 255, Y = yi & 255;
+    const g = (i, j, dx, dy) => { const h = p[p[X + i] + Y + j]; return gx[h] * dx + gy[h] * dy; };
+    const u = fade(xf), v = fade(yf), a = g(0, 0, xf, yf), b = g(1, 0, xf - 1, yf), c = g(0, 1, xf, yf - 1), d = g(1, 1, xf - 1, yf - 1);
+    return (a + (b - a) * u + (c - a + (a - b - c + d) * u) * v) * 1.4;
+  };
+  return (x, y) => n(x, y) + 0.5 * n(x * 2.03 + 17.1, y * 2.03 + 3.7);
+}
+
+// ---------------- geometry helpers ----------------
+const pathLen = q => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return s; };
+// ellipse (or arc a0 -> a1) round (cx, cy), turned by rot
+const ell = (cx, cy, rx, ry, a0 = 0, a1 = TAU, n = 48, rot = 0) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n, x = rx * cos(a), y = ry * sin(a); return [cx + x * cos(rot) - y * sin(rot), cy + x * sin(rot) + y * cos(rot)]; }).slice(0, abs(a1 - a0) >= TAU - 1e-9 ? n : n + 1);
+const curve = (f, n = 24) => Array.from({ length: n + 1 }, (_, i) => f(i / n));
+function chaikin(pts, n) { for (let k = 0; k < n; k++) { const o = [pts[0]]; for (let i = 0; i < pts.length - 1; i++) { const [a, b] = [pts[i], pts[i + 1]]; o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); } o.push(pts.at(-1)); pts = o; } return pts; }
+function bbox(q) { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of q) { a = min(a, x); b = min(b, y); c = max(c, x); d = max(d, y); } return [a, b, c, d]; }
+function inPoly(q, x, y) {
+  const b = q.bb || (q.bb = bbox(q)); if (x < b[0] || x > b[2] || y < b[1] || y > b[3]) return false;
+  let c = false; for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const [xi, yi] = q[i], [xj, yj] = q[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; }
+  return c;
+}
+function densify(q, d) { const o = [q[0]]; for (let i = 1; i < q.length; i++) { const [a, b] = [q[i - 1], q[i]], n = ceil(hypot(b[0] - a[0], b[1] - a[1]) / d); for (let k = 1; k <= n; k++) o.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } return o; }
+// Keep (keep = true) or drop the parts of each path where inside(x, y) holds, cut where it crosses (found by halving).
+function clipBy(paths, inside, keep) {
+  const out = [];
+  for (const [q, cl] of paths) {
+    const pts = densify(cl ? [...q, q[0]] : q, 0.3);
+    let run = [], prev = null, prevIn = null, crossed = false;
+    for (const p of pts) {
+      const isIn = inside(p[0], p[1]);
+      if (prev && isIn !== prevIn) {
+        crossed = true; let a = prev, b = p;
+        for (let k = 0; k < 7; k++) { const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; if (inside(mid[0], mid[1]) === prevIn) a = mid; else b = mid; }
+        const x = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        if (prevIn === keep) { run.push(x); if (run.length > 1) out.push([run, false]); run = []; } else run = [x];
+      }
+      if (isIn === keep) run.push(p);
+      prev = p; prevIn = isIn;
+    }
+    if (!crossed) { if (prevIn === keep) out.push([q, cl]); } else if (run.length > 1) out.push([run, false]);
+  }
+  return out;
+}
+const clipPolys = (paths, polys, keep) => polys.length ? clipBy(paths, (x, y) => polys.some(q => inPoly(q, x, y)), keep) : keep ? [] : paths;
+// Parallel hatch inside polygons (even-odd, so a polygon inside another cuts a hole), rows alternating direction for the plotter.
+function hatchSegs(polys, angDeg, pitch) {
+  const a = angDeg * D2R, c = cos(a), s = sin(a), R = polys.map(q => q.map(([x, y]) => [x * c + y * s, -x * s + y * c]));
+  let y0 = INF, y1 = -INF; for (const q of R) for (const p of q) { y0 = min(y0, p[1]); y1 = max(y1, p[1]); }
+  const segs = []; let row = 0;
+  for (let y = (floor(y0 / pitch) + 0.5) * pitch; y < y1; y += pitch, row++) {
+    const xs = [];
+    for (const q of R) for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const [xi, yi] = q[i], [xj, yj] = q[j]; if ((yi > y) !== (yj > y)) xs.push(xi + (y - yi) * (xj - xi) / (yj - yi)); }
+    xs.sort((u, v) => u - v);
+    for (let k = 0; k + 1 < xs.length; k += 2) if (xs[k + 1] - xs[k] > 0.3) { const seg = [[xs[k] * c - y * s, xs[k] * s + y * c], [xs[k + 1] * c - y * s, xs[k + 1] * s + y * c]]; if (row & 1) seg.reverse(); segs.push([seg, false]); }
+  }
+  return segs;
+}
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+// Break a path into dashes; on/off may vary along it (functions of the point).
+function dashes(q, on, off) {
+  const out = []; let run = [q[0]], drawing = true, acc = 0;
+  for (let i = 1; i < q.length; i++) {
+    acc += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]);
+    if (drawing) { run.push(q[i]); const L = on(q[i]); if (L === INF) { acc = 0; continue; } if (acc >= L) { if (run.length > 1) out.push([run, false]); run = []; drawing = false; acc = 0; } }
+    else if (acc >= off(q[i])) { drawing = true; acc = 0; run = [q[i]]; }
+  }
+  if (drawing && run.length > 1) out.push([run, false]);
+  return out;
+}
+
+// ---------------- a pen in a local frame: u right, v up, P maps to the page ----------------
+// Drawn back to front: cover() rubs out what is already drawn under a shape before its own lines go on.
+function sketch(P, o) {
+  const K = { line: [], shade: [], masks: [] }, map = pts => pts.map(([u, v]) => P(u, v));
+  K.L = (pts, cl = false) => { K.line.push([map(pts), cl]); };
+  K.cover = (...polys) => { const qs = polys.map(map); K.line = clipPolys(K.line, qs, false); K.shade = clipPolys(K.shade, qs, false); };
+  // dark: crosshatch (or one hatch, by the Dark areas setting); mid: one hatch at a wider pitch
+  K.dark = (polys, ang = 45) => { if (o.dark === "off") return; const qs = polys.map(map); K.shade.push(...hatchSegs(qs, ang, o.hp)); if (o.dark === "cross") K.shade.push(...hatchSegs(qs, ang + 90, o.hp)); };
+  K.mid = (polys, ang = 45) => { if (o.dark !== "off") K.shade.push(...hatchSegs(polys.map(map), ang, o.hp * 1.5)); };
+  // whatever fn draws is kept only inside poly
+  K.inside = (poly, fn) => { const nl = K.line.length, ns = K.shade.length, q = [map(poly)]; fn(); K.line.splice(nl, INF, ...clipPolys(K.line.slice(nl), q, true)); K.shade.splice(ns, INF, ...clipPolys(K.shade.slice(ns), q, true)); };
+  K.mask = (...polys) => { for (const q of polys) K.masks.push(map(q)); };
+  return K;
+}
+
+// ---------------- the stinky things, in their own units (base at v = 0) ----------------
+// Each draws into K and returns the vent, where the smell leaves it: { u, v, w half-width }.
+
+// The corpse flower's life in one number. 0 to 0.2: a bud in its bracts, growing; 0.2 to 0.45: the spathe opens;
+// around 0.45 to 0.55: full bloom, hot and at its stinkiest (it really does warm the spadix to throw the smell);
+// 0.6 on: it collapses, the frill falls and the spadix bends over.
+function corpse(K, o, rand, age) {
+  const ph = rand() * TAU, ph2 = rand() * TAU, lean0 = (rand() - 0.5) * 10, side = rand() < 0.5 ? -1 : 1, e = 10 / 42;
+  const op = sstep(0.2, 0.44, age), wilt = sstep(0.58, 1, age), grow = lerp(0.6, 1, sstep(0, 0.45, age));
+  K.mid([ell(14, 0, 44, 5, 0, TAU, 48)]);                       // its shadow on the ground
+  // the spadix: a centreline that bends over as it wilts, and a width round it
+  const Hs = 100 * grow, sw0 = 9.5 * (1 - 0.3 * wilt), spine = [];
+  for (let i = 0, x = 0, v = 58; i <= 50; i++) {
+    const t = i / 50, th = 2 * lean0 * t / 100 + side * wilt * 2.2 * t ** 2.2;
+    spine.push([x, v, th, sw0 * max(0, 1 - t ** 2.2) ** 0.55]); x += sin(th) * Hs / 50; v += cos(th) * Hs / 50;
+  }
+  const along = f => spine.map(([x, v, th, w]) => [x + f * w * cos(th), v - f * w * sin(th)]);
+  const spadix = [...along(-1), ...along(1).reverse()];
+  // the spathe: from a closed bud to an open frilled cup, then slumping
+  const Hr = lerp(58 + 0.72 * Hs, 74, op) - 12 * wilt, Rr = lerp(7, 42, op) * (1 - 0.25 * wilt), droop = 8 * wilt;
+  const w = v => { const t = clamp((v - 30) / (Hr - 30), 0, 1); return lerp(21 * (1 - t ** 2.2) ** 0.8 + Rr * t, 18 + (Rr - 18) * t ** 1.5 + 5 * sin(PI * t) * Rr / 42, op); };
+  const ruf = 2.6 * Rr / 42 * (1 + 2 * wilt), ruf2 = 2.2 * op * (1 + 1.5 * wilt);
+  const rim = th => { const s = abs(sin(th)); return [(Rr + ruf * sin(7 * th + ph) * sqrt(s)) * cos(th), Hr + Rr * e * sin(th) + ruf2 * sin(5 * th + ph2) * s - droop * abs(cos(th))]; };
+  const rimLoop = Array.from({ length: 96 }, (_, i) => rim(i / 96 * TAU));
+  if (op > 0.12) { K.L(rimLoop, true); K.dark([rimLoop]); }       // the deep maroon inside of the cup
+  K.cover(spadix); K.L(spadix, true);
+  for (const f of [-0.5, 0.05, 0.6]) K.L(along(f).slice(1, 46));
+  K.mid([[...along(0.3), ...along(1).reverse()]], 30);
+  const sideL = s => curve(t => [s * w(30 + (Hr - 30) * t), 30 + (Hr - 30) * t - droop * t ** 3], 30);
+  const cup = [...sideL(-1), ...curve(t => rim(PI + PI * t), 48), ...sideL(1).reverse()];
+  const rib = f => { const th = TAU - Math.acos(f), r = rim(th), sq = sqrt(1 - f * f); return curve(t => { const v = 30 + (Hr - 30) * t, end = t ** 4; return [w(v) * f + end * (r[0] - Rr * f), v - e * w(v) * sq + end * (r[1] - Hr + e * Rr * sq)]; }, 30); };
+  K.cover(cup); K.L(cup, true);
+  for (const f of [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8]) K.L(rib(f));
+  const th4 = TAU - Math.acos(0.45);
+  K.mid([[...rib(0.45), ...curve(t => rim(th4 + (TAU - th4) * t), 12), ...sideL(1).reverse()]], 60);
+  // slumping: creases round the cup
+  K.inside(cup, () => { for (let i = 0; i < round(4 * wilt); i++) { const v0 = 40 + i * (Hr - 40) / 4 + rand() * 3; K.L(curve(t => [lerp(-1, 1, t) * w(v0) * 0.9, v0 - 3 * sin(PI * t) + 1.2 * sin(t * 17 + i)], 16)); } });
+  // the bud's bracts, peeling back and gone before it opens
+  const bracts = [];
+  if (age < 0.4) {
+    const peel = sstep(0.18, 0.4, age) * 0.7;
+    for (const s of [-1, 1]) {
+      const b = curve(t => { const a = s * peel * t, r = 36 * grow * t; return [s * (14 + 6 * sin(PI * t)) + sin(a) * r * 0.3, 30 + cos(a) * r]; }, 12);
+      const poly = [[s * 4, 31], ...b.map(([u, v], i) => [u + s * 6 * (1 - i / 12), v]), ...b.slice().reverse().map(([u, v], i) => [u - s * 7 * (i / 12), v])];
+      K.cover(poly); K.L(poly, true); K.L(b.slice(1, 11)); K.mid([poly], s > 0 ? 45 : 135); bracts.push(poly);
+    }
+  }
+  // the pot
+  const pot = [[-22, 0], [22, 0], [28, 26], [-28, 26]], lip = [[-31, 26], [31, 26], [31, 33], [-31, 33]];
+  K.cover(pot, lip); K.L(pot, true); K.L(lip, true);
+  K.mid([[[9, 0], [22, 0], [28, 26], [12, 26]]]); K.mid([[[16, 26], [31, 26], [31, 33], [17, 33]]]);
+  K.mask(cup, spadix, pot, lip, rimLoop, ...bracts);
+  const smell = op * (1 - sstep(0.55, 0.92, age));
+  return { u: 0, v: Hr + Rr * e + 10 * op, w: max(Rr * 0.9, 8), smell };
+}
+
+// Cheese, grown: eyes packed biggest first (and some cut by the edge between two faces), blue veins as
+// branching walkers, a brie that ripens from the rind inwards and oozes. Age ripens all of them.
+function cheese(K, o, rand, age) {
+  const kind = o.cheese, soft = kind === "brie", bw = o.view === "row" ? 62 : 76;
+  const boardTop = ell(0, 8, bw, 15, 0, TAU, 80);
+  K.L(boardTop, true); K.L(ell(0, 2, bw, 15, PI, TAU, 40)); K.L([[-bw, 8], [-bw, 2]]); K.L([[bw, 8], [bw, 2]]);
+  K.mid([[...ell(0, 8, bw, 15, PI, TAU, 40), ...ell(0, 2, bw, 15, TAU, PI, 40)]], 90);
+  if (!soft) for (let i = 0; i < 4; i++) { const c = [-bw + 8 + rand() * 20, -2 + rand() * 7], r = 1 + rand() * 1.2; K.L(Array.from({ length: 5 }, (_, j) => [c[0] + r * (0.7 + 0.5 * rand()) * cos(j * 1.26), c[1] + r * (0.7 + 0.5 * rand()) * sin(j * 1.26)]), true); }
+  const S = (o.cut === "wheel" ? cheeseWheel : cheeseWedge)(K, soft, age, rand, boardTop);
+  // the rind: hatched, or for a brie the white bloom, stippled
+  if (soft) for (const f of S.skin) K.inside(f, () => { for (const [x, y] of scatterPts(f, round(polyArea(f) * 0.12), rand)) K.L(ell(x, y, 0.45, 0.45, 0, TAU, 6), true); });
+  else for (const f of S.rind) if (age > 0.5) K.dark([f], 80); else K.mid([f], 80);
+  const fits = (poly, c, rx, ry, list) => ell(c[0], c[1], rx + 1.5, ry + 1.5, 0, TAU, 16).every(([x, y]) => inPoly(poly, x, y)) && list.every(h => hypot(h[0] - c[0], (h[1] - c[1]) * rx / ry) > h[2] + rx + 2);
+  const cavity = (x, y, r, sq, inside) => { const hole = ell(x, y, r, r * sq, 0, TAU, 28); K.inside(inside, () => { K.L(hole, true); K.dark([hole, ell(x + 0.2 * r, y - 0.2 * r * sq, r * 0.72, r * 0.72 * sq, 0, TAU, 24)]); }); };
+  if (kind === "holey") {
+    const eyes = new Map(S.paste.map(f => [f, []]));
+    // eyes cut by an edge: a round hole in one face, a squashed one in the other, the edge broken between
+    for (const [a, b, fa, fb, sqa, sqb] of S.edges) for (let t = 0; t < 3; t++) {
+      const s = 0.15 + 0.7 * rand(), c = [lerp(a[0], b[0], s), lerp(a[1], b[1], s)], r = (2.5 + 2.5 * rand()) * o.eyes * 0.8;
+      if ([...eyes.get(fa) || [], ...eyes.get(fb) || []].some(h => hypot(h[0] - c[0], h[1] - c[1]) < h[2] + r + 3)) continue;
+      K.cover(ell(c[0], c[1], r, r * sqa, 0, TAU, 28), ell(c[0], c[1], r, r * sqb, 0, TAU, 28));
+      cavity(c[0], c[1], r, sqa, fa); cavity(c[0], c[1], r, sqb, fb);
+      eyes.get(fa)?.push([c[0], c[1], r]); eyes.get(fb)?.push([c[0], c[1], r]);
+    }
+    // then the rest, biggest first, each where it fits
+    for (const f of S.paste) {
+      const b = bbox(f), sq = S.squash.get(f) ?? 0.9, n = round(polyArea(f) / 70 / o.eyes ** 1.5), got = eyes.get(f), rmax = 6.5 * o.eyes;
+      for (let i = 0; i < n; i++) { const r = lerp(rmax * 0.3, rmax, ((n - i) / n) ** 2); for (let t = 0; t < 40; t++) { const c = [lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand())]; if (fits(f, c, r, r * sq, got)) { got.push([c[0], c[1], r]); cavity(c[0], c[1], r, sq, f); break; } } }
+    }
+  } else if (kind === "blue") {
+    // blue veins: wandering, branching cracks where the mould has got in; more and longer with age
+    for (const f of S.paste) {
+      const b = bbox(f), walkers = [], n = round((2 + 9 * age) * polyArea(f) / 1500);
+      for (let i = 0; i < n; i++) walkers.push([lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand()), rand() * TAU, 15 + age * 55]);
+      K.inside(f, () => {
+        while (walkers.length) {
+          let [x, y, a, life] = walkers.pop(); const pts = [[x, y]];
+          for (; life > 0; life--) { a += (rand() - 0.5) * 0.9; x += cos(a) * 0.9; y += sin(a) * 0.9; pts.push([x, y]); if (rand() < 0.05 && walkers.length < 50) walkers.push([x, y, a + (rand() < 0.5 ? 0.8 : -0.8), life * 0.55]); }
+          K.L(pts);
+        }
+        for (const [x, y] of scatterPts(f, round((4 + 16 * age) * polyArea(f) / 1500), rand)) K.L(ell(x, y, 0.5 + rand() * 0.6, 0.5 + rand() * 0.6, 0, TAU, 8), true);
+      });
+    }
+  } else {
+    // brie ripens from the rind inwards: a chalky core, smaller every day, and the cream line under the rind
+    for (const f of S.cut) {
+      const c = centroid(f), sc = 0.7 * (1 - age);
+      if (sc > 0.08) { const core = f.map(p => [c[0] + (p[0] - c[0]) * sc, c[1] + (p[1] - c[1]) * sc]); K.inside(core, () => { for (const [x, y] of scatterPts(core, round(polyArea(core) * 0.25), rand)) K.L(ell(x, y, 0.3, 0.3, 0, TAU, 5), true); }); }
+    }
+    for (const q of S.cream) K.L(q);
+  }
+  // old cheese: mould spots on the rind, dry cracks in the paste
+  if (age > 0.55) for (const f of S.skin) K.inside(f, () => { for (const [x, y] of scatterPts(f, round((age - 0.55) * 30 * polyArea(f) / 1200), rand)) { const r = 0.8 + rand() * 1.3; K.L(ell(x, y, r, r, 0, TAU, 10), true); for (let j = 0; j < 7; j++) { const a = rand() * TAU; K.L([[x + r * cos(a), y + r * sin(a)], [x + r * 1.8 * cos(a), y + r * 1.8 * sin(a)]]); } } });
+  if (age > 0.65 && !soft) for (const f of S.paste) K.inside(f, () => { for (const [x, y] of scatterPts(f, round((age - 0.65) * 18), rand)) { let a = rand() * TAU, p = [x, y]; const q = [p]; for (let j = 0; j < 6; j++) { a += (rand() - 0.5) * 1.6; p = [p[0] + 1.3 * cos(a), p[1] + 1.3 * sin(a)]; q.push(p); } K.L(q); } });
+  K.mask(...S.masks, [...ell(0, 8, bw, 15, 0, PI, 40), ...ell(0, 2, bw, 15, PI, TAU, 40)]);
+  return { u: S.vent[0], v: S.vent[1], w: S.vent[2], smell: { holey: 0.4 + 0.6 * age, blue: 0.5 + 0.5 * age, brie: 0.3 + 0.7 * age }[kind] };
+}
+const polyArea = q => abs(q.reduce((a, p, i) => { const r = q[(i + 1) % q.length]; return a + p[0] * r[1] - r[0] * p[1]; }, 0)) / 2;
+const centroid = q => { const b = bbox(q); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; };
+function scatterPts(poly, n, rand) { const b = bbox(poly), out = []; for (let t = 0; t < n * 6 && out.length < n; t++) { const p = [lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand())]; if (inPoly(poly, p[0], p[1])) out.push(p); } return out; }
+const inset = (p, toward, d) => { const dx = toward[0] - p[0], dy = toward[1] - p[1], L = hypot(dx, dy) || 1; return [p[0] + dx / L * d, p[1] + dy / L * d]; };
+
+// A wedge: tip to the left, the rind curving round the right. A brie sits lower, sags and oozes as it ripens.
+function cheeseWedge(K, soft, age, rand, boardTop) {
+  const T0 = [-50, 12], R1 = [36, 7], R0 = [56, 22], Hh = soft ? 22 : 34, up = p => [p[0], p[1] + Hh];
+  const T1 = up(T0), R1t = up(R1), R0t = up(R0), sag = soft ? 5 * age : 0;
+  const arc = (a, b, bulge) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = hypot(dx, dy); return curve(t => [a[0] + dx * t + dy / L * bulge * sin(PI * t), a[1] + dy * t - dx / L * bulge * sin(PI * t)], 16); };
+  const rindTop = arc(R1t, R0t, 4), rindBot = arc(R1, R0, 4), edge = curve(t => [lerp(T1[0], R1t[0], t), lerp(T1[1], R1t[1], t) - sag * sin(PI * t)], 20);
+  const wedge = [T0, ...rindBot, R0t, T1], front = [T0, R1, ...edge.slice().reverse()], top = [...edge, ...rindTop.slice(1)];
+  K.inside(boardTop, () => K.mid([[R1, [R1[0] + 22, R1[1] - 3], [R0[0] + 18, R0[1] + 1], R0]], 0));   // shadow on the board
+  // a ripe brie runs: a puddle on the board, a tongue of it out of the cut face
+  let ooze = null;
+  if (soft && age > 0.35) {
+    const run = sstep(0.35, 1, age);
+    K.L(ell(-6, 6 - 4 * run, 12 + 30 * run, 2 + 3 * run, 0, TAU, 40), true);
+    ooze = [...curve(s => { const p = [lerp(T0[0], R1[0], 0.08 + 0.8 * s), lerp(T0[1], R1[1], 0.08 + 0.8 * s)]; return [p[0], p[1] - run * (8 * sin(PI * s) ** 0.7 + 2.5 * sin(s * 19) ** 2)]; }, 30),
+      ...curve(s => { const t = 0.88 - 0.8 * s; return [lerp(T0[0], R1[0], t), lerp(T0[1], R1[1], t) + 2.5 + run * 1.5 * sin(PI * s)]; }, 20)];
+  }
+  K.cover(wedge, ...(ooze ? [ooze] : []));
+  K.L(wedge, true); K.L([R1, R1t]); K.L(edge); K.L(rindTop);
+  const side = [...rindBot, ...rindTop.slice().reverse()];
+  K.L([inset(R1, T0, 3.5), inset(R1t, T1, 3.5)]);
+  K.L(rindTop.map(p => inset(p, T1, 3.5)));
+  if (ooze) { K.cover(ooze); K.L(ooze, true); K.mid([ooze], 20); }
+  const frontIn = [T0, inset(R1, T0, 4), inset(R1t, T1, 4), ...edge.slice(1, -1).reverse()], topIn = [...edge, ...rindTop.map(p => inset(p, T1, 4)).slice(1)];
+  return {
+    paste: [frontIn, topIn], cut: [frontIn], rind: [side], skin: soft ? [side, topIn] : [side], squash: new Map([[topIn, 0.45]]),
+    edges: soft ? [] : [[T1, R1t, frontIn, topIn, 0.9, 0.45]], cream: soft ? [[inset(R1, T0, 5.5), inset(R1t, T1, 5.5)]] : [],
+    masks: [wedge, ...(ooze ? [ooze] : [])], vent: [14, Hh + 24, 40],
+  };
+}
+
+// A whole wheel with a wedge cut out of the front: two cut faces in the notch, the rind round the rest.
+function cheeseWheel(K, soft, age, rand, boardTop) {
+  const R = soft ? 50 : 54, Hh = soft ? 16 : 30, e = 0.24, base = 10, f1 = -115 * D2R, f2 = -45 * D2R;
+  const P3 = (x, y, z) => [x, base + y + z * e], rimT = f => P3(R * cos(f), Hh, R * sin(f)), rimB = f => P3(R * cos(f), 0, R * sin(f));
+  const arcT = (a, b, n = 24) => curve(t => rimT(lerp(a, b, t)), n), arcB = (a, b, n = 24) => curve(t => rimB(lerp(a, b, t)), n);
+  const Ct = P3(0, Hh, 0), Cb = P3(0, 0, 0);
+  const top = [Ct, ...arcT(f2, f1 + TAU, 60)], sideA = [...arcT(-PI, f1), ...arcB(f1, -PI)], sideB = [...arcT(f2, 0), ...arcB(0, f2)];
+  const wall1 = [Cb, rimB(f1), rimT(f1), Ct], wall2 = [Cb, rimB(f2), rimT(f2), Ct];
+  K.inside(boardTop, () => K.mid([[rimB(-20 * D2R), rimB(30 * D2R), [R + 18, base + 10], [R + 14, base - 6]]], 0));
+  for (const f of [sideA, sideB, wall1, wall2, top]) { K.cover(f); K.L(f, true); }
+  // the rind band down the outer edge of each cut face
+  for (const f of [f1, f2]) K.L([inset(rimB(f), Cb, 3.5), inset(rimT(f), Ct, 3.5)]);
+  const shrink = (q, d) => { const c = centroid(q); return q.map(p => inset(p, c, d)); };
+  const w1 = shrink(wall1, 2.5), w2 = shrink(wall2, 2.5);
+  return {
+    paste: [w1, w2], cut: [w1, w2], rind: [sideA, sideB], skin: [sideA, sideB, top], squash: new Map([[top, 0.45]]),
+    edges: soft ? [] : [[Ct, rimT(f1), wall1, top, 0.9, 0.45], [Ct, rimT(f2), wall2, top, 0.9, 0.45]],
+    cream: soft ? [[inset(rimB(f1), Cb, 5), inset(rimT(f1), Ct, 5)], [inset(rimB(f2), Cb, 5), inset(rimT(f2), Ct, 5)]] : [],
+    masks: [top, sideA, sideB, wall1, wall2], vent: [0, Hh + R * e + 6, R * 0.8],
+  };
+}
+
+function sock(K, o, rand, age) {
+  const wob = rand() * TAU, shift = v => 1.6 * sin(v / 15 + wob) * sstep(30, 60, v), cu = v => -18 + shift(v);
+  const cp = [[-31, 96], [-31, 62], [-32, 30], [-30, 12], [-24, 2], [-12, 0], [30, 0], [42, 1], [49, 8], [47, 17], [38, 22], [20, 25], [4, 30], [-4, 42], [-5, 62], [-5, 96]];
+  const open = chaikin(cp, 3).map(([u, v]) => [u + shift(v), v]);
+  const body = [...open, ...ell(cu(96), 96, 13, 3.5, TAU, PI, 24)];
+  const opening = ell(cu(96), 96, 13, 3.5, 0, TAU, 40);
+  K.mid([ell(10, -1, 48, 4.5, 0, TAU, 48)], 0);                  // shadow
+  K.cover(body); K.L(body, true);
+  K.L(opening, true); K.dark([opening], 30);
+  K.inside(body, () => {
+    // ribbed cuff
+    K.L(ell(cu(82), 82, 13, 3.5, PI, TAU, 24));
+    for (let f = -0.84; f < 0.9; f += 0.14) { const sq = sqrt(1 - f * f) * 3.5; K.L([[cu(82) + 13 * f, 82 - sq], [cu(96) + 13 * f, 96 - sq]]); }
+    // two stripes
+    for (const [a, b] of [[52, 57], [63, 68]]) { const band = [...ell(cu(a), a, 13.4, 3.5, PI, TAU, 24), ...ell(cu(b), b, 13.4, 3.5, TAU, PI, 24)]; K.L(band.slice(0, 25)); K.L(band.slice(25)); K.dark([band], 60); }
+    // darned heel and toe
+    const heel = ell(-27, 6, 15, 15, 0, TAU, 40), toe = ell(46, 10, 12, 12, 0, TAU, 36);
+    K.L(heel, true); K.mid([heel], 135); K.L(toe, true); K.dark([toe], 20);
+    // wrinkles round the ankle and over the instep
+    for (let i = 0; i < 3; i++) K.L(curve(t => [-29 + 20 * t, 34 + i * 5 - 1.6 * sin(PI * t) + rand()], 10));
+    for (let i = 0; i < 2; i++) K.L(curve(t => [6 + i * 9 + 3 * t, 26 - 7 * t], 4));
+    K.mid([[[-11, 30], [-2, 30], [-2, 82], [-11, 82]]], 45);
+    K.mid([[[-30, -2], [52, -2], [52, 4], [-30, 4]]], 45);
+  });
+  // the hole, and more of them the older it gets
+  for (const [u, v, r] of [[17, 11, 4.5], [-20, 44, 3], [28, 6, 2.6], [-13, 70, 2.4], [-25, 18, 2.2]].slice(0, 1 + floor(age * 4.5))) {
+    const hole = ell(u + cu(v) + 18, v, r, r * 0.67, 0, TAU, 24); K.cover(hole); K.L(hole, true); K.dark([hole], 45);
+  }
+  K.mask(body, opening);
+  return { u: cu(96), v: 100, w: 12, smell: 0.3 + 0.7 * age };
+}
+
+// a fish in its own units: tail root at u = -46, nose at u = 51, midline v = 24
+const S_ = u => sin(PI * clamp((u + 46) / 96, 0, 1) ** 0.8);
+const fTop = u => 27 + 12 * S_(u), fBot = u => 21 - 9 * S_(u);
+const fishBody = () => [...curve(t => [-46 + 96 * t, fTop(-46 + 96 * t)], 40), ...curve(t => [50 + 3 * sin(PI * t), 27 - 6 * t], 8), ...curve(t => [50 - 96 * t, fBot(50 - 96 * t)], 40)];
+const fishTail = [[-44, 26.5], [-67, 41], [-60, 24], [-67, 7], [-44, 21.5]];
+// the tail fin and the head, shared by the whole fish and the fishbone; T maps fish units into the caller's
+function fishParts(K, T, bones, fresh = false) {
+  const t = pts => pts.map(([u, v]) => T(u, v));
+  K.L(t(fishTail), true);
+  for (let i = 1; i < 6; i++) { const f = i / 6; K.L(t([[-45, 24], [lerp(-67, -60, f), lerp(41, 24, f)]])); K.L(t([[-45, 24], [lerp(-60, -67, f), lerp(24, 7, f)]])); }
+  const body = fishBody();
+  if (bones) {
+    K.cover(t(curve(s => [24 - 4 * sin(PI * s), lerp(fBot(24), fTop(24), s)], 12).concat([[52, 21], [52, 27]])));
+    K.inside(t([[24, 0], [60, 0], [60, 50], [24, 50]]), () => K.L(t(body), true));
+    K.L(t(curve(s => [24 - 4 * sin(PI * s), lerp(fBot(24) + 0.3, fTop(24) - 0.3, s)], 12)));
+    K.L(t(curve(s => [20 - 66 * s, 24 + 0.6 * sin(s * 9)], 30)));                         // the spine
+    for (let u = 15; u > -40; u -= 5.5) {
+      K.L(t(curve(s => [u - 6 * s, lerp(24, fTop(u - 6) - 1.4, s) + 1.5 * sin(PI * s)], 8)));
+      K.L(t(curve(s => [u - 6 * s, lerp(24, fBot(u - 6) + 1.4, s) - 1.2 * sin(PI * s)], 8)));
+    }
+  }
+  const eye = ell(38, 26.5, 3.4, 3.4, 0, TAU, 20);
+  K.cover(t(eye)); K.L(t(eye), true);
+  if (fresh) { const pupil = ell(38.4, 26.9, 1.3, 1.3, 0, TAU, 12); K.L(t(pupil), true); K.dark([t(pupil)]); }
+  else { K.L(t([[36.2, 24.7], [39.8, 28.3]])); K.L(t([[36.2, 28.3], [39.8, 24.7]])); }
+  K.L(t([[52.6, 23.6], [46, 22.6], [48, 21.3]]));
+}
+
+function fish(K, o, rand, age) {
+  // the plate
+  const plate = ell(0, 10, 80, 18, 0, TAU, 80), well = ell(0, 11, 60, 12.5, 0, TAU, 64);
+  K.mid([ell(14, 4, 80, 18, 0, TAU, 60)], 0);
+  K.cover([...ell(0, 10, 80, 18, 0, PI, 40), ...ell(0, 7, 80, 18, PI, TAU, 40)]);
+  K.L(plate, true); K.L(well, true); K.L(ell(0, 7, 80, 18, PI, TAU, 40)); K.L([[-80, 10], [-80, 7]]); K.L([[80, 10], [80, 7]]);
+  K.mid([[...ell(0, 10, 80, 18, PI, TAU, 40), ...ell(0, 7, 80, 18, TAU, PI, 40)]], 90);
+  K.mid([well, ell(3, 9.8, 58, 11.5, 0, TAU, 60)], 30);
+  const id = (u, v) => [u, v], body = fishBody();
+  const plateMask = [...ell(0, 10, 80, 18, 0, PI, 40), ...ell(0, 7, 80, 18, PI, TAU, 40)];
+  const smell = 0.35 + 0.65 * age;
+  if (o.view === "row" ? age > 0.7 : o.fish === "bones") { K.cover(fishTail); fishParts(K, id, true); K.mask(body, fishTail, plateMask); return { u: 0, v: 44, w: 44, smell }; }
+  // fins behind the body
+  const dorsal = [...curve(s => [-14 + 32 * s, fTop(-14 + 32 * s) - 1], 16), ...curve(s => [18 - 32 * s, fTop(18 - 32 * s) + 8 * sin(PI * (1 - s)) ** 0.7 + 0.8 * sin(s * 40)], 24)];
+  const anal = [...curve(s => [-32 + 14 * s, fBot(-32 + 14 * s) + 1], 8), ...curve(s => [-18 - 14 * s, fBot(-18 - 14 * s) - 4.5 * sin(PI * s)], 10)];
+  for (const fin of [dorsal, anal]) { K.cover(fin); K.L(fin, true); }
+  for (let u = -12; u < 18; u += 3.2) K.L([[u, fTop(u)], [u + 1.5, fTop(u) + 7 * sin(PI * (u + 14) / 32) ** 0.7]]);
+  K.cover(fishTail); fishParts(K, id, false);
+  K.cover(body); K.L(body, true);
+  // scales, the free edge of each toward the tail
+  K.inside(body, () => K.inside([[-46, 0], [21, 0], [21, 50], [-46, 50]], () => {
+    for (let i = 0, u = -42; u < 22; u += 4.4, i++) for (let v = 10 + (i & 1) * 1.9; v < 42; v += 3.8) K.L(ell(u, v, 2.6, 2.4, PI / 2, 1.5 * PI, 8));
+    const lat = curve(s => [-44 + 66 * s, 24 + 1.2 * sin(PI * s)], 24);
+    K.mid([[...lat, ...curve(s => [22 - 66 * s, fBot(22 - 66 * s)], 24)]], 30);
+  }));
+  K.L(curve(s => [-44 + 66 * s, 24 + 1.2 * sin(PI * s)], 24));
+  K.L(curve(s => [24 - 4 * sin(PI * s), lerp(fBot(24) + 0.3, fTop(24) - 0.3, s)], 12));
+  fishParts(K, id, false, age < 0.3);
+  const pec = [[21, 21.5], [12, 15.5], [10.5, 18.5], [11.5, 21.5], [21, 22.6]];
+  K.cover(pec); K.L(pec, true); K.L([[20.5, 21.8], [11.3, 17]]); K.L([[20.5, 22], [11, 20]]);
+  K.mask(body, fishTail, dorsal, anal, plateMask);
+  return { u: 0, v: 44, w: 44, smell };
+}
+
+function bin(K, o, rand, age) {
+  const hw = v => 30 + 4 * v / 73, ry = v => 6 + v / 73;
+  K.mid([ell(16, 0, 50, 6, 0, TAU, 48)], 0);
+  // inside, through the gap under the lid
+  const rimTop = ell(0, 77, 36, 7.5, 0, TAU, 72);
+  K.L(rimTop, true); K.dark([rimTop], 30);
+  // a fishbone poking out of the gap
+  const fa = 0.62, fs = 0.3, T = (u, v) => { const x = (u - 10) * fs, y = (v - 24) * fs; return [20 + x * cos(fa) - y * sin(fa), 82 + x * sin(fa) + y * cos(fa)]; };
+  const fb = [...fishBody(), ...fishTail].map(([u, v]) => T(u, v));
+  K.cover(fb); fishParts(K, T, true);
+  // the lid, hinged at the back on the left and propped up on the right
+  const la = 14 * D2R, pv = [-36, 77], lidC = [pv[0] + 38 * cos(la), pv[1] + 38 * sin(la)], L = (u, v) => [lidC[0] + u * cos(la) - v * sin(la), lidC[1] + u * sin(la) + v * cos(la)];
+  const lt = pts => pts.map(([u, v]) => L(u, v));
+  const lidPoly = lt([...ell(0, -3, 38, 7.5, PI, TAU, 36), ...ell(0, 0, 38, 7.5, 0, PI, 36)]), dome = lt([...ell(0, 2, 27, 9, 0, PI, 30)]), handle = lt([[-6, 9.5], [-6, 13], [6, 13], [6, 9.5]]);
+  K.cover(lidPoly); K.L(lt(ell(0, 0, 38, 7.5, 0, TAU, 60)), true); K.L(lt(ell(0, -3, 38, 7.5, PI, TAU, 36))); K.L(lt([[-38, 0], [-38, -3]])); K.L(lt([[38, 0], [38, -3]]));
+  K.mid([lt([...ell(0, 0, 38, 7.5, PI, TAU, 36), ...ell(0, -3, 38, 7.5, TAU, PI, 36)])], 100);
+  K.cover(dome); K.L(dome, true); K.mid([lt([[8, 0], ...ell(0, 2, 27, 9, 0.35, 0, 8).slice(1)])], 30);
+  K.cover(handle); K.L(handle, true);
+  // the body: corrugated, two bands
+  const body = [[-34, 73], [-30, 2], ...ell(0, 2, 30, 6, PI, TAU, 36), [34, 73], ...ell(0, 73, 34, 7, TAU, PI, 36)];
+  K.cover(body); K.L(body, true);
+  K.inside(body, () => {
+    for (let f = -0.8; f < 0.85; f += 0.16) { const sq = sqrt(1 - f * f); K.L([[hw(2) * f, 2 - 6 * sq], [hw(73) * f, 73 - 7 * sq]]); }
+    for (const v of [18, 20.5, 54, 56.5]) K.L(ell(0, v, hw(v), ry(v), PI, TAU, 36));
+    K.mid([[...curve(t => { const v = 2 + 71 * t; return [hw(v) * 0.5, v - ry(v) * 0.87]; }, 12), ...curve(t => { const v = 73 - 71 * t; return [hw(v), v]; }, 12)]], 60);
+  });
+  for (const s of [-1, 1]) K.L([[s * 34.5, 62], [s * 41, 62], [s * 41, 54], [s * 34, 54]]);
+  // the rim, in front
+  const rimBand = [...ell(0, 77, 36, 7.5, PI, TAU, 40), ...ell(0, 73, 36, 7.5, TAU, PI, 40)];
+  K.cover(rimBand); K.L(rimBand, true); K.mid([rimBand.filter(([u]) => u > 12)], 90);
+  // a banana skin over the front rim on the left
+  const peel = [];
+  for (const [dx, len, bend] of [[-7, 18, -0.5], [0, 22, 0.1], [7, 17, 0.6]]) {
+    const c = curve(t => [-20 + dx * t ** 0.7 + bend * 6 * t * t, 71 - len * t + 2 * sin(PI * t)], 16), pts = [];
+    for (let i = 0; i <= 16; i++) { const t = i / 16, w = 3.2 * sin(PI * clamp(t * 1.15, 0, 1)) ** 0.6 + 0.4; pts.push([c[i][0] - w, c[i][1]]); }
+    for (let i = 16; i >= 0; i--) { const t = i / 16, w = 3.2 * sin(PI * clamp(t * 1.15, 0, 1)) ** 0.6 + 0.4; pts.push([c[i][0] + w, c[i][1]]); }
+    peel.push([pts, c]);
+  }
+  for (const [pts, c] of peel) { K.cover(pts); K.L(pts, true); K.L(c.slice(2, 14)); K.mid([pts.filter((_, i) => i > 18 && i < 32).concat(c.slice(4, 14).reverse())], 45); }
+  K.L([[-20, 71], [-19, 78], [-17.5, 79]]);
+  K.mask(body, rimBand, rimTop, lidPoly, dome, handle, fb, ...peel.map(p => p[0]));
+  return { u: 22, v: 92, w: 16, smell: 0.3 + 0.7 * age };
+}
+
+const SOURCES = { corpse: { nh: 160, hw: 50, below: 6, draw: corpse }, cheese: { nh: 60, hw: 80, hwRow: 64, below: 15, draw: cheese }, sock: { nh: 100, hw: 52, below: 6, draw: sock }, fish: { nh: 46, hw: 84, below: 12, draw: fish }, bin: { nh: 112, hw: 52, below: 7, draw: bin } };
+
+// ---------------- a fly, seen from above, heading a ----------------
+function fly(o, x, y, a, L) {
+  const K = sketch((u, v) => [x + u * cos(a) - v * sin(a), y + u * sin(a) + v * cos(a)], o);
+  for (const s of [-1, 1]) for (const [b, k, f] of [[0.2, 0.34, 0.46], [0.1, 0.08, 0.02], [0.02, -0.14, -0.32]]) K.L([[b * L, s * 0.08 * L], [k * L, s * 0.32 * L], [f * L, s * 0.44 * L]]);
+  const abd = ell(-0.2 * L, 0, 0.27 * L, 0.17 * L, 0, TAU, 20), th = ell(0.12 * L, 0, 0.15 * L, 0.14 * L, 0, TAU, 16), hd = ell(0.34 * L, 0, 0.11 * L, 0.13 * L, 0, TAU, 14);
+  for (const q of [abd, th, hd]) { K.cover(q); K.L(q, true); }
+  K.inside(abd, () => { for (const u of [-0.17, -0.3]) K.L([[u * L, -0.2 * L], [u * L, 0.2 * L]]); });
+  for (const s of [-1, 1]) { const wing = ell(-0.15 * L, s * 0.2 * L, 0.3 * L, 0.11 * L, 0, TAU, 20, -s * 0.54); K.cover(wing); K.L(wing, true); K.L([[0.08 * L, s * 0.06 * L], [-0.36 * L, s * 0.36 * L]]); }
+  return { K, mask: ell(x - 0.05 * L * cos(a), y - 0.05 * L * sin(a), 0.58 * L, 0.58 * L, 0, TAU, 20) };
+}
+
+// ---------------- masks on a raster, grown by a pad ----------------
+function raster(W, H, polys, pad) {
+  const nx = ceil(W / RES) + 1, ny = ceil(H / RES) + 1, g = new Uint8Array(nx * ny);
+  for (const q of polys) {
+    const b = bbox(q), j0 = max(0, floor(b[1] / RES)), j1 = min(ny - 1, ceil(b[3] / RES));
+    for (let j = j0; j <= j1; j++) {
+      const y = (j + 0.5) * RES, xs = [];
+      for (let i = 0, k = q.length - 1; i < q.length; k = i++) { const [xi, yi] = q[i], [xk, yk] = q[k]; if ((yi > y) !== (yk > y)) xs.push(xi + (y - yi) * (xk - xi) / (yk - yi)); }
+      xs.sort((u, v) => u - v);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let i = max(0, round(xs[k] / RES)); i <= min(nx - 1, round(xs[k + 1] / RES)); i++) g[j * nx + i] = 1;
+    }
+  }
+  const r = ceil(pad / RES);
+  let d = g;
+  if (r > 0) { // grow by r cells: rows, then columns
+    const t = new Uint8Array(nx * ny); d = new Uint8Array(nx * ny);
+    for (let j = 0; j < ny; j++) { let last = -INF; for (let i = 0; i < nx; i++) { if (g[j * nx + i]) last = i; if (i - last <= r) t[j * nx + i] = 1; } last = INF; for (let i = nx - 1; i >= 0; i--) { if (g[j * nx + i]) last = i; if (last - i <= r) t[j * nx + i] = 1; } }
+    for (let i = 0; i < nx; i++) { let last = -INF; for (let j = 0; j < ny; j++) { if (t[j * nx + i]) last = j; if (j - last <= r) d[j * nx + i] = 1; } last = INF; for (let j = ny - 1; j >= 0; j--) { if (t[j * nx + i]) last = j; if (last - j <= r) d[j * nx + i] = 1; } }
+  }
+  const at = a => (x, y) => { const i = floor(x / RES), j = floor(y / RES); return i < 0 || j < 0 || i >= nx || j >= ny ? false : a[j * nx + i] === 1; };
+  return { hit: at(d), raw: at(g) };
+}
+
+// ---------------- spacing: points on a grid, so "is anything within d" is quick ----------------
+function pointGrid(W, H, cell) {
+  const nx = ceil(W / cell) + 2, ny = ceil(H / cell) + 2, cells = Array.from({ length: nx * ny }, () => []);
+  const key = (x, y) => clamp(floor(x / cell) + 1, 0, nx - 1) + clamp(floor(y / cell) + 1, 0, ny - 1) * nx;
+  return {
+    add(x, y, id, at) { const c = cells[key(x, y)]; c.push(x, y, id, at); return c; },
+    // the nearest point within d that is not on line id within skip of position at
+    near(x, y, d, id = -1, at = 0, skip = 0) {
+      const r = ceil(d / cell), ci = clamp(floor(x / cell) + 1, 0, nx - 1), cj = clamp(floor(y / cell) + 1, 0, ny - 1), d2 = d * d;
+      let best = INF;
+      for (let j = max(0, cj - r); j <= min(ny - 1, cj + r); j++) for (let i = max(0, ci - r); i <= min(nx - 1, ci + r); i++) {
+        const c = cells[i + j * nx];
+        for (let k = 0; k < c.length; k += 4) { if (c[k + 2] === id && abs(c[k + 3] - at) <= skip) continue; const dd = (c[k] - x) ** 2 + (c[k + 1] - y) ** 2; if (dd < d2 && dd < best) best = dd; }
+      }
+      return best === INF ? -1 : sqrt(best);
+    },
+  };
+}
+// Cut paths wherever they come within d of a path already kept (or of themselves further along).
+function thin(paths, d, W, H, minLen = 1.5) {
+  const G = pointGrid(W, H, d), out = [];
+  let next = 0;
+  paths.forEach(([q, cl]) => {
+    const pts = densify(cl ? [...q, q[0]] : q, d * 0.5);
+    let id = next++;   // a new id after every cut: the pieces of one path must keep their distance too
+    let arc = 0, run = [], runs = [];
+    for (let i = 0; i < pts.length; i++) {
+      if (i) arc += hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      const [x, y] = pts[i];
+      if (G.near(x, y, d, id, arc, 3 * d) >= 0) { if (run.length) runs.push(run); run = []; id = next++; continue; }
+      run.push([x, y]); G.add(x, y, id, arc);
+    }
+    if (run.length) runs.push(run);
+    if (runs.length === 1 && runs[0].length === pts.length) { out.push([q, cl]); return; }
+    for (const r of runs) if (r.length > 1 && pathLen(r) >= minLen) out.push([r, false]);
+  });
+  return out;
+}
+function minGap(paths, W, H, d) {
+  const G = pointGrid(W, H, d); let best = INF;
+  paths.forEach(([q, cl], id) => {
+    const pts = densify(cl ? [...q, q[0]] : q, 0.3); let arc = 0;
+    for (let i = 0; i < pts.length; i++) { if (i) arc += hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); const n = G.near(pts[i][0], pts[i][1], d, id, arc, 3 * MIN_GAP); if (n >= 0) best = min(best, n); }
+    arc = 0; for (let i = 0; i < pts.length; i++) { if (i) arc += hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); G.add(pts[i][0], pts[i][1], id, arc); }
+  });
+  return best;
+}
+
+// ---------------- marching squares, closed loops only (the field is zero at its edge) ----------------
+function contours(F, nx, ny, h, x0, y0, t) {
+  const adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+
+// ---------------- build ----------------
+const PAGES = { "190x250": [190, 250], "250x190": [250, 190], "280x280": [280, 280] };
+const INKS = { green: "3f8f2f", yellow: "b89a00", purple: "6b3fa0", black: "000000" };
+function build(o) {
+  const t0 = performance.now(), notes = [], gates = [];
+  const [W, H] = PAGES[o.page] || PAGES["190x250"], m = o.margin;
+  const rand = mulberry(o.seed * 7919 + 13), noise = makeNoise(o.seed), noise2 = makeNoise(o.seed + 101), sw = o.swirl;
+  // the sources: one, or a row of them ageing left to right, each scaled to its share of the page on the bottom margin
+  const S = SOURCES[o.source] || SOURCES.corpse, n = o.view === "row" ? o.row : 1, slot = (W - 2 * m) / n;
+  const k = min(o.size / 100 * (H - 2 * m) / (S.nh + S.below), n > 1 ? slot * 0.96 / (2 * (S.hwRow || S.hw)) : (W - 2 * m) * 0.96 / (2 * S.hw));
+  const src = { line: [], shade: [], masks: [] }, vents = [];
+  for (let i = 0; i < n; i++) {
+    const age = n > 1 ? lerp(0.04, 0.96, i / (n - 1)) : o.age, half = (n > 1 && S.hwRow || S.hw) * k;
+    const cx = n > 1 ? m + slot * (i + 0.5) : clamp(W / 2 + o.offset * (W - 2 * m) / 2, m + half, W - m - half), by = H - m - S.below * k;
+    const K = sketch((u, v) => [cx + u * k, by - v * k], o);
+    const vl = S.draw(K, o, mulberry(o.seed * 31 + 7), age);   // one seed for the row: the same thing, older
+    src.line.push(...K.line); src.shade.push(...K.shade); src.masks.push(...K.masks);
+    if (vl.smell > 0.04) vents.push({ x: cx + vl.u * k, y: by - vl.v * k, w: vl.w * k, str: min(1, vl.smell) });
+  }
+
+  // a plume per vent, all in one field: up, spreading, bent by the wind, with curl noise faded in as it climbs
+  const curl = (x, y) => { const e = 0.35, a = x / sw, b = y / sw, f = sw / (2 * e), q = e / sw; return [(noise(a, b + q) - noise(a, b - q)) * f, -(noise(a + q, b) - noise(a - q, b)) * f]; };
+  const plumes = vents.map(vent => {
+    const Hp = max(10, vent.y - m), hmax = o.reach * Hp * (0.35 + 0.65 * vent.str);
+    const cxAt = h => vent.x + o.wind * 0.9 * h * h / (2 * Hp), halfAt = h => vent.w + o.spread * max(h, 0);
+    const vel = (x, y, tf = 1) => {
+      const h = vent.y - y, c = curl(x, y), t = o.turb * tf * sstep(0, Hp * 0.22, h) * (0.6 + 0.6 * min(1, max(0, h) / Hp));
+      const vx = o.wind * 0.9 * max(h, 0) / Hp + o.spread * (x - cxAt(h)) / halfAt(h) + c[0] * t, vy = -1 + c[1] * t, nn = hypot(vx, vy) || 1;
+      return [vx / nn, vy / nn];
+    };
+    const inEnv = (x, y) => {
+      const h = vent.y - y;
+      if (x < m || x > W - m || y < m || y > H - m || h > hmax * (1 + 0.06 * noise2(x / 25, 7.7))) return false;
+      if (h < 0) { const depth = vent.w * 0.9; return h > -depth && abs(x - cxAt(0)) <= vent.w * (1 + h / depth); } // a funnel down into the source
+      return abs(x - cxAt(h)) <= halfAt(h) * (1 + 0.22 * noise2(h / 20, 3.3));
+    };
+    return { vent, Hp, hmax, cxAt, halfAt, vel, inEnv };
+  });
+  const pick = () => { let r = rand() * plumes.reduce((a, p) => a + p.vent.str, 0); for (const p of plumes) if ((r -= p.vent.str) <= 0) return p; return plumes.at(-1); };
+
+  // flies: in the smell (more where it is stronger), clear of the sources and of each other
+  const srcBlock = raster(W, H, src.masks, o.flysize + 2), flies = [], flyLine = [], flyShade = [], flyMasks = [];
+  for (let t = 0; plumes.length && flies.length < o.flies && t < 600; t++) {
+    const p = pick(), h = p.Hp * (0.06 + 0.7 * rand()), x = p.cxAt(h) + (rand() * 2 - 1) * p.halfAt(h) * 1.1, y = p.vent.y - h, L = o.flysize;
+    if (x < m + L || x > W - m - L || y < m + L || y > H - m - L || srcBlock.hit(x, y) || flies.some(f => hypot(f.x - x, f.y - y) < 3 * L + 10)) continue;
+    flies.push({ x, y, a: rand() * TAU });
+  }
+  for (const f of flies) { const F = fly(o, f.x, f.y, f.a, o.flysize); flyLine.push(...F.K.line); flyShade.push(...F.K.shade); flyMasks.push(F.mask); }
+  const block = raster(W, H, [...src.masks, ...flyMasks], INK_GAP), bare = raster(W, H, [...src.masks, ...flyMasks], 0);
+  const blocked = block.hit;
+
+  // fly paths: loops and swerves, dashed, back from each fly
+  const trails = [];
+  for (const f of flies) {
+    if (o.trail <= 0) break;
+    const R = 3 + rand() * 4, l1 = 5 + rand() * 5, l2 = 12 + rand() * 9, p1 = rand() * TAU, p2 = rand() * TAU, len = o.trail * (0.6 + 0.4 * rand());
+    let a = f.a + PI, x = f.x - cos(f.a) * 0.5 * o.flysize, y = f.y - sin(f.a) * 0.5 * o.flysize; const q = [[x, y]];
+    for (let s = 0; s < len; s += 0.4) { a += 0.4 * (1.25 * sin(s / l1 + p1) + 0.7 * sin(s / l2 + p2)) / R; x += 0.4 * cos(a); y += 0.4 * sin(a); if (x < m || x > W - m || y < m || y > H - m) break; q.push([x, y]); }
+    if (q.length > 3) trails.push(...dashes(q, () => 1.5, () => 1.1));
+  }
+
+  // the smell
+  let smell = [];
+  if (o.style === "plume") {
+    // streamlines share one grid, so the plumes keep their spacing where they meet
+    const G = pointGrid(W, H, 1), dsep = (p, y) => o.gap * (1 + o.fade * clamp((p.vent.y - y) / p.hmax, 0, 1) ** 2);
+    const lines = [];
+    const free = (p, x, y, d, id = -1, at = 0, skip = 0) => p.inEnv(x, y) && !blocked(x, y) && G.near(x, y, d, id, at, skip) < 0;
+    const trace = (p, sx, sy) => {
+      const id = lines.length, skip = ceil(2.5 * dsep(p, sy) / STEP), cells = [], halves = [[], []];
+      if (!free(p, sx, sy, dsep(p, sy) * 0.98)) return false;
+      cells.push(G.add(sx, sy, id, 0));
+      [1, -1].forEach((dir, hI) => {
+        let x = sx, y = sy;
+        for (let i = 1; i < 3000; i++) {
+          const [vx, vy] = p.vel(x, y), [wx, wy] = p.vel(x + vx * STEP * 0.5 * dir, y + vy * STEP * 0.5 * dir), nx = x + wx * STEP * dir, ny = y + wy * STEP * dir;
+          if (!free(p, nx, ny, dsep(p, ny) * 0.5, id, i * dir, skip)) break;
+          x = nx; y = ny; halves[hI].push([x, y]); cells.push(G.add(x, y, id, i * dir));
+        }
+      });
+      const q = [...halves[1].reverse(), [sx, sy], ...halves[0]];
+      if (pathLen(q) < 3) { for (const c of cells) c.length -= 4; return false; } // undo: this line's points are the last in each cell
+      lines.push({ q, p }); return true;
+    };
+    // seeds across each vent; if a vent is covered, look a little higher
+    for (const p of plumes) { const before = lines.length; for (let lift = 0; lines.length === before && lift < p.Hp * 0.6; lift += 1) for (let x = p.cxAt(0) - p.vent.w; x <= p.cxAt(0) + p.vent.w; x += o.gap) trace(p, x, p.vent.y - 0.5 - lift); }
+    for (let li = 0; li < lines.length && lines.length < 5000; li++) {
+      const { q, p } = lines[li];
+      for (let i = 1; i < q.length - 1; i += 2) {
+        const dx = q[i + 1][0] - q[i - 1][0], dy = q[i + 1][1] - q[i - 1][1], L = hypot(dx, dy) || 1, d = dsep(p, q[i][1]);
+        for (const s of [1, -1]) trace(p, q[i][0] - dy / L * d * s, q[i][1] + dx / L * d * s);
+      }
+    }
+    if (o.tail === "dash") for (const { q, p } of lines) {
+      const qf = r => clamp(((p.vent.y - r[1]) / p.hmax + 0.08 * noise2(r[0] / 12, r[1] / 12) - 0.55) / 0.45, 0, 1);
+      smell.push(...dashes(q, r => qf(r) > 0 ? lerp(7, 1, qf(r)) : INF, r => lerp(0.8, 3.5, qf(r))));
+    } else smell = lines.map(({ q }) => [q, false]);
+  } else if (o.style === "wisps") {
+    // the cartoon: wavy lines rising, each curling over at the top; fewer off a weaker smell
+    for (const p of plumes) {
+      const { vent, cxAt, hmax, vel } = p, nw = max(1, round(o.wisps * (0.3 + 0.7 * vent.str)));
+      for (let i = 0; i < nw; i++) {
+        const f = nw === 1 ? 0 : i / (nw - 1) - 0.5;
+        let x = cxAt(0) + f * 2 * vent.w * 0.8, y = vent.y - 2 - rand() * 3;
+        for (let lift = 0; blocked(x, y) && lift < 60; lift++) y -= 1;
+        const L = hmax * (0.5 + 0.3 * rand()) * (1 - 0.4 * abs(f)), c = [[x, y]];
+        for (let s = 0; s < L; s += 0.5) { const [vx, vy] = vel(x, y, 0.35); x += vx * 0.5; y += vy * 0.5; if (x < m || x > W - m || y < m) break; c.push([x, y]); }
+        if (c.length < 8) continue;
+        const wig = o.wiggle * (0.6 + 0.4 * vent.str), lam = 10 + wig * 2.5, ph = rand() * TAU, q = [];
+        let s = 0;
+        for (let j = 0; j < c.length; j++) {
+          if (j) s += hypot(c[j][0] - c[j - 1][0], c[j][1] - c[j - 1][1]);
+          const a = c[min(j + 1, c.length - 1)], b = c[max(j - 1, 0)], tx = a[0] - b[0], ty = a[1] - b[1], tl = hypot(tx, ty) || 1, A = wig * sstep(0, 10, s) * (0.8 + 0.4 * s / L);
+          const off = A * sin(TAU * s / lam + ph); q.push([c[j][0] - ty / tl * off, c[j][1] + tx / tl * off]);
+        }
+        // the curl at the top: turn tighter and tighter
+        let [hx, hy] = q.at(-1), [px, py] = q.at(-3), ha = atan2(hy - py, hx - px);
+        const r0 = max(1.5, wig * 1.1), turn = f < 0 || (f === 0 && rand() < 0.5) ? -1 : 1, Lh = 1.3 * PI * r0;
+        for (let t = 0; t < Lh; t += 0.4) { ha += turn * 0.4 / (r0 * (1 - 0.55 * t / Lh)); hx += 0.4 * cos(ha); hy += 0.4 * sin(ha); if (hx < m || hx > W - m || hy < m) break; q.push([hx, hy]); }
+        smell.push([q, false]);
+      }
+    }
+  } else if (plumes.length) {
+    // smell map: a chain of puffs up each plume, each wider and fainter, summed, swirled, then contoured
+    const h = 0.6, x0 = m, y0 = m, nx = ceil((W - 2 * m) / h) + 1, ny = ceil((H - 2 * m) / h) + 1, F = new Float32Array(nx * ny);
+    const chains = plumes.map(({ vent, cxAt, halfAt, hmax }) => { const puffs = []; for (let s = 0; s <= hmax; s += 3) puffs.push([cxAt(s) + 0.25 * halfAt(s) * noise2(s / 30, 1.7), vent.y - s, vent.w * 0.55 + o.spread * s * 0.75, vent.str * exp(-s / (hmax * 0.55))]); return { vent, puffs }; });
+    const baseY = plumes.reduce((a, p) => a + p.vent.y, 0) / plumes.length, Hp = plumes[0].Hp;
+    let top = 0;
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      let x = x0 + i * h, y = y0 + j * h;
+      const tw = o.turb * sw * 0.3 * sstep(0, Hp * 0.25, baseY - y);
+      if (tw > 0) { x += tw * noise(x / sw, y / sw); y += tw * noise(x / sw + 9.1, y / sw + 4.2); }
+      let c = 0;
+      for (const { vent, puffs } of chains) {
+        const hh = vent.y - y, below = hh < 0 ? exp(-((hh / (0.6 * vent.w)) ** 2)) : 1; if (below < 1e-3) continue;
+        let cc = 0; for (const [px, py, sg, A] of puffs) { const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy, s2 = 2 * sg * sg; if (d2 < 9 * s2) cc += A * exp(-d2 / s2); }
+        c += cc * below;
+      }
+      const edge = min(i, nx - 1 - i, ny - 1 - j) * h;
+      F[j * nx + i] = c * sstep(0, 14, edge) * sstep(0, 26, j * h); top = max(top, F[j * nx + i]);
+    }
+    if (top > 0) for (let i = 0; i < F.length; i++) F[i] /= top;
+    for (let l = 1; l <= o.levels; l++) {
+      const r = 2.6 * l / (o.levels + 0.5), lv = exp(-r * r / 2);
+      for (const loop of contours(F, nx, ny, h, x0, y0, lv)) if (pathLen(loop) > 4) smell.push([loop, true]);
+    }
+  }
+  smell = clipBy(smell, (x, y) => blocked(x, y) || x < m || x > W - m || y < m || y > H - m, false);
+  smell = thin(smell, MIN_GAP + 0.05, W, H).map(([q, cl]) => [rdp(q, 0.03), cl]);
+
+  // tidy: trails out of the sources and flies, everything inside the page
+  const trailsOut = clipBy(trails, blocked, false).filter(([q]) => pathLen(q) > 0.6);
+  const onPage = (x, y) => x >= 1.5 && y >= 1.5 && x <= W - 1.5 && y <= H - 1.5, fin = L => clipBy(L, onPage, true).map(([q, cl]) => [rdp(q, 0.03), cl]);
+  const layers = { line: fin([...src.line, ...flyLine]), shade: fin([...src.shade, ...flyShade, ...trailsOut]), smell: fin(smell) };
+
+  // gates
+  let bad = 0, pts = 0;
+  for (const L of Object.values(layers)) for (const [q] of L) for (const [x, y] of q) { pts++; if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > W || y > H) bad++; }
+  const gap = minGap(layers.smell, W, H, 2);
+  let over = 0; for (const [q] of layers.smell) for (const [x, y] of densify(q, 0.3)) if (bare.raw(x, y)) over++;
+  gates.push(["all points finite and on the page", bad === 0, `${bad} of ${pts} off`]);
+  // a closed bud has no smell yet; that is not a fault
+  gates.push(["there is a smell, if anything smells yet", !plumes.length || layers.smell.length > 0, plumes.length ? `${layers.smell.length} lines` : "nothing smells yet"]);
+  gates.push(["hatch pitch >= 0.5 mm (0.3 pen)", o.hp >= 0.5, `${o.hp} mm`]);
+  gates.push([`smell lines never closer than ${MIN_GAP} mm`, gap >= MIN_GAP - 1e-6, gap === INF ? "nothing near" : `${gap.toFixed(2)} mm`]);
+  gates.push(["no smell over the source or a fly", over === 0, `${over} points`]);
+  if (flies.length < o.flies && plumes.length) notes.push(`room for ${flies.length} of ${o.flies} flies`);
+  if (!plumes.length) notes.push("nothing smells yet: a corpse flower only stinks once it opens");
+  return { W, H, o, layers, gates, notes, flies: flies.length, ms: performance.now() - t0 };
+}
+
+// ---------------- preview, export ----------------
+const COL = { line: "#1d1a14", shade: "#6d6656" };
+function draw(r) {
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  for (const L of penLayers(r)) { c.strokeStyle = L.name === "smell" ? "#" + L.colour : COL[L.name]; c.lineWidth = L.w; c.beginPath(); for (const [q, cl] of L.paths) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); }
+  const lenm = L => L.reduce((a, [q]) => a + pathLen(q), 0) / 1000;
+  $("stats").innerHTML = `${r.o.source}, ${r.o.style}: <b>${r.layers.smell.length}</b> smell lines, <b>${r.flies}</b> flies · ${r.ms.toFixed(0)} ms<br>`
+    + `line 0.4 pen: <b>${lenm(r.layers.line).toFixed(1)} m</b> · shade 0.3 pen: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · smell pen: <b>${lenm(r.layers.smell).toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "line", colour: "000000", w: 0.4, paths: r.layers.line }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade },
+  { name: "smell", colour: INKS[r.o.ink] || INKS.green, w: 0.4, paths: r.layers.smell },
+].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG stink plume studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["source", "cheese", "cut", "eyes", "fish", "view", "age", "row", "size", "offset", "seed", "style", "gap", "fade", "tail", "wisps", "wiggle", "levels", "spread", "turb", "swirl", "wind", "reach", "flies", "flysize", "trail", "dark", "hp", "ink", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const RECOLOUR = new Set(["ink"]);
+function run(k) { sync(); if (last && RECOLOUR.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { source: "corpse", cheese: "holey", cut: "wedge", eyes: 1, fish: "whole", view: "one", age: 0.5, row: 5, size: 52, offset: 0, seed: 8, style: "plume", gap: 1.8, fade: 1.2, tail: "dash", wisps: 3, wiggle: 3, levels: 12, spread: 0.32, turb: 1.2, swirl: 26, wind: 0.15, reach: 0.95, flies: 5, flysize: 5, trail: 70, dark: "cross", hp: 0.8, ink: "green", page: "190x250", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  corpse: P({}),
+  sock: P({ source: "sock", style: "wisps", size: 42, wisps: 4, age: 0.6, wiggle: 3.4, spread: 0.2, turb: 0.6, reach: 0.8, flies: 3, seed: 3, offset: -0.1 }),
+  stilton: P({ source: "cheese", cheese: "blue", style: "map", size: 34, levels: 13, spread: 0.36, turb: 1, swirl: 30, wind: 0.25, flies: 3, page: "250x190", seed: 12, ink: "purple" }),
+  fishbone: P({ source: "fish", fish: "bones", age: 0.85, size: 30, gap: 1.6, turb: 1.4, swirl: 22, spread: 0.28, flies: 6, flysize: 4, page: "250x190", seed: 5 }),
+  bin: P({ source: "bin", age: 0.8, size: 46, offset: 0.4, wind: -0.6, spread: 0.24, turb: 1, gap: 2, flies: 4, seed: 21, ink: "yellow" }),
+  emmental: P({ source: "cheese", style: "wisps", size: 32, wisps: 6, age: 0.3, wiggle: 2.6, spread: 0.3, turb: 0.5, flies: 2, page: "250x190", seed: 4, ink: "yellow" }),
+  kipper: P({ source: "fish", style: "map", size: 26, levels: 16, turb: 1.4, swirl: 22, spread: 0.4, flies: 4, page: "280x280", seed: 9 }),
+  lifecycle: P({ view: "row", row: 5, size: 62, gap: 1.5, fade: 1, spread: 0.26, turb: 1, swirl: 22, reach: 0.9, flies: 6, flysize: 4, trail: 50, page: "280x280", seed: 8, ink: "purple" }),
+  wheel: P({ source: "cheese", cut: "wheel", style: "map", size: 34, levels: 12, age: 0.7, spread: 0.34, turb: 1, swirl: 28, flies: 3, page: "250x190", seed: 6, ink: "yellow" }),
+  brie: P({ source: "cheese", cheese: "brie", view: "row", row: 3, style: "wisps", size: 48, wisps: 4, wiggle: 2.4, spread: 0.2, turb: 0.5, reach: 0.7, flies: 4, flysize: 4, trail: 40, page: "250x190", seed: 2 }),
+  bud: P({ age: 0.18, flies: 0 }),
+  slump: P({ age: 0.82, seed: 11, flies: 7, gap: 2 }),
+  titan: P({ size: 46, offset: -0.4, wind: 0.9, turb: 1.6, swirl: 34, gap: 1.6, fade: 0.8, flies: 7, flysize: 4, page: "280x280", seed: 17, ink: "purple" }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `stink-${r.o.source}-${r.o.style}-s${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
