@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="190mm" height="250mm" viewBox="0 0 190 250">
 <title>PLG ram skull studio</title>
-<desc id="plg-settings">{"view":"overlay","age":10,"count":4,"layers":4,"seed":7,"curl":400,"tight":0.2,"hsize":1,"girth":1,"spread":58,"flare":0.16,"rise":40,"ridges":1,"plaque":"none","label":"age","ram":"none","ramcol":"green","dark":"cross","hp":0.8,"engrave":16,"page":"190x250","margin":10}</desc>
+<desc id="plg-settings">{"view":"overlay","age":10,"count":4,"layers":4,"seed":7,"curl":400,"tight":0.2,"hsize":1,"girth":1,"spread":58,"flare":0.16,"rise":40,"ridges":1,"plaque":"none","part":"together","cut":"none","cutoff":2,"label":"age","ram":"none","ramcol":"green","dark":"cross","hp":0.8,"engrave":16,"page":"190x250","margin":10}</desc>
 <g id="pen-g1" stroke="#e09a00" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M112.119,68.031 L113.979,66.629 L115.447,65.668 L116.944,64.811 L118.976,63.832 L121.037,63.039 L123.437,62.336 L125.000,62.001 L127.077,61.716 L128.622,61.620 L130.656,61.646 L132.650,61.843 L134.594,62.204 L136.477,62.722 L138.291,63.389 L140.275,64.307 L141.908,65.235 L143.447,66.281 L144.887,67.435 L146.223,68.686 L147.449,70.022 L148.562,71.432 L149.791,73.281 L150.402,74.451 L151.028,76.079 L151.450,77.745 L151.687,79.410 L151.760,81.044 L151.696,82.624 L151.462,84.499 L151.109,86.251 L150.596,88.191 L149.722,91.112" fill="none"/>
 <path d="M123.573,73.846 L124.836,73.210" fill="none"/>

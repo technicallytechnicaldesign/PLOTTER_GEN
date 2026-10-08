@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="190mm" height="250mm" viewBox="0 0 190 250">
 <title>PLG ram skull studio</title>
-<desc id="plg-settings">{"view":"one","age":8,"count":4,"layers":4,"seed":3,"curl":400,"tight":0.2,"hsize":1,"girth":1,"spread":58,"flare":0.16,"rise":40,"ridges":1,"plaque":"shield","label":"ram","ram":"both","ramcol":"green","dark":"cross","hp":0.8,"engrave":28,"page":"190x250","margin":10}</desc>
+<desc id="plg-settings">{"view":"one","age":8,"count":4,"layers":4,"seed":3,"curl":400,"tight":0.2,"hsize":1,"girth":1,"spread":58,"flare":0.16,"rise":40,"ridges":1,"plaque":"shield","part":"together","cut":"none","cutoff":2,"label":"ram","ram":"both","ramcol":"green","dark":"cross","hp":0.8,"engrave":28,"page":"190x250","margin":10}</desc>
 <g id="pen-ram" stroke="#1f8a4c" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">
 <path d="M88.098,72.433 L101.902,72.433 L101.902,73.628" fill="none"/>
 <path d="M101.902,88.269 L101.902,92.153 L88.098,92.153 L88.098,88.269" fill="none"/>

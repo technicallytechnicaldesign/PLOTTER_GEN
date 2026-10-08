@@ -12,6 +12,7 @@
     "hp": "0.75",
     "margin": "8",
     "piece": "shed",
+    "pinned": "pinned",
     "look": "memory",
     "view": "net",
     "dark": "cross",
@@ -21,7 +22,7 @@
     "fold": "score",
     "ticks": "split"
   },
-  "sourceHash": "148af9f70de6604d8e30cc0dd84fa2921dce1cb1e0382fa23ad3a509faa7d89e",
+  "sourceHash": "a7e63ebcd521c898529d20ba0f21108436760011d6fe7c6bd8fae55934c27b70",
   "svg": "site/art/bram-memory.svg",
   "image": "site/art/bram-memory.webp",
   "page": "280x280",

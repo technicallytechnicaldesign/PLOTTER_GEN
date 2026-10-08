@@ -1,8 +1,8 @@
 {
   "studio": "ram-skull-studio.html",
-  "id": "ram-trophy",
-  "title": "Old ram on a shield",
-  "preset": "trophy",
+  "id": "ram-cutout",
+  "title": "The head, to cut out",
+  "preset": "cutout",
   "content": {},
   "settings": {
     "age": "8",
@@ -23,8 +23,8 @@
     "margin": "10",
     "view": "one",
     "plaque": "shield",
-    "part": "together",
-    "cut": "none",
+    "part": "head",
+    "cut": "holes",
     "label": "age",
     "ram": "none",
     "ramcol": "green",
@@ -33,8 +33,8 @@
     "ticks": "split"
   },
   "sourceHash": "afd529bf7d61a6214e483f2bf9cb35faa224b94e57c030fc76b2ddc0d51c6bf2",
-  "svg": "site/art/ram-trophy.svg",
-  "image": "site/art/ram-trophy.webp",
+  "svg": "site/art/ram-cutout.svg",
+  "image": "site/art/ram-cutout.webp",
   "page": "190x250",
   "seed": 7
 }

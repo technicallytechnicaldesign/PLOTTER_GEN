@@ -168,7 +168,13 @@
       "photo": "prints/inktober-09-ram.png",
       "render": true,
       "studio": "../ram-skull-studio.html",
-      "description": "Friday 9 October 2026, prompt \"ram\". Not plotted yet: the Ram skull studio's own render of an eight-year-old ram on a shield, its horn grown along a log spiral with a ring for each year. Its companion, the Battering ram studio, folds up a siege ram with the same skull over the door. The real sheet goes in when it is inked.",
+      "description": "Friday 9 October 2026, prompt \"ram\". Not plotted yet: the Ram skull studio’s own render of an eight-year-old ram on a shield, its horn grown along a log spiral with a ring for each year. On the plinth in front, the Battering ram studio’s siege ram as it folds up, its own faces and ink: wheels and horns on split pins, a ram’s skull over the door. Photographs of the real ones go in when they are made.",
+      "model": "prints/models/inktober-09-battering-ram.json",
+      "box": {
+        "width": 156,
+        "height": 72,
+        "depth": 62
+      },
       "frame": {
         "width": 190,
         "height": 250
