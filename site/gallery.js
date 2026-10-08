@@ -13,7 +13,7 @@ function safeURL(value){if(!value)return null;try{const u=new URL(value,location
 export function contentFlags(s){return {nsfw:!!s.content?.nsfw,swearing:!!s.content?.swearing||/\b(fuck\w*|shit\w*|cunt\w*|bitch\w*)\b/i.test(s.title||'')}}
 function admitted(s){const f=contentFlags(s);return (!f.nsfw||$('nsfw').checked)&&(!f.swearing||$('swearing').checked)}
 // A cuboid centred on its own origin. Faces are flat leaves inside one preserve-3d group; the bottom is never drawn,
-// so a box resting on a plinth shares no plane with it.
+// so a box resting on a plinth shares no plane with it. NOTE: update for allowing viewing under. Expand capability in zoom mode so undersides can be seen as in the viewer is is a void.
 const FACES=[['front',0,0,1],['back',180,0,1],['right',90,0,0],['left',-90,0,0],['top',0,90,2]];
 function cuboid(w,h,d,face){return FACES.map(([n,ry,rx,k])=>{const fw=k===1||k===2?w:d,fh=k===2?d:h,t=k===1?d/2:k===2?h/2:w/2;return `<span class="cube-face face-${n}" style="width:${fw}px;height:${fh}px;left:${-fw/2}px;top:${-fh/2}px;transform:rotateY(${ry}deg) rotateX(${rx}deg) translateZ(${t}px)">${face(n)}</span>`}).join('')}
 const boxFace=s=>n=>{const url=safeURL(s.faces?.[n]);return url?`<img src="${esc(url)}" alt="">`:`<span class="photo-space"><span class="empty-mark">＋</span><span>${n.toUpperCase()}</span><small>FACE PHOTO</small></span>`};
