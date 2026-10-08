@@ -49,7 +49,7 @@
 #scene button:focus{width:auto;height:auto;padding:10px 14px;min-height:44px;overflow:visible;clip-path:none;outline:2px solid #607e83;outline-offset:2px}
 
 /* Phone: a small corner map that leaves the room in view. */
-#map text{font-size:170px}
+#map text{font-size:270px}
 @media(max-width:700px){#map-panel{width:118px;padding:6px;right:6px;top:6px;outline:none}#map{height:150px}#map-panel p{display:none}.map-title{font-size:8px}#map-close{padding:2px 6px;font-size:14px;min-height:0}}
 
 /* Close look at a 3D piece: drag the box round (a single CSS cube in the dialog).
