@@ -190,7 +190,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <div class="wrap">
 <aside>
   <fieldset><legend>Presets</legend>
-    <div class="row"><button data-preset="trophy">Old ram on a shield</button><button data-preset="wall">The wall, lamb to old ram</button><button data-preset="rings">Growth overlay</button><button data-preset="ddr">RAM on the ram</button><button data-preset="bighorn">Bighorn, full curl</button><button data-preset="lamb">Lamb</button><button data-preset="memwall">Memory upgrades</button><button data-preset="bare">Bare skull, no mount</button></div>
+    <div class="row"><button data-preset="trophy">Old ram on a shield</button><button data-preset="wall">The wall, lamb to old ram</button><button data-preset="rings">Growth overlay</button><button data-preset="ddr">RAM on the ram</button><button data-preset="bighorn">Bighorn, full curl</button><button data-preset="lamb">Lamb</button><button data-preset="memwall">Memory upgrades</button><button data-preset="bare">Bare skull, no mount</button><button data-preset="cutout">The head, to cut out</button><button data-preset="board">Its board, to glue it on</button></div>
   </fieldset>
   <fieldset><legend>The ram</legend>
     <label>Show <select id="view"><option value="one">one skull</option><option value="row">a wall of mounts, lamb to old ram</option><option value="overlay">overlay: the years on one skull, a colour each</option></select></label>
@@ -212,6 +212,10 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
   </fieldset>
   <fieldset><legend>Mount and RAM</legend>
     <label>Mount <select id="plaque"><option value="shield">a shield</option><option value="oval">an oval</option><option value="none">none, the bare skull</option></select></label>
+    <label data-when="plaque!=none">This sheet <select id="part"><option value="together">head and board together</option><option value="head">the head alone, to glue on</option><option value="board">the board alone, with a guide</option></select></label>
+    <label>Cut line <select id="cut"><option value="none">none</option><option value="outline">round the outside</option><option value="holes">round the outside, and any gap the horns close off</option></select></label>
+    <label data-when="cut!=none">Cut line distance from the ink (mm) <output id="o-cutoff"></output><input type="range" id="cutoff" min="1" max="5" step="0.25" value="2"></label>
+    <p class="hint" data-when="plaque!=none">Head and board come out at the same scale, so plot them on different card, cut both and glue the head on.</p>
     <label data-when="plaque!=none">Label <select id="label"><option value="age">its age</option><option value="latin">OVIS ARIES</option><option value="ram">its memory</option><option value="none">none</option></select></label>
     <label>RAM on the ram <select id="ram"><option value="none">none</option><option value="chips">a memory chip for every year of horn</option><option value="traces">circuit traces over the skull</option><option value="both">both, and gold contacts at the snout</option></select></label>
     <label data-when="ram!=none">RAM pen <select id="ramcol"><option value="green">circuit-board green</option><option value="gold">gold</option><option value="blue">blue</option></select></label>
@@ -284,6 +288,14 @@ function rdp(pts, tol) {
     if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
   }
   return pts.filter((_, i) => keep[i]);
+}
+
+function dashes(q, on, off) {
+  const out = []; let run = [q[0]], acc = 0, drawing = true; const pts = [...q, q[0]];
+  for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i], L = hypot(b[0] - a[0], b[1] - a[1]); let s = 0;
+    while (s < L) { const step = min(L - s, (drawing ? on : off) - acc); s += step; acc += step; const p = [lerp(a[0], b[0], s / L), lerp(a[1], b[1], s / L)]; if (drawing) run.push(p); if (acc >= (drawing ? on : off) - 1e-9) { if (drawing && run.length > 1) out.push(run); drawing = !drawing; acc = 0; run = drawing ? [p] : []; } } }
+  if (drawing && run.length > 1) out.push(run);
+  return out;
 }
 
 // ---------------- stroke font (capitals and figures) ----------------
@@ -498,8 +510,9 @@ function visible(Z, q, cl, eps = EPS) {
 const LIGHT = unit3([-0.5, -0.65, -0.6]);   // toward the light: upper left, in front
 function inkMount(o, M, k, ox, oy, rand, pens) {
   const W = PAGE[0], H = PAGE[1], T = p => [ox + k * p[0], oy + k * p[1], k * (p[2] || 0)];
-  const Z = zbuf(W, H), lines = [];   // [pen, 3D page points, closed]
-  const push = (pen, q, cl = false) => { if (q.length > 1) lines.push([pen, q, cl]); };
+  const Z = zbuf(W, H), lines = [];   // [pen, 3D page points, closed, piece]
+  let piece = "board";
+  const push = (pen, q, cl = false) => { if (q.length > 1) lines.push([pen, q, cl, piece]); };
   // plaque at the back
   if (M.plaque) {
     const P = M.plaque.map(p => T([p[0], p[1], M.zPlaque])), zp = k * M.zPlaque;
@@ -518,6 +531,7 @@ function inkMount(o, M, k, ox, oy, rand, pens) {
     }
   }
   // the skull
+  piece = "head";
   const unitsPerMm = 1 / k, SL = skullLines(o, M.ss, unitsPerMm, rand), sk = q => q.map(([x, y]) => T([x, y, zSkull(x / M.ss, y / M.ss) * M.ss]));
   Z.poly(SKULL.map(([x, y]) => [ox + k * x * M.ss, oy + k * y * M.ss]), (x, y) => { const u = (x - ox) / k / M.ss, v = (y - oy) / k / M.ss; return k * zSkull(u, v) * M.ss; });
   for (const [q, cl] of SL.L) push("line", sk(q), cl);
@@ -578,15 +592,62 @@ function inkMount(o, M, k, ox, oy, rand, pens) {
     cap(0); cap(h.n - 1);
   };
   const base = Z.copy();   // plaque and skull only: the younger horns of an overlay are seen through the old one
+  // the head's own footprint, for its cut line: skull and every horn, no plaque
+  const head = zbuf(W, H);
+  head.poly(SKULL.map(([x, y]) => [ox + k * x * M.ss, oy + k * y * M.ss]), () => 0);
+  for (const h of [...M.H, ...M.ghosts.flat()]) meshInto(head, h);
   for (const h of M.H) meshInto(Z, h);
   const all = [];
-  for (const [pen, q, cl] of lines) for (const r of visible(Z, q, cl)) all.push([pen, r[0], r[1]]);
-  for (const h of M.H) for (const [pen, q, cl, e] of hornLines(h, "line", true)) for (const r of visible(Z, q, cl, e)) all.push([pen, r[0], r[1]]);
+  for (const [pen, q, cl, pc] of lines) for (const r of visible(Z, q, cl)) all.push([pen, r[0], r[1], pc]);
+  for (const h of M.H) for (const [pen, q, cl, e] of hornLines(h, "line", true)) for (const r of visible(Z, q, cl, e)) all.push([pen, r[0], r[1], "head"]);
   M.ghosts.forEach((pair, gi) => {
     const Zg = base.copy(); for (const h of pair) meshInto(Zg, h);
-    for (const h of pair) for (const [pen, q, cl, e] of hornLines(h, "g" + (gi + 1), false)) for (const r of visible(Zg, q, cl, e)) all.push([pen, r[0], r[1]]);
+    for (const h of pair) for (const [pen, q, cl, e] of hornLines(h, "g" + (gi + 1), false)) for (const r of visible(Zg, q, cl, e)) all.push([pen, r[0], r[1], "head"]);
   });
-  return all;
+  const plaque = M.plaque ? M.plaque.map(p => [ox + k * p[0], oy + k * p[1]]) : null;
+  return { all, head: head.z, plaque };
+}
+
+// ---------------- cut lines ----------------
+// Distance (mm) from every cell to the nearest set cell of a mask: two chamfer passes (3-4 weights, about 2% off true).
+function distance(mask, nx, ny) {
+  const d = new Float32Array(nx * ny), a = RES, b = RES * 1.4142;
+  for (let i = 0; i < d.length; i++) d[i] = mask[i] ? 0 : 1e9;
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const k = j * nx + i; let v = d[k]; if (i) v = min(v, d[k - 1] + a); if (j) { v = min(v, d[k - nx] + a); if (i) v = min(v, d[k - nx - 1] + b); if (i < nx - 1) v = min(v, d[k - nx + 1] + b); } d[k] = v; }
+  for (let j = ny - 1; j >= 0; j--) for (let i = nx - 1; i >= 0; i--) { const k = j * nx + i; let v = d[k]; if (i < nx - 1) v = min(v, d[k + 1] + a); if (j < ny - 1) { v = min(v, d[k + nx] + a); if (i < nx - 1) v = min(v, d[k + nx + 1] + b); if (i) v = min(v, d[k + nx - 1] + b); } d[k] = v; }
+  return d;
+}
+// Signed distance: positive outside the mask, negative inside.
+function signed(mask, nx, ny) { const out = distance(mask, nx, ny), inv = mask.map(v => v ? 0 : 1), inn = distance(inv, nx, ny); return out.map((v, i) => v > 0 ? v : -inn[i]); }
+function contourLoops(F, nx, ny, level) {
+  const adj = new Map(), link = (e1, e2) => { (adj.get(e1) || adj.set(e1, []).get(e1)).push(e2); (adj.get(e2) || adj.set(e2, []).get(e2)).push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - level, b = F[ia + 1] - level, c = F[ia + nx + 1] - level, d = F[ia + nx] - level;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0); if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - level, v2 = F[n2] - level, f = v1 / (v1 - v2); return e & 1 ? [(i + 0.5) * RES, (j + 0.5 + f) * RES] : [(i + 0.5 + f) * RES, (j + 0.5) * RES]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(rdp(chaikin(loop, 1, true), 0.04));
+  }
+  return loops;
+}
+const loopArea = q => abs(q.reduce((a, p, i) => { const r = q[(i + 1) % q.length]; return a + p[0] * r[1] - r[0] * p[1]; }, 0)) / 2;
+// Outer loops, and (if wanted) the holes inside them big enough to cut cleanly.
+function cutLoops(mask, W, H, off, holes) {
+  const nx = ceil(W / RES) + 1, ny = ceil(H / RES) + 1, S = signed(mask, nx, ny), L = contourLoops(S, nx, ny, off);
+  const depth = q => L.filter(o => o !== q && inPoly(o, q[0][0], q[0][1])).length;
+  return L.filter(q => { const dd = depth(q); return dd % 2 === 0 ? loopArea(q) > 4 : holes && loopArea(q) > 30; });
 }
 
 // ---------------- build ----------------
@@ -606,14 +667,31 @@ function build(o) {
   let k = 0, cols = 1;
   for (let c = 1; c <= n; c++) { const r = ceil(n / c), kk = min((W - 2 * m - gap * (c - 1)) / c / bw, (H - 2 * m - gap * (r - 1)) / r / bh); if (kk > k) { k = kk; cols = c; } }
   const rows = ceil(n / cols), cw = (W - 2 * m) / cols, rh = (H - 2 * m) / rows;
-  const pens = { traceGap: INF }, all = [];
+  const pens = { traceGap: INF }, all = [], inked = [];
   mounts.forEach((M, i) => {
     const b = M.bb, r = floor(i / cols), inRow = min(cols, n - r * cols), c = i - r * cols, x0 = m + (W - 2 * m - inRow * cw) / 2;
     const cx = x0 + cw * (c + 0.5), cy = m + rh * (r + 0.5), ox = cx - k * (b[0] + b[2]) / 2, oy = cy + k * bh / 2 - k * b[3];   // bottoms level in each row
-    all.push(...inkMount(o, M, k, ox, oy, mulberry(o.seed * 31 + i), pens));
+    const got = inkMount(o, M, k, ox, oy, mulberry(o.seed * 31 + i), pens);
+    all.push(...got.all); inked.push(got);
   });
-  const layers = { g1: [], g2: [], g3: [], ram: [], shade: [], line: [] };
-  for (const [pen, q, cl] of all) { const s = rdp(q, 0.03); if (s.length > 1 && (cl || pathLen(s) > 0.3)) layers[pen].push([s, cl]); }
+  // which piece this sheet is: the head and the board can go on different card, at the same scale, to be glued together
+  const part = mounts.some(M => M.plaque) ? o.part : "together", keep = pc => part === "together" || pc === part;
+  // cut lines from the footprints: a signed distance field, contoured at the offset
+  const cuts = [], nx = ceil(W / RES) + 1, ny = ceil(H / RES) + 1;
+  const headMask = new Uint8Array(nx * ny); for (const g of inked) for (let i = 0; i < headMask.length; i++) if (g.head[i] < INF) headMask[i] = 1;
+  const boardMask = new Uint8Array(nx * ny);
+  for (const g of inked) if (g.plaque) { const b = bbox(g.plaque); for (let j = max(0, floor(b[1] / RES)); j <= min(ny - 1, ceil(b[3] / RES)); j++) for (let i = max(0, floor(b[0] / RES)); i <= min(nx - 1, ceil(b[2] / RES)); i++) if (inPoly(g.plaque, (i + 0.5) * RES, (j + 0.5) * RES)) boardMask[j * nx + i] = 1; }
+  if (o.cut !== "none") {
+    const mask = part === "head" ? headMask : part === "board" ? boardMask : headMask.map((v, i) => v | boardMask[i]);
+    for (const q of cutLoops(mask, W, H, o.cutoff, o.cut === "holes")) cuts.push([q, true]);
+  }
+  // on the board alone, a dashed guide just inside where the head goes, hidden once it is glued on
+  if (part === "board") { const on = (x, y) => inked.some(g => g.plaque && inPoly(g.plaque, x, y)) && boardMask[floor(y / RES) * nx + floor(x / RES)];
+    for (const q of cutLoops(headMask, W, H, -1.5, false)) for (const d of dashes(q, 2, 1.6)) { let run = []; for (const p of d) { if (on(p[0], p[1])) run.push(p); else { if (run.length > 1) all.push(["shade", run, false, "board"]); run = []; } } if (run.length > 1) all.push(["shade", run, false, "board"]); } }
+  if (cuts.length) gates.push(["cut line clear of the ink", o.cutoff >= 1, `${o.cutoff} mm outside the drawing`]);
+  const layers = { g1: [], g2: [], g3: [], ram: [], shade: [], line: [], cut: cuts };
+  for (const [pen, q, cl, pc] of all) { if (!keep(pc)) continue; const s = rdp(q, 0.03); if (s.length > 1 && (cl || pathLen(s) > 0.3)) layers[pen].push([s, cl]); }
+  if (cuts.length) layers.cut.push([[[1, 1], [W - 1, 1], [W - 1, H - 1], [1, H - 1]], true]);   // trim rectangle: the cut file lands where the pen files do
   // gates
   let bad = 0, pts = 0;
   for (const L of Object.values(layers)) for (const [q] of L) for (const [x, y] of q) { pts++; if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > W || y > H) bad++; }
@@ -622,6 +700,7 @@ function build(o) {
   gates.push(["hatch pitch >= 0.5 mm (0.3 pen)", o.hp >= 0.5, `${o.hp} mm`]);
   if (pens.traceGap < INF) gates.push([`circuit traces at least ${TRACE_GAP} mm apart`, pens.traceGap >= TRACE_GAP - 1e-9, `${pens.traceGap.toFixed(2)} mm grid`]);
   const ages = mounts.flatMap(M => [M.A, ...M.ghosts.map(g => g[0].A)]);
+  if (part !== "together") notes.push(part === "head" ? "the head alone: cut it out and glue it on the board, plotted at the same scale" : "the board alone: the dashed guide shows where the head goes and is covered once it is glued on");
   return { W, H, o, layers, gates, notes, ages, scale: k, ms: performance.now() - t0 };
 }
 
@@ -631,13 +710,15 @@ const penLayers = r => [
   ...[0, 1, 2].map(i => ({ name: "g" + (i + 1), colour: GCOL[i], w: 0.4, paths: r.layers["g" + (i + 1)] })),
   { name: "ram", colour: RAMCOL[r.o.ramcol] || RAMCOL.green, w: 0.4, paths: r.layers.ram },
   { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade }, { name: "line", colour: "000000", w: 0.4, paths: r.layers.line },
+  { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut || [], cut: true },
 ].filter(L => L.paths.length);
 function draw(r) {
   const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
   cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
   const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
   c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
-  for (const L of penLayers(r)) { c.strokeStyle = COL[L.name] || "#" + L.colour; c.lineWidth = L.w; c.beginPath(); for (const [q, cl] of L.paths) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); }
+  for (const L of penLayers(r)) { c.strokeStyle = L.cut ? "#d0271c" : COL[L.name] || "#" + L.colour; c.lineWidth = L.cut ? 0.25 : L.w; c.setLineDash(L.cut ? [1.6, 1.1] : []); c.beginPath(); for (const [q, cl] of L.cut ? L.paths.slice(0, -1) : L.paths) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); }
+  c.setLineDash([]);
   const lenm = L => L.reduce((a, [q]) => a + pathLen(q), 0) / 1000;
   $("stats").innerHTML = `ages ${r.ages.join(", ")} · ${r.ms.toFixed(0)} ms<br>`
     + penLayers(r).map(L => `${L.name}: <b>${lenm(L.paths).toFixed(1)} m</b>`).join(" · ") + "<br>"
@@ -646,20 +727,20 @@ function draw(r) {
 }
 const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
 function toSVG(r, only = null, ticks = false) {
-  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
-    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
   return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG ram skull studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["view", "age", "count", "layers", "seed", "curl", "tight", "hsize", "girth", "spread", "flare", "rise", "ridges", "plaque", "label", "ram", "ramcol", "dark", "hp", "engrave", "page", "margin"];
+const IDS = ["view", "age", "count", "layers", "seed", "curl", "tight", "hsize", "girth", "spread", "flare", "rise", "ridges", "plaque", "part", "cut", "cutoff", "label", "ram", "ramcol", "dark", "hp", "engrave", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null, pending = 0;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 const RECOLOUR = new Set(["ramcol"]);
 function run(k) { sync(); if (last && RECOLOUR.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
 
-const BASE = { view: "one", age: 8, count: 4, layers: 4, seed: 7, curl: 400, tight: 0.2, hsize: 1, girth: 1, spread: 58, flare: 0.16, rise: 40, ridges: 1, plaque: "shield", label: "age", ram: "none", ramcol: "green", dark: "cross", hp: 0.8, engrave: 28, page: "190x250", margin: 10 };
+const BASE = { view: "one", age: 8, count: 4, layers: 4, seed: 7, curl: 400, tight: 0.2, hsize: 1, girth: 1, spread: 58, flare: 0.16, rise: 40, ridges: 1, plaque: "shield", part: "together", cut: "none", cutoff: 2, label: "age", ram: "none", ramcol: "green", dark: "cross", hp: 0.8, engrave: 28, page: "190x250", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   trophy: P({}),
@@ -670,6 +751,8 @@ const PRESETS = {
   lamb: P({ age: 1, plaque: "oval" }),
   memwall: P({ view: "row", age: 9, count: 3, ram: "chips", label: "ram", ramcol: "gold", page: "250x190", engrave: 16 }),
   bare: P({ plaque: "none", age: 6, dark: "single", seed: 12 }),
+  cutout: P({ part: "head", cut: "holes" }),
+  board: P({ part: "board", cut: "outline", label: "latin" }),
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
 IDS.forEach(k => $(k).addEventListener("input", () => run(k)));

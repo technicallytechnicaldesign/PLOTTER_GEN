@@ -193,10 +193,11 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <div class="wrap">
 <aside>
   <fieldset><legend>Presets</legend>
-    <div class="row"><button data-preset="shed">The shed, ram style</button><button data-preset="beam">The beam</button><button data-preset="built">Put together</button><button data-preset="wood">Plain wood</button><button data-preset="memory">The RAM shed</button><button data-preset="ramstick">The beam as a RAM stick</button><button data-preset="mini">Small, both on one sheet</button></div>
+    <div class="row"><button data-preset="shed">The shed, ram style</button><button data-preset="beam">The beam</button><button data-preset="built">Put together</button><button data-preset="wood">Plain wood</button><button data-preset="memory">The RAM shed</button><button data-preset="ramstick">The beam as a RAM stick</button><button data-preset="mini">Small, both on one sheet</button><button data-preset="painted">Painted wheels, plain wood</button></div>
   </fieldset>
   <fieldset><legend>The ram</legend>
     <label>On this sheet <select id="piece"><option value="shed">the shed</option><option value="beam">the beam</option><option value="both">both (small sizes only)</option></select></label>
+    <label>Wheels and horns <select id="pinned"><option value="pinned">separate parts, on split pins</option><option value="painted">painted on</option></select></label>
     <label>Look <select id="look"><option value="ram">the ram all over it</option><option value="wood">plain wood</option><option value="memory">RAM: circuits and a memory stick</option></select></label>
     <label>Size <output id="o-size"></output><input type="range" id="size" min="0.5" max="1.3" step="0.02" value="1"></label>
     <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="5"></label>
@@ -226,7 +227,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <main>
   <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
   <div class="stats" id="stats">computing</div>
-  <p class="foot">How it goes together. The shed: fold the walls up off the floor, the roof slopes over off the walls and glue the ridge, then fold each gable up and glue its flaps inside the walls and roof. Slide the beam through the square holes in both gables, head out of the front: the holes are a millimetre bigger than the beam so it slides. Built on the Smack studio's net engine. Cut and fold sizes untested.</p>
+  <p class="foot">How it goes together. The shed: fold the walls up off the floor, the roof slopes over off the walls and glue the ridge, then fold each gable up and glue its flaps inside the walls and roof. Slide the beam through the square holes in both gables, head out of the front: the holes are a millimetre bigger than the beam so it slides. The wheels and horns are cut separately: push a split pin through each, then through its hole in the wall or the beam, and open the legs inside before closing up, so the wheels roll and the horns can be posed. Built on the Smack studio's net engine. Cut and fold sizes untested.</p>
 </main>
 </div>
 
@@ -679,11 +680,18 @@ const curve = (f, n = 24) => Array.from({ length: n + 1 }, (_, i) => f(i / n));
 // ---------------- the battering ram: a shed with a gable roof, and the beam that hangs through it ----------------
 // Sizes in mm at size 1: the shed L long, W wide, walls Hw high, roof Hr high; the beam b square, through holes in both gables.
 const BEAM_CLEAR = 1.0;   // ASSUMED: the hole is this much bigger than the beam, so it slides
+const PIN_R = 1.2;        // ASSUMED: hole for a brass split pin (shank about 2 mm), as in the jointed studios
+const PIECE_GAP = 3;      // ASSUMED: card between pin-on pieces and the net on the sheet
+// Where the pin-on parts go, in 3D: wheels on the walls, horns on the beam just behind the head.
+const wheelR = G => G.Hw * 0.34;
+const wheelSpots = G => [0.2, 0.8].flatMap(t => [-1, 1].map(sy => ({ x: G.L * t, y: sy * G.W / 2, z: wheelR(G) * 0.75, sy })));
+const hornSpots = G => [-1, 1].map(sy => ({ x: G.xb1 - 13 * G.s, y: sy * G.b / 2, z: G.zb + G.b * 0.15, sy }));
+const holeOn = (Fc, p) => circ(...(d => [dot3(d, Fc.U), dot3(d, Fc.V)])(sub3([p.x, p.y, p.z], Fc.O)), PIN_R, 16);
 function dims(o) {
   const s = o.size, L = 100 * s, W = 56 * s, Hw = 40 * s, Hr = 26 * s, b = max(18 * s, 17.5);   // the beam never so thin its 5 mm flaps will not fit
   return { s, L, W, Hw, Hr, b, zb: max(Hw * 0.4, b / 2 + 4), xb0: -14 * s, xb1: L + 40 * s };
 }
-function shedSolid(G) {
+function shedSolid(G, pinned) {
   const { L, W, Hw, Hr } = G, A = x => [x, -W / 2, 0], B = x => [x, W / 2, 0], C = x => [x, W / 2, Hw], D = x => [x, 0, Hw + Hr], E = x => [x, -W / 2, Hw];
   const nl = unit3([0, -Hr, W / 2]), nr = unit3([0, Hr, W / 2]);
   const faces = [
@@ -700,9 +708,10 @@ function shedSolid(G) {
   // the holes the beam runs through, one in each gable
   const h = G.b / 2 + BEAM_CLEAR / 2;
   for (const f of [5, 6]) { const Fc = faces[f], x = f === 5 ? L : 0; Fc.windows.push([[x, -h, G.zb + h], [x, h, G.zb + h], [x, h, G.zb - h], [x, -h, G.zb - h]].map(p => { const d = sub3(p, Fc.O); return [dot3(d, Fc.U), dot3(d, Fc.V)]; })); }
+  if (pinned) for (const w of wheelSpots(G)) faces[w.sy > 0 ? 2 : 1].windows.push(holeOn(faces[w.sy > 0 ? 2 : 1], w));
   return { name: "shed", faces, root: 0, pairs, tabs };
 }
-function beamSolid(G) {
+function beamSolid(G, pinned) {
   const { b, zb, xb0, xb1 } = G, p = (x, sy, sz) => [x, sy * b / 2, zb + sz * b / 2];
   const faces = [
     face("beam top", [p(xb0, -1, 1), p(xb1, -1, 1), p(xb1, 1, 1), p(xb0, 1, 1)], [0, 0, 1]),
@@ -712,6 +721,7 @@ function beamSolid(G) {
     face("ram head", [p(xb1, -1, 1), p(xb1, -1, -1), p(xb1, 1, -1), p(xb1, 1, 1)], [1, 0, 0]),
     face("beam end", [p(xb0, -1, 1), p(xb0, 1, 1), p(xb0, 1, -1), p(xb0, -1, -1)], [-1, 0, 0]),
   ];
+  if (pinned) for (const h of hornSpots(G)) faces[h.sy > 0 ? 1 : 3].windows.push(holeOn(faces[h.sy > 0 ? 1 : 3], h));
   return { name: "beam", faces, root: 1, pairs: [[1, 0], [1, 2], [2, 3], [1, 4], [1, 5]], tabs: [[3, 0, "glue"], [0, 4, "glue"], [2, 4, "glue"], [3, 4, "glue"], [0, 5, "glue"], [2, 5, "glue"], [3, 5, "glue"]] };
 }
 
@@ -823,7 +833,7 @@ function shedArt(o, S, G, ctx) {
     const wall = f === 1 || f === 2, roof = f === 3 || f === 4, gable = f >= 5;
     if (wall) {
       // painted wheels low on each wall, planks (or a circuit board) behind them
-      const r = G.Hw * 0.34, wheels = [0.2, 0.8].map(t => [d.w * t, d.h - r * 0.75]), wp = wheels.map(([x, y]) => circ(x, y, r + 0.8, 40));
+      const r = wheelR(G), wheels = o.pinned === "pinned" ? [] : [0.2, 0.8].map(t => [d.w * t, d.h - r * 0.75]), wp = wheels.map(([x, y]) => circ(x, y, r + 0.8, 40));
       if (look === "memory") put("c1", clipOut(tracesIn(d.w, d.h, rnd, 2.2, wp, 10), wp));
       else { const P = planks(d.w, d.h, 6.5 * G.s, rnd); put("shade", clipOut(P.lines, wp)); for (const [x, y] of P.dots) if (outside(wp, x, y)) ctx.dot(f, "line", ...d.map([[x, y]])[0], 0.4); }
       for (const [x, y] of wheels) {
@@ -880,13 +890,68 @@ function beamArt(o, S, G, ctx) {
     const bandPolys = bands.map(x => [[x - 2.5, -1], [x + 2.5, -1], [x + 2.5, Lc + 1], [x - 2.5, Lc + 1]]);
     putA("shade", clipOut(grain(La, Lc, rnd), bandPolys));
     for (const x of bands) { putA("line", [[[[x - 2.5, 0], [x - 2.5, Lc]], false], [[[x + 2.5, 0], [x + 2.5, Lc]], false]]); for (const yy of [Lc * 0.3, Lc * 0.7]) ctx.dot(f, "line", ...d.map(T([[[[x, yy]], false]])[0][0])[0], 0.45); }
-    if (look === "ram" && (f === 1 || f === 3)) {
+    if (look === "ram" && (f === 1 || f === 3) && o.pinned !== "pinned") {
       // the horns, curled flat along each side just behind the head, coiling back from it
       const H = hornFlat(fx - toFront * 30 * G.s, Lc * 0.46, Lc * 0.27, 1.15, toFront * (f === 1 ? 1 : -1), toFront > 0 ? 0 : PI);
       putA("c1", H.lines);
     }
   });
   return `beam: ${(G.xb1 - G.xb0).toFixed(0)} mm long, ${G.b.toFixed(0)} mm square`;
+}
+
+// ---------------- pin-on parts ----------------
+// Art clipped to stay 0.4 mm inside a part's cut outline and clear of its pin hole.
+const inside = (art, poly, hole) => art.flatMap(([layer, q, cl]) => keepWhere([[densify(q, cl, 0.4), cl]], (x, y) => polyD(x, y, poly) < -INK_GAP - 0.05 && polyD(x, y, hole) > INK_GAP + 0.05).map(([qq, c2]) => [layer, qq, c2]));
+// A wheel: rim, felloe, hub and eight spokes, a pin hole at the axle.
+function wheelPiece(G, o) {
+  const r = wheelR(G), poly = circ(0, 0, r, 48), hole = circ(0, 0, PIN_R, 16), art = [["line", circ(0, 0, r - 1.6, 48), true], ["line", circ(0, 0, r * 0.8, 44), true], ["line", circ(0, 0, max(PIN_R + 1.4, r * 0.17), 20), true]];
+  for (let k = 0; k < 8; k++) { const a = k / 8 * TAU + 0.2; art.push(["line", [[max(PIN_R + 1.4, r * 0.17) * cos(a), max(PIN_R + 1.4, r * 0.17) * sin(a)], [r * 0.8 * cos(a), r * 0.8 * sin(a)]], false]); }
+  for (let k = 0; k < 16; k++) { const a = k / 16 * TAU; art.push(["shade", [[(r - 1.6) * cos(a), (r - 1.6) * sin(a)], [r * 0.8 * cos(a), r * 0.8 * sin(a)]], false]); }
+  return { poly, hole, art: inside(art, poly, hole), name: "wheel" };
+}
+// A horn: up from its pin, back, down and round, thinning as it goes (a log spiral again), year rings across it.
+// side -1 is the mirror image, so both horns show their printed face outward when pinned on.
+function hornPiece(G, o, side) {
+  const R0 = G.b * 0.95, Wb = G.b * 0.34, k = 0.24, T = 1.2 * TAU, n = 90, L = [], Rt = [], mid = [];
+  let x = 0, y = 0, h = -PI / 2;
+  for (let i = 0; i <= n; i++) {
+    const t = T * i / n, w = Wb * exp(-k * t) * (1 - 0.85 * sstep(0.8 * T, T, t)), nx = -sin(h), ny = cos(h);
+    L.push([x + nx * w, y + ny * w]); Rt.push([x - nx * w, y - ny * w]); mid.push([x, y, w, nx, ny]);
+    const ds = R0 * exp(-k * t) * T / n; x += cos(h) * ds; y += sin(h) * ds; h += T / n;
+  }
+  const back = [[-Wb * 0.2, Wb], [-Wb * 0.2, -Wb]].map(([px, py]) => [px, py]);   // a flat base, where it meets the head
+  let poly = [...L, ...Rt.slice().reverse(), ...back];
+  const art = [];
+  for (let i = 6; i < n - 4; i += 7) { const [cx, cy, w, nx, ny] = mid[i]; art.push([o.look === "wood" ? "line" : "c1", [[cx + nx * w, cy + ny * w], [cx - nx * w, cy - ny * w]], false]); }
+  for (const f of [0.45, -0.45]) art.push(["shade", mid.slice(2, -6).map(([cx, cy, w, nx, ny]) => [cx + nx * w * f, cy + ny * w * f]), false]);
+  let hole = circ(0, 0, PIN_R, 16), out = { poly, hole, art: inside(art, poly, hole), name: "horn" };
+  if (side < 0) { const M = q => q.map(([px, py]) => [-px, py]); out = { ...out, poly: M(out.poly).reverse(), hole: M(out.hole).reverse(), art: out.art.map(([l, q, c]) => [l, M(q), c]) }; }
+  return out;
+}
+// Pack parts into the free card: a 0.5 mm occupancy grid of the nets (grown by the gap), first fit scanning down the
+// page, each part tried upright and turned 90 degrees.
+function pack(PW, PH, m, polys, parts) {
+  const g = 0.5, nx = ceil(PW / g), ny = ceil(PH / g), occ = new Uint8Array(nx * ny), grow = ceil(PIECE_GAP / g);
+  const stamp = P => { const b = bbox(P); for (let j = max(0, floor(b[1] / g) - grow); j <= min(ny - 1, ceil(b[3] / g) + grow); j++) for (let i = max(0, floor(b[0] / g) - grow); i <= min(nx - 1, ceil(b[2] / g) + grow); i++) { const x = (i + 0.5) * g, y = (j + 0.5) * g; if (inPoly(P, x, y) || polyD(x, y, P) < PIECE_GAP) occ[j * nx + i] = 1; } };
+  for (const P of polys) stamp(P);
+  return parts.map(pc => {
+    for (const rot of [0, 1]) {
+      const P = rot ? pc.poly.map(([x, y]) => [-y, x]) : pc.poly, b = bbox(P), cells = [];
+      for (let j = floor(b[1] / g); j <= ceil(b[3] / g); j++) for (let i = floor(b[0] / g); i <= ceil(b[2] / g); i++) if (inPoly(P, i * g, j * g)) cells.push([i, j]);
+      for (let y = m - b[1]; y + b[3] <= PH - m; y += 1) for (let x = m - b[0]; x + b[2] <= PW - m; x += 1) {
+        const ci = round(x / g), cj = round(y / g);
+        if (cells.every(([i, j]) => !occ[(j + cj) * nx + i + ci])) { stamp(P.map(([px, py]) => [px + x, py + y])); return { x, y, rot }; }
+      }
+    }
+    return null;
+  });
+}
+// A flat part standing in 3D: its plane through C, x along ax, y (down on the page) along -z, facing nrm.
+function flatOn(pc, C, ax, nrm) {
+  const W3 = ([x, y]) => [C[0] + ax[0] * x, C[1] + ax[1] * x, C[2] - y], Fc = face(pc.name, pc.poly.map(W3), nrm);
+  const loc = p => { const d = sub3(p, Fc.O); return [dot3(d, Fc.U), dot3(d, Fc.V)]; };
+  Fc.windows = [pc.hole.map(p => loc(W3(p)))];
+  return { Fc, ink: pc.art.map(([layer, q, cl]) => ({ layer, q: q.map(p => loc(W3(p))), cl })) };
 }
 
 // ---------------- build ----------------
@@ -898,7 +963,7 @@ function shiftNet(N, dx, dy) {
 }
 function build(o) {
   const t0 = performance.now(), notes = [], gates = [], [PW, PH] = o.page.split("x").map(Number), rnd = mulberry(o.seed * 7919 + 17);
-  const G = dims(o), shed = shedSolid(G), beam = beamSolid(G);
+  const G = dims(o), pinned = o.pinned === "pinned", shed = shedSolid(G, pinned), beam = beamSolid(G, pinned);
   // both are laid out and inked (the assembled preview shows both); only the chosen pieces go on the sheet
   const solids = [shed, beam], allNets = solids.map(S => layoutNet(S, o, PW, PH)), sel = o.piece === "both" ? [0, 1] : o.piece === "beam" ? [1] : [0];
   const pieces = sel.map(i => solids[i]), nets = sel.map(i => allNets[i]);
@@ -939,6 +1004,24 @@ function build(o) {
     gates.push([`${S.name} glue tabs at least 5 mm deep`, tabMin >= TAB_MIN - 1e-9, tabMin.toFixed(1) + " mm (ASSUMED rule)"]);
     if (ctx.dotMin < INF) gates.push([`${S.name}: dots at least 0.7 mm across`, ctx.dotMin >= DOT_MIN - 1e-9, ctx.dotMin.toFixed(2) + " mm smallest (ASSUMED rule)"]);
   });
+  // the pin-on parts: wheels go with the shed, horns with the beam, packed into the card the nets leave free
+  const extra = [];
+  if (pinned) {
+    const want = [...(sel.includes(0) ? Array.from({ length: 4 }, () => wheelPiece(G, o)) : []), ...(sel.includes(1) ? [hornPiece(G, o, 1), hornPiece(G, o, -1)] : [])];
+    const placed = pack(PW, PH, o.margin, nets.flatMap(N => N.polys.map(p => p.P)), want);
+    want.forEach((pc, i) => {
+      const at = placed[i]; if (!at) return;
+      const T = q => q.map(([x, y]) => at.rot ? [at.x - y, at.y + x] : [at.x + x, at.y + y]);
+      layers.cut.push([T(pc.poly), true], [T(pc.hole), true]);
+      for (const [layer, q, cl] of pc.art) layers[layer].push([T(q), cl, "line"]);
+    });
+    const missing = placed.filter(p => !p).length;
+    gates.push(["pin-on parts fit beside the net", missing === 0, missing ? missing + " of " + want.length + " do not fit: lower the size or print them on their own" : want.length ? want.length + " parts, " + PIECE_GAP + " mm clear of the net and each other" : "none on this sheet"]);
+    gates.push(["split pin holes", PIN_R * 2 >= 2.4 - 1e-9, (PIN_R * 2).toFixed(1) + " mm (ASSUMED, as in the jointed studios)"]);
+    // and in the put-together preview, pinned in place
+    for (const w of wheelSpots(G)) extra.push(flatOn(wheelPiece(G, o), [w.x, w.y + w.sy * 0.8, w.z], [w.sy > 0 ? -1 : 1, 0, 0], [0, w.sy, 0]));
+    for (const h of hornSpots(G)) extra.push(flatOn(hornPiece(G, o, h.sy), [h.x, h.y + h.sy * 0.8, h.z], [h.sy > 0 ? -1 : 1, 0, 0], [0, h.sy, 0]));
+  }
   layers.cut.push([[[TRIM_INSET, TRIM_INSET], [PW - TRIM_INSET, TRIM_INSET], [PW - TRIM_INSET, PH - TRIM_INSET], [TRIM_INSET, PH - TRIM_INSET]], true]);
   // gates
   const m = o.margin, b = bbox(nets.flatMap(N => [[N.b[0], N.b[1]], [N.b[2], N.b[3]]])), fits = b[0] >= m - 1e-6 && b[1] >= m - 1e-6 && b[2] <= PW - m + 1e-6 && b[3] <= PH - m + 1e-6;
@@ -950,7 +1033,7 @@ function build(o) {
   if (o.fold === "perf") gates.push(["perforation bridges at least 0.8 mm", PERF_OFF >= 0.8, `${PERF_ON} mm cut, ${PERF_OFF} mm bridge (ASSUMED)`]);
   if (!fits) notes.push(o.piece === "both" ? "two pieces do not fit this page: print the shed and the beam on separate sheets, or lower the size" : "lower the size or the margin, or use the 12 x 12 page");
   notes.push("glue the shed shut, then slide the beam through both gable holes, head out of the front");
-  return { o, W: PW, H: PH, layers, gates, notes, stage: stages.join(" · "), ms: performance.now() - t0, solids: [shed, beam], fold3 };
+  return { o, W: PW, H: PH, layers, gates, notes, stage: stages.join(" · "), ms: performance.now() - t0, solids: [shed, beam], fold3, extra };
 }
 
 // ---------------- preview, export ----------------
@@ -978,9 +1061,10 @@ function draw(r) {
 function drawFolded(c, r, W, H, col) {
   const o = r.o, cy = cos(o.turn * D2R), sy = sin(o.turn * D2R), cp = cos(o.tip * D2R), sp = sin(o.tip * D2R);
   const rot = p => { const x1 = p[0] * cy - p[1] * sy, y1 = p[0] * sy + p[1] * cy; return [x1, -(p[2] * cp + y1 * sp), y1 * cp - p[2] * sp]; };
-  const F = r.solids.flatMap(S => S.faces), all = F.flatMap(Fc => Fc.P3.map(rot)), b = bbox(all), k = min((W - 30) / (b[2] - b[0]), (H - 30) / (b[3] - b[1])), ox = W / 2 - k * (b[0] + b[2]) / 2, oy = H / 2 - k * (b[1] + b[3]) / 2;
+  const F = [...r.solids.flatMap(S => S.faces), ...(r.extra || []).map(e => e.Fc)], all = F.flatMap(Fc => Fc.P3.map(rot)), b = bbox(all), k = min((W - 30) / (b[2] - b[0]), (H - 30) / (b[3] - b[1])), ox = W / 2 - k * (b[0] + b[2]) / 2, oy = H / 2 - k * (b[1] + b[3]) / 2;
   const pj = p => { const q = rot(p); return [ox + k * q[0], oy + k * q[1], q[2]]; };
   const inkOf = new Map(); for (const { S, fink } of r.fold3) S.faces.forEach((Fc, f) => inkOf.set(Fc, fink.filter(it => it.f === f)));
+  for (const e of r.extra || []) inkOf.set(e.Fc, e.ink);
   const slices = [];
   for (const Fc of F) {
     const ub = bbox(Fc.poly), n = Fc.poly.length === 4 && ub[2] - ub[0] > 30 ? ceil((ub[2] - ub[0]) / 12) : 1;
@@ -991,7 +1075,9 @@ function drawFolded(c, r, W, H, col) {
       slices.push({ Fc, P, u0, u1, n, d: P3.reduce((s, p) => s + rot(p)[2], 0) / P3.length, facing: (Fc.N[0] * sy + Fc.N[1] * cy) * cp - Fc.N[2] * sp < 0 });
     }
   }
-  slices.sort((p, q) => q.d - p.d);
+  // pinned parts sit on the outside of a face: draw them after the solids (turned-away ones are skipped anyway)
+  const isExtra = new Set((r.extra || []).map(e => e.Fc));
+  slices.sort((p, q) => (isExtra.has(p.Fc) - isExtra.has(q.Fc)) || q.d - p.d);
   const path = pts => pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y));
   for (const sl of slices) {
     if (!sl.facing) continue;   // a closed solid: faces turned away are never seen
@@ -1022,14 +1108,14 @@ function toSVG(r, only = null, ticks = false) {
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["piece", "look", "size", "seed", "view", "turn", "tip", "dark", "hp", "c1col", "c2col", "page", "margin", "fold"];
+const IDS = ["piece", "pinned", "look", "size", "seed", "view", "turn", "tip", "dark", "hp", "c1col", "c2col", "page", "margin", "fold"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null, pending = 0;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 const VIEW_ONLY = new Set(["view", "turn", "tip", "c1col", "c2col"]);
 function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
 
-const BASE = { piece: "shed", look: "ram", size: 1, seed: 5, view: "net", turn: 35, tip: 22, dark: "cross", hp: 0.75, c1col: "b8860b", c2col: "1f8a4c", page: "280x280", margin: 8, fold: "score" };
+const BASE = { piece: "shed", pinned: "pinned", look: "ram", size: 1, seed: 5, view: "net", turn: 35, tip: 22, dark: "cross", hp: 0.75, c1col: "b8860b", c2col: "1f8a4c", page: "280x280", margin: 8, fold: "score" };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   shed: P({}),
@@ -1039,6 +1125,7 @@ const PRESETS = {
   memory: P({ look: "memory", c1col: "1f8a4c", c2col: "c08a00" }),
   ramstick: P({ piece: "beam", look: "memory", page: "250x190", c1col: "1f8a4c", c2col: "c08a00" }),
   mini: P({ piece: "both", size: 0.62, page: "280x280" }),
+  painted: P({ pinned: "painted", look: "wood" }),
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
 IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
@@ -1059,7 +1146,20 @@ $("loadsvg").onchange = async e => {
   run();
 };
 addEventListener("resize", () => last && draw(last));
-window.__studio = { build, read, PRESETS, penLayers, toSVG, drawFolded, COLS };
+// The put-together ram as a model for the print gallery: every face in 3D (mm, z up) with its outline, holes and ink.
+function model(r) {
+  const col = COLS(r.o), inkOf = new Map(), faces = [];
+  for (const { S, fink } of r.fold3) S.faces.forEach((Fc, f) => inkOf.set(Fc, fink.filter(it => it.f === f)));
+  for (const e of r.extra || []) inkOf.set(e.Fc, e.ink);
+  const R = v => +v.toFixed(2), Rp = q => q.map(p => p.map(R));
+  for (const Fc of [...r.solids.flatMap(S => S.faces), ...(r.extra || []).map(e => e.Fc)]) faces.push({
+    O: Fc.O.map(R), U: Fc.U.map(v => +v.toFixed(5)), V: Fc.V.map(v => +v.toFixed(5)), poly: Rp(Fc.poly), holes: Fc.windows.map(Rp),
+    ink: (inkOf.get(Fc) || []).map(it => ({ c: col[it.layer], w: PEN[it.layer] || 0.4, q: Rp(simplify(it.q, 0.05)), cl: !!it.cl })),
+  });
+  const all = faces.flatMap(f => f.poly.map(([u, v]) => [0, 1, 2].map(i => f.O[i] + f.U[i] * u + f.V[i] * v))), lo = [0, 1, 2].map(i => min(...all.map(p => p[i]))), hi = [0, 1, 2].map(i => max(...all.map(p => p[i])));
+  return { version: 1, studio: "battering-ram-studio.html", settings: r.o, min: lo.map(R), max: hi.map(R), faces };
+}
+window.__studio = { build, read, PRESETS, penLayers, toSVG, drawFolded, COLS, model };
 run();
 </script>
 </body>

@@ -195,6 +195,7 @@ export function createGallery(host, world, onChange) {
     const sideMap = side.clone(); sideMap.repeat.set(pw / 64, PLINTH_H / 64); sideMap.needsUpdate = true;
     const baseMats = [basic({ map: sideMap }), basic({ map: sideMap }), basic({ color: '#f6f7f7' }), basic({ color: PAPER }), basic({ map: label }), basic({ color: PAPER })];
     const base = new THREE.Mesh(new THREE.BoxGeometry(pw, PLINTH_H, pw), baseMats); base.position.y = -(FLOOR - PLINTH_H / 2); outline(base, base.geometry); g.add(base);
+    if (s.model) { modelOn(g, s, -(FLOOR - PLINTH_H - 1)); g.userData.print = s.id; return; }
     const faces = [], boxMats = [];
     for (const n of ['right', 'left', 'top', 'bottom', 'front', 'back']) {
       if (n === 'bottom') { boxMats.push(basic({ color: PAPER })); continue; }
@@ -205,10 +206,31 @@ export function createGallery(host, world, onChange) {
     const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), boxMats); box.position.y = -(FLOOR - PLINTH_H - h / 2 - 1); g.add(box);
     g.userData.print = s.id; prints.set(s.id, g); spinners.push(box);
   }
+  // A folded paper model on a plinth: a studio's own faces (mm, z up), each with its holes, its ink drawn as its texture.
+  function modelOn(g, s, y0) {
+    const spin = new THREE.Group(); g.add(spin); spinners.push(spin);
+    fetch(s.model, { cache: 'no-cache' }).then(r => r.json()).then(M => {
+      const k = SCALE * (s.modelScale || 1), cx = (M.min[0] + M.max[0]) / 2, cy = (M.min[1] + M.max[1]) / 2, z0 = M.min[2];
+      const at = (f, u, v) => { const p = [0, 1, 2].map(i => f.O[i] + f.U[i] * u + f.V[i] * v); return new THREE.Vector3((p[0] - cx) * k, y0 + (p[2] - z0) * k, -(p[1] - cy) * k); };
+      for (const f of M.faces) {
+        const xs = f.poly.map(p => p[0]), ys = f.poly.map(p => p[1]), u0 = Math.min(...xs), v0 = Math.min(...ys), w = Math.max(...xs) - u0 || 1, h = Math.max(...ys) - v0 || 1;
+        const tex = paint(w, h, c => { c.fillStyle = PAPER; c.fillRect(0, 0, w, h); c.lineCap = c.lineJoin = 'round'; for (const L of f.ink) { c.strokeStyle = L.c; c.lineWidth = Math.max(0.3, L.w); c.beginPath(); L.q.forEach(([u, v], i) => i ? c.lineTo(u - u0, v - v0) : c.moveTo(u - u0, v - v0)); if (L.cl) c.closePath(); c.stroke(); } }, { res: 6, cap: 1024 });
+        tex.anisotropy = aniso;
+        const shape = new THREE.Shape(f.poly.map(([u, v]) => new THREE.Vector2(u, v)));
+        for (const hole of f.holes) shape.holes.push(new THREE.Path(hole.map(([u, v]) => new THREE.Vector2(u, v))));
+        const geo = new THREE.ShapeGeometry(shape), pos = geo.attributes.position, uv = geo.attributes.uv;
+        for (let i = 0; i < pos.count; i++) { const u = pos.getX(i), v = pos.getY(i), p = at(f, u, v); pos.setXYZ(i, p.x, p.y, p.z); uv.setXY(i, (u - u0) / w, 1 - (v - v0) / h); }
+        pos.needsUpdate = uv.needsUpdate = true; geo.computeBoundingSphere();
+        spin.add(new THREE.Mesh(geo, basic({ map: tex, side: THREE.DoubleSide })));
+        for (const loop of [f.poly, ...f.holes]) spin.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([...loop, loop[0]].map(([u, v]) => at(f, u, v))), lineMat));
+      }
+      onChange();
+    }).catch(() => {});
+  }
   const spots = new Map();
   function hangAll(all) {
     // A world with one hall (inktober-world.js) hangs its 'hall' works in order along the two long walls.
-    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else if (h.s.hang === 'plinth' && h.s.box) { const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
+    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else if (h.s.hang === 'plinth' && h.s.box) { const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else if (h.s.model && h.s.box) { frame(h.s, h.w, h.h, h.x, h.z, h.angle); const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
     for (const r of rooms) {
       const works = all.filter(s => s.room === r.id), pegged = works.filter(s => s.hang === 'peg'); let walls = roomWalls(r);
       if (pegged.length) { garland(pegged, walls.find(w => w.id === 'far')); walls = walls.filter(w => w.id !== 'far'); }
