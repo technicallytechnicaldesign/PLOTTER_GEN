@@ -18,8 +18,8 @@ for(const h of hung){const v=viewing(h);assert(canWalk(v.x,v.z),'A day cannot be
 // One room: no way out through the walls, and walking works at the shared speed.
 assert(!canWalk(HALL+10,0)&&!canWalk(0,END-10)&&!canWalk(0,START+10),'The hall is open');
 const p={...destination(),vf:0,vs:0,vturn:0};for(let i=0;i<60;i++)advance(p,{forward:1,strafe:0,turn:0},1/60);assert(START-200-p.z>460,'Walking does not move');
-// Day status comes from the date: 6 October is today, the 5th is past, the 7th is ahead.
-const days=prepare(data.prints,new Date(2026,9,6,15));
+// Day status comes from the date: 6 October is today, the 5th is past, the 7th is ahead. Checked on blank days, so inking more of the month keeps it true.
+const days=prepare(data.prints.map(s=>({...s,prompt:null,photo:null,render:false})),new Date(2026,9,6,15));
 assert.equal(days.filter(s=>s.mark==='today').length,1);assert.equal(days[5].mark,'today');
 assert.equal(days[4].reserved[1],'AWAITING INK');assert.equal(days[6].reserved[1],'NOT YET');assert.equal(days[0].title,'Day 01');
 assert.equal(prepare([{...data.prints[0],prompt:'Crow'}],new Date(2026,9,6))[0].title,'Day 01: Crow');
