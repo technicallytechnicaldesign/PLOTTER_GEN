@@ -1,12 +1,20 @@
 # Stink plume
 
-**UID:** PLG-STK-6F31879F · **Version:** 1 · 2026-10-08
+**UID:** PLG-STK-6F31879F · **Version:** 2 · 2026-10-08
 
 Inktober day 8, prompt "stinky". `stink-plume-studio.html`: the smell is the drawing. Something stinky sits at the bottom of the sheet and its smell rises off it as pen lines, with flies looping through the fog.
 
 ## Sources
 
-Corpse flower (titan arum in a pot), cheese (holey or blue) on a board, an old sock that stands up by itself, a fish or a fishbone on a plate, a dustbin with its lid up.
+Corpse flower (titan arum in a pot), cheese on a board, an old sock that stands up by itself, a fish or a fishbone on a plate, a dustbin with its lid up.
+
+## Age (v2)
+
+Every source takes an age from 0 to 1, and its smell strength comes from it. **Show: a row** lays 3 to 6 of them across the sheet, ageing left to right, each with its own plume in one shared field (one spacing grid, so plumes keep their gap where they meet; flies go where the smell is strongest).
+
+- **Corpse flower:** bud in its bracts (no smell, so no plume), the spathe opening, the night of the bloom (strongest), then the collapse: the frill drops and creases, the spadix bends over.
+- **Cheese:** holey, blue or brie; a wedge, or a whole wheel with a wedge cut out. Eyes are packed biggest first, and some sit on the edge between two faces, breaking it. Blue veins are branching walkers that spread with age. Brie ripens from the rind in (a stippled chalky core that shrinks), sags, then oozes and puddles. Old cheese gets a darker rind, mould spots and cracks.
+- **Sock:** more holes. **Fish:** a fresh eye at first; in a row the last ones are bones. **Bin:** just smellier.
 
 ## Smell styles
 
@@ -22,6 +30,6 @@ Line 0.4 (the source, flies), shade 0.3 (hatching, fly trails), smell 0.4 in a c
 
 ## On the site
 
-- Catalogue `stink` on the Inktober 2026 shelf (axes system 3, material 1), five specimens baked to `site/art/stink-*` from the presets corpse, sock, stilton, fishbone and bin; they join the plotter hero pool.
+- Catalogue `stink` on the Inktober 2026 shelf (axes system 3, material 1), five specimens baked to `site/art/stink-*` from the presets corpse, lifecycle, wheel, sock and stilton; they join the plotter hero pool. Thirteen presets in all.
 - Ink room day 8: `prints/inktober-08-stinky.png`, the corpse flower preset, hung as a labelled studio render (`render: true`) until the real sheet is photographed.
-- Known: `inktober-world-test.mjs` still asserts day 1 has no prompt, which stopped being true on 1 October; all its hanging checks pass.
+- `inktober-world-test.mjs` now checks the today/past/ahead labels on blank days, so it holds however much of the month is inked.

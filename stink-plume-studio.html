@@ -190,14 +190,21 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 <div class="wrap">
 <aside>
   <fieldset><legend>Presets</legend>
-    <div class="row"><button data-preset="corpse">Corpse flower</button><button data-preset="sock">The sock that stands up</button><button data-preset="stilton">Blue cheese, smell map</button><button data-preset="fishbone">Fishbone</button><button data-preset="bin">Bin day</button><button data-preset="emmental">Holey cheese</button><button data-preset="kipper">Kipper, smell map</button><button data-preset="titan">Titan in a gale</button></div>
+    <div class="row"><button data-preset="corpse">Corpse flower</button><button data-preset="sock">The sock that stands up</button><button data-preset="stilton">Blue cheese, smell map</button><button data-preset="fishbone">Fishbone</button><button data-preset="bin">Bin day</button><button data-preset="emmental">Holey cheese</button><button data-preset="kipper">Kipper, smell map</button><button data-preset="titan">Titan in a gale</button><button data-preset="lifecycle">Corpse flower, bud to collapse</button><button data-preset="bud">In bud</button><button data-preset="slump">The morning after</button><button data-preset="wheel">Cheese wheel, smell map</button><button data-preset="brie">Brie, ripening</button></div>
   </fieldset>
   <fieldset><legend>The stinky thing</legend>
     <label>Source <select id="source"><option value="corpse">corpse flower, the titan arum</option><option value="cheese">cheese on a board</option><option value="sock">an old sock, standing up</option><option value="fish">a fish on a plate</option><option value="bin">a dustbin, lid up</option></select></label>
-    <label data-when="source=cheese">Cheese <select id="cheese"><option value="holey">holey, with eyes</option><option value="blue">blue, veined</option></select></label>
+    <label data-when="source=cheese">Cheese <select id="cheese"><option value="holey">holey, with eyes</option><option value="blue">blue, veined</option><option value="brie">brie, ripening from the rind in</option></select></label>
+    <label data-when="source=cheese">Cut <select id="cut"><option value="wedge">a wedge</option><option value="wheel">a whole wheel, a wedge cut out</option></select></label>
+    <label data-when="source=cheese; cheese=holey">Eye size <output id="o-eyes"></output><input type="range" id="eyes" min="0.5" max="2" step="0.05" value="1"></label>
     <label data-when="source=fish">Fish <select id="fish"><option value="whole">whole, a few days old</option><option value="bones">picked to the bones</option></select></label>
+    <label>Show <select id="view"><option value="one">one</option><option value="row">a row, ageing left to right</option></select></label>
+    <label data-when="view=one">Age <output id="o-age"></output><input type="range" id="age" min="0" max="1" step="0.01" value="0.5"></label>
+    <label data-when="view=row">How many <output id="o-row"></output><input type="range" id="row" min="3" max="6" step="1" value="5"></label>
+    <p class="hint" data-when="source=corpse">Age runs the corpse flower's life: a bud in its bracts, opening, the night it blooms and stinks, then the collapse. It only smells while it is open.</p>
+    <p class="hint" data-when="source=cheese">Age ripens the cheese: darker rind, then mould spots and cracks; blue veins spread; a brie's chalky core shrinks and it starts to run.</p>
     <label>Height (% of the page) <output id="o-size"></output><input type="range" id="size" min="20" max="65" step="1" value="52"></label>
-    <label>Left or right <output id="o-offset"></output><input type="range" id="offset" min="-0.6" max="0.6" step="0.05" value="0"></label>
+    <label data-when="view=one">Left or right <output id="o-offset"></output><input type="range" id="offset" min="-0.6" max="0.6" step="0.05" value="0"></label>
     <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="8"></label>
   </fieldset>
   <fieldset><legend>The smell</legend>
@@ -363,91 +370,174 @@ function sketch(P, o) {
 // ---------------- the stinky things, in their own units (base at v = 0) ----------------
 // Each draws into K and returns the vent, where the smell leaves it: { u, v, w half-width }.
 
-function corpse(K, o, rand) {
-  const ph = rand() * TAU, ph2 = rand() * TAU, lean = (rand() - 0.5) * 10, e = 10 / 42;
-  const w = v => { const t = clamp((v - 30) / 44, 0, 1); return 18 + 24 * t ** 1.5 + 5 * sin(PI * t); };
-  const rim = th => { const s = abs(sin(th)); return [(42 + 2.6 * sin(7 * th + ph) * sqrt(s)) * cos(th), 74 + 10 * sin(th) + 2.2 * sin(5 * th + ph2) * s]; };
-  const rimLoop = Array.from({ length: 96 }, (_, i) => rim(i / 96 * TAU));
+// The corpse flower's life in one number. 0 to 0.2: a bud in its bracts, growing; 0.2 to 0.45: the spathe opens;
+// around 0.45 to 0.55: full bloom, hot and at its stinkiest (it really does warm the spadix to throw the smell);
+// 0.6 on: it collapses, the frill falls and the spadix bends over.
+function corpse(K, o, rand, age) {
+  const ph = rand() * TAU, ph2 = rand() * TAU, lean0 = (rand() - 0.5) * 10, side = rand() < 0.5 ? -1 : 1, e = 10 / 42;
+  const op = sstep(0.2, 0.44, age), wilt = sstep(0.58, 1, age), grow = lerp(0.6, 1, sstep(0, 0.45, age));
   K.mid([ell(14, 0, 44, 5, 0, TAU, 48)]);                       // its shadow on the ground
-  K.L(rimLoop, true); K.dark([rimLoop]);                          // the deep maroon inside of the cup
-  // the spadix, the tall spike that heats up and pumps out the smell
-  const sx = v => lean * ((v - 58) / 100) ** 2, sw = v => 9.5 * max(0, 1 - ((v - 58) / 100) ** 2.2) ** 0.55;
-  const left = [], right = [], strip = [];
-  for (let i = 0; i <= 50; i++) { const v = 58 + 100 * i / 50; left.push([sx(v) - sw(v), v]); right.push([sx(v) + sw(v), v]); strip.push([sx(v) + 0.3 * sw(v), v]); }
-  const spadix = [...left, ...right.slice().reverse()];
+  // the spadix: a centreline that bends over as it wilts, and a width round it
+  const Hs = 100 * grow, sw0 = 9.5 * (1 - 0.3 * wilt), spine = [];
+  for (let i = 0, x = 0, v = 58; i <= 50; i++) {
+    const t = i / 50, th = 2 * lean0 * t / 100 + side * wilt * 2.2 * t ** 2.2;
+    spine.push([x, v, th, sw0 * max(0, 1 - t ** 2.2) ** 0.55]); x += sin(th) * Hs / 50; v += cos(th) * Hs / 50;
+  }
+  const along = f => spine.map(([x, v, th, w]) => [x + f * w * cos(th), v - f * w * sin(th)]);
+  const spadix = [...along(-1), ...along(1).reverse()];
+  // the spathe: from a closed bud to an open frilled cup, then slumping
+  const Hr = lerp(58 + 0.72 * Hs, 74, op) - 12 * wilt, Rr = lerp(7, 42, op) * (1 - 0.25 * wilt), droop = 8 * wilt;
+  const w = v => { const t = clamp((v - 30) / (Hr - 30), 0, 1); return lerp(21 * (1 - t ** 2.2) ** 0.8 + Rr * t, 18 + (Rr - 18) * t ** 1.5 + 5 * sin(PI * t) * Rr / 42, op); };
+  const ruf = 2.6 * Rr / 42 * (1 + 2 * wilt), ruf2 = 2.2 * op * (1 + 1.5 * wilt);
+  const rim = th => { const s = abs(sin(th)); return [(Rr + ruf * sin(7 * th + ph) * sqrt(s)) * cos(th), Hr + Rr * e * sin(th) + ruf2 * sin(5 * th + ph2) * s - droop * abs(cos(th))]; };
+  const rimLoop = Array.from({ length: 96 }, (_, i) => rim(i / 96 * TAU));
+  if (op > 0.12) { K.L(rimLoop, true); K.dark([rimLoop]); }       // the deep maroon inside of the cup
   K.cover(spadix); K.L(spadix, true);
-  for (const f of [-0.5, 0.05, 0.6]) K.L(curve(t => { const v = 60 + 90 * t; return [sx(v) + f * sw(v), v]; }, 30));
-  K.mid([[...strip, ...right.slice().reverse()]], 30);
-  // the spathe: a frilled cup, ribbed outside
-  const side = s => curve(t => [s * w(30 + 44 * t), 30 + 44 * t], 30);
-  const front = curve(t => rim(PI + PI * t), 48);
-  const cup = [...side(-1), ...front, ...side(1).reverse()];
-  const rib = f => { const th = TAU - Math.acos(f), r = rim(th), sq = sqrt(1 - f * f); return curve(t => { const v = 30 + 44 * t, b = [w(v) * f, v - e * w(v) * sq], end = t ** 4; return [b[0] + end * (r[0] - 42 * f), b[1] + end * (r[1] - 74 + 10 * sq)]; }, 30); };
+  for (const f of [-0.5, 0.05, 0.6]) K.L(along(f).slice(1, 46));
+  K.mid([[...along(0.3), ...along(1).reverse()]], 30);
+  const sideL = s => curve(t => [s * w(30 + (Hr - 30) * t), 30 + (Hr - 30) * t - droop * t ** 3], 30);
+  const cup = [...sideL(-1), ...curve(t => rim(PI + PI * t), 48), ...sideL(1).reverse()];
+  const rib = f => { const th = TAU - Math.acos(f), r = rim(th), sq = sqrt(1 - f * f); return curve(t => { const v = 30 + (Hr - 30) * t, end = t ** 4; return [w(v) * f + end * (r[0] - Rr * f), v - e * w(v) * sq + end * (r[1] - Hr + e * Rr * sq)]; }, 30); };
   K.cover(cup); K.L(cup, true);
   for (const f of [-0.8, -0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6, 0.8]) K.L(rib(f));
   const th4 = TAU - Math.acos(0.45);
-  K.mid([[...rib(0.45), ...curve(t => rim(th4 + (TAU - th4) * t), 12), ...side(1).reverse()]], 60);
+  K.mid([[...rib(0.45), ...curve(t => rim(th4 + (TAU - th4) * t), 12), ...sideL(1).reverse()]], 60);
+  // slumping: creases round the cup
+  K.inside(cup, () => { for (let i = 0; i < round(4 * wilt); i++) { const v0 = 40 + i * (Hr - 40) / 4 + rand() * 3; K.L(curve(t => [lerp(-1, 1, t) * w(v0) * 0.9, v0 - 3 * sin(PI * t) + 1.2 * sin(t * 17 + i)], 16)); } });
+  // the bud's bracts, peeling back and gone before it opens
+  const bracts = [];
+  if (age < 0.4) {
+    const peel = sstep(0.18, 0.4, age) * 0.7;
+    for (const s of [-1, 1]) {
+      const b = curve(t => { const a = s * peel * t, r = 36 * grow * t; return [s * (14 + 6 * sin(PI * t)) + sin(a) * r * 0.3, 30 + cos(a) * r]; }, 12);
+      const poly = [[s * 4, 31], ...b.map(([u, v], i) => [u + s * 6 * (1 - i / 12), v]), ...b.slice().reverse().map(([u, v], i) => [u - s * 7 * (i / 12), v])];
+      K.cover(poly); K.L(poly, true); K.L(b.slice(1, 11)); K.mid([poly], s > 0 ? 45 : 135); bracts.push(poly);
+    }
+  }
   // the pot
   const pot = [[-22, 0], [22, 0], [28, 26], [-28, 26]], lip = [[-31, 26], [31, 26], [31, 33], [-31, 33]];
   K.cover(pot, lip); K.L(pot, true); K.L(lip, true);
   K.mid([[[9, 0], [22, 0], [28, 26], [12, 26]]]); K.mid([[[16, 26], [31, 26], [31, 33], [17, 33]]]);
-  K.mask(cup, spadix, pot, lip, rimLoop);
-  return { u: 0, v: 84, w: 38 };
+  K.mask(cup, spadix, pot, lip, rimLoop, ...bracts);
+  const smell = op * (1 - sstep(0.55, 0.92, age));
+  return { u: 0, v: Hr + Rr * e + 10 * op, w: max(Rr * 0.9, 8), smell };
 }
 
-function cheese(K, o, rand) {
-  // the board, seen from above at a slant
-  const boardTop = ell(0, 8, 76, 15, 0, TAU, 80);
-  const boardMask = [...ell(0, 8, 76, 15, 0, PI, 40), ...ell(0, 2, 76, 15, PI, TAU, 40)];
-  // the wedge: tip to the left, the rind curving round the right
-  const T0 = [-50, 12], R1 = [36, 7], R0 = [56, 22], Hh = 34, up = p => [p[0], p[1] + Hh];
-  const T1 = up(T0), R1t = up(R1), R0t = up(R0);
-  const arc = (a, b, bulge) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = hypot(dx, dy); return curve(t => [a[0] + dx * t + dy / L * bulge * sin(PI * t), a[1] + dy * t - dx / L * bulge * sin(PI * t)], 16); };
-  const rindTop = arc(R1t, R0t, 4), rindBot = arc(R1, R0, 4);
-  const wedge = [T0, ...rindBot, R0t, T1];
-  K.inside(boardTop, () => K.mid([[R1, [R1[0] + 22, R1[1] - 3], [R0[0] + 18, R0[1] + 1], R0]], 0));   // shadow on the board
-  K.L(boardTop, true); K.L(ell(0, 2, 76, 15, PI, TAU, 40)); K.L([[-76, 8], [-76, 2]]); K.L([[76, 8], [76, 2]]);
-  K.mid([[...ell(0, 8, 76, 15, PI, TAU, 40), ...ell(0, 2, 76, 15, TAU, PI, 40)]], 90);
-  for (let i = 0; i < 4; i++) { const c = [-68 + rand() * 20, -2 + rand() * 7], r = 1 + rand() * 1.2; K.L(Array.from({ length: 5 }, (_, j) => [c[0] + r * (0.7 + 0.5 * rand()) * cos(j * 1.26), c[1] + r * (0.7 + 0.5 * rand()) * sin(j * 1.26)]), true); }
-  K.cover(wedge);
-  K.L(wedge, true); K.L([R1, R1t]); K.L([T1, R1t]); K.L(rindTop);
-  const side = [...rindBot, ...rindTop.slice().reverse()];
-  // the rind: its band on the cut face and round the top
-  const inset = (p, toward, d) => { const dx = toward[0] - p[0], dy = toward[1] - p[1], L = hypot(dx, dy); return [p[0] + dx / L * d, p[1] + dy / L * d]; };
-  K.L([inset(R1, T0, 3.5), inset(R1t, T1, 3.5)]);
-  K.L(rindTop.map(p => inset(p, T1, 3.5)));
-  K.dark([side], 80);
-  const frontIn = [T0, inset(R1, T0, 4), inset(R1t, T1, 4), T1], topIn = [T1, ...rindTop.map(p => inset(p, T1, 4))];
+// Cheese, grown: eyes packed biggest first (and some cut by the edge between two faces), blue veins as
+// branching walkers, a brie that ripens from the rind inwards and oozes. Age ripens all of them.
+function cheese(K, o, rand, age) {
+  const kind = o.cheese, soft = kind === "brie", bw = o.view === "row" ? 62 : 76;
+  const boardTop = ell(0, 8, bw, 15, 0, TAU, 80);
+  K.L(boardTop, true); K.L(ell(0, 2, bw, 15, PI, TAU, 40)); K.L([[-bw, 8], [-bw, 2]]); K.L([[bw, 8], [bw, 2]]);
+  K.mid([[...ell(0, 8, bw, 15, PI, TAU, 40), ...ell(0, 2, bw, 15, TAU, PI, 40)]], 90);
+  if (!soft) for (let i = 0; i < 4; i++) { const c = [-bw + 8 + rand() * 20, -2 + rand() * 7], r = 1 + rand() * 1.2; K.L(Array.from({ length: 5 }, (_, j) => [c[0] + r * (0.7 + 0.5 * rand()) * cos(j * 1.26), c[1] + r * (0.7 + 0.5 * rand()) * sin(j * 1.26)]), true); }
+  const S = (o.cut === "wheel" ? cheeseWheel : cheeseWedge)(K, soft, age, rand, boardTop);
+  // the rind: hatched, or for a brie the white bloom, stippled
+  if (soft) for (const f of S.skin) K.inside(f, () => { for (const [x, y] of scatterPts(f, round(polyArea(f) * 0.12), rand)) K.L(ell(x, y, 0.45, 0.45, 0, TAU, 6), true); });
+  else for (const f of S.rind) if (age > 0.5) K.dark([f], 80); else K.mid([f], 80);
   const fits = (poly, c, rx, ry, list) => ell(c[0], c[1], rx + 1.5, ry + 1.5, 0, TAU, 16).every(([x, y]) => inPoly(poly, x, y)) && list.every(h => hypot(h[0] - c[0], (h[1] - c[1]) * rx / ry) > h[2] + rx + 2);
-  const scatter = (poly, n, r0, r1, squash) => {
-    const b = bbox(poly), got = [];
-    for (let t = 0; t < 400 && got.length < n; t++) { const c = [lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand())], r = lerp(r0, r1, rand() ** 2); if (fits(poly, c, r, r * squash, got)) got.push([c[0], c[1], r]); }
-    return got;
-  };
-  if (o.cheese === "holey") {
-    // the eyes: each a cavity, its upper-left inside wall in shadow
-    for (const [poly, n, r0, r1, sq] of [[frontIn, 10, 2.2, 6.5, 0.9], [topIn, 4, 2, 4, 0.45]])
-      for (const [x, y, r] of scatter(poly, n, r0, r1, sq)) { const hole = ell(x, y, r, r * sq, 0, TAU, 28); K.L(hole, true); K.dark([hole, ell(x + 0.2 * r, y - 0.2 * r * sq, r * 0.72, r * 0.72 * sq, 0, TAU, 24)]); }
-  } else {
-    // blue veins: wandering, branching cracks where the mould grows
-    for (const [poly, n] of [[frontIn, 6], [topIn, 4]]) {
-      const b = bbox(poly), walkers = [];
-      for (let i = 0; i < n; i++) walkers.push([lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand()), rand() * TAU, 30 + rand() * 40]);
-      K.inside(poly, () => {
+  const cavity = (x, y, r, sq, inside) => { const hole = ell(x, y, r, r * sq, 0, TAU, 28); K.inside(inside, () => { K.L(hole, true); K.dark([hole, ell(x + 0.2 * r, y - 0.2 * r * sq, r * 0.72, r * 0.72 * sq, 0, TAU, 24)]); }); };
+  if (kind === "holey") {
+    const eyes = new Map(S.paste.map(f => [f, []]));
+    // eyes cut by an edge: a round hole in one face, a squashed one in the other, the edge broken between
+    for (const [a, b, fa, fb, sqa, sqb] of S.edges) for (let t = 0; t < 3; t++) {
+      const s = 0.15 + 0.7 * rand(), c = [lerp(a[0], b[0], s), lerp(a[1], b[1], s)], r = (2.5 + 2.5 * rand()) * o.eyes * 0.8;
+      if ([...eyes.get(fa) || [], ...eyes.get(fb) || []].some(h => hypot(h[0] - c[0], h[1] - c[1]) < h[2] + r + 3)) continue;
+      K.cover(ell(c[0], c[1], r, r * sqa, 0, TAU, 28), ell(c[0], c[1], r, r * sqb, 0, TAU, 28));
+      cavity(c[0], c[1], r, sqa, fa); cavity(c[0], c[1], r, sqb, fb);
+      eyes.get(fa)?.push([c[0], c[1], r]); eyes.get(fb)?.push([c[0], c[1], r]);
+    }
+    // then the rest, biggest first, each where it fits
+    for (const f of S.paste) {
+      const b = bbox(f), sq = S.squash.get(f) ?? 0.9, n = round(polyArea(f) / 70 / o.eyes ** 1.5), got = eyes.get(f), rmax = 6.5 * o.eyes;
+      for (let i = 0; i < n; i++) { const r = lerp(rmax * 0.3, rmax, ((n - i) / n) ** 2); for (let t = 0; t < 40; t++) { const c = [lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand())]; if (fits(f, c, r, r * sq, got)) { got.push([c[0], c[1], r]); cavity(c[0], c[1], r, sq, f); break; } } }
+    }
+  } else if (kind === "blue") {
+    // blue veins: wandering, branching cracks where the mould has got in; more and longer with age
+    for (const f of S.paste) {
+      const b = bbox(f), walkers = [], n = round((2 + 9 * age) * polyArea(f) / 1500);
+      for (let i = 0; i < n; i++) walkers.push([lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand()), rand() * TAU, 15 + age * 55]);
+      K.inside(f, () => {
         while (walkers.length) {
           let [x, y, a, life] = walkers.pop(); const pts = [[x, y]];
-          for (; life > 0; life--) { a += (rand() - 0.5) * 0.9; x += cos(a) * 0.9; y += sin(a) * 0.9; pts.push([x, y]); if (rand() < 0.05 && walkers.length < 40) walkers.push([x, y, a + (rand() < 0.5 ? 0.8 : -0.8), life * 0.55]); }
+          for (; life > 0; life--) { a += (rand() - 0.5) * 0.9; x += cos(a) * 0.9; y += sin(a) * 0.9; pts.push([x, y]); if (rand() < 0.05 && walkers.length < 50) walkers.push([x, y, a + (rand() < 0.5 ? 0.8 : -0.8), life * 0.55]); }
           K.L(pts);
         }
+        for (const [x, y] of scatterPts(f, round((4 + 16 * age) * polyArea(f) / 1500), rand)) K.L(ell(x, y, 0.5 + rand() * 0.6, 0.5 + rand() * 0.6, 0, TAU, 8), true);
       });
-      for (const [x, y, r] of scatter(poly, 14, 0.5, 1.1, 1)) K.L(ell(x, y, r, r, 0, TAU, 8), true);
     }
+  } else {
+    // brie ripens from the rind inwards: a chalky core, smaller every day, and the cream line under the rind
+    for (const f of S.cut) {
+      const c = centroid(f), sc = 0.7 * (1 - age);
+      if (sc > 0.08) { const core = f.map(p => [c[0] + (p[0] - c[0]) * sc, c[1] + (p[1] - c[1]) * sc]); K.inside(core, () => { for (const [x, y] of scatterPts(core, round(polyArea(core) * 0.25), rand)) K.L(ell(x, y, 0.3, 0.3, 0, TAU, 5), true); }); }
+    }
+    for (const q of S.cream) K.L(q);
   }
-  K.mask(wedge, boardMask);
-  return { u: 14, v: 58, w: 40 };
+  // old cheese: mould spots on the rind, dry cracks in the paste
+  if (age > 0.55) for (const f of S.skin) K.inside(f, () => { for (const [x, y] of scatterPts(f, round((age - 0.55) * 30 * polyArea(f) / 1200), rand)) { const r = 0.8 + rand() * 1.3; K.L(ell(x, y, r, r, 0, TAU, 10), true); for (let j = 0; j < 7; j++) { const a = rand() * TAU; K.L([[x + r * cos(a), y + r * sin(a)], [x + r * 1.8 * cos(a), y + r * 1.8 * sin(a)]]); } } });
+  if (age > 0.65 && !soft) for (const f of S.paste) K.inside(f, () => { for (const [x, y] of scatterPts(f, round((age - 0.65) * 18), rand)) { let a = rand() * TAU, p = [x, y]; const q = [p]; for (let j = 0; j < 6; j++) { a += (rand() - 0.5) * 1.6; p = [p[0] + 1.3 * cos(a), p[1] + 1.3 * sin(a)]; q.push(p); } K.L(q); } });
+  K.mask(...S.masks, [...ell(0, 8, bw, 15, 0, PI, 40), ...ell(0, 2, bw, 15, PI, TAU, 40)]);
+  return { u: S.vent[0], v: S.vent[1], w: S.vent[2], smell: { holey: 0.4 + 0.6 * age, blue: 0.5 + 0.5 * age, brie: 0.3 + 0.7 * age }[kind] };
+}
+const polyArea = q => abs(q.reduce((a, p, i) => { const r = q[(i + 1) % q.length]; return a + p[0] * r[1] - r[0] * p[1]; }, 0)) / 2;
+const centroid = q => { const b = bbox(q); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; };
+function scatterPts(poly, n, rand) { const b = bbox(poly), out = []; for (let t = 0; t < n * 6 && out.length < n; t++) { const p = [lerp(b[0], b[2], rand()), lerp(b[1], b[3], rand())]; if (inPoly(poly, p[0], p[1])) out.push(p); } return out; }
+const inset = (p, toward, d) => { const dx = toward[0] - p[0], dy = toward[1] - p[1], L = hypot(dx, dy) || 1; return [p[0] + dx / L * d, p[1] + dy / L * d]; };
+
+// A wedge: tip to the left, the rind curving round the right. A brie sits lower, sags and oozes as it ripens.
+function cheeseWedge(K, soft, age, rand, boardTop) {
+  const T0 = [-50, 12], R1 = [36, 7], R0 = [56, 22], Hh = soft ? 22 : 34, up = p => [p[0], p[1] + Hh];
+  const T1 = up(T0), R1t = up(R1), R0t = up(R0), sag = soft ? 5 * age : 0;
+  const arc = (a, b, bulge) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = hypot(dx, dy); return curve(t => [a[0] + dx * t + dy / L * bulge * sin(PI * t), a[1] + dy * t - dx / L * bulge * sin(PI * t)], 16); };
+  const rindTop = arc(R1t, R0t, 4), rindBot = arc(R1, R0, 4), edge = curve(t => [lerp(T1[0], R1t[0], t), lerp(T1[1], R1t[1], t) - sag * sin(PI * t)], 20);
+  const wedge = [T0, ...rindBot, R0t, T1], front = [T0, R1, ...edge.slice().reverse()], top = [...edge, ...rindTop.slice(1)];
+  K.inside(boardTop, () => K.mid([[R1, [R1[0] + 22, R1[1] - 3], [R0[0] + 18, R0[1] + 1], R0]], 0));   // shadow on the board
+  // a ripe brie runs: a puddle on the board, a tongue of it out of the cut face
+  let ooze = null;
+  if (soft && age > 0.35) {
+    const run = sstep(0.35, 1, age);
+    K.L(ell(-6, 6 - 4 * run, 12 + 30 * run, 2 + 3 * run, 0, TAU, 40), true);
+    ooze = [...curve(s => { const p = [lerp(T0[0], R1[0], 0.08 + 0.8 * s), lerp(T0[1], R1[1], 0.08 + 0.8 * s)]; return [p[0], p[1] - run * (8 * sin(PI * s) ** 0.7 + 2.5 * sin(s * 19) ** 2)]; }, 30),
+      ...curve(s => { const t = 0.88 - 0.8 * s; return [lerp(T0[0], R1[0], t), lerp(T0[1], R1[1], t) + 2.5 + run * 1.5 * sin(PI * s)]; }, 20)];
+  }
+  K.cover(wedge, ...(ooze ? [ooze] : []));
+  K.L(wedge, true); K.L([R1, R1t]); K.L(edge); K.L(rindTop);
+  const side = [...rindBot, ...rindTop.slice().reverse()];
+  K.L([inset(R1, T0, 3.5), inset(R1t, T1, 3.5)]);
+  K.L(rindTop.map(p => inset(p, T1, 3.5)));
+  if (ooze) { K.cover(ooze); K.L(ooze, true); K.mid([ooze], 20); }
+  const frontIn = [T0, inset(R1, T0, 4), inset(R1t, T1, 4), ...edge.slice(1, -1).reverse()], topIn = [...edge, ...rindTop.map(p => inset(p, T1, 4)).slice(1)];
+  return {
+    paste: [frontIn, topIn], cut: [frontIn], rind: [side], skin: soft ? [side, topIn] : [side], squash: new Map([[topIn, 0.45]]),
+    edges: soft ? [] : [[T1, R1t, frontIn, topIn, 0.9, 0.45]], cream: soft ? [[inset(R1, T0, 5.5), inset(R1t, T1, 5.5)]] : [],
+    masks: [wedge, ...(ooze ? [ooze] : [])], vent: [14, Hh + 24, 40],
+  };
 }
 
-function sock(K, o, rand) {
+// A whole wheel with a wedge cut out of the front: two cut faces in the notch, the rind round the rest.
+function cheeseWheel(K, soft, age, rand, boardTop) {
+  const R = soft ? 50 : 54, Hh = soft ? 16 : 30, e = 0.24, base = 10, f1 = -115 * D2R, f2 = -45 * D2R;
+  const P3 = (x, y, z) => [x, base + y + z * e], rimT = f => P3(R * cos(f), Hh, R * sin(f)), rimB = f => P3(R * cos(f), 0, R * sin(f));
+  const arcT = (a, b, n = 24) => curve(t => rimT(lerp(a, b, t)), n), arcB = (a, b, n = 24) => curve(t => rimB(lerp(a, b, t)), n);
+  const Ct = P3(0, Hh, 0), Cb = P3(0, 0, 0);
+  const top = [Ct, ...arcT(f2, f1 + TAU, 60)], sideA = [...arcT(-PI, f1), ...arcB(f1, -PI)], sideB = [...arcT(f2, 0), ...arcB(0, f2)];
+  const wall1 = [Cb, rimB(f1), rimT(f1), Ct], wall2 = [Cb, rimB(f2), rimT(f2), Ct];
+  K.inside(boardTop, () => K.mid([[rimB(-20 * D2R), rimB(30 * D2R), [R + 18, base + 10], [R + 14, base - 6]]], 0));
+  for (const f of [sideA, sideB, wall1, wall2, top]) { K.cover(f); K.L(f, true); }
+  // the rind band down the outer edge of each cut face
+  for (const f of [f1, f2]) K.L([inset(rimB(f), Cb, 3.5), inset(rimT(f), Ct, 3.5)]);
+  const shrink = (q, d) => { const c = centroid(q); return q.map(p => inset(p, c, d)); };
+  const w1 = shrink(wall1, 2.5), w2 = shrink(wall2, 2.5);
+  return {
+    paste: [w1, w2], cut: [w1, w2], rind: [sideA, sideB], skin: [sideA, sideB, top], squash: new Map([[top, 0.45]]),
+    edges: soft ? [] : [[Ct, rimT(f1), wall1, top, 0.9, 0.45], [Ct, rimT(f2), wall2, top, 0.9, 0.45]],
+    cream: soft ? [[inset(rimB(f1), Cb, 5), inset(rimT(f1), Ct, 5)], [inset(rimB(f2), Cb, 5), inset(rimT(f2), Ct, 5)]] : [],
+    masks: [top, sideA, sideB, wall1, wall2], vent: [0, Hh + R * e + 6, R * 0.8],
+  };
+}
+
+function sock(K, o, rand, age) {
   const wob = rand() * TAU, shift = v => 1.6 * sin(v / 15 + wob) * sstep(30, 60, v), cu = v => -18 + shift(v);
   const cp = [[-31, 96], [-31, 62], [-32, 30], [-30, 12], [-24, 2], [-12, 0], [30, 0], [42, 1], [49, 8], [47, 17], [38, 22], [20, 25], [4, 30], [-4, 42], [-5, 62], [-5, 96]];
   const open = chaikin(cp, 3).map(([u, v]) => [u + shift(v), v]);
@@ -471,10 +561,12 @@ function sock(K, o, rand) {
     K.mid([[[-11, 30], [-2, 30], [-2, 82], [-11, 82]]], 45);
     K.mid([[[-30, -2], [52, -2], [52, 4], [-30, 4]]], 45);
   });
-  const hole = ell(17, 11, 4.5, 3, 0, TAU, 24);
-  K.cover(hole); K.L(hole, true); K.dark([hole], 45);
+  // the hole, and more of them the older it gets
+  for (const [u, v, r] of [[17, 11, 4.5], [-20, 44, 3], [28, 6, 2.6], [-13, 70, 2.4], [-25, 18, 2.2]].slice(0, 1 + floor(age * 4.5))) {
+    const hole = ell(u + cu(v) + 18, v, r, r * 0.67, 0, TAU, 24); K.cover(hole); K.L(hole, true); K.dark([hole], 45);
+  }
   K.mask(body, opening);
-  return { u: cu(96), v: 100, w: 12 };
+  return { u: cu(96), v: 100, w: 12, smell: 0.3 + 0.7 * age };
 }
 
 // a fish in its own units: tail root at u = -46, nose at u = 51, midline v = 24
@@ -483,7 +575,7 @@ const fTop = u => 27 + 12 * S_(u), fBot = u => 21 - 9 * S_(u);
 const fishBody = () => [...curve(t => [-46 + 96 * t, fTop(-46 + 96 * t)], 40), ...curve(t => [50 + 3 * sin(PI * t), 27 - 6 * t], 8), ...curve(t => [50 - 96 * t, fBot(50 - 96 * t)], 40)];
 const fishTail = [[-44, 26.5], [-67, 41], [-60, 24], [-67, 7], [-44, 21.5]];
 // the tail fin and the head, shared by the whole fish and the fishbone; T maps fish units into the caller's
-function fishParts(K, T, bones) {
+function fishParts(K, T, bones, fresh = false) {
   const t = pts => pts.map(([u, v]) => T(u, v));
   K.L(t(fishTail), true);
   for (let i = 1; i < 6; i++) { const f = i / 6; K.L(t([[-45, 24], [lerp(-67, -60, f), lerp(41, 24, f)]])); K.L(t([[-45, 24], [lerp(-60, -67, f), lerp(24, 7, f)]])); }
@@ -499,11 +591,13 @@ function fishParts(K, T, bones) {
     }
   }
   const eye = ell(38, 26.5, 3.4, 3.4, 0, TAU, 20);
-  K.cover(t(eye)); K.L(t(eye), true); K.L(t([[36.2, 24.7], [39.8, 28.3]])); K.L(t([[36.2, 28.3], [39.8, 24.7]]));
+  K.cover(t(eye)); K.L(t(eye), true);
+  if (fresh) { const pupil = ell(38.4, 26.9, 1.3, 1.3, 0, TAU, 12); K.L(t(pupil), true); K.dark([t(pupil)]); }
+  else { K.L(t([[36.2, 24.7], [39.8, 28.3]])); K.L(t([[36.2, 28.3], [39.8, 24.7]])); }
   K.L(t([[52.6, 23.6], [46, 22.6], [48, 21.3]]));
 }
 
-function fish(K, o, rand) {
+function fish(K, o, rand, age) {
   // the plate
   const plate = ell(0, 10, 80, 18, 0, TAU, 80), well = ell(0, 11, 60, 12.5, 0, TAU, 64);
   K.mid([ell(14, 4, 80, 18, 0, TAU, 60)], 0);
@@ -513,7 +607,8 @@ function fish(K, o, rand) {
   K.mid([well, ell(3, 9.8, 58, 11.5, 0, TAU, 60)], 30);
   const id = (u, v) => [u, v], body = fishBody();
   const plateMask = [...ell(0, 10, 80, 18, 0, PI, 40), ...ell(0, 7, 80, 18, PI, TAU, 40)];
-  if (o.fish === "bones") { K.cover(fishTail); fishParts(K, id, true); K.mask(body, fishTail, plateMask); return { u: 0, v: 44, w: 44 }; }
+  const smell = 0.35 + 0.65 * age;
+  if (o.view === "row" ? age > 0.7 : o.fish === "bones") { K.cover(fishTail); fishParts(K, id, true); K.mask(body, fishTail, plateMask); return { u: 0, v: 44, w: 44, smell }; }
   // fins behind the body
   const dorsal = [...curve(s => [-14 + 32 * s, fTop(-14 + 32 * s) - 1], 16), ...curve(s => [18 - 32 * s, fTop(18 - 32 * s) + 8 * sin(PI * (1 - s)) ** 0.7 + 0.8 * sin(s * 40)], 24)];
   const anal = [...curve(s => [-32 + 14 * s, fBot(-32 + 14 * s) + 1], 8), ...curve(s => [-18 - 14 * s, fBot(-18 - 14 * s) - 4.5 * sin(PI * s)], 10)];
@@ -529,14 +624,14 @@ function fish(K, o, rand) {
   }));
   K.L(curve(s => [-44 + 66 * s, 24 + 1.2 * sin(PI * s)], 24));
   K.L(curve(s => [24 - 4 * sin(PI * s), lerp(fBot(24) + 0.3, fTop(24) - 0.3, s)], 12));
-  fishParts(K, id, false);
+  fishParts(K, id, false, age < 0.3);
   const pec = [[21, 21.5], [12, 15.5], [10.5, 18.5], [11.5, 21.5], [21, 22.6]];
   K.cover(pec); K.L(pec, true); K.L([[20.5, 21.8], [11.3, 17]]); K.L([[20.5, 22], [11, 20]]);
   K.mask(body, fishTail, dorsal, anal, plateMask);
-  return { u: 0, v: 44, w: 44 };
+  return { u: 0, v: 44, w: 44, smell };
 }
 
-function bin(K, o, rand) {
+function bin(K, o, rand, age) {
   const hw = v => 30 + 4 * v / 73, ry = v => 6 + v / 73;
   K.mid([ell(16, 0, 50, 6, 0, TAU, 48)], 0);
   // inside, through the gap under the lid
@@ -577,10 +672,10 @@ function bin(K, o, rand) {
   for (const [pts, c] of peel) { K.cover(pts); K.L(pts, true); K.L(c.slice(2, 14)); K.mid([pts.filter((_, i) => i > 18 && i < 32).concat(c.slice(4, 14).reverse())], 45); }
   K.L([[-20, 71], [-19, 78], [-17.5, 79]]);
   K.mask(body, rimBand, rimTop, lidPoly, dome, handle, fb, ...peel.map(p => p[0]));
-  return { u: 22, v: 92, w: 16 };
+  return { u: 22, v: 92, w: 16, smell: 0.3 + 0.7 * age };
 }
 
-const SOURCES = { corpse: { nh: 160, hw: 50, below: 6, draw: corpse }, cheese: { nh: 60, hw: 80, below: 15, draw: cheese }, sock: { nh: 100, hw: 52, below: 6, draw: sock }, fish: { nh: 46, hw: 84, below: 12, draw: fish }, bin: { nh: 112, hw: 52, below: 7, draw: bin } };
+const SOURCES = { corpse: { nh: 160, hw: 50, below: 6, draw: corpse }, cheese: { nh: 60, hw: 80, hwRow: 64, below: 15, draw: cheese }, sock: { nh: 100, hw: 52, below: 6, draw: sock }, fish: { nh: 46, hw: 84, below: 12, draw: fish }, bin: { nh: 112, hw: 52, below: 7, draw: bin } };
 
 // ---------------- a fly, seen from above, heading a ----------------
 function fly(o, x, y, a, L) {
@@ -697,39 +792,49 @@ const INKS = { green: "3f8f2f", yellow: "b89a00", purple: "6b3fa0", black: "0000
 function build(o) {
   const t0 = performance.now(), notes = [], gates = [];
   const [W, H] = PAGES[o.page] || PAGES["190x250"], m = o.margin;
-  const rand = mulberry(o.seed * 7919 + 13), noise = makeNoise(o.seed), noise2 = makeNoise(o.seed + 101);
-  // the source, scaled to its share of the page and stood on the bottom margin
-  const S = SOURCES[o.source] || SOURCES.corpse;
-  const k = min(o.size / 100 * (H - 2 * m) / (S.nh + S.below), (W - 2 * m) * 0.96 / (2 * S.hw));
-  const half = S.hw * k, cx = clamp(W / 2 + o.offset * (W - 2 * m) / 2, m + half, W - m - half), by = H - m - S.below * k;
-  const K = sketch((u, v) => [cx + u * k, by - v * k], o);
-  const vl = S.draw(K, o, mulberry(o.seed * 31 + 7)), vent = { x: cx + vl.u * k, y: by - vl.v * k, w: vl.w * k };
+  const rand = mulberry(o.seed * 7919 + 13), noise = makeNoise(o.seed), noise2 = makeNoise(o.seed + 101), sw = o.swirl;
+  // the sources: one, or a row of them ageing left to right, each scaled to its share of the page on the bottom margin
+  const S = SOURCES[o.source] || SOURCES.corpse, n = o.view === "row" ? o.row : 1, slot = (W - 2 * m) / n;
+  const k = min(o.size / 100 * (H - 2 * m) / (S.nh + S.below), n > 1 ? slot * 0.96 / (2 * (S.hwRow || S.hw)) : (W - 2 * m) * 0.96 / (2 * S.hw));
+  const src = { line: [], shade: [], masks: [] }, vents = [];
+  for (let i = 0; i < n; i++) {
+    const age = n > 1 ? lerp(0.04, 0.96, i / (n - 1)) : o.age, half = (n > 1 && S.hwRow || S.hw) * k;
+    const cx = n > 1 ? m + slot * (i + 0.5) : clamp(W / 2 + o.offset * (W - 2 * m) / 2, m + half, W - m - half), by = H - m - S.below * k;
+    const K = sketch((u, v) => [cx + u * k, by - v * k], o);
+    const vl = S.draw(K, o, mulberry(o.seed * 31 + 7), age);   // one seed for the row: the same thing, older
+    src.line.push(...K.line); src.shade.push(...K.shade); src.masks.push(...K.masks);
+    if (vl.smell > 0.04) vents.push({ x: cx + vl.u * k, y: by - vl.v * k, w: vl.w * k, str: min(1, vl.smell) });
+  }
 
-  // the plume: up, spreading, bent by the wind, with curl noise faded in as it climbs
-  const Hp = max(10, vent.y - m), hmax = o.reach * Hp, sw = o.swirl;
-  const cxAt = h => vent.x + o.wind * 0.9 * h * h / (2 * Hp), halfAt = h => vent.w + o.spread * max(h, 0);
+  // a plume per vent, all in one field: up, spreading, bent by the wind, with curl noise faded in as it climbs
   const curl = (x, y) => { const e = 0.35, a = x / sw, b = y / sw, f = sw / (2 * e), q = e / sw; return [(noise(a, b + q) - noise(a, b - q)) * f, -(noise(a + q, b) - noise(a - q, b)) * f]; };
-  const vel = (x, y, tf = 1) => {
-    const h = vent.y - y, c = curl(x, y), t = o.turb * tf * sstep(0, Hp * 0.22, h) * (0.6 + 0.6 * min(1, max(0, h) / Hp));
-    const vx = o.wind * 0.9 * max(h, 0) / Hp + o.spread * (x - cxAt(h)) / halfAt(h) + c[0] * t, vy = -1 + c[1] * t, n = hypot(vx, vy) || 1;
-    return [vx / n, vy / n];
-  };
-  const inEnv = (x, y) => {
-    const h = vent.y - y;
-    if (x < m || x > W - m || y < m || y > H - m || h > hmax * (1 + 0.06 * noise2(x / 25, 7.7))) return false;
-    if (h < 0) { const depth = vent.w * 0.9; return h > -depth && abs(x - cxAt(0)) <= vent.w * (1 + h / depth); } // a funnel down into the source
-    return abs(x - cxAt(h)) <= halfAt(h) * (1 + 0.22 * noise2(h / 20, 3.3));
-  };
+  const plumes = vents.map(vent => {
+    const Hp = max(10, vent.y - m), hmax = o.reach * Hp * (0.35 + 0.65 * vent.str);
+    const cxAt = h => vent.x + o.wind * 0.9 * h * h / (2 * Hp), halfAt = h => vent.w + o.spread * max(h, 0);
+    const vel = (x, y, tf = 1) => {
+      const h = vent.y - y, c = curl(x, y), t = o.turb * tf * sstep(0, Hp * 0.22, h) * (0.6 + 0.6 * min(1, max(0, h) / Hp));
+      const vx = o.wind * 0.9 * max(h, 0) / Hp + o.spread * (x - cxAt(h)) / halfAt(h) + c[0] * t, vy = -1 + c[1] * t, nn = hypot(vx, vy) || 1;
+      return [vx / nn, vy / nn];
+    };
+    const inEnv = (x, y) => {
+      const h = vent.y - y;
+      if (x < m || x > W - m || y < m || y > H - m || h > hmax * (1 + 0.06 * noise2(x / 25, 7.7))) return false;
+      if (h < 0) { const depth = vent.w * 0.9; return h > -depth && abs(x - cxAt(0)) <= vent.w * (1 + h / depth); } // a funnel down into the source
+      return abs(x - cxAt(h)) <= halfAt(h) * (1 + 0.22 * noise2(h / 20, 3.3));
+    };
+    return { vent, Hp, hmax, cxAt, halfAt, vel, inEnv };
+  });
+  const pick = () => { let r = rand() * plumes.reduce((a, p) => a + p.vent.str, 0); for (const p of plumes) if ((r -= p.vent.str) <= 0) return p; return plumes.at(-1); };
 
-  // flies: in the smell, clear of the source and of each other
-  const srcBlock = raster(W, H, K.masks, o.flysize + 2), flies = [], flyLine = [], flyShade = [], flyMasks = [];
-  for (let t = 0; flies.length < o.flies && t < 600; t++) {
-    const h = Hp * (0.06 + 0.7 * rand()), x = cxAt(h) + (rand() * 2 - 1) * halfAt(h) * 1.1, y = vent.y - h, L = o.flysize;
+  // flies: in the smell (more where it is stronger), clear of the sources and of each other
+  const srcBlock = raster(W, H, src.masks, o.flysize + 2), flies = [], flyLine = [], flyShade = [], flyMasks = [];
+  for (let t = 0; plumes.length && flies.length < o.flies && t < 600; t++) {
+    const p = pick(), h = p.Hp * (0.06 + 0.7 * rand()), x = p.cxAt(h) + (rand() * 2 - 1) * p.halfAt(h) * 1.1, y = p.vent.y - h, L = o.flysize;
     if (x < m + L || x > W - m - L || y < m + L || y > H - m - L || srcBlock.hit(x, y) || flies.some(f => hypot(f.x - x, f.y - y) < 3 * L + 10)) continue;
     flies.push({ x, y, a: rand() * TAU });
   }
   for (const f of flies) { const F = fly(o, f.x, f.y, f.a, o.flysize); flyLine.push(...F.K.line); flyShade.push(...F.K.shade); flyMasks.push(F.mask); }
-  const block = raster(W, H, [...K.masks, ...flyMasks], INK_GAP), bare = raster(W, H, [...K.masks, ...flyMasks], 0);
+  const block = raster(W, H, [...src.masks, ...flyMasks], INK_GAP), bare = raster(W, H, [...src.masks, ...flyMasks], 0);
   const blocked = block.hit;
 
   // fly paths: loops and swerves, dashed, back from each fly
@@ -745,77 +850,82 @@ function build(o) {
   // the smell
   let smell = [];
   if (o.style === "plume") {
-    const G = pointGrid(W, H, 1), dsep = y => o.gap * (1 + o.fade * clamp((vent.y - y) / hmax, 0, 1) ** 2);
+    // streamlines share one grid, so the plumes keep their spacing where they meet
+    const G = pointGrid(W, H, 1), dsep = (p, y) => o.gap * (1 + o.fade * clamp((p.vent.y - y) / p.hmax, 0, 1) ** 2);
     const lines = [];
-    const free = (x, y, d, id = -1, at = 0, skip = 0) => inEnv(x, y) && !blocked(x, y) && G.near(x, y, d, id, at, skip) < 0;
-    const trace = (sx, sy) => {
-      const id = lines.length, skip = ceil(2.5 * dsep(sy) / STEP), cells = [], halves = [[], []];
-      if (!free(sx, sy, dsep(sy) * 0.98)) return false;
+    const free = (p, x, y, d, id = -1, at = 0, skip = 0) => p.inEnv(x, y) && !blocked(x, y) && G.near(x, y, d, id, at, skip) < 0;
+    const trace = (p, sx, sy) => {
+      const id = lines.length, skip = ceil(2.5 * dsep(p, sy) / STEP), cells = [], halves = [[], []];
+      if (!free(p, sx, sy, dsep(p, sy) * 0.98)) return false;
       cells.push(G.add(sx, sy, id, 0));
       [1, -1].forEach((dir, hI) => {
         let x = sx, y = sy;
         for (let i = 1; i < 3000; i++) {
-          const [vx, vy] = vel(x, y), [wx, wy] = vel(x + vx * STEP * 0.5 * dir, y + vy * STEP * 0.5 * dir), nx = x + wx * STEP * dir, ny = y + wy * STEP * dir;
-          if (!free(nx, ny, dsep(ny) * 0.5, id, i * dir, skip)) break;
+          const [vx, vy] = p.vel(x, y), [wx, wy] = p.vel(x + vx * STEP * 0.5 * dir, y + vy * STEP * 0.5 * dir), nx = x + wx * STEP * dir, ny = y + wy * STEP * dir;
+          if (!free(p, nx, ny, dsep(p, ny) * 0.5, id, i * dir, skip)) break;
           x = nx; y = ny; halves[hI].push([x, y]); cells.push(G.add(x, y, id, i * dir));
         }
       });
-      const line = [...halves[1].reverse(), [sx, sy], ...halves[0]];
-      if (pathLen(line) < 3) { for (const c of cells) c.length -= 4; return false; } // undo: this line's points are the last in each cell
-      lines.push(line); return true;
+      const q = [...halves[1].reverse(), [sx, sy], ...halves[0]];
+      if (pathLen(q) < 3) { for (const c of cells) c.length -= 4; return false; } // undo: this line's points are the last in each cell
+      lines.push({ q, p }); return true;
     };
-    // seeds across the vent; if the vent is covered, look a little higher
-    for (let lift = 0; !lines.length && lift < Hp * 0.6; lift += 1)
-      for (let x = cxAt(0) - vent.w; x <= cxAt(0) + vent.w; x += o.gap) trace(x, vent.y - 0.5 - lift);
-    for (let li = 0; li < lines.length && lines.length < 4000; li++) {
-      const q = lines[li];
+    // seeds across each vent; if a vent is covered, look a little higher
+    for (const p of plumes) { const before = lines.length; for (let lift = 0; lines.length === before && lift < p.Hp * 0.6; lift += 1) for (let x = p.cxAt(0) - p.vent.w; x <= p.cxAt(0) + p.vent.w; x += o.gap) trace(p, x, p.vent.y - 0.5 - lift); }
+    for (let li = 0; li < lines.length && lines.length < 5000; li++) {
+      const { q, p } = lines[li];
       for (let i = 1; i < q.length - 1; i += 2) {
-        const dx = q[i + 1][0] - q[i - 1][0], dy = q[i + 1][1] - q[i - 1][1], L = hypot(dx, dy) || 1, d = dsep(q[i][1]);
-        for (const s of [1, -1]) trace(q[i][0] - dy / L * d * s, q[i][1] + dx / L * d * s);
+        const dx = q[i + 1][0] - q[i - 1][0], dy = q[i + 1][1] - q[i - 1][1], L = hypot(dx, dy) || 1, d = dsep(p, q[i][1]);
+        for (const s of [1, -1]) trace(p, q[i][0] - dy / L * d * s, q[i][1] + dx / L * d * s);
       }
     }
-    smell = lines.map(q => [q, false]);
-    if (o.tail === "dash") {
-      const qf = p => clamp(((vent.y - p[1]) / hmax + 0.08 * noise2(p[0] / 12, p[1] / 12) - 0.55) / 0.45, 0, 1);
-      smell = smell.flatMap(([q]) => dashes(q, p => qf(p) > 0 ? lerp(7, 1, qf(p)) : INF, p => lerp(0.8, 3.5, qf(p))));
-    }
+    if (o.tail === "dash") for (const { q, p } of lines) {
+      const qf = r => clamp(((p.vent.y - r[1]) / p.hmax + 0.08 * noise2(r[0] / 12, r[1] / 12) - 0.55) / 0.45, 0, 1);
+      smell.push(...dashes(q, r => qf(r) > 0 ? lerp(7, 1, qf(r)) : INF, r => lerp(0.8, 3.5, qf(r))));
+    } else smell = lines.map(({ q }) => [q, false]);
   } else if (o.style === "wisps") {
-    // the cartoon: wavy lines rising, each curling over at the top
-    const n = o.wisps;
-    for (let i = 0; i < n; i++) {
-      const f = n === 1 ? 0 : i / (n - 1) - 0.5;
-      let x = cxAt(0) + f * 2 * vent.w * 0.8, y = vent.y - 2 - rand() * 3;
-      for (let lift = 0; blocked(x, y) && lift < 60; lift++) y -= 1;
-      const L = hmax * (0.5 + 0.3 * rand()) * (1 - 0.4 * abs(f)), c = [[x, y]];
-      for (let s = 0; s < L; s += 0.5) { const [vx, vy] = vel(x, y, 0.35); x += vx * 0.5; y += vy * 0.5; if (x < m || x > W - m || y < m) break; c.push([x, y]); }
-      if (c.length < 8) continue;
-      const lam = 10 + o.wiggle * 2.5, ph = rand() * TAU, q = [];
-      let s = 0;
-      for (let j = 0; j < c.length; j++) {
-        if (j) s += hypot(c[j][0] - c[j - 1][0], c[j][1] - c[j - 1][1]);
-        const a = c[min(j + 1, c.length - 1)], b = c[max(j - 1, 0)], tx = a[0] - b[0], ty = a[1] - b[1], tl = hypot(tx, ty) || 1, A = o.wiggle * sstep(0, 10, s) * (0.8 + 0.4 * s / L);
-        const off = A * sin(TAU * s / lam + ph); q.push([c[j][0] - ty / tl * off, c[j][1] + tx / tl * off]);
+    // the cartoon: wavy lines rising, each curling over at the top; fewer off a weaker smell
+    for (const p of plumes) {
+      const { vent, cxAt, hmax, vel } = p, nw = max(1, round(o.wisps * (0.3 + 0.7 * vent.str)));
+      for (let i = 0; i < nw; i++) {
+        const f = nw === 1 ? 0 : i / (nw - 1) - 0.5;
+        let x = cxAt(0) + f * 2 * vent.w * 0.8, y = vent.y - 2 - rand() * 3;
+        for (let lift = 0; blocked(x, y) && lift < 60; lift++) y -= 1;
+        const L = hmax * (0.5 + 0.3 * rand()) * (1 - 0.4 * abs(f)), c = [[x, y]];
+        for (let s = 0; s < L; s += 0.5) { const [vx, vy] = vel(x, y, 0.35); x += vx * 0.5; y += vy * 0.5; if (x < m || x > W - m || y < m) break; c.push([x, y]); }
+        if (c.length < 8) continue;
+        const wig = o.wiggle * (0.6 + 0.4 * vent.str), lam = 10 + wig * 2.5, ph = rand() * TAU, q = [];
+        let s = 0;
+        for (let j = 0; j < c.length; j++) {
+          if (j) s += hypot(c[j][0] - c[j - 1][0], c[j][1] - c[j - 1][1]);
+          const a = c[min(j + 1, c.length - 1)], b = c[max(j - 1, 0)], tx = a[0] - b[0], ty = a[1] - b[1], tl = hypot(tx, ty) || 1, A = wig * sstep(0, 10, s) * (0.8 + 0.4 * s / L);
+          const off = A * sin(TAU * s / lam + ph); q.push([c[j][0] - ty / tl * off, c[j][1] + tx / tl * off]);
+        }
+        // the curl at the top: turn tighter and tighter
+        let [hx, hy] = q.at(-1), [px, py] = q.at(-3), ha = atan2(hy - py, hx - px);
+        const r0 = max(1.5, wig * 1.1), turn = f < 0 || (f === 0 && rand() < 0.5) ? -1 : 1, Lh = 1.3 * PI * r0;
+        for (let t = 0; t < Lh; t += 0.4) { ha += turn * 0.4 / (r0 * (1 - 0.55 * t / Lh)); hx += 0.4 * cos(ha); hy += 0.4 * sin(ha); if (hx < m || hx > W - m || hy < m) break; q.push([hx, hy]); }
+        smell.push([q, false]);
       }
-      // the curl at the top: turn tighter and tighter
-      let [hx, hy] = q.at(-1), [px, py] = q.at(-3), ha = atan2(hy - py, hx - px);
-      const r0 = max(1.5, o.wiggle * 1.1), turn = f < 0 || (f === 0 && rand() < 0.5) ? -1 : 1, Lh = 1.3 * PI * r0;
-      for (let t = 0; t < Lh; t += 0.4) { ha += turn * 0.4 / (r0 * (1 - 0.55 * t / Lh)); hx += 0.4 * cos(ha); hy += 0.4 * sin(ha); if (hx < m || hx > W - m || hy < m) break; q.push([hx, hy]); }
-      smell.push([q, false]);
     }
-  } else {
-    // smell map: a chain of puffs up the plume, each wider and fainter, swirled, then contoured
+  } else if (plumes.length) {
+    // smell map: a chain of puffs up each plume, each wider and fainter, summed, swirled, then contoured
     const h = 0.6, x0 = m, y0 = m, nx = ceil((W - 2 * m) / h) + 1, ny = ceil((H - 2 * m) / h) + 1, F = new Float32Array(nx * ny);
-    const puffs = [];
-    for (let s = 0; s <= hmax; s += 3) puffs.push([cxAt(s) + 0.25 * halfAt(s) * noise2(s / 30, 1.7), vent.y - s, vent.w * 0.55 + o.spread * s * 0.75, exp(-s / (hmax * 0.55))]);
+    const chains = plumes.map(({ vent, cxAt, halfAt, hmax }) => { const puffs = []; for (let s = 0; s <= hmax; s += 3) puffs.push([cxAt(s) + 0.25 * halfAt(s) * noise2(s / 30, 1.7), vent.y - s, vent.w * 0.55 + o.spread * s * 0.75, vent.str * exp(-s / (hmax * 0.55))]); return { vent, puffs }; });
+    const baseY = plumes.reduce((a, p) => a + p.vent.y, 0) / plumes.length, Hp = plumes[0].Hp;
     let top = 0;
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
       let x = x0 + i * h, y = y0 + j * h;
-      const hh = vent.y - y, tw = o.turb * sw * 0.3 * sstep(0, Hp * 0.25, hh);
+      const tw = o.turb * sw * 0.3 * sstep(0, Hp * 0.25, baseY - y);
       if (tw > 0) { x += tw * noise(x / sw, y / sw); y += tw * noise(x / sw + 9.1, y / sw + 4.2); }
       let c = 0;
-      for (const [px, py, sg, A] of puffs) { const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy, s2 = 2 * sg * sg; if (d2 < 9 * s2) c += A * exp(-d2 / s2); }
-      const edge = min(i, nx - 1 - i, ny - 1 - j) * h, below = hh < 0 ? exp(-((hh / (0.6 * vent.w)) ** 2)) : 1;
-      F[j * nx + i] = c * below * sstep(0, 14, edge) * sstep(0, 26, j * h); top = max(top, F[j * nx + i]);
+      for (const { vent, puffs } of chains) {
+        const hh = vent.y - y, below = hh < 0 ? exp(-((hh / (0.6 * vent.w)) ** 2)) : 1; if (below < 1e-3) continue;
+        let cc = 0; for (const [px, py, sg, A] of puffs) { const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy, s2 = 2 * sg * sg; if (d2 < 9 * s2) cc += A * exp(-d2 / s2); }
+        c += cc * below;
+      }
+      const edge = min(i, nx - 1 - i, ny - 1 - j) * h;
+      F[j * nx + i] = c * sstep(0, 14, edge) * sstep(0, 26, j * h); top = max(top, F[j * nx + i]);
     }
     if (top > 0) for (let i = 0; i < F.length; i++) F[i] /= top;
     for (let l = 1; l <= o.levels; l++) {
@@ -826,10 +936,10 @@ function build(o) {
   smell = clipBy(smell, (x, y) => blocked(x, y) || x < m || x > W - m || y < m || y > H - m, false);
   smell = thin(smell, MIN_GAP + 0.05, W, H).map(([q, cl]) => [rdp(q, 0.03), cl]);
 
-  // tidy: trails out of the source and flies, everything inside the page
+  // tidy: trails out of the sources and flies, everything inside the page
   const trailsOut = clipBy(trails, blocked, false).filter(([q]) => pathLen(q) > 0.6);
   const onPage = (x, y) => x >= 1.5 && y >= 1.5 && x <= W - 1.5 && y <= H - 1.5, fin = L => clipBy(L, onPage, true).map(([q, cl]) => [rdp(q, 0.03), cl]);
-  const layers = { line: fin([...K.line, ...flyLine]), shade: fin([...K.shade, ...flyShade, ...trailsOut]), smell: fin(smell) };
+  const layers = { line: fin([...src.line, ...flyLine]), shade: fin([...src.shade, ...flyShade, ...trailsOut]), smell: fin(smell) };
 
   // gates
   let bad = 0, pts = 0;
@@ -837,11 +947,13 @@ function build(o) {
   const gap = minGap(layers.smell, W, H, 2);
   let over = 0; for (const [q] of layers.smell) for (const [x, y] of densify(q, 0.3)) if (bare.raw(x, y)) over++;
   gates.push(["all points finite and on the page", bad === 0, `${bad} of ${pts} off`]);
-  gates.push(["there is a smell", layers.smell.length > 0, `${layers.smell.length} lines`]);
+  // a closed bud has no smell yet; that is not a fault
+  gates.push(["there is a smell, if anything smells yet", !plumes.length || layers.smell.length > 0, plumes.length ? `${layers.smell.length} lines` : "nothing smells yet"]);
   gates.push(["hatch pitch >= 0.5 mm (0.3 pen)", o.hp >= 0.5, `${o.hp} mm`]);
   gates.push([`smell lines never closer than ${MIN_GAP} mm`, gap >= MIN_GAP - 1e-6, gap === INF ? "nothing near" : `${gap.toFixed(2)} mm`]);
   gates.push(["no smell over the source or a fly", over === 0, `${over} points`]);
-  if (flies.length < o.flies) notes.push(`room for ${flies.length} of ${o.flies} flies`);
+  if (flies.length < o.flies && plumes.length) notes.push(`room for ${flies.length} of ${o.flies} flies`);
+  if (!plumes.length) notes.push("nothing smells yet: a corpse flower only stinks once it opens");
   return { W, H, o, layers, gates, notes, flies: flies.length, ms: performance.now() - t0 };
 }
 
@@ -871,23 +983,28 @@ function toSVG(r, only = null, ticks = false) {
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["source", "cheese", "fish", "size", "offset", "seed", "style", "gap", "fade", "tail", "wisps", "wiggle", "levels", "spread", "turb", "swirl", "wind", "reach", "flies", "flysize", "trail", "dark", "hp", "ink", "page", "margin"];
+const IDS = ["source", "cheese", "cut", "eyes", "fish", "view", "age", "row", "size", "offset", "seed", "style", "gap", "fade", "tail", "wisps", "wiggle", "levels", "spread", "turb", "swirl", "wind", "reach", "flies", "flysize", "trail", "dark", "hp", "ink", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null, pending = 0;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 const RECOLOUR = new Set(["ink"]);
 function run(k) { sync(); if (last && RECOLOUR.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
 
-const BASE = { source: "corpse", cheese: "holey", fish: "whole", size: 52, offset: 0, seed: 8, style: "plume", gap: 1.8, fade: 1.2, tail: "dash", wisps: 3, wiggle: 3, levels: 12, spread: 0.32, turb: 1.2, swirl: 26, wind: 0.15, reach: 0.95, flies: 5, flysize: 5, trail: 70, dark: "cross", hp: 0.8, ink: "green", page: "190x250", margin: 10 };
+const BASE = { source: "corpse", cheese: "holey", cut: "wedge", eyes: 1, fish: "whole", view: "one", age: 0.5, row: 5, size: 52, offset: 0, seed: 8, style: "plume", gap: 1.8, fade: 1.2, tail: "dash", wisps: 3, wiggle: 3, levels: 12, spread: 0.32, turb: 1.2, swirl: 26, wind: 0.15, reach: 0.95, flies: 5, flysize: 5, trail: 70, dark: "cross", hp: 0.8, ink: "green", page: "190x250", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   corpse: P({}),
-  sock: P({ source: "sock", style: "wisps", size: 42, wisps: 3, wiggle: 3.4, spread: 0.2, turb: 0.6, reach: 0.8, flies: 3, seed: 3, offset: -0.1 }),
+  sock: P({ source: "sock", style: "wisps", size: 42, wisps: 4, age: 0.6, wiggle: 3.4, spread: 0.2, turb: 0.6, reach: 0.8, flies: 3, seed: 3, offset: -0.1 }),
   stilton: P({ source: "cheese", cheese: "blue", style: "map", size: 34, levels: 13, spread: 0.36, turb: 1, swirl: 30, wind: 0.25, flies: 3, page: "250x190", seed: 12, ink: "purple" }),
-  fishbone: P({ source: "fish", fish: "bones", size: 30, gap: 1.6, turb: 1.4, swirl: 22, spread: 0.28, flies: 6, flysize: 4, page: "250x190", seed: 5 }),
-  bin: P({ source: "bin", size: 46, offset: 0.4, wind: -0.6, spread: 0.24, turb: 1, gap: 2, flies: 4, seed: 21, ink: "yellow" }),
-  emmental: P({ source: "cheese", style: "wisps", size: 32, wisps: 5, wiggle: 2.6, spread: 0.3, turb: 0.5, flies: 2, page: "250x190", seed: 4, ink: "yellow" }),
+  fishbone: P({ source: "fish", fish: "bones", age: 0.85, size: 30, gap: 1.6, turb: 1.4, swirl: 22, spread: 0.28, flies: 6, flysize: 4, page: "250x190", seed: 5 }),
+  bin: P({ source: "bin", age: 0.8, size: 46, offset: 0.4, wind: -0.6, spread: 0.24, turb: 1, gap: 2, flies: 4, seed: 21, ink: "yellow" }),
+  emmental: P({ source: "cheese", style: "wisps", size: 32, wisps: 6, age: 0.3, wiggle: 2.6, spread: 0.3, turb: 0.5, flies: 2, page: "250x190", seed: 4, ink: "yellow" }),
   kipper: P({ source: "fish", style: "map", size: 26, levels: 16, turb: 1.4, swirl: 22, spread: 0.4, flies: 4, page: "280x280", seed: 9 }),
+  lifecycle: P({ view: "row", row: 5, size: 62, gap: 1.5, fade: 1, spread: 0.26, turb: 1, swirl: 22, reach: 0.9, flies: 6, flysize: 4, trail: 50, page: "280x280", seed: 8, ink: "purple" }),
+  wheel: P({ source: "cheese", cut: "wheel", style: "map", size: 34, levels: 12, age: 0.7, spread: 0.34, turb: 1, swirl: 28, flies: 3, page: "250x190", seed: 6, ink: "yellow" }),
+  brie: P({ source: "cheese", cheese: "brie", view: "row", row: 3, style: "wisps", size: 48, wisps: 4, wiggle: 2.4, spread: 0.2, turb: 0.5, reach: 0.7, flies: 4, flysize: 4, trail: 40, page: "250x190", seed: 2 }),
+  bud: P({ age: 0.18, flies: 0 }),
+  slump: P({ age: 0.82, seed: 11, flies: 7, gap: 2 }),
   titan: P({ size: 46, offset: -0.4, wind: 0.9, turb: 1.6, swirl: 34, gap: 1.6, fade: 0.8, flies: 7, flysize: 4, page: "280x280", seed: 17, ink: "purple" }),
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
