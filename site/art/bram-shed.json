@@ -1,0 +1,30 @@
+{
+  "studio": "battering-ram-studio.html",
+  "id": "bram-shed",
+  "title": "The shed, wheels to pin on",
+  "preset": "shed",
+  "content": {},
+  "settings": {
+    "size": "1",
+    "seed": "5",
+    "turn": "35",
+    "tip": "22",
+    "hp": "0.75",
+    "margin": "8",
+    "piece": "shed",
+    "pinned": "pinned",
+    "look": "ram",
+    "view": "net",
+    "dark": "cross",
+    "c1col": "b8860b",
+    "c2col": "1f8a4c",
+    "page": "280x280",
+    "fold": "score",
+    "ticks": "split"
+  },
+  "sourceHash": "a7e63ebcd521c898529d20ba0f21108436760011d6fe7c6bd8fae55934c27b70",
+  "svg": "site/art/bram-shed.svg",
+  "image": "site/art/bram-shed.webp",
+  "page": "280x280",
+  "seed": 5
+}
