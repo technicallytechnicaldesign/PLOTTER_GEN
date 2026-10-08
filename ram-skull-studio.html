@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ram skull studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Ram skull studio</h1>
+  <p class="sub">Inktober day 9, ram. A ram's skull on its mount, the horns grown the way real horns grow: a tube swept along a logarithmic spiral, new horn added at the base every year and a ring left between, so the tip is the lamb's horn. Hang a wall of them from lamb to old ram, or lay the years over each other in coloured pens. And if you like, put RAM on the ram.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="trophy">Old ram on a shield</button><button data-preset="wall">The wall, lamb to old ram</button><button data-preset="rings">Growth overlay</button><button data-preset="ddr">RAM on the ram</button><button data-preset="bighorn">Bighorn, full curl</button><button data-preset="lamb">Lamb</button><button data-preset="memwall">Memory upgrades</button><button data-preset="bare">Bare skull, no mount</button></div>
+  </fieldset>
+  <fieldset><legend>The ram</legend>
+    <label>Show <select id="view"><option value="one">one skull</option><option value="row">a wall of mounts, lamb to old ram</option><option value="overlay">overlay: the years on one skull, a colour each</option></select></label>
+    <label>Age (years; in a row or overlay, the oldest) <output id="o-age"></output><input type="range" id="age" min="1" max="14" step="1" value="8"></label>
+    <label data-when="view=row">Mounts on the wall <output id="o-count"></output><input type="range" id="count" min="3" max="6" step="1" value="4"></label>
+    <label data-when="view=overlay">Ages laid over <output id="o-layers"></output><input type="range" id="layers" min="2" max="4" step="1" value="4"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="7"></label>
+  </fieldset>
+  <fieldset><legend>The horns</legend>
+    <label>Curl at full age (degrees) <output id="o-curl"></output><input type="range" id="curl" min="180" max="540" step="5" value="400"></label>
+    <label>Spiral tightening <output id="o-tight"></output><input type="range" id="tight" min="0.08" max="0.35" step="0.01" value="0.2"></label>
+    <label>Size <output id="o-hsize"></output><input type="range" id="hsize" min="0.6" max="1.4" step="0.05" value="1"></label>
+    <label>Girth <output id="o-girth"></output><input type="range" id="girth" min="0.6" max="1.5" step="0.05" value="1"></label>
+    <label>Turned out from the face (degrees) <output id="o-spread"></output><input type="range" id="spread" min="25" max="80" step="1" value="58"></label>
+    <label>Flare, out along the coil <output id="o-flare"></output><input type="range" id="flare" min="0" max="0.5" step="0.01" value="0.16"></label>
+    <label>First heading (degrees above back) <output id="o-rise"></output><input type="range" id="rise" min="0" max="90" step="1" value="40"></label>
+    <label>Fine ridges <output id="o-ridges"></output><input type="range" id="ridges" min="0" max="2" step="0.1" value="1"></label>
+    <p class="hint">Horn grows at the base, so each year's ring marks where the tip was. Past seven years the tip gets broomed: worn off by fighting.</p>
+  </fieldset>
+  <fieldset><legend>Mount and RAM</legend>
+    <label>Mount <select id="plaque"><option value="shield">a shield</option><option value="oval">an oval</option><option value="none">none, the bare skull</option></select></label>
+    <label data-when="plaque!=none">Label <select id="label"><option value="age">its age</option><option value="latin">OVIS ARIES</option><option value="ram">its memory</option><option value="none">none</option></select></label>
+    <label>RAM on the ram <select id="ram"><option value="none">none</option><option value="chips">a memory chip for every year of horn</option><option value="traces">circuit traces over the skull</option><option value="both">both, and gold contacts at the snout</option></select></label>
+    <label data-when="ram!=none">RAM pen <select id="ramcol"><option value="green">circuit-board green</option><option value="gold">gold</option><option value="blue">blue</option></select></label>
+  </fieldset>
+  <fieldset><legend>Drawing</legend>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch, an even dark tone</option><option value="single">single hatch, a mid tone</option><option value="off">off, colour me in</option></select></label>
+    <label data-when="dark!=off">Hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.8"></label>
+    <label>Horn engraving lines <output id="o-engrave"></output><input type="range" id="engrave" min="0" max="48" step="2" value="28"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen: the growth colours first, then the RAM pen, the shade pen and the line pen. Each carries four corner ticks at 1 mm.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How the horn is made. Its centreline turns at a steady rate while its radius of curvature shrinks exponentially, which is a logarithmic spiral; it is tilted out from the face and flares sideways along its length, so seen from the front it coils beside the skull. The tube thins at the same rate, so every piece of horn is a scaled copy of every other. Hidden lines are found with a depth buffer: every surface is rasterised at a quarter of a millimetre, and each pen line is kept only where it is the nearest thing to the eye. Pen widths untested.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp, log } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------------- pen sizes (ASSUMED until a pen test sheet is read) ----------------
+const RES = 0.25;      // depth buffer cell, mm
+const EPS = 0.45;      // a line point counts as seen if it is within this of the nearest surface, mm
+const TRACE_GAP = 0.6; // ASSUMED: circuit traces at least this far apart for a 0.4 pen
+
+// ---------------- small helpers ----------------
+const add3 = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], mul3 = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit3 = a => mul3(a, 1 / (hypot(a[0], a[1], a[2]) || 1));
+const ell = (cx, cy, rx, ry, a0 = 0, a1 = TAU, n = 48, rot = 0) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n, x = rx * cos(a), y = ry * sin(a); return [cx + x * cos(rot) - y * sin(rot), cy + x * sin(rot) + y * cos(rot)]; }).slice(0, abs(a1 - a0) >= TAU - 1e-9 ? n : n + 1);
+const curve = (f, n = 24) => Array.from({ length: n + 1 }, (_, i) => f(i / n));
+function chaikin(pts, n, closed = false) { for (let k = 0; k < n; k++) { const o = closed ? [] : [pts[0]], m = pts.length; for (let i = 0; i < (closed ? m : m - 1); i++) { const a = pts[i], b = pts[(i + 1) % m]; o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]); } if (!closed) o.push(pts.at(-1)); pts = o; } return pts; }
+function bbox(q) { let a = INF, b = INF, c = -INF, d = -INF; for (const p of q) { a = min(a, p[0]); b = min(b, p[1]); c = max(c, p[0]); d = max(d, p[1]); } return [a, b, c, d]; }
+function inPoly(q, x, y) { let c = false; for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const [xi, yi] = q[i], [xj, yj] = q[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
+const pathLen = q => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return s; };
+function hatchSegs(polys, angDeg, pitch) {
+  const a = angDeg * D2R, c = cos(a), s = sin(a), R = polys.map(q => q.map(([x, y]) => [x * c + y * s, -x * s + y * c]));
+  let y0 = INF, y1 = -INF; for (const q of R) for (const p of q) { y0 = min(y0, p[1]); y1 = max(y1, p[1]); }
+  const segs = []; let row = 0;
+  for (let y = (floor(y0 / pitch) + 0.5) * pitch; y < y1; y += pitch, row++) {
+    const xs = [];
+    for (const q of R) for (let i = 0, j = q.length - 1; i < q.length; j = i++) { const [xi, yi] = q[i], [xj, yj] = q[j]; if ((yi > y) !== (yj > y)) xs.push(xi + (y - yi) * (xj - xi) / (yj - yi)); }
+    xs.sort((u, v) => u - v);
+    for (let k = 0; k + 1 < xs.length; k += 2) if (xs[k + 1] - xs[k] > 0.2) { const seg = [[xs[k] * c - y * s, xs[k] * s + y * c], [xs[k + 1] * c - y * s, xs[k + 1] * s + y * c]]; if (row & 1) seg.reverse(); segs.push(seg); }
+  }
+  return segs;
+}
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+
+// ---------------- stroke font (capitals and figures) ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.8,3.8 L3.2,3.8", B: "M0,0 L2.4,0 A2.4,1.5,1.3,1.5,-90,90 L0,3 M0,3 L2.6,3 A2.6,4.5,1.4,1.5,-90,90 L0,6 L0,0",
+  C: "A2,3,2,3,-45,-315", D: "M0,0 L1.5,0 A1.5,3,2.5,3,-90,90 L0,6 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2,3,2,3,-45,-315 L4,3.4 L2.2,3.4", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", I: "M1,0 L3,0 M2,0 L2,6 M1,6 L3,6", J: "M4,0 L4,4.3 A2.3,4.3,1.7,1.7,0,180",
+  K: "M0,0 L0,6 M4,0 L0,4 M1.4,2.6 L4,6", L: "M0,0 L0,6 L4,6", M: "M0,6 L0,0 L2,3.5 L4,0 L4,6", N: "M0,6 L0,0 L4,6 L4,0", O: "A2,3,2,3,0,360",
+  P: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2", Q: "A2,3,2,3,0,360 M2.6,4.4 L4,6.3", R: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2 M2,3.2 L4,6",
+  S: "A2,1.5,1.8,1.5,-20,-270 A2,4.5,2,1.5,-90,160", T: "M0,0 L4,0 M2,0 L2,6", U: "M0,0 L0,4 A2,4,2,2,180,0 L4,0", V: "M0,0 L2,6 L4,0",
+  W: "M0,0 L1,6 L2,2.5 L3,6 L4,0", X: "M0,0 L4,6 M4,0 L0,6", Y: "M0,0 L2,3 L4,0 M2,3 L2,6", Z: "M0,0 L4,0 L0,6 L4,6",
+  0: "A2,3,2,3,0,360 M3.2,1 L0.8,5", 1: "M0.8,1.2 L2,0 L2,6 M0.8,6 L3.2,6", 2: "A2,1.8,1.8,1.8,-160,20 L0,6 L4,6", 3: "A2,1.5,1.7,1.5,-160,90 A2,4.5,1.9,1.5,-90,160",
+  4: "M3,6 L3,0 L0,4.2 L4,4.2", 5: "M4,0 L0.4,0 L0,2.8 A2,4.1,2,1.9,-125,155", 6: "M3.2,0 L0.1,4 M4,4.3 A2,4.3,2,1.7,0,360", 7: "M0,0 L4,0 L1.5,6",
+  8: "M3.6,1.5 A2,1.5,1.6,1.5,0,360 M4,4.5 A2,4.5,2,1.5,0,360", 9: "M3.6,1.7 A2,1.7,1.6,1.7,0,360 M3.6,1.9 L1,6", "-": "M0.8,3 L3.2,3", ".": "M2,5.6 L2,6",
+};
+function glyph(src) {
+  const S = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; S.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; S.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return S;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+// Text centred on (cx, cy), capitals h tall.
+function text(s, cx, cy, h) {
+  const k = h / 6, adv = 5.4 * k, w = [...s].reduce((a, ch) => a + (GLYPHS[ch] ? adv : 3.6 * k), 0) - adv + 4 * k, out = [];
+  let x = cx - w / 2;
+  for (const ch of s) { const G = GLYPHS[ch]; if (!G) { x += 3.6 * k; continue; } for (const S of G) out.push(S.map(([gx, gy]) => [x + gx * k, cy + (gy - 3) * k])); x += adv; }
+  return out;
+}
+
+// ---------------- the horn ----------------
+// Turn reached and size at age A (years): fast at first, then slower, as real horn growth is.
+const growth = A => 1 - exp(-A / 3.2);
+const turnAt = (o, A) => o.curl * D2R * (0.16 + 0.84 * growth(A));
+// The centreline turns at a steady rate while its radius of curvature shrinks as exp(-k t): a logarithmic spiral, drawn in a
+// plane turned out from the face by `spread` and pushed sideways by `flare` as it goes. t = 0 is the base, on the skull.
+function horn(o, A, side, base, ss) {
+  const g = growth(A), turn = turnAt(o, A), cut = 0.55 * sstep(7, 13, A), tEnd = turn - cut;
+  const Rc = 46 * o.hsize * ss * (0.4 + 0.6 * g), kb = o.tight, rb = 10 * o.girth * ss * (0.45 + 0.55 * g);
+  const sg = sin(o.spread * D2R), cg = cos(o.spread * D2R), h0 = -o.rise * D2R, dt = 0.02;
+  const C = [], R = [], Tt = [];
+  let p = 0, q = 0, fl = 0;
+  for (let t = 0; t <= tEnd + 1e-9; t += dt) {
+    const sc = exp(-kb * t), taper = 1 - 0.8 * sstep(turn - 1, turn, t);   // the unworn tip comes to a point
+    C.push([base[0] + side * (p * sg + fl * cg), base[1] + q, base[2] + p * cg - fl * sg]); R.push(max(0.35, rb * sc * taper)); Tt.push(t);
+    const ds = Rc * sc * dt, h = h0 + t; p += cos(h) * ds; q += sin(h) * ds; fl += o.flare * ds;
+  }
+  // frames carried along without twisting
+  const n = C.length, T = [], N = [], B = [];
+  for (let i = 0; i < n; i++) T.push(unit3(sub3(C[min(n - 1, i + 1)], C[max(0, i - 1)])));
+  let nv = unit3(cross3(T[0], [0, 0, 1])); if (!isFinite(nv[0]) || hypot(...nv) < 0.5) nv = [1, 0, 0];
+  for (let i = 0; i < n; i++) { nv = unit3(sub3(nv, mul3(T[i], dot3(nv, T[i])))); N.push(nv); B.push(cross3(T[i], nv)); }
+  // a slightly three-cornered section, as a ram's horn has
+  const at = (i, ph) => { const r = R[i] * (1 + 0.1 * cos(3 * ph)); return add3(C[i], add3(mul3(N[i], r * cos(ph)), mul3(B[i], r * sin(ph)))); };
+  const normal = (i, ph) => unit3(add3(mul3(N[i], cos(ph)), mul3(B[i], sin(ph))));
+  const idx = t => clamp(round(t / dt), 0, n - 1);
+  // year rings: the tip is year one; ring k sits where the tip was when the ram was k
+  const rings = []; for (let k = 1; k < A; k++) { const t = turn - turnAt(o, k); if (t > 0.04 && t < tEnd - 0.04) rings.push({ k, i: idx(t) }); }
+  return { C, R, T, N, B, n, at, normal, idx, rings, tEnd, broomed: cut > 0.02, A, dt };
+}
+
+// ---------------- the skull, seen from the front, in skull units (y down) ----------------
+const SKULL_R = [[0, -2], [12, -2], [21, 1], [27, 9], [27, 20], [29, 30], [38, 35], [44, 45], [43, 56], [36, 64], [29, 72], [25, 86], [21, 100], [17, 113], [13, 124], [9, 131], [0, 133]];
+const mirrorClose = R => [...R, ...R.slice(1, -1).reverse().map(([x, y]) => [-x, y])];
+const SKULL = chaikin(mirrorClose(SKULL_R), 3, true);
+// the face bulges toward the eye (negative z); the crown curves away at the top
+const zSkull = (x, y) => -(10 * sqrt(max(0, 1 - (x / 47) ** 2)) + 3) * sstep(-6, 24, y);
+function skullLines(o, ss, unitsPerMm, rand) {
+  const L = [], S = [], RAM = [], sc = pts => pts.map(([x, y]) => [x * ss, y * ss]);
+  const line = (q, cl = false) => L.push([sc(q), cl]), shade = (q, cl = false) => S.push([sc(q), cl]);
+  const hp = o.hp * unitsPerMm / ss, dark = (polys, ang = 45) => { if (o.dark === "off") return; for (const s of hatchSegs(polys, ang, hp)) shade(s); if (o.dark === "cross") for (const s of hatchSegs(polys, ang + 90, hp)) shade(s); };
+  const mid = (polys, ang = 45) => { if (o.dark !== "off") for (const s of hatchSegs(polys, ang, hp * 1.5)) shade(s); };
+  line(SKULL, true);
+  for (const s of [-1, 1]) {
+    const mx = q => q.map(([x, y]) => [s * x, y]);
+    // the orbit: a rim, and the dark socket inside it, opening sideways
+    const rim = ell(s * 33, 48, 10.5, 13, 0, TAU, 40, s * 0.18), socket = ell(s * 34, 48.5, 6.5, 9.5, 0, TAU, 32, s * 0.18);
+    line(rim, true); line(socket, true); dark([socket], s > 0 ? 45 : 135); mid([rim, socket], s > 0 ? 60 : 120);
+    // the ridge from the eye down the cheek, and the hollow behind it
+    line(mx(curve(t => [35 - 12 * t, 62 + 28 * t - 4 * sin(PI * t)], 12)));
+    // the horn core's base, where the horn grows from
+    line(mx(ell(22, 8, 9, 6.5, PI * 0.9, TAU * 1.05, 20)));
+    // temple hollow between horn and eye
+    mid([mx([[26, 14], [28, 30], [33, 33], [30, 22]])], s > 0 ? 70 : 110);
+    // the nasal bones, long plates down the middle
+    line(mx(chaikin([[0.6, 56], [6.5, 58], [7, 84], [5, 104], [1.5, 110]], 2)));
+    // little holes for nerves and blood
+    line(mx(ell(11, 42, 1.4, 1.8, 0, TAU, 10)), true); line(mx(ell(13, 88, 1.1, 1.5, 0, TAU, 10)), true);
+    // the shadowed side of the face: right, as the light is upper left
+    // the shadowed side of the face: a band down the right edge, as the light is upper left
+    if (s > 0) { const edge = SKULL.filter(([x, y]) => x > 0 && y > 60 && y < 128); K_inside(SKULL, () => mid([[...edge, ...edge.slice().reverse().map(([x, y]) => [x - 10, y])]], 30), S, sc); }
+  }
+  // sutures: the frontal down the middle, the frontonasal across
+  line(curve(t => [0.9 * sin(t * 40) + 0.5 * (rand() - 0.5), 2 + 54 * t], 60));
+  line(curve(t => [-15 + 30 * t, 56 + (((t * 22) | 0) % 2 ? 1 : -1) * 0.9 * rand() + 0.4 * sin(t * 50)], 44));
+  // the nasal opening, dark
+  const nose = chaikin([[0, 109], [3.5, 112], [5.5, 120], [3.5, 127], [0, 129], [-3.5, 127], [-5.5, 120], [-3.5, 112]], 2, true);
+  line(nose, true); dark([nose], 45);
+  return { L, S, RAM, nose, sc };
+}
+// helper: hatch drawn by fn into S, kept only inside poly (both in skull units)
+function K_inside(poly, fn, S, sc) {
+  const n0 = S.length; fn();
+  const P = sc(poly), got = S.splice(n0);
+  for (const [q] of got) { let run = []; for (let i = 0; i < q.length; i++) { const a = q[i], c = q[min(i + 1, q.length - 1)], n = i < q.length - 1 ? max(1, ceil(hypot(c[0] - a[0], c[1] - a[1]) / 0.4)) : 1;
+    for (let j = 0; j < n; j++) { const x = lerp(a[0], c[0], j / n), y = lerp(a[1], c[1], j / n); if (inPoly(P, x, y)) run.push([x, y]); else { if (run.length > 1) S.push([run, false]); run = []; } } }
+    if (run.length > 1) S.push([run, false]); }
+}
+
+// ---------------- RAM on the ram ----------------
+// Circuit traces: a chip on the forehead, its pins routed out and down the face on a 45-degree grid, never crossing.
+function traces(o, ss, gridU, rand) {
+  const out = [], P = SKULL.map(([x, y]) => [x * ss, y * ss]), g = gridU, keepOut = [];
+  for (const s of [-1, 1]) keepOut.push(ell(s * 33 * ss, 48 * ss, 13 * ss, 15.5 * ss, 0, TAU, 24, s * 0.18), ell(s * 22 * ss, 8 * ss, 12 * ss, 10 * ss, 0, TAU, 20));
+  keepOut.push(ell(0, 119 * ss, 8 * ss, 13 * ss, 0, TAU, 20));
+  const ok = (x, y) => inPoly(P, x, y) && !keepOut.some(q => inPoly(q, x, y)) && [[g, 0], [-g, 0], [0, g], [0, -g]].every(([dx, dy]) => inPoly(P, x + dx * 0.9, y + dy * 0.9));
+  const used = new Set(), key = (i, j) => i + "," + j, cell = (x, y) => [round(x / g), round(y / g)];
+  // the chip: a rectangle with pins down both sides
+  const cw = 7 * ss, ch = 10 * ss, cy = 26 * ss, chip = [[-cw, cy - ch], [cw, cy - ch], [cw, cy + ch], [-cw, cy + ch]];
+  out.push([chip, true]); out.push([ell(-cw + 2 * ss, cy - ch + 2 * ss, 0.9 * ss, 0.9 * ss, 0, TAU, 10), true]);
+  for (let i = round((-cw - g) / g); i <= round((cw + g) / g); i++) for (let j = round((cy - ch - g) / g); j <= round((cy + ch + g) / g); j++) used.add(key(i, j));
+  const starts = [];
+  for (const s of [-1, 1]) for (let j = round((cy - ch) / g) + 1; j < round((cy + ch) / g); j++) starts.push([s, j]);
+  for (const [s, j] of starts) {
+    const y = j * g, x0 = s * cw, i0 = round((s * (cw + g)) / g);
+    if (used.has(key(i0 + s, j))) continue;
+    let i = i0, dir = [s, 0]; const pts = [[x0, y], [i * g, y]];
+    const dirs = [[s, 0], [s, 1], [0, 1], [-s, 1]];
+    for (let step = 0, life = 14 + floor(rand() * 40); step < life; step++) {
+      const opts = dirs.filter(d => !(d[0] === -dir[0] && d[1] === -dir[1])).map(d => ({ d, w: (d[0] === dir[0] && d[1] === dir[1] ? 2.5 : 1) * (d[1] > 0 ? 1.6 : 1) * rand() }));
+      opts.sort((a, b) => b.w - a.w);
+      let moved = false;
+      for (const { d } of opts) {
+        const ni = i + d[0], nj = j + (pts.length ? 0 : 0) + d[1] + (step ? 0 : 0), cj = round(pts.at(-1)[1] / g) + d[1];
+        const nx = ni * g, ny = cj * g;
+        // a diagonal also claims the two cells it cuts across, so traces never cross
+        if (!ok(nx, ny) || used.has(key(ni, cj)) || (d[0] && d[1] && (used.has(key(ni, cj - d[1])) && used.has(key(ni - d[0], cj))))) continue;
+        used.add(key(ni, cj)); pts.push([nx, ny]); i = ni; dir = d; moved = true; break;
+      }
+      if (!moved) break;
+    }
+    used.add(key(round(pts[1][0] / g), j));
+    if (pts.length < 4) continue;
+    const [ex, ey] = pts.at(-1);
+    out.push([pts, false]); out.push([ell(ex, ey, g * 0.32, g * 0.32, 0, TAU, 10), true]);
+  }
+  return { lines: out, chip };
+}
+// Gold contacts across the snout, as on the edge of a memory stick.
+function contacts(ss) { const out = []; for (let i = -2; i <= 2; i++) out.push([[[i * 2.4 * ss - 0.8 * ss, 123 * ss], [i * 2.4 * ss + 0.8 * ss, 123 * ss], [i * 2.4 * ss + 0.8 * ss, 130 * ss - abs(i) * 1.1 * ss], [i * 2.4 * ss - 0.8 * ss, 130 * ss - abs(i) * 1.1 * ss]], true]); return out; }
+
+// ---------------- a mount: plaque, skull and horns, in skull units with z ----------------
+function mount(o, A, rand, extraAges = []) {
+  const ss = 0.72 + 0.28 * growth(A);   // a lamb's skull is smaller
+  const base = s => [s * 22 * ss, 6 * ss, -7 * ss];
+  const H = [horn(o, A, 1, base(1), ss), horn(o, A, -1, base(-1), ss)];
+  const ghosts = extraAges.map(a => [horn(o, a, 1, base(1), ss), horn(o, a, -1, base(-1), ss)]);
+  let zmax = -INF; const pts2 = SKULL.map(([x, y]) => [x * ss, y * ss]);
+  for (const h of [H, ...ghosts].flat()) for (let i = 0; i < h.n; i += 4) { const c = h.C[i], r = h.R[i]; zmax = max(zmax, c[2] + r); pts2.push([c[0] - r, c[1] - r], [c[0] + r, c[1] + r]); }
+  const hb = bbox(pts2);
+  let plaque = null;
+  if (o.plaque !== "none") {
+    const w = 46 * ss, top = -18 * ss, bot = 160 * ss;
+    plaque = o.plaque === "oval" ? ell(0, (top + bot) / 2, w * 1.05, (bot - top) / 2, 0, TAU, 72)
+      : chaikin([[0, top + 6 * ss], [w * 0.5, top], [w, top + 4 * ss], [w, 104 * ss], [w * 0.6, 142 * ss], [0, bot], [-w * 0.6, 142 * ss], [-w, 104 * ss], [-w, top + 4 * ss], [-w * 0.5, top]], 2, true);
+    for (const p of plaque) pts2.push(p);
+  }
+  return { A, ss, H, ghosts, plaque, zPlaque: zmax + 4, bb: bbox(pts2), hb };
+}
+
+// ---------------- the depth buffer ----------------
+function zbuf(W, H) {
+  const nx = ceil(W / RES) + 1, ny = ceil(H / RES) + 1, z = new Float32Array(nx * ny).fill(INF);
+  const tri = (a, b, c) => {
+    const x0 = max(0, floor(min(a[0], b[0], c[0]) / RES)), x1 = min(nx - 1, ceil(max(a[0], b[0], c[0]) / RES)), y0 = max(0, floor(min(a[1], b[1], c[1]) / RES)), y1 = min(ny - 1, ceil(max(a[1], b[1], c[1]) / RES));
+    const d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]); if (abs(d) < 1e-12) return;
+    for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) {
+      const x = (i + 0.5) * RES, y = (j + 0.5) * RES, l1 = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (y - c[1])) / d, l2 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (y - c[1])) / d, l3 = 1 - l1 - l2;
+      if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+      const zz = l1 * a[2] + l2 * b[2] + l3 * c[2], k = j * nx + i; if (zz < z[k]) z[k] = zz;
+    }
+  };
+  const poly = (P, zf) => {
+    const b = bbox(P), j0 = max(0, floor(b[1] / RES)), j1 = min(ny - 1, ceil(b[3] / RES));
+    for (let j = j0; j <= j1; j++) {
+      const y = (j + 0.5) * RES, xs = [];
+      for (let i = 0, k = P.length - 1; i < P.length; k = i++) { const [xi, yi] = P[i], [xk, yk] = P[k]; if ((yi > y) !== (yk > y)) xs.push(xi + (y - yi) * (xk - xi) / (yk - yi)); }
+      xs.sort((u, v) => u - v);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let i = max(0, ceil(xs[k] / RES - 0.5)); i <= min(nx - 1, floor(xs[k + 1] / RES - 0.5)); i++) { const zz = zf((i + 0.5) * RES, y), q = j * nx + i; if (zz < z[q]) z[q] = zz; }
+    }
+  };
+  const seen = (x, y, zz, eps = EPS) => { const i = floor(x / RES), j = floor(y / RES); if (i < 0 || j < 0 || i >= nx || j >= ny) return true; return zz <= z[j * nx + i] + eps; };
+  const copy = () => { const c = zbuf(W, H); c.z.set(z); return c; };
+  return { tri, poly, seen, copy, z };
+}
+// Keep the parts of a 3D page line that are seen.
+function visible(Z, q, cl, eps = EPS) {
+  const pts = [], src = cl ? [...q, q[0]] : q;
+  for (let i = 0; i < src.length; i++) { if (!i) { pts.push(src[0]); continue; } const a = src[i - 1], b = src[i], n = max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)); for (let k = 1; k <= n; k++) pts.push([lerp(a[0], b[0], k / n), lerp(a[1], b[1], k / n), lerp(a[2], b[2], k / n)]); }
+  const out = []; let run = [], all = true;
+  for (const p of pts) { if (Z.seen(p[0], p[1], p[2], eps)) run.push([p[0], p[1]]); else { all = false; if (run.length > 1) out.push([run, false]); run = []; } }
+  if (all && cl) return [[q.map(p => [p[0], p[1]]), true]];
+  if (run.length > 1) out.push([run, false]);
+  return out;
+}
+
+// ---------------- ink a mount onto the page ----------------
+const LIGHT = unit3([-0.5, -0.65, -0.6]);   // toward the light: upper left, in front
+function inkMount(o, M, k, ox, oy, rand, pens) {
+  const W = PAGE[0], H = PAGE[1], T = p => [ox + k * p[0], oy + k * p[1], k * (p[2] || 0)];
+  const Z = zbuf(W, H), lines = [];   // [pen, 3D page points, closed]
+  const push = (pen, q, cl = false) => { if (q.length > 1) lines.push([pen, q, cl]); };
+  // plaque at the back
+  if (M.plaque) {
+    const P = M.plaque.map(p => T([p[0], p[1], M.zPlaque])), zp = k * M.zPlaque;
+    Z.poly(P, () => zp);
+    push("line", P, true);
+    const c = [ox, oy + k * 80 * M.ss], inset = M.plaque.map(([x, y]) => { const dx = x, dy = y - 80 * M.ss, L = hypot(dx, dy) || 1; return T([x - dx / L * 5 * M.ss, y - dy / L * 5 * M.ss, M.zPlaque]); });
+    push("line", inset, true);
+    // wood grain: long wavy lines inside the bevel, in the thin pen
+    const ib = bbox(inset), gr = [];
+    for (let x = ib[0] + 3; x < ib[2] - 2; x += 2.2 + rand() * 1.6) { const ph = rand() * TAU, a = 0.4 + rand() * 0.8; gr.push(curve(t => [x + a * sin(t * 9 + ph) + 0.6 * sin(t * 23), lerp(ib[1], ib[3], t), zp], 160)); }
+    for (const q of gr) for (const [r] of [[q.filter(([x, y]) => inPoly(inset, x, y))]]) if (r.length > 1) push("shade", r);
+    // the label plate
+    if (o.label !== "none") {
+      const s = o.label === "latin" ? "OVIS ARIES" : o.label === "ram" ? `${2 ** min(M.A + 2, 12)} MB RAM` : `${M.A} YEAR${M.A > 1 ? "S" : ""}`, hh = 3.2, wd = s.length * hh * 1.0 + 9, py = oy + k * 146 * M.ss;
+      if (wd < k * 80 * M.ss) { push("line", [[ox - wd / 2, py - hh, zp], [ox + wd / 2, py - hh, zp], [ox + wd / 2, py + hh, zp], [ox - wd / 2, py + hh, zp]], true); for (const q of text(s, ox, py, hh * 0.9)) push("line", q.map(([x, y]) => [x, y, zp])); }
+    }
+  }
+  // the skull
+  const unitsPerMm = 1 / k, SL = skullLines(o, M.ss, unitsPerMm, rand), sk = q => q.map(([x, y]) => T([x, y, zSkull(x / M.ss, y / M.ss) * M.ss]));
+  Z.poly(SKULL.map(([x, y]) => [ox + k * x * M.ss, oy + k * y * M.ss]), (x, y) => { const u = (x - ox) / k / M.ss, v = (y - oy) / k / M.ss; return k * zSkull(u, v) * M.ss; });
+  for (const [q, cl] of SL.L) push("line", sk(q), cl);
+  for (const [q, cl] of SL.S) push("shade", sk(q), cl);
+  if (o.ram === "traces" || o.ram === "both") {
+    const g = max(1.6, TRACE_GAP + 0.8) / k, tr = traces(o, M.ss, g, rand);
+    for (const [q, cl] of tr.lines) push("ram", q.map(([x, y]) => T([x, y, zSkull(x / M.ss, y / M.ss) * M.ss])), cl);
+    pens.traceGap = min(pens.traceGap, g * k);
+  }
+  if (o.ram === "both") for (const [q, cl] of contacts(M.ss)) push("ram", q.map(([x, y]) => T([x, y, zSkull(x / M.ss, y / M.ss) * M.ss])), cl);
+  // the horns into the buffer, then their lines
+  const hornLines = (h, pen, full) => {
+    const out = [], P = (i, ph) => T(h.at(i, ph)), M2 = 40, every = max(1, round(0.5 / (k * h.dt * 30)));
+    // silhouettes: the two edges of each ring as seen
+    const e1 = [], e2 = [];
+    for (let i = 0; i < h.n; i++) {
+      const c = T(h.C[i]), a = T(h.C[min(h.n - 1, i + 1)]), b = T(h.C[max(0, i - 1)]), tx = a[0] - b[0], ty = a[1] - b[1], tl = hypot(tx, ty) || 1, nx = -ty / tl, ny = tx / tl;
+      let lo = INF, hi = -INF, pl = null, ph = null;
+      for (let j = 0; j < M2; j++) { const p = P(i, j / M2 * TAU), d = (p[0] - c[0]) * nx + (p[1] - c[1]) * ny; if (d < lo) { lo = d; pl = p; } if (d > hi) { hi = d; ph = p; } }
+      e1.push(pl); e2.push(ph);
+    }
+    out.push([pen, e1, false, 1.2], [pen, e2, false, 1.2]);
+    const ring = (i, a0 = 0, a1 = TAU, n = 64) => curve(t => P(i, lerp(a0, a1, t)), n);
+    out.push([pen, ring(0).slice(0, -1), true], [pen, ring(h.n - 1).slice(0, -1), true]);
+    for (const r of h.rings) out.push([pen, ring(r.i).slice(0, -1), true]);
+    if (!full) return out;
+    // fine ridges between the rings: part-rings in the thin pen
+    if (o.ridges > 0) for (let i = 3; i < h.n - 3; i += max(1, round(3 / o.ridges))) { const a0 = rand() * TAU, a1 = a0 + 1.2 + rand() * 2.2; out.push(["shade", ring(i, a0, a1, 24), false]); }
+    // engraving: lines running along the horn on its shadowed side, more where it is darker
+    if (o.dark !== "off" && o.engrave > 0) for (let j = 0; j < o.engrave; j++) {
+      const ph = j / o.engrave * TAU, thr = [0.32, -0.05, 0.14, -0.05][j % 4] - (o.dark === "single" ? 0.15 : 0);
+      let run = [];
+      for (let i = 0; i < h.n; i += every) { if (dot3(h.normal(i, ph), LIGHT) < thr) run.push(P(i, ph)); else { if (run.length > 2) out.push(["shade", run, false]); run = []; } }
+      if (run.length > 2) out.push(["shade", run, false]);
+    }
+    // a memory chip on every year's horn, pins and all
+    if ((o.ram === "chips" || o.ram === "both") && full) {
+      const bounds = [0, ...h.rings.map(r => r.i).sort((a, b) => a - b), h.n - 1];
+      for (let s = 0; s + 1 < bounds.length; s++) {
+        const i0 = bounds[s], i1 = bounds[s + 1], L = i1 - i0; if (L < 10) continue;
+        const a = i0 + round(L * 0.18), b = i1 - round(L * 0.18), im = round((a + b) / 2);
+        let best = 0, bz = INF; for (let j = 0; j < 24; j++) { const ph = j / 24 * TAU, nz = h.normal(im, ph)[2]; if (nz < bz) { bz = nz; best = ph; } }
+        const w = 0.55, side = (ph) => { const q = []; for (let i = a; i <= b; i++) q.push(P(i, ph)); return q; };
+        out.push(["ram", [...side(best - w), ...side(best + w).reverse()], true]);
+        for (let i = a + 2; i < b - 1; i += max(2, round(L / 14))) for (const sgn of [-1, 1]) out.push(["ram", curve(t => P(i, best + sgn * (w + 0.28 * t)), 4), false]);
+        out.push(["ram", curve(t => P(round(lerp(a, b, 0.15)), best - w * 0.6 + w * 0.15 * cos(t * TAU)), 8), false]);
+      }
+    }
+    return out;
+  };
+  const meshInto = (Zb, h) => {
+    const M2 = 24, step = 2;
+    for (let i = 0; i + step < h.n; i += step) for (let j = 0; j < M2; j++) {
+      const a = T(h.at(i, j / M2 * TAU)), b = T(h.at(i, (j + 1) / M2 * TAU)), c = T(h.at(i + step, (j + 1) / M2 * TAU)), d = T(h.at(i + step, j / M2 * TAU));
+      Zb.tri(a, b, c); Zb.tri(a, c, d);
+    }
+    const cap = (i) => { const c = T(h.C[i]); for (let j = 0; j < M2; j++) Zb.tri(c, T(h.at(i, j / M2 * TAU)), T(h.at(i, (j + 1) / M2 * TAU))); };
+    cap(0); cap(h.n - 1);
+  };
+  const base = Z.copy();   // plaque and skull only: the younger horns of an overlay are seen through the old one
+  for (const h of M.H) meshInto(Z, h);
+  const all = [];
+  for (const [pen, q, cl] of lines) for (const r of visible(Z, q, cl)) all.push([pen, r[0], r[1]]);
+  for (const h of M.H) for (const [pen, q, cl, e] of hornLines(h, "line", true)) for (const r of visible(Z, q, cl, e)) all.push([pen, r[0], r[1]]);
+  M.ghosts.forEach((pair, gi) => {
+    const Zg = base.copy(); for (const h of pair) meshInto(Zg, h);
+    for (const h of pair) for (const [pen, q, cl, e] of hornLines(h, "g" + (gi + 1), false)) for (const r of visible(Zg, q, cl, e)) all.push([pen, r[0], r[1]]);
+  });
+  return all;
+}
+
+// ---------------- build ----------------
+const PAGES = { "190x250": [190, 250], "250x190": [250, 190], "280x280": [280, 280] };
+let PAGE = PAGES["190x250"];
+const RAMCOL = { green: "1f8a4c", gold: "c08a00", blue: "1d5fa8" }, GCOL = ["e09a00", "d1495b", "2e86ab"];
+function build(o) {
+  const t0 = performance.now(), notes = [], gates = [];
+  const [W, H] = PAGE = PAGES[o.page] || PAGES["190x250"], m = o.margin, rand = mulberry(o.seed * 7919 + 13);
+  // which mounts, at what ages
+  let mounts;
+  if (o.view === "row") mounts = Array.from({ length: o.count }, (_, i) => mount(o, max(1, round(lerp(1, o.age, i / (o.count - 1)))), rand));
+  else if (o.view === "overlay") { const n = o.layers, ages = Array.from({ length: n - 1 }, (_, i) => max(1, round(lerp(1, o.age, i / (n - 1))))).filter(a => a < o.age); mounts = [mount(o, o.age, rand, [...new Set(ages)].slice(0, 3))]; }
+  else mounts = [mount(o, o.age, rand)];
+  // one scale for all, so the wall shows the growth; mounts hung on whichever grid lets them be biggest, youngest first
+  const n = mounts.length, gap = n > 1 ? 5 : 0, bw = max(...mounts.map(M => M.bb[2] - M.bb[0])), bh = max(...mounts.map(M => M.bb[3] - M.bb[1]));
+  let k = 0, cols = 1;
+  for (let c = 1; c <= n; c++) { const r = ceil(n / c), kk = min((W - 2 * m - gap * (c - 1)) / c / bw, (H - 2 * m - gap * (r - 1)) / r / bh); if (kk > k) { k = kk; cols = c; } }
+  const rows = ceil(n / cols), cw = (W - 2 * m) / cols, rh = (H - 2 * m) / rows;
+  const pens = { traceGap: INF }, all = [];
+  mounts.forEach((M, i) => {
+    const b = M.bb, r = floor(i / cols), inRow = min(cols, n - r * cols), c = i - r * cols, x0 = m + (W - 2 * m - inRow * cw) / 2;
+    const cx = x0 + cw * (c + 0.5), cy = m + rh * (r + 0.5), ox = cx - k * (b[0] + b[2]) / 2, oy = cy + k * bh / 2 - k * b[3];   // bottoms level in each row
+    all.push(...inkMount(o, M, k, ox, oy, mulberry(o.seed * 31 + i), pens));
+  });
+  const layers = { g1: [], g2: [], g3: [], ram: [], shade: [], line: [] };
+  for (const [pen, q, cl] of all) { const s = rdp(q, 0.03); if (s.length > 1 && (cl || pathLen(s) > 0.3)) layers[pen].push([s, cl]); }
+  // gates
+  let bad = 0, pts = 0;
+  for (const L of Object.values(layers)) for (const [q] of L) for (const [x, y] of q) { pts++; if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > W || y > H) bad++; }
+  gates.push(["all points finite and on the page", bad === 0, `${bad} of ${pts} off`]);
+  gates.push(["the line pen has the skull and horns", layers.line.length > 0, `${layers.line.length} lines`]);
+  gates.push(["hatch pitch >= 0.5 mm (0.3 pen)", o.hp >= 0.5, `${o.hp} mm`]);
+  if (pens.traceGap < INF) gates.push([`circuit traces at least ${TRACE_GAP} mm apart`, pens.traceGap >= TRACE_GAP - 1e-9, `${pens.traceGap.toFixed(2)} mm grid`]);
+  const ages = mounts.flatMap(M => [M.A, ...M.ghosts.map(g => g[0].A)]);
+  return { W, H, o, layers, gates, notes, ages, scale: k, ms: performance.now() - t0 };
+}
+
+// ---------------- preview, export ----------------
+const COL = { line: "#1d1a14", shade: "#6d6656" };
+const penLayers = r => [
+  ...[0, 1, 2].map(i => ({ name: "g" + (i + 1), colour: GCOL[i], w: 0.4, paths: r.layers["g" + (i + 1)] })),
+  { name: "ram", colour: RAMCOL[r.o.ramcol] || RAMCOL.green, w: 0.4, paths: r.layers.ram },
+  { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade }, { name: "line", colour: "000000", w: 0.4, paths: r.layers.line },
+].filter(L => L.paths.length);
+function draw(r) {
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  for (const L of penLayers(r)) { c.strokeStyle = COL[L.name] || "#" + L.colour; c.lineWidth = L.w; c.beginPath(); for (const [q, cl] of L.paths) { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); }
+  const lenm = L => L.reduce((a, [q]) => a + pathLen(q), 0) / 1000;
+  $("stats").innerHTML = `ages ${r.ages.join(", ")} · ${r.ms.toFixed(0)} ms<br>`
+    + penLayers(r).map(L => `${L.name}: <b>${lenm(L.paths).toFixed(1)} m</b>`).join(" · ") + "<br>"
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG ram skull studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["view", "age", "count", "layers", "seed", "curl", "tight", "hsize", "girth", "spread", "flare", "rise", "ridges", "plaque", "label", "ram", "ramcol", "dark", "hp", "engrave", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const RECOLOUR = new Set(["ramcol"]);
+function run(k) { sync(); if (last && RECOLOUR.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { view: "one", age: 8, count: 4, layers: 4, seed: 7, curl: 400, tight: 0.2, hsize: 1, girth: 1, spread: 58, flare: 0.16, rise: 40, ridges: 1, plaque: "shield", label: "age", ram: "none", ramcol: "green", dark: "cross", hp: 0.8, engrave: 28, page: "190x250", margin: 10 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  trophy: P({}),
+  wall: P({ view: "row", age: 10, count: 4, page: "280x280", engrave: 20 }),
+  rings: P({ view: "overlay", age: 10, layers: 4, plaque: "none", engrave: 16 }),
+  ddr: P({ ram: "both", label: "ram", seed: 3 }),
+  bighorn: P({ age: 12, curl: 480, girth: 1.3, tight: 0.24, spread: 62, flare: 0.2, page: "280x280" }),
+  lamb: P({ age: 1, plaque: "oval" }),
+  memwall: P({ view: "row", age: 9, count: 3, ram: "chips", label: "ram", ramcol: "gold", page: "250x190", engrave: 16 }),
+  bare: P({ plaque: "none", age: 6, dark: "single", seed: 12 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `ram-${r.o.view}-a${r.o.age}-s${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, mount, horn, growth };
+run();
+</script>
+</body>
+</html>

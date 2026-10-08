@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Battering ram studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Battering ram studio</h1>
+  <p class="sub">Inktober day 9, ram. A siege ram to fold up: a shed with a gable roof on painted wheels, and the beam that hangs through it with a ram's head on the end. Plain wood, or the ram all over it (a skull over the door, a fleece of curls on the roof, horns down the beam), or RAM: circuit-board walls and a beam that is a memory stick.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="shed">The shed, ram style</button><button data-preset="beam">The beam</button><button data-preset="built">Put together</button><button data-preset="wood">Plain wood</button><button data-preset="memory">The RAM shed</button><button data-preset="ramstick">The beam as a RAM stick</button><button data-preset="mini">Small, both on one sheet</button></div>
+  </fieldset>
+  <fieldset><legend>The ram</legend>
+    <label>On this sheet <select id="piece"><option value="shed">the shed</option><option value="beam">the beam</option><option value="both">both (small sizes only)</option></select></label>
+    <label>Look <select id="look"><option value="ram">the ram all over it</option><option value="wood">plain wood</option><option value="memory">RAM: circuits and a memory stick</option></select></label>
+    <label>Size <output id="o-size"></output><input type="range" id="size" min="0.5" max="1.3" step="0.02" value="1"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="5"></label>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="net">the flat net</option><option value="folded">put together</option></select></label>
+    <label data-when="view=folded">Turn <output id="o-turn"></output><input type="range" id="turn" min="-180" max="180" step="1" value="35"></label>
+    <label data-when="view=folded">Tip <output id="o-tip"></output><input type="range" id="tip" min="0" max="60" step="1" value="22"></label>
+    <p class="hint">Put together shows the shed and the beam whichever is on the sheet.</p>
+  </fieldset>
+  <fieldset><legend>Drawing</legend>
+    <label>Dark areas <select id="dark"><option value="cross">crosshatch</option><option value="single">single hatch</option><option value="fade">run-off</option></select></label>
+    <label>Hatch pitch (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="2" step="0.05" value="0.75"></label>
+    <label>Colour pen 1 <select id="c1col"><option value="b8860b">horn amber</option><option value="1f8a4c">circuit green</option><option value="d7263d">red</option><option value="1d5fa8">blue</option></select></label>
+    <label>Colour pen 2 <select id="c2col"><option value="1f8a4c">circuit green</option><option value="c08a00">gold</option><option value="d7263d">red</option><option value="141414">black</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="250x190">250 x 190 landscape</option><option value="190x250">190 x 250</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="20" step="1" value="8"></label>
+    <label>Folds <select id="fold"><option value="score">scored (the scoring stylus)</option><option value="perf">perforated</option><option value="dotted">dotted line in pen</option></select></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Job order: colour pens, shade, line, score, then the cut. Pen files carry corner ticks; the cut file a trim rectangle at 1 mm.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it goes together. The shed: fold the walls up off the floor, the roof slopes over off the walls and glue the ridge, then fold each gable up and glue its flaps inside the walls and roof. Slide the beam through the square holes in both gables, head out of the front: the holes are a millimetre bigger than the beam so it slides. Built on the Smack studio's net engine. Cut and fold sizes untested.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+// Math and Infinity bound once: the headless site build runs this script in a vm context, where every global lookup is slow.
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+// ---------------- pens (ASSUMED widths until a test plot is measured) ----------------
+const PEN = { line: 0.4, shade: 0.3, c1: 0.4, c2: 0.4, c3: 0.4 };
+const PASS = 0.28;     // mm between outline passes: a 0.4 pen at 0.28 mm steps reads as one thick line
+
+// ---------------- cut sizes (ASSUMED until the cut calibration sheet is read) ----------------
+const INK_GAP = 0.4;   // ASSUMED: clear card between any ink and a cut, as in the jointed figure studio
+const TAB = 7;         // ASSUMED: glue tab depth
+const TAB_MIN = 5;     // ASSUMED: a glue tab shallower than this will not hold
+const TRIM_INSET = 1;  // trim rectangle, mm from every page edge (the pen corner ticks sit at the same 1 mm)
+const PERF_ON = 2, PERF_OFF = 1;   // ASSUMED perforated fold: 2 mm cut, 1 mm bridge
+const WIN_EDGE = 3;    // ASSUMED: card left between a window and any fold or edge
+const DOT_MIN = 0.7;   // ASSUMED: the smallest Ben-Day dot (across) that plots as a ring, not a blob
+const SEAM_TOL = 1.8;  // two line ends across a seam count as meeting within this (2 x INK_GAP at 30 degrees, plus slack)
+
+// ---------------- distance-field pieces (all in mm, y down) ----------------
+const smin = (a, b, k) => { if (!(abs(a - b) < k)) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return lerp(b, a, h) - k * h * (1 - h); };
+const ell = (x, y, cx, cy, rx, ry, a) => { const dx = x - cx, dy = y - cy, c = cos(a), s = sin(a), u = dx * c + dy * s, v = -dx * s + dy * c; return (hypot(u / rx, v / ry) - 1) * min(rx, ry); };
+const segD = (x, y, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - ax) * dx + (y - ay) * dy) / l2, 0, 1); return hypot(x - ax - dx * t, y - ay - dy * t); };
+function polyD(x, y, P) { let d = INF, s = 1; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const ax = P[j][0], ay = P[j][1], bx = P[i][0], by = P[i][1], ex = bx - ax, ey = by - ay, wx = x - ax, wy = y - ay, t = clamp((wx * ex + wy * ey) / (ex * ex + ey * ey || 1e-9), 0, 1), dx = wx - ex * t, dy = wy - ey * t; d = min(d, dx * dx + dy * dy); if ((ay > y) !== (by > y) && x < (bx - ax) * (y - ay) / (by - ay) + ax) s = -s; } return s * sqrt(d); }
+const inPoly = (P, x, y) => { let s = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const ay = P[j][1], by = P[i][1]; if ((ay > y) !== (by > y) && x < (P[i][0] - P[j][0]) * (y - ay) / (by - ay) + P[j][0]) s = !s; } return s; };
+// A tube along a polyline whose radius runs r0 -> r1.
+function tube(x, y, pts, r0, r1) { let d = INF; const n = pts.length - 1; for (let i = 0; i < n; i++) { const ax = pts[i][0], ay = pts[i][1], bx = pts[i + 1][0], by = pts[i + 1][1], dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - ax) * dx + (y - ay) * dy) / l2, 0, 1); d = min(d, hypot(x - ax - dx * t, y - ay - dy * t) - lerp(r0, r1, (i + t) / n)); } return d; }
+const bbox = pts => { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of pts) { if (x < a) a = x; if (y < b) b = y; if (x > c) c = x; if (y > d) d = y; } return [a, b, c, d]; };
+const centroid = P => [P.reduce((s, p) => s + p[0], 0) / P.length, P.reduce((s, p) => s + p[1], 0) / P.length];
+const dotPoly = (x, y, r, n = 10) => Array.from({ length: n }, (_, i) => [x + r * cos(i / n * TAU), y + r * sin(i / n * TAU)]);
+const arcPts = (cx, cy, rx, ry, a0, a1, th = 0, n = 40) => Array.from({ length: n + 1 }, (_, i) => { const a = a0 + (a1 - a0) * i / n, x = rx * cos(a), y = ry * sin(a); return [cx + x * cos(th) - y * sin(th), cy + x * sin(th) + y * cos(th)]; });
+// Points every st mm along a polyline; a closed one also walks its closing edge (without repeating the start).
+function densify(q, closed = false, st = 0.3) {
+  const out = [q[0]], n = q.length, last = closed ? n : n - 1;
+  for (let i = 0; i < last; i++) { const ax = q[i][0], ay = q[i][1], bx = q[(i + 1) % n][0], by = q[(i + 1) % n][1], m = max(1, ceil(hypot(bx - ax, by - ay) / st)); for (let k = 1; k <= m; k++) out.push([lerp(ax, bx, k / m), lerp(ay, by, k / m)]); }
+  if (closed) out.pop();
+  return out;
+}
+
+// ---------------- contours: marching squares on a sampled grid, chained into polylines ----------------
+function sample(f, b, h) {
+  const x0 = b[0], y0 = b[1], nx = ceil((b[2] - b[0]) / h) + 2, ny = ceil((b[3] - b[1]) / h) + 2, v = new Float64Array(nx * ny);
+  const S = 4, H = h * S, cx = ceil((nx - 1) / S) + 1, cy = ceil((ny - 1) / S) + 1, c = new Float64Array(cx * cy), band = H * 1.6 + 2;
+  for (let j = 0; j < cy; j++) for (let i = 0; i < cx; i++) c[j * cx + i] = f(x0 + i * H, y0 + j * H);
+  for (let j = 0; j < ny; j++) {
+    const J = floor(j / S), J1 = min(J + 1, cy - 1), ty = (j - J * S) / S;
+    for (let i = 0; i < nx; i++) {
+      const I = floor(i / S), I1 = min(I + 1, cx - 1), a = c[J * cx + I], b2 = c[J * cx + I1], d = c[J1 * cx + I], e = c[J1 * cx + I1];
+      if ((a > band && b2 > band && d > band && e > band) || (a < -band && b2 < -band && d < -band && e < -band)) { const tx = (i - I * S) / S; v[j * nx + i] = lerp(lerp(a, b2, tx), lerp(d, e, tx), ty); }
+      else v[j * nx + i] = f(x0 + i * h, y0 + j * h);
+    }
+  }
+  return { x0, y0, nx, ny, h, v };
+}
+// Bilinear lookup in a sampled grid; outside it reads as far outside the shape.
+function gl(g, x, y) { const fx = (x - g.x0) / g.h, fy = (y - g.y0) / g.h, i = floor(fx), j = floor(fy); if (i < 0 || j < 0 || i >= g.nx - 1 || j >= g.ny - 1) return 99; const u = fx - i, w = fy - j, k = j * g.nx + i, V = g.v; return lerp(lerp(V[k], V[k + 1], u), lerp(V[k + g.nx], V[k + g.nx + 1], u), w); }
+function iso(g, level = 0) {
+  const { x0, y0, nx, ny, h, v } = g, pt = new Map(), adj = new Map(), val = k => v[k] - level;
+  const P = id => { if (pt.has(id)) return; const k = id >> 1, i = k % nx, j = (k - i) / nx, a = val(k), b = val(id & 1 ? k + nx : k + 1), t = a / (a - b); pt.set(id, id & 1 ? [x0 + i * h, y0 + (j + t) * h] : [x0 + (i + t) * h, y0 + j * h]); };
+  const link = (a, b) => { P(a); P(b); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const k = j * nx + i, a = val(k) < 0, b = val(k + 1) < 0, c = val(k + nx + 1) < 0, d = val(k + nx) < 0;
+    if (a === b && b === c && c === d) continue;
+    const T = k * 2, Rt = (k + 1) * 2 + 1, B = (k + nx) * 2, L = k * 2 + 1, e = [];
+    if (a !== b) e.push(T); if (b !== c) e.push(Rt); if (d !== c) e.push(B); if (a !== d) e.push(L);
+    if (e.length === 2) link(e[0], e[1]);
+    else if ((val(k) + val(k + 1) + val(k + nx + 1) + val(k + nx)) / 4 < 0 === a) { link(T, Rt); link(B, L); } else { link(T, L); link(Rt, B); }
+  }
+  const seen = new Set(), out = [];
+  const walk = s => { const line = [s]; seen.add(s); let cur = s; for (;;) { const nb = adj.get(cur).find(n => !seen.has(n)); if (nb === undefined) break; seen.add(nb); line.push(nb); cur = nb; } return line.map(q => pt.get(q)); };
+  for (const [id, n] of adj) if (n.length === 1 && !seen.has(id)) out.push([walk(id), false]);
+  for (const id of adj.keys()) if (!seen.has(id)) out.push([walk(id), true]);
+  return out;
+}
+function simplify(p, tol = 0.03) {
+  if (p.length < 3) return p;
+  if (hypot(p[0][0] - p[p.length - 1][0], p[0][1] - p[p.length - 1][1]) < 1e-6) { let fi = 1, fd = 0; for (let i = 1; i < p.length - 1; i++) { const d = hypot(p[i][0] - p[0][0], p[i][1] - p[0][1]); if (d > fd) { fd = d; fi = i; } } if (fd < 1e-6) return p.slice(0, 1); return [...simplify(p.slice(0, fi + 1), tol), ...simplify(p.slice(fi), tol).slice(1)]; }
+  const keep = new Uint8Array(p.length), st = [[0, p.length - 1]]; keep[0] = keep[p.length - 1] = 1;
+  while (st.length) { const [a, b] = st.pop(), ax = p[a][0], ay = p[a][1], dx = p[b][0] - ax, dy = p[b][1] - ay, L = hypot(dx, dy) || 1e-9; let md = 0, mi = -1; for (let i = a + 1; i < b; i++) { const d = abs((p[i][0] - ax) * dy - (p[i][1] - ay) * dx) / L; if (d > md) { md = d; mi = i; } } if (md > tol) { keep[mi] = 1; st.push([a, mi], [mi, b]); } }
+  return p.filter((_, i) => keep[i]);
+}
+// Split polylines wherever pred fails; a closed loop that survives whole stays closed.
+function keepWhere(lines, pred) {
+  const out = [];
+  for (const [p, cl] of lines) {
+    const ok = p.map(q => pred(q[0], q[1]));
+    if (ok.every(Boolean)) { out.push([p, cl]); continue; }
+    const n = p.length, s = cl ? ok.indexOf(false) : 0, idx = cl ? Array.from({ length: n + 1 }, (_, i) => (s + i) % n) : Array.from({ length: n }, (_, i) => i);
+    let run = [];
+    for (const i of idx) { if (ok[i]) run.push(p[i]); else { if (run.length > 1) out.push([run, false]); run = []; } }
+    if (run.length > 1) out.push([run, false]);
+  }
+  return out;
+}
+// Parallel hatching clipped to inside(x,y), alternate lines reversed so the pen zigzags.
+function hatch(inside, b, angDeg, sp, res = 0.4) {
+  const a = angDeg * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, out = [];
+  let o0 = INF, o1 = -INF, t0 = INF, t1 = -INF;
+  for (const [x, y] of [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]]) { const o = x * nx + y * ny, t = x * dx + y * dy; o0 = min(o0, o); o1 = max(o1, o); t0 = min(t0, t); t1 = max(t1, t); }
+  // start on a whole multiple of sp, so a strip that wraps round meets its own lines at the seam
+  let flip = false;
+  for (let o = ceil(o0 / sp) * sp; o < o1; o += sp) {
+    const P = t => [nx * o + dx * t, ny * o + dy * t], ins = t => { const q = P(t); return inside(q[0], q[1]); }, segs = [];
+    let prev = ins(t0), start = prev ? t0 : null;
+    for (let t = t0 + res; ; t += res) {
+      const tt = min(t, t1), cur = ins(tt);
+      if (cur !== prev) { let lo = tt - res, hi = tt; for (let k = 0; k < 7; k++) { const m = (lo + hi) / 2; if (ins(m) === prev) lo = m; else hi = m; } const tc = (lo + hi) / 2; if (cur) start = tc; else { if (tc - start > 0.25) segs.push([start, tc]); start = null; } prev = cur; }
+      if (tt >= t1) break;
+    }
+    if (prev && start !== null && t1 - start > 0.25) segs.push([start, t1]);
+    if (segs.length) { if (flip) segs.reverse(); for (const [s, e] of segs) out.push([flip ? [P(e), P(s)] : [P(s), P(e)], false, "fill"]); flip = !flip; }
+  }
+  return out;
+}
+// Run-off along any ramp: tf(x, y) gives 0 (light) .. 1 (dark); nothing below lo, dashes that lengthen to hi, solid past it.
+// Pd is the dash period along the line; a strip that wraps round passes one that divides its length.
+function runoffT(lines, tf, ang, lo, hi, Pd = 2.4) {
+  const ca = cos(ang * D2R), sa = sin(ang * D2R);
+  const keep = (x, y) => { const t = tf(x, y); if (t >= hi) return true; if (t <= lo) return false; const s = x * ca + y * sa, f = (((s % Pd) + Pd) % Pd) / Pd; return f < (t - lo) / (hi - lo); };
+  return keepWhere(lines.map(([q]) => [densify(q), false]), keep).map(([q]) => [q, false, "fill"]);
+}
+// A dark area in the chosen style: crosshatch, single hatch, or run-off (the crossing pass only joins in the dark).
+function darkFill(inside, b, o, tf, sp = o.hp, Pd = 2.4, R = [0.06, 0.55, 0.4, 0.95]) {
+  const A = hatch(inside, b, 45, sp);
+  if (o.dark === "single") return A;
+  const B = hatch(inside, b, -45, sp);
+  if (o.dark === "cross") return [...A, ...B];
+  return [...runoffT(A, tf, 45, R[0], R[1], Pd), ...runoffT(B, tf, -45, R[2], R[3], Pd)];
+}
+// Lines along a shape's length, every sp mm inward from start: how a thin shape is shaded (crosshatch in a thin band plots as rows of X).
+function contourFill(g, sp, start, maxN = 60) { const out = []; for (let k = 0; k < maxN; k++) { const L = iso(g, -(start + k * sp)); if (!L.length) break; for (const [q, cl] of L) out.push([q, cl, "fill"]); } return out; }
+const outlines = (g, passes, level = 0) => { const out = []; for (let p = 0; p < passes; p++) out.push(...iso(g, level - p * PASS)); return out; };
+
+// ---------------- single-stroke capitals for the lettering (cap height 6, y down) ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.8,3.8 L3.2,3.8", B: "M0,0 L2.4,0 A2.4,1.5,1.3,1.5,-90,90 L0,3 M0,3 L2.6,3 A2.6,4.5,1.4,1.5,-90,90 L0,6 L0,0",
+  C: "A2,3,2,3,-45,-315", D: "M0,0 L1.5,0 A1.5,3,2.5,3,-90,90 L0,6 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2,3,2,3,-45,-315 L4,3.4 L2.2,3.4", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", I: "M1,0 L3,0 M2,0 L2,6 M1,6 L3,6", J: "M4,0 L4,4.3 A2.3,4.3,1.7,1.7,0,180",
+  K: "M0,0 L0,6 M4,0 L0,4 M1.4,2.6 L4,6", L: "M0,0 L0,6 L4,6", M: "M0,6 L0,0 L2,3.5 L4,0 L4,6", N: "M0,6 L0,0 L4,6 L4,0", O: "A2,3,2,3,0,360",
+  P: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2", Q: "A2,3,2,3,0,360 M2.6,4.4 L4,6.3", R: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2 M2,3.2 L4,6",
+  S: "A2,1.5,1.8,1.5,-20,-270 A2,4.5,2,1.5,-90,160", T: "M0,0 L4,0 M2,0 L2,6", U: "M0,0 L0,4 A2,4,2,2,180,0 L4,0", V: "M0,0 L2,6 L4,0",
+  W: "M0,0 L1,6 L2,2.5 L3,6 L4,0", X: "M0,0 L4,6 M4,0 L0,6", Y: "M0,0 L2,3 L4,0 M2,3 L2,6", Z: "M0,0 L4,0 L0,6 L4,6",
+  0: "A2,3,2,3,0,360 M3.2,1 L0.8,5", 1: "M0.8,1.2 L2,0 L2,6 M0.8,6 L3.2,6", 2: "A2,1.8,1.8,1.8,-160,20 L0,6 L4,6", 3: "A2,1.5,1.7,1.5,-160,90 A2,4.5,1.9,1.5,-90,160",
+  4: "M3,6 L3,0 L0,4.2 L4,4.2", 5: "M4,0 L0.4,0 L0,2.8 A2,4.1,2,1.9,-125,155", 6: "M3.2,0 L0.1,4 M4,4.3 A2,4.3,2,1.7,0,360", 7: "M0,0 L4,0 L1.5,6",
+  8: "M3.6,1.5 A2,1.5,1.6,1.5,0,360 M4,4.5 A2,4.5,2,1.5,0,360", 9: "M3.6,1.7 A2,1.7,1.6,1.7,0,360 M3.6,1.9 L1,6",
+  "!": "M2,0 L2,4.2 M2,5.6 L2,6", "?": "A2,1.6,1.8,1.6,-160,60 L2,3.8 L2,4.4 M2,5.6 L2,6", "-": "M0.8,3 L3.2,3", ".": "M2,5.6 L2,6", "'": "M2,0 L2,1.6",
+};
+function glyph(src) {
+  const S = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; S.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; S.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return S;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+const ADV = 5.4, SPACE = 3.6;
+const textUnits = s => [...s].reduce((a, ch) => a + (GLYPHS[ch] ? ADV : SPACE), 0) - (s.length ? ADV - 4 : 0);
+const cleanText = s => [...(s || "").toUpperCase()].map(ch => GLYPHS[ch] || ch === " " ? ch : " ").join("").trim();
+// Lay text out along a path: place(x) gives [px, py, angle] for a distance x along it. Two passes 0.28 mm apart make the strokes bold.
+function letters(txt, k, place) {
+  const U = textUnits(txt), strokes = []; let x = -U * k / 2;
+  for (const ch of txt) {
+    const G = GLYPHS[ch]; if (!G) { x += SPACE * k; continue; }
+    const [px, py, th] = place(x + 2 * k), ct = cos(th), st = sin(th);
+    for (const pass of [0, 0.28]) for (const S of G) strokes.push([S.map(([gx, gy]) => { const dx = (gx - 2) * k + pass, dy = (gy - 3) * k; return [px + dx * ct - dy * st, py + dx * st + dy * ct]; }), false]);
+    x += ADV * k;
+  }
+  return strokes;
+}
+
+// ---------------- comic pieces: fat letters, bursts, a hand ----------------
+// Fat comic letters: the single-stroke capitals swollen to half-width w = 0.8 k, with a block shadow pushed depth mm along sdir.
+// Returns sampled fields for the letters (L) and their block shadow (S), plus the lines to draw.
+function sfx(text, cx, cy, k, th, depth, sdir) {
+  const U = textUnits(text), w = 0.8 * k, ct = cos(th), st = sin(th), sg = [];
+  let x = -U * k / 2;
+  for (const ch of text) {
+    const G = GLYPHS[ch]; if (!G) { x += SPACE * k; continue; }
+    for (const S of G) { const P = S.map(([gx, gy]) => { const dx = x + gx * k, dy = (gy - 3) * k; return [cx + dx * ct - dy * st, cy + dx * st + dy * ct]; }); for (let i = 1; i < P.length; i++) sg.push(P[i - 1][0], P[i - 1][1], P[i][0], P[i][1]); }
+    x += ADV * k;
+  }
+  const pts = []; for (let i = 0; i < sg.length; i += 2) pts.push([sg[i], sg[i + 1]]);
+  const off = [sdir[0] * depth, sdir[1] * depth], pad = w + 1.5;
+  const b0 = bbox(pts), bb = [b0[0] - pad, b0[1] - pad, b0[2] + pad + max(0, off[0]), b0[3] + pad + max(0, off[1])];
+  const LD = (px, py) => { let d2 = INF; for (let i = 0; i < sg.length; i += 4) { const ax = sg[i], ay = sg[i + 1], ex = sg[i + 2] - ax, ey = sg[i + 3] - ay, wx = px - ax, wy = py - ay, t = clamp((wx * ex + wy * ey) / (ex * ex + ey * ey || 1e-9), 0, 1), dx = wx - ex * t, dy = wy - ey * t, q = dx * dx + dy * dy; if (q < d2) d2 = q; } return sqrt(d2) - w; };
+  const gL = sample(LD, bb, 0.15), L = (px, py) => gl(gL, px, py);
+  // the block shadow: the letters swept along off, less the letters themselves
+  const SD = (px, py) => { let e = 99; for (let i = 1; i <= 10; i++) e = min(e, L(px - off[0] * i / 10, py - off[1] * i / 10)); return max(e, -L(px, py)); };
+  const gS = sample(SD, bb, 0.15), Sf = (px, py) => gl(gS, px, py);
+  return { gL, gS, L, S: Sf, k, w, bb };
+}
+// Draw a word: outline passes, the block shadow's outline and its fill (along its length), and a colour fill inside the letters.
+function sfxLines(W, o, fillPen) {
+  const out = { line: [], fill: [] };
+  out.line.push(...outlines(W.gL, o.weight));
+  out.line.push(...keepWhere(iso(W.gS, 0), (x, y) => W.L(x, y) > 0.15));
+  if (o.look !== "line") out.line.push(...contourFill(W.gS, o.hp, o.hp * 0.5, 8));
+  if (o.look === "colour") out.fill.push(...contourFill(W.gL, o.sp, o.weight * PASS + 0.35, 12));
+  return out;
+}
+// A jagged comic burst: 2 ns points alternating between the spike tips (about Ro) and the notches (about Ri).
+function burstPoly(cx, cy, ns, Ro, Ri, th, rnd, jag = 1) {
+  const P = [];
+  for (let i = 0; i < ns * 2; i++) { const a = th + (i + (rnd() - 0.5) * 0.3 * jag) * PI / ns, r = i % 2 ? Ri * (0.93 + rnd() * 0.14 * jag) : Ro * (0.84 + rnd() * 0.28 * jag); P.push([cx + r * cos(a), cy + r * sin(a)]); }
+  return P;
+}
+// A slapping hand, palm on: a rounded palm, four fingers and a thumb, blended. S is about the palm's width; fingers point up the tilt.
+function handShape(cx, cy, S, th, mirror, rnd) {
+  const c = cos(th), s = sin(th), mx = mirror ? -1 : 1;
+  const caps = [[-0.29, -0.36, -11, 0.6, 0.105], [-0.1, -0.42, -3, 0.72, 0.11], [0.1, -0.41, 4, 0.68, 0.108], [0.28, -0.34, 13, 0.52, 0.096]]
+    .map(([bx, by, ang, len, r]) => { const a = (ang + (rnd() - 0.5) * 6) * D2R; return [bx * S, by * S, (bx + len * sin(a)) * S, (by - len * cos(a)) * S, r * S]; });
+  caps.push([-0.36 * S, 0.12 * S, (-0.36 - 0.5 * 0.82) * S, (0.12 - 0.5 * 0.57) * S, 0.12 * S]);
+  const rbox = (x, y, hx, hy, r) => { const qx = abs(x) - hx + r, qy = abs(y) - hy + r; return hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - r; };
+  const D = (x, y) => {
+    const dx = x - cx, dy = y - cy, hx = (dx * c + dy * s) * mx, hy = -dx * s + dy * c;
+    let d = rbox(hx, hy - 0.06 * S, 0.4 * S, 0.42 * S, 0.2 * S);
+    for (const [ax, ay, bx, by, r] of caps) d = smin(d, segD(hx, hy, ax, ay, bx, by) - r, 0.06 * S);
+    return d;
+  };
+  const toW = (hx, hy) => [cx + (hx * mx) * c - hy * s, cy + (hx * mx) * s + hy * c];
+  return { D, bb: [cx - 1.35 * S, cy - 1.35 * S, cx + 1.35 * S, cy + 1.35 * S], palm: toW(0, 0.1 * S) };
+}
+
+// ---------------- the net engine ----------------
+const add3 = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], mul3 = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit3 = a => mul3(a, 1 / (hypot(a[0], a[1], a[2]) || 1));
+// A face: its corners in 3D, its outward normal, and a flat frame (u along the first edge, v = u x n) so that seen from
+// outside, u runs right and v runs down, the same way as the paper. Printing on the outside, no face is ever mirrored.
+function face(name, P3, N) {
+  const O = P3[0], U = unit3(sub3(P3[1], P3[0])), V = cross3(U, N);
+  return { name, P3, N, O, U, V, poly: P3.map(p => { const d = sub3(p, O); return [dot3(d, U), dot3(d, V)]; }), nb: [], windows: [], excl: [] };
+}
+const to3 = (F, u, v) => add3(F.O, add3(mul3(F.U, u), mul3(F.V, v)));
+// An n-sided prism standing on z: side 0 faces the viewer (-y), the sides run round to the right, optional top and bottom caps.
+function prism(n, a, h, top, bottom) {
+  const R = a / (2 * sin(PI / n)), ang = k => -PI / 2 - PI / n + k * TAU / n;
+  const T = k => [R * cos(ang(k)), R * sin(ang(k)), h / 2], B = k => [R * cos(ang(k)), R * sin(ang(k)), -h / 2], F = [];
+  for (let i = 0; i < n; i++) F.push(face("side " + i, [T(i), T(i + 1), B(i + 1), B(i)], [cos(ang(i) + PI / n), sin(ang(i) + PI / n), 0]));
+  if (top) F.push(face("top", Array.from({ length: n }, (_, k) => T(k)), [0, 0, 1]));
+  if (bottom) F.push(face("bottom", Array.from({ length: n }, (_, k) => B(k)), [0, 0, -1]));
+  return F;
+}
+// Which edge of which face meets which: two faces share an edge when its two corners match in 3D.
+function adjacency(F) {
+  const key = p => p.map(c => (abs(c) < 5e-5 ? 0 : c).toFixed(4)).join(","), M = new Map();
+  F.forEach((Fc, f) => { Fc.nb = Fc.P3.map(() => null); Fc.P3.forEach((p, k) => { const a = key(p), b = key(Fc.P3[(k + 1) % Fc.P3.length]), kk = a < b ? a + "|" + b : b + "|" + a; (M.get(kk) || M.set(kk, []).get(kk)).push([f, k]); }); });
+  for (const L of M.values()) if (L.length === 2) { const [[f1, k1], [f2, k2]] = L; F[f1].nb[k1] = [f2, k2]; F[f2].nb[k2] = [f1, k1]; }
+}
+const edgeTo = (F, f, g) => F[f].nb.findIndex(n => n && n[0] === g);
+const apT = (t, u, v) => [t.c * u - t.s * v + t.tx, t.s * u + t.c * v + t.ty];
+const invT = (t, x, y) => { const dx = x - t.tx, dy = y - t.ty; return [t.c * dx + t.s * dy, -t.s * dx + t.c * dy]; };
+// Unfold faces flat: the root keeps its own frame, each child turns about the edge it shares with its parent.
+function unfold(F, root, pairs) {
+  const X = new Map([[root, { c: 1, s: 0, tx: 0, ty: 0 }]]), q = [root];
+  while (q.length) {
+    const f = q.shift();
+    for (const [p, g] of pairs) {
+      if (p !== f || X.has(g)) continue;
+      const k = edgeTo(F, f, g); if (k < 0) throw Error("faces " + f + " and " + g + " share no edge");
+      const m = F[f].poly.length, tf = X.get(f), SA = apT(tf, F[f].poly[k][0], F[f].poly[k][1]), SB = apT(tf, F[f].poly[(k + 1) % m][0], F[f].poly[(k + 1) % m][1]);
+      const loc = p3 => { const d = sub3(p3, F[g].O); return [dot3(d, F[g].U), dot3(d, F[g].V)]; };
+      const gA = loc(F[f].P3[k]), gB = loc(F[f].P3[(k + 1) % m]);
+      const ang = atan2(SB[1] - SA[1], SB[0] - SA[0]) - atan2(gB[1] - gA[1], gB[0] - gA[0]), c = cos(ang), s = sin(ang);
+      X.set(g, { c, s, tx: SA[0] - (c * gA[0] - s * gA[1]), ty: SA[1] - (s * gA[0] + c * gA[1]) });
+      q.push(g);
+    }
+  }
+  return X;
+}
+// A development: several faces unfolded into one flat plane to draw across. fwd(x, y) says which face a point lands on, and
+// where in that face's frame; period > 0 rolls the plane round on itself in x (the lantern's walls).
+function makeDev(F, root, pairs, period = 0) {
+  const X = unfold(F, root, pairs), ents = [];
+  for (const [f, t] of X) ents.push({ f, t, bb: bbox(F[f].poly.map(([u, v]) => apT(t, u, v))) });
+  const fwd = (x, y) => {
+    if (period) x = ((x % period) + period) % period;
+    for (const e of ents) { const b = e.bb; if (x < b[0] - 1e-7 || x > b[2] + 1e-7 || y < b[1] - 1e-7 || y > b[3] + 1e-7) continue; const [u, v] = invT(e.t, x, y); if (inPoly(F[e.f].poly, u, v)) return [e.f, u, v]; }
+    return null;
+  };
+  return { fwd, X, period };
+}
+const NONE = [-1];
+// Carry a polyline drawn in a development onto the faces: split where it crosses from face to face (the crossing found by
+// bisection, so both pieces end on the fold), and dropped where it leaves the development.
+function mapLine(dev, q, cl, onCross = null) {
+  if (q.length < 2) return [];
+  const pts = densify(q, cl); if (cl) pts.push(pts[0]);
+  const at = p => dev.fwd(p[0], p[1]) || NONE, out = [];
+  let run = null, rf = -2, prev = null, crossed = false;
+  for (const p of pts) {
+    const m = at(p);
+    if (prev === null) { rf = m[0]; if (rf >= 0) run = { f: rf, pts: [] }; }
+    else if (m[0] !== rf) {
+      crossed = true;
+      let lo = prev, hi = p;
+      for (let k = 0; k < 14; k++) { const mid = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2]; if (at(mid)[0] === rf) lo = mid; else hi = mid; }
+      if (run) { const e = at(lo); if (e[0] === rf) run.pts.push([e[1], e[2]]); if (run.pts.length > 1) out.push(run); }
+      const s = at(hi);
+      if (onCross && rf >= 0 && s[0] >= 0) { const e = at(lo); if (e[0] === rf) onCross(rf, e[1], e[2], s[0], s[1], s[2]); }
+      run = null; rf = s[0]; if (rf >= 0) run = { f: rf, pts: [[s[1], s[2]]] };
+    }
+    if (run && m[0] === rf) run.pts.push([m[1], m[2]]);
+    prev = p;
+  }
+  if (run && run.pts.length > 1) out.push(run);
+  if (cl && !crossed && out.length === 1) { out[0].pts.pop(); out[0].closed = true; }
+  else if (cl && crossed && out.length > 1 && at(pts[0])[0] >= 0 && out[0].f === out[out.length - 1].f) { const L = out.pop(); out[0].pts = [...L.pts, ...out[0].pts.slice(1)]; }
+  return out;
+}
+// A flap on edge k of a face, in that face's frame: it starts at the edge's first corner and ends at its second, so the
+// flap's closing side is the fold. glue: a 7 mm trapezoid; tuck: a rounded tongue; dust: a sloped flap under a tuck lid.
+function tabPoly(Fc, k, kind, shMin = 0) {
+  const P = Fc.poly, A = P[k], B = P[(k + 1) % P.length], L = hypot(B[0] - A[0], B[1] - A[1]), e = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], [cx, cy] = centroid(P);
+  let n = [e[1], -e[0]]; if ((cx - A[0]) * n[0] + (cy - A[1]) * n[1] > 0) n = [-n[0], -n[1]];
+  const at = (s, d) => [A[0] + e[0] * s + n[0] * d, A[1] + e[1] * s + n[1] * d];
+  if (kind === "tuck") { const d = min(L * 0.34, 17), r = d * 0.55, pts = [A]; for (let i = 0; i <= 8; i++) { const a = PI - i / 8 * PI / 2; pts.push(at(0.8 + r + r * cos(a), d - r + r * sin(a))); } for (let i = 0; i <= 8; i++) { const a = PI / 2 - i / 8 * PI / 2; pts.push(at(L - 0.8 - r + r * cos(a), d - r + r * sin(a))); } pts.push(B); return { poly: pts, depth: d }; }
+  if (kind === "dust") { const d = min(L * 0.3, 15); return { poly: [A, at(0.6, d * 0.8), at(L * 0.3, d), at(L - d * 0.7, d), B], depth: d }; }
+  const d = min(TAB, L * 0.3), sh = min(max(d * 0.9, shMin), L * 0.4);
+  return { poly: [A, at(sh, d), at(L - sh, d), B], depth: d };
+}
+// Lay the net on the page: unfold along the tree, add the flaps, turn it 90 degrees if that fits better, centre it.
+// Tree edges and flap hinges are folds; every other edge is cut.
+function layoutNet(S, o, PW, PH) {
+  const F = S.faces; adjacency(F);
+  const X = unfold(F, S.root, S.pairs);
+  for (const Fc of F) Fc.fold = Fc.poly.map(() => false);
+  for (const [p, g] of S.pairs) { const k = edgeTo(F, p, g); F[p].fold[k] = true; F[g].fold[F[p].nb[k][1]] = true; }
+  const tabs = S.tabs.map(([f, g, kind, sh]) => { const k = edgeTo(F, f, g); F[f].fold[k] = true; return { f, k, kind, ...tabPoly(F[f], k, kind, sh) }; });
+  const polysOf = () => [...F.map((Fc, f) => ({ f, P: Fc.poly.map(([u, v]) => apT(X.get(f), u, v)) })), ...tabs.map(t => ({ f: t.f, tab: t, P: t.poly.map(([u, v]) => apT(X.get(t.f), u, v)) }))];
+  let polys = polysOf(), b = bbox(polys.flatMap(p => p.P));
+  const m = o.margin, aw = PW - 2 * m, ah = PH - 2 * m, over = (w, h) => max(0, w - aw) + max(0, h - ah);
+  let turned = false;
+  if (over(b[3] - b[1], b[2] - b[0]) < over(b[2] - b[0], b[3] - b[1]) - 1e-9) { turned = true; for (const t of X.values()) { const c = -t.s, s = t.c, tx = -t.ty, ty = t.tx; t.c = c; t.s = s; t.tx = tx; t.ty = ty; } polys = polysOf(); b = bbox(polys.flatMap(p => p.P)); }
+  const dx = PW / 2 - (b[0] + b[2]) / 2, dy = PH / 2 - (b[1] + b[3]) / 2;
+  for (const t of X.values()) { t.tx += dx; t.ty += dy; }
+  polys = polysOf(); b = bbox(polys.flatMap(p => p.P));
+  const folds = [], cuts = [];
+  F.forEach((Fc, f) => { const t = X.get(f), n = Fc.poly.length; Fc.cutE = []; Fc.foldE = [];
+    for (let k = 0; k < n; k++) { const A = Fc.poly[k], B = Fc.poly[(k + 1) % n], sa = apT(t, A[0], A[1]), sb = apT(t, B[0], B[1]);
+      if (Fc.fold[k]) { Fc.foldE.push([A[0], A[1], B[0], B[1], k]); const nb = Fc.nb[k]; if (!nb || S.pairs.some(([p, g]) => p === f && g === nb[0]) || tabs.some(tb => tb.f === f && tb.k === k)) folds.push([sa, sb]); }
+      else { Fc.cutE.push([A[0], A[1], B[0], B[1], k]); cuts.push([sa, sb]); } } });
+  for (const t of tabs) { const P = t.poly.map(([u, v]) => apT(X.get(t.f), u, v)); for (let i = 1; i < P.length; i++) cuts.push([P[i - 1], P[i]]); }
+  return { X, tabs, polys, folds, loops: chain(cuts), b, turned };
+}
+// Chain cut edges end to end into closed outlines.
+function chain(segs) {
+  const left = segs.slice(), loops = [], near = (p, q) => abs(p[0] - q[0]) < 1e-3 && abs(p[1] - q[1]) < 1e-3;
+  while (left.length) {
+    const [a, b] = left.pop(), loop = [a, b];
+    for (;;) {
+      const end = loop[loop.length - 1]; if (near(end, loop[0]) && loop.length > 2) { loop.pop(); break; }
+      const i = left.findIndex(([p, q]) => near(p, end) || near(q, end)); if (i < 0) break;
+      const [p, q] = left.splice(i, 1)[0]; loop.push(near(p, end) ? q : p);
+    }
+    loops.push(loop);
+  }
+  return loops;
+}
+// Pieces of the net crossing each other (a tab over a face): proper edge crossings, or one piece's middle inside another.
+function overlaps(polys) {
+  const d = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]), E = 1e-6;
+  const cross = (p1, p2, p3, p4) => { const d1 = d(p3, p4, p1), d2 = d(p3, p4, p2), d3 = d(p1, p2, p3), d4 = d(p1, p2, p4); return ((d1 > E && d2 < -E) || (d1 < -E && d2 > E)) && ((d3 > E && d4 < -E) || (d3 < -E && d4 > E)); };
+  let n = 0;
+  const B = polys.map(p => bbox(p.P));
+  for (let i = 0; i < polys.length; i++) for (let j = i + 1; j < polys.length; j++) {
+    if (B[i][2] < B[j][0] || B[j][2] < B[i][0] || B[i][3] < B[j][1] || B[j][3] < B[i][1]) continue;
+    const A = polys[i].P, C = polys[j].P; let hit = false;
+    for (let a = 0; a < A.length && !hit; a++) for (let c = 0; c < C.length && !hit; c++) if (cross(A[a], A[(a + 1) % A.length], C[c], C[(c + 1) % C.length])) hit = true;
+    if (!hit) { const [ax, ay] = centroid(A), [cx, cy] = centroid(C); hit = inPoly(C, ax, ay) || inPoly(A, cx, cy); }
+    if (hit) n++;
+  }
+  return n;
+}
+// Can ink sit here? Inside the face, 0.4 mm clear of every cut edge and every window. (Folds take ink: a ray runs over them.)
+let inkMin = INF;
+function okInk(Fc, u, v) {
+  if (!inPoly(Fc.poly, u, v)) return false;
+  let d = INF;
+  for (const e of Fc.cutE) { const s = segD(u, v, e[0], e[1], e[2], e[3]); if (s < INK_GAP) return false; if (s < d) d = s; }
+  for (let i = 0; i < Fc.windows.length; i++) { const b = Fc.winBB[i]; if (u > b[0] - 2 && u < b[2] + 2 && v > b[1] - 2 && v < b[3] + 2) { const s = polyD(u, v, Fc.windows[i]); if (s < INK_GAP) return false; if (s < d) d = s; } }
+  if (d < inkMin) inkMin = d;
+  return true;
+}
+function finalize(items, F) {
+  const fink = [];
+  for (const it of items) {
+    const Fc = F[it.f], ex = it.noEx || !Fc.excl.length ? null : Fc.excl;
+    const ok = (u, v) => okInk(Fc, u, v) && !(ex && ex.some(e => e(u, v)));
+    if (it.kind === "dot") { if (it.q.every(([u, v]) => ok(u, v))) fink.push({ f: it.f, layer: it.layer, q: it.q, cl: true, kind: "dot" }); continue; }
+    for (const [q, cl] of keepWhere([[it.q, it.cl]], ok)) { const s = simplify(q, 0.03); if (s.length > 1) fink.push({ f: it.f, layer: it.layer, q: s, cl, kind: it.kind }); }
+  }
+  return fink;
+}
+// The seam gate: every line that runs into a glued seam the art wraps across should meet a line end on the other face,
+// measured in 3D on the folded solid. Lines that meet the seam at under 30 degrees are left out (their ends drift apart).
+function seamCheck(F, fink, devPairs, treePairs) {
+  const key = (p, g) => [p + "-" + g, g + "-" + p], tree = new Set(treePairs.flatMap(([p, g]) => key(p, g)));
+  const wraps = new Set(devPairs.flatMap(([p, g]) => key(p, g)).filter(k => !tree.has(k))), ends = [];
+  for (const it of fink) {
+    if (it.cl || it.kind === "dot") continue;
+    const Fc = F[it.f], q = it.q;
+    for (const [end, nxt] of [[q[0], q[1]], [q[q.length - 1], q[q.length - 2]]]) for (const e of [...Fc.cutE, ...Fc.foldE]) {
+      const nb = Fc.nb[e[4]]; if (!nb || !wraps.has(it.f + "-" + nb[0])) continue;
+      if (segD(end[0], end[1], e[0], e[1], e[2], e[3]) > INK_GAP + 0.25) continue;
+      const ex = e[2] - e[0], ey = e[3] - e[1], dx = end[0] - nxt[0], dy = end[1] - nxt[1];
+      if (abs(dx * ey - dy * ex) / ((hypot(ex, ey) * hypot(dx, dy)) || 1) < 0.5) continue;
+      ends.push({ f: it.f, g: nb[0], p: to3(Fc, end[0], end[1]) });
+    }
+  }
+  let hit = 0, worst = 0;
+  for (const e of ends) { let best = INF; for (const q of ends) if (q.f === e.g && q.g === e.f) { const dd = hypot(e.p[0] - q.p[0], e.p[1] - q.p[1], e.p[2] - q.p[2]); if (dd < best) best = dd; } if (best <= SEAM_TOL) { hit++; worst = max(worst, best); } }
+  return { n: ends.length, hit, worst };
+}
+
+// ---------------- the solids ----------------
+// The box: a cube as a four-sided prism. Faces 0 front, 1 right, 2 back, 3 left, 4 top, 5 bottom.
+// The net is a strip of the four sides with the bottom hung off the front; the top hangs off the front (glued) or the back (tuck lid).
+function boxSolid(o) {
+  const a = o.side, faces = prism(4, a, a, true, true), tuck = o.close === "tuck";
+  const pairs = [[0, 1], [1, 2], [2, 3], [0, 5], tuck ? [2, 4] : [0, 4]];
+  const tabs = [[3, 0, "glue"], [1, 5, "glue"], [2, 5, "glue"], [3, 5, "glue"]];
+  if (tuck) tabs.push([4, 0, "tuck"], [1, 4, "dust"], [3, 4, "dust"]); else tabs.push([1, 4, "glue"], [2, 4, "glue"], [3, 4, "glue"]);
+  return { faces, root: 0, pairs, tabs };
+}
+// The lantern: an open-topped prism of n walls on a base hung off wall 0; the walls glue to the base on tabs.
+function lanternSolid(o) {
+  const n = o.sides, faces = prism(n, o.lside, o.lh, false, true), pairs = [], tabs = [[n - 1, 0, "glue"]];
+  for (let i = 0; i < n - 1; i++) pairs.push([i, i + 1]);
+  pairs.push([0, n]);
+  // the base splays out past the walls beside wall 0 at 360/n degrees: their tab shoulders must slope more steeply than that
+  const sh = n > 4 ? TAB / Math.tan(TAU / n) + 0.8 : 0;
+  for (let i = 1; i < n; i++) tabs.push([i, n, "glue", sh]);
+  return { faces, root: 0, pairs, tabs };
+}
+
+const curve = (f, n = 24) => Array.from({ length: n + 1 }, (_, i) => f(i / n));
+// ---------------- the battering ram: a shed with a gable roof, and the beam that hangs through it ----------------
+// Sizes in mm at size 1: the shed L long, W wide, walls Hw high, roof Hr high; the beam b square, through holes in both gables.
+const BEAM_CLEAR = 1.0;   // ASSUMED: the hole is this much bigger than the beam, so it slides
+function dims(o) {
+  const s = o.size, L = 100 * s, W = 56 * s, Hw = 40 * s, Hr = 26 * s, b = max(18 * s, 17.5);   // the beam never so thin its 5 mm flaps will not fit
+  return { s, L, W, Hw, Hr, b, zb: max(Hw * 0.4, b / 2 + 4), xb0: -14 * s, xb1: L + 40 * s };
+}
+function shedSolid(G) {
+  const { L, W, Hw, Hr } = G, A = x => [x, -W / 2, 0], B = x => [x, W / 2, 0], C = x => [x, W / 2, Hw], D = x => [x, 0, Hw + Hr], E = x => [x, -W / 2, Hw];
+  const nl = unit3([0, -Hr, W / 2]), nr = unit3([0, Hr, W / 2]);
+  const faces = [
+    face("floor", [A(0), B(0), B(L), A(L)], [0, 0, -1]),
+    face("left wall", [E(0), E(L), A(L), A(0)], [0, -1, 0]),
+    face("right wall", [C(L), C(0), B(0), B(L)], [0, 1, 0]),
+    face("left roof", [E(L), E(0), D(0), D(L)], nl),
+    face("right roof", [D(L), D(0), C(0), C(L)], nr),
+    face("front gable", [A(L), B(L), C(L), D(L), E(L)], [1, 0, 0]),
+    face("back gable", [B(0), A(0), E(0), D(0), C(0)], [-1, 0, 0]),
+  ];
+  const pairs = [[0, 1], [0, 2], [1, 3], [2, 4], [0, 5], [0, 6]];
+  const tabs = [[3, 4, "glue"], [5, 1, "glue"], [5, 2, "glue"], [5, 3, "glue"], [5, 4, "glue"], [6, 1, "glue"], [6, 2, "glue"], [6, 3, "glue"], [6, 4, "glue"]];
+  // the holes the beam runs through, one in each gable
+  const h = G.b / 2 + BEAM_CLEAR / 2;
+  for (const f of [5, 6]) { const Fc = faces[f], x = f === 5 ? L : 0; Fc.windows.push([[x, -h, G.zb + h], [x, h, G.zb + h], [x, h, G.zb - h], [x, -h, G.zb - h]].map(p => { const d = sub3(p, Fc.O); return [dot3(d, Fc.U), dot3(d, Fc.V)]; })); }
+  return { name: "shed", faces, root: 0, pairs, tabs };
+}
+function beamSolid(G) {
+  const { b, zb, xb0, xb1 } = G, p = (x, sy, sz) => [x, sy * b / 2, zb + sz * b / 2];
+  const faces = [
+    face("beam top", [p(xb0, -1, 1), p(xb1, -1, 1), p(xb1, 1, 1), p(xb0, 1, 1)], [0, 0, 1]),
+    face("beam right", [p(xb0, 1, 1), p(xb1, 1, 1), p(xb1, 1, -1), p(xb0, 1, -1)], [0, 1, 0]),
+    face("beam bottom", [p(xb0, 1, -1), p(xb1, 1, -1), p(xb1, -1, -1), p(xb0, -1, -1)], [0, 0, -1]),
+    face("beam left", [p(xb0, -1, -1), p(xb1, -1, -1), p(xb1, -1, 1), p(xb0, -1, 1)], [0, -1, 0]),
+    face("ram head", [p(xb1, -1, 1), p(xb1, -1, -1), p(xb1, 1, -1), p(xb1, 1, 1)], [1, 0, 0]),
+    face("beam end", [p(xb0, -1, 1), p(xb0, 1, 1), p(xb0, 1, -1), p(xb0, -1, -1)], [-1, 0, 0]),
+  ];
+  return { name: "beam", faces, root: 1, pairs: [[1, 0], [1, 2], [2, 3], [1, 4], [1, 5]], tabs: [[3, 0, "glue"], [0, 4, "glue"], [2, 4, "glue"], [3, 4, "glue"], [0, 5, "glue"], [2, 5, "glue"], [3, 5, "glue"]] };
+}
+
+// A drawing frame on a face, as seen from outside: x to the right, y down (down the slope on a roof), origin at the face's
+// top-left. Art is drawn in it and carried into the face's own frame, so nothing is ever upside down when folded.
+function designOn(Fc) {
+  let up = sub3([0, 0, 1], mul3(Fc.N, Fc.N[2])); if (hypot(...up) < 1e-6) up = [1, 0, 0]; up = unit3(up);
+  const right = cross3(mul3(Fc.N, -1), up), rx = p => dot3(p, right), dy = p => -dot3(p, up);
+  const xs = Fc.P3.map(rx), ys = Fc.P3.map(dy), x0 = min(...xs), y0 = min(...ys);
+  const toFace = (x, y) => { const w = add3(mul3(right, x + x0), mul3(up, -(y + y0))), d = sub3(w, Fc.O); return [dot3(d, Fc.U), dot3(d, Fc.V)]; };
+  return { w: max(...xs) - x0, h: max(...ys) - y0, at: p3 => [rx(p3) - x0, dy(p3) - y0], map: q => q.map(([x, y]) => toFace(x, y)) };
+}
+
+// ---------------- art pieces, in a face's design frame (mm) ----------------
+const circ = (cx, cy, r, n = 28) => Array.from({ length: n }, (_, i) => [cx + r * cos(i / n * TAU), cy + r * sin(i / n * TAU)]);
+const outside = (polys, x, y) => !polys.some(P => inPoly(P, x, y));
+const clipOut = (lines, polys) => polys.length ? keepWhere(lines.map(([q, cl]) => [densify(q, cl), cl]), (x, y) => outside(polys, x, y)) : lines;
+function planks(w, h, pitch, rnd, vertical = false) {
+  const out = [], dots = [], [W, H] = vertical ? [h, w] : [w, h], T = vertical ? ([x, y]) => [y, x] : p => p;
+  for (let y = pitch; y < H - 0.5; y += pitch) out.push([[T([0, y]), T([W, y])], false]);
+  for (let y = 0; y < H; y += pitch) { let x = rnd() * W * 0.5; while (x < W) { if (x > 2 && x < W - 2) { out.push([[T([x, y + 0.6]), T([x, min(H, y + pitch) - 0.6])], false]); for (const s of [-1.6, 1.6]) dots.push(T([x + s, y + pitch / 2])); } x += 20 + rnd() * 30; } }
+  return { lines: out, dots };
+}
+function grain(w, h, rnd, along = "x") {
+  const out = [];
+  for (let k = 0; k < (along === "x" ? h : w) / 2.6; k++) { const c = (k + 0.5) * 2.6 + (rnd() - 0.5), ph = rnd() * TAU, len = along === "x" ? w : h; out.push([curve(t => { const a = t * len, d = c + 0.5 * sin(a / 9 + ph) + 0.25 * sin(a / 3.1 + ph * 2); return along === "x" ? [a, d] : [d, a]; }, 60), false]); }
+  return out;
+}
+function shingles(w, h, rnd, size) {
+  const out = [];
+  for (let r = 0, y = size * 0.9; y < h + size; y += size * 0.8, r++) for (let x = (r & 1) * size / 2 - size / 2; x < w + size; x += size) out.push([curve(t => [x + size * t, y + size * 0.42 * sin(PI * t)], 10), false]);
+  return out;
+}
+// A horn laid flat: a band along a log spiral, wide at the base, with its year rings.
+function hornFlat(cx, cy, R, turns, dir, rot = 0) {
+  const out = [], inner = [], outer = [], rings = [], k = 0.22, n = 90;
+  const at = (t, off) => { const r = R * exp(-k * t), a = rot + dir * t; return [cx + (r + off) * cos(a), cy + (r + off) * sin(a)]; };
+  for (let i = 0; i <= n; i++) { const t = turns * TAU * i / n, wd = R * 0.36 * exp(-k * t) * (1 - 0.85 * sstep(0.75, 1, i / n)); outer.push(at(t, wd)); inner.push(at(t, -wd)); if (i && i % 9 === 0 && i < n - 4) rings.push([at(t, wd), at(t, -wd)]); }
+  out.push([[...outer, ...inner.slice().reverse()], true]);
+  for (const r of rings) out.push([r, false]);
+  return { lines: out, poly: [...outer, ...inner.slice().reverse()] };
+}
+// A ram's skull, front on, h tall, with its horns curled flat beside it.
+const SKULL_R = [[0, -2], [12, -2], [21, 1], [27, 9], [27, 20], [29, 30], [38, 35], [44, 45], [43, 56], [36, 64], [29, 72], [25, 86], [21, 100], [17, 113], [13, 124], [9, 131], [0, 133]];
+const SKULL = (() => { let pts = [...SKULL_R, ...SKULL_R.slice(1, -1).reverse().map(([x, y]) => [-x, y])]; for (let k = 0; k < 3; k++) { const o2 = [], m2 = pts.length; for (let i = 0; i < m2; i++) { const a = pts[i], c = pts[(i + 1) % m2]; o2.push([a[0] * 0.75 + c[0] * 0.25, a[1] * 0.75 + c[1] * 0.25], [a[0] * 0.25 + c[0] * 0.75, a[1] * 0.25 + c[1] * 0.75]); } pts = o2; } return pts; })();
+function skull2D(cx, cy, h, horns = true) {
+  const k = h / 133, T = q => q.map(([x, y]) => [cx + x * k, cy + y * k]), line = [], dark = [], polys = [];
+  const out = T(SKULL); line.push([out, true]); polys.push(out);
+  for (const s of [-1, 1]) {
+    const rim = T(arcPts(s * 33, 48, 10.5, 13, 0, TAU, s * 0.18, 30).slice(0, -1)), sock = T(arcPts(s * 34, 48.5, 6.5, 9.5, 0, TAU, s * 0.18, 24).slice(0, -1));
+    line.push([rim, true], [sock, true]); dark.push(sock);
+    line.push([T(curve(t => [s * (35 - 12 * t), 62 + 28 * t - 4 * sin(PI * t)], 10)), false]);
+    if (horns) { const H = hornFlat(cx + s * 40 * k, cy + 30 * k, 40 * k, 1.05, s, s > 0 ? -PI * 0.6 : -PI * 0.4); line.push(...H.lines); polys.push(H.poly); }
+  }
+  const nose = T(curve(t => [5.5 * sin(t * TAU), 119 - 10 * cos(t * TAU)], 20).slice(0, -1)); line.push([nose, true]); dark.push(nose);
+  line.push([T(curve(t => [0.8 * sin(t * 40), 2 + 54 * t], 40)), false]);
+  return { line, dark, polys };
+}
+function chipArt(x, y, w, h, pins, label) {
+  const out = [[[[x, y], [x + w, y], [x + w, y + h], [x, y + h]], true], [circ(x + 1.6, y + 1.6, 0.5, 10), true]];
+  for (let i = 0; i < pins; i++) { const px = x + w * (i + 0.5) / pins; out.push([[[px, y], [px, y - 1.4]], false], [[[px, y + h], [px, y + h + 1.4]], false]); }
+  if (label) for (const q of textLines(label, x + w / 2, y + h / 2, min(h * 0.4, w / label.length * 1.2))) out.push([q, false]);
+  return out;
+}
+function textLines(s, cx, cy, hgt) {
+  const k = hgt / 6, adv = ADV * k, wd = [...s].reduce((a, ch) => a + (GLYPHS[ch] ? adv : SPACE * k), 0) - adv + 4 * k, out = [];
+  let x = cx - wd / 2;
+  for (const ch of s) { const Gl = GLYPHS[ch]; if (!Gl) { x += SPACE * k; continue; } for (const S of Gl) out.push(S.map(([gx, gy]) => [x + gx * k, cy + (gy - 3) * k])); x += adv; }
+  return out;
+}
+// Circuit traces in a w x h rectangle on a 45-degree grid, never crossing, ending in vias.
+function tracesIn(w, h, rnd, g, avoid = [], n = 14) {
+  const out = [], used = new Set(), key = (i, j) => i + "," + j, nx = floor(w / g), ny = floor(h / g);
+  const ok = (i, j) => i > 0 && j > 0 && i < nx && j < ny && !used.has(key(i, j)) && outside(avoid, i * g, j * g);
+  const D = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+  for (let t = 0; t < n * 4 && out.length < n * 2; t++) {
+    let i = 1 + floor(rnd() * (nx - 1)), j = 1 + floor(rnd() * (ny - 1)); if (!ok(i, j)) continue;
+    let d = floor(rnd() * 4) * 2; const pts = [[i * g, j * g]]; used.add(key(i, j));
+    for (let s = 0; s < 40; s++) {
+      const opts = [0, 1, -1].map(dd => (d + dd + 8) % 8).filter(() => true).sort(() => rnd() - 0.6);
+      let moved = false;
+      for (const nd of opts) { const [di, dj] = D[nd], ni = i + di, nj = j + dj; if (!ok(ni, nj) || (di && dj && used.has(key(i + di, j)) && used.has(key(i, j + dj)))) continue; used.add(key(ni, nj)); i = ni; j = nj; d = nd; pts.push([i * g, j * g]); moved = true; break; }
+      if (!moved || rnd() < 0.04) break;
+    }
+    if (pts.length < 4) continue;
+    out.push([pts, false], [circ(pts.at(-1)[0], pts.at(-1)[1], g * 0.3, 10), true], [circ(pts[0][0], pts[0][1], g * 0.3, 10), true]);
+  }
+  return out;
+}
+// Wool: packed curls, each a little spiral.
+function fleece(w, h, rnd, r0) {
+  const out = [], got = [];
+  for (let t = 0; t < w * h / (r0 * r0) * 3; t++) {
+    const r = r0 * (0.7 + 0.6 * rnd()), x = rnd() * w, y = rnd() * h;
+    if (got.some(([gx, gy, gr]) => hypot(gx - x, gy - y) < gr + r + 0.8)) continue;
+    got.push([x, y, r]); const ph = rnd() * TAU, dir = rnd() < 0.5 ? 1 : -1;
+    out.push([curve(t2 => { const a = ph + dir * t2 * TAU * 1.6, rr = r * (1 - 0.8 * t2); return [x + rr * cos(a), y + rr * sin(a)]; }, 30), false]);
+  }
+  return out;
+}
+
+// ---------------- art for each face ----------------
+function shedArt(o, S, G, ctx) {
+  const F = S.faces, rnd = ctx.rnd, look = o.look;
+  F.forEach((Fc, f) => {
+    if (f === 0) return;   // the floor stays plain
+    const d = designOn(Fc), put = (layer, lines, kind) => ctx.local(f, layer, lines.map(([q, cl]) => [d.map(q), cl]), kind);
+    const holes = Fc.windows.map(w => { const c = w.map(([u, v]) => to3(Fc, u, v)); return c.map(d.at); });
+    const wall = f === 1 || f === 2, roof = f === 3 || f === 4, gable = f >= 5;
+    if (wall) {
+      // painted wheels low on each wall, planks (or a circuit board) behind them
+      const r = G.Hw * 0.34, wheels = [0.2, 0.8].map(t => [d.w * t, d.h - r * 0.75]), wp = wheels.map(([x, y]) => circ(x, y, r + 0.8, 40));
+      if (look === "memory") put("c1", clipOut(tracesIn(d.w, d.h, rnd, 2.2, wp, 10), wp));
+      else { const P = planks(d.w, d.h, 6.5 * G.s, rnd); put("shade", clipOut(P.lines, wp)); for (const [x, y] of P.dots) if (outside(wp, x, y)) ctx.dot(f, "line", ...d.map([[x, y]])[0], 0.4); }
+      for (const [x, y] of wheels) {
+        put("line", [[circ(x, y, r, 40), true], [circ(x, y, r * 0.8, 36), true], [circ(x, y, r * 0.16, 14), true]]);
+        const spokes = []; for (let k = 0; k < 8; k++) { const a = k / 8 * TAU + 0.2; spokes.push([[[x + r * 0.16 * cos(a), y + r * 0.16 * sin(a)], [x + r * 0.8 * cos(a), y + r * 0.8 * sin(a)]], false]); }
+        put("line", spokes);
+      }
+      if (look === "memory") put("c2", chipArt(d.w / 2 - 14 * G.s, 5 * G.s, 28 * G.s, 12 * G.s, 8, "RAM"));
+    } else if (roof) {
+      if (look === "ram") put("c1", fleece(d.w, d.h, rnd, 3.4 * G.s));
+      else if (look === "memory") { put("c1", tracesIn(d.w, d.h, rnd, 2.2, [], 8)); put("line", textLines(f === 3 ? "DDR RAM" : "8 GB", d.w / 2, d.h / 2, d.h * 0.32).map(q => [q, false])); }
+      else put("shade", shingles(d.w, d.h, rnd, 7 * G.s));
+    } else if (gable) {
+      const front = f === 5;
+      if (look === "memory") put("c1", tracesIn(d.w, d.h, rnd, 2.2, holes.map(h => h.map(([x, y]) => [x, y])), 6));
+      else { const P = planks(d.w, d.h, 6.5 * G.s, rnd, true); put("shade", P.lines); }
+      if (front && look !== "wood") {
+        // the emblem on the front gable, above the hole: the ram, front on
+        const hb = bbox(holes[0]), y0 = G.Hr * 0.3, sk = skull2D(d.w / 2, y0, hb[1] - y0 - 3, look === "ram");
+        put(look === "ram" ? "line" : "c2", sk.line);
+        for (const P of sk.dark) put("shade", darkFill((x, y) => inPoly(P, x, y), bbox(P), o, () => 1));
+      }
+    }
+  });
+  return `shed: ${G.L.toFixed(0)} x ${G.W.toFixed(0)} x ${(G.Hw + G.Hr).toFixed(0)} mm`;
+}
+function beamArt(o, S, G, ctx) {
+  const F = S.faces, rnd = ctx.rnd, look = o.look, front3 = [G.xb1, 0, G.zb];
+  F.forEach((Fc, f) => {
+    const d = designOn(Fc), put = (layer, lines, kind) => ctx.local(f, layer, lines.map(([q, cl]) => [d.map(q), cl]), kind);
+    if (f === 4) {   // the ram's head on the business end
+      const sk = skull2D(d.w / 2, d.h * 0.06, d.h * 0.9, false);
+      put(look === "memory" ? "c2" : "line", sk.line);
+      for (const P of sk.dark) put("shade", darkFill((x, y) => inPoly(P, x, y), bbox(P), o, () => 1));
+      return;
+    }
+    if (f === 5) return;
+    // work along the beam (a) and across it (c), whichever way this face's frame lies
+    const o3 = d.at([0, 0, 0]), x3 = d.at([10, 0, 0]), ax = abs(x3[0] - o3[0]) > abs(x3[1] - o3[1]) ? 0 : 1, La = ax ? d.h : d.w, Lc = ax ? d.w : d.h;
+    const T = lines => lines.map(([q, cl]) => [q.map(([a, c]) => ax ? [c, a] : [a, c]), cl]), putA = (layer, lines) => put(layer, T(lines));
+    const fx = d.at(front3)[ax], toFront = fx > La / 2 ? 1 : -1;   // which end of this face is the head
+    // iron bands, at the same distance from the head on every face, so they meet round the corners
+    const bands = [16, 50, 104].map(a => fx - toFront * a * G.s).filter(x => x > 3 && x < La - 3);
+    if (look === "memory") {
+      // the beam is a memory stick: a row of chips, gold contacts along the bottom edge of each side
+      if (f === 1 || f === 3) {
+        const n = 6, cw = (La - 40 * G.s) / n;
+        for (let i = 0; i < n; i++) putA("c1", chipArt(toFront > 0 ? 6 + i * cw : 34 * G.s + i * cw, Lc * 0.18, cw * 0.78, Lc * 0.48, 4, ""));
+        const fing = []; for (let x = 4; x < La - 4; x += 2.2) fing.push([[[x, Lc - 0.6], [x + 1.2, Lc - 0.6], [x + 1.2, Lc - 3.6], [x, Lc - 3.6]], true]);
+        putA("c2", fing);
+      } else put("c1", tracesIn(d.w, d.h, rnd, 2.2, [], 5));
+      return;
+    }
+    const bandPolys = bands.map(x => [[x - 2.5, -1], [x + 2.5, -1], [x + 2.5, Lc + 1], [x - 2.5, Lc + 1]]);
+    putA("shade", clipOut(grain(La, Lc, rnd), bandPolys));
+    for (const x of bands) { putA("line", [[[[x - 2.5, 0], [x - 2.5, Lc]], false], [[[x + 2.5, 0], [x + 2.5, Lc]], false]]); for (const yy of [Lc * 0.3, Lc * 0.7]) ctx.dot(f, "line", ...d.map(T([[[[x, yy]], false]])[0][0])[0], 0.45); }
+    if (look === "ram" && (f === 1 || f === 3)) {
+      // the horns, curled flat along each side just behind the head, coiling back from it
+      const H = hornFlat(fx - toFront * 30 * G.s, Lc * 0.46, Lc * 0.27, 1.15, toFront * (f === 1 ? 1 : -1), toFront > 0 ? 0 : PI);
+      putA("c1", H.lines);
+    }
+  });
+  return `beam: ${(G.xb1 - G.xb0).toFixed(0)} mm long, ${G.b.toFixed(0)} mm square`;
+}
+
+// ---------------- build ----------------
+function shiftNet(N, dx, dy) {
+  for (const t of N.X.values()) { t.tx += dx; t.ty += dy; }
+  const mv = p => [p[0] + dx, p[1] + dy];
+  N.polys = N.polys.map(p => ({ ...p, P: p.P.map(mv) })); N.folds = N.folds.map(([a, b]) => [mv(a), mv(b)]); N.loops = N.loops.map(L => L.map(mv));
+  N.b = [N.b[0] + dx, N.b[1] + dy, N.b[2] + dx, N.b[3] + dy];
+}
+function build(o) {
+  const t0 = performance.now(), notes = [], gates = [], [PW, PH] = o.page.split("x").map(Number), rnd = mulberry(o.seed * 7919 + 17);
+  const G = dims(o), shed = shedSolid(G), beam = beamSolid(G);
+  // both are laid out and inked (the assembled preview shows both); only the chosen pieces go on the sheet
+  const solids = [shed, beam], allNets = solids.map(S => layoutNet(S, o, PW, PH)), sel = o.piece === "both" ? [0, 1] : o.piece === "beam" ? [1] : [0];
+  const pieces = sel.map(i => solids[i]), nets = sel.map(i => allNets[i]);
+  if (nets.length === 2) {
+    const w = nets.map(N => N.b[2] - N.b[0]), h = nets.map(N => N.b[3] - N.b[1]), gap = 6, m = o.margin;
+    const side = w[0] + w[1] + gap <= PW - 2 * m || (w[0] + w[1]) / (PW - 2 * m) < (h[0] + h[1]) / (PH - 2 * m);
+    if (side) { const x0 = PW / 2 - (w[0] + w[1] + gap) / 2; shiftNet(nets[0], x0 - nets[0].b[0], 0); shiftNet(nets[1], x0 + w[0] + gap - nets[1].b[0], 0); }
+    else { const y0 = PH / 2 - (h[0] + h[1] + gap) / 2; shiftNet(nets[0], 0, y0 - nets[0].b[1]); shiftNet(nets[1], 0, y0 + h[0] + gap - nets[1].b[1]); }
+  }
+  const layers = { line: [], shade: [], c1: [], c2: [], c3: [], score: [], cut: [] }, stages = [], allPolys = [], fold3 = [];
+  let inkLow = INF;
+  solids.forEach((S, si) => {
+    const F = S.faces, N = allNets[si], items = [], on = sel.includes(si), pi = si;
+    const ctx = { rnd, dotMin: INF,
+      local: (f, layer, lines, kind, noEx) => { for (const L of lines) { if (!L || !L[0] || L[0].length < 2) continue; items.push({ f, layer, q: densify(L[0], !!L[1]), cl: !!L[1], kind: kind || L[2] || "line", noEx }); } },
+      dot: (f, layer, u, v, r) => { items.push({ f, layer, q: dotPoly(u, v, r), cl: true, kind: "dot" }); ctx.dotMin = min(ctx.dotMin, 2 * r); },
+    };
+    stages.push(S === shed ? shedArt(o, S, G, ctx) : beamArt(o, S, G, ctx));
+    for (const Fc of F) Fc.winBB = Fc.windows.map(bbox);
+    inkMin = INF;
+    const fink = finalize(items, F);
+    fold3.push({ S, fink });
+    if (!on) return;
+    inkLow = min(inkLow, inkMin);
+    for (const it of fink) layers[it.layer].push([it.q.map(([u, v]) => apT(N.X.get(it.f), u, v)), it.cl, it.kind]);
+    for (const L of N.loops) layers.cut.push([L, true]);
+    F.forEach((Fc, f) => { const t = N.X.get(f); for (const w of Fc.windows) layers.cut.push([w.map(([u, v]) => apT(t, u, v)), true]); });
+    const dash = (A, B, on, off, inset) => { const L = hypot(B[0] - A[0], B[1] - A[1]), out = []; for (let s = inset; s < L - inset - 0.2; s += on + off) { const e = min(s + on, L - inset); out.push([[lerp(A[0], B[0], s / L), lerp(A[1], B[1], s / L)], [lerp(A[0], B[0], e / L), lerp(A[1], B[1], e / L)]]); } return out; };
+    for (const [A, B] of N.folds) {
+      if (o.fold === "score") layers.score.push([[A, B], false]);
+      else if (o.fold === "perf") for (const d of dash(A, B, PERF_ON, PERF_OFF, 0.8)) layers.cut.push([d, false]);
+      else if (o.fold === "dotted") for (const d of dash(A, B, 0.8, 1.4, 0.6)) layers.line.push([d, false, "fold"]);
+    }
+    allPolys.push(...N.polys.map(p => ({ ...p, f: pi * 100 + p.f })));
+    const ov = overlaps(N.polys);
+    gates.push([`the ${S.name} net does not overlap itself`, ov === 0, ov ? ov + " pieces overlap" : `${F.length} faces, ${N.tabs.length} flaps`]);
+    const tabMin = min(...N.tabs.map(t => t.depth));
+    gates.push([`${S.name} glue tabs at least 5 mm deep`, tabMin >= TAB_MIN - 1e-9, tabMin.toFixed(1) + " mm (ASSUMED rule)"]);
+    if (ctx.dotMin < INF) gates.push([`${S.name}: dots at least 0.7 mm across`, ctx.dotMin >= DOT_MIN - 1e-9, ctx.dotMin.toFixed(2) + " mm smallest (ASSUMED rule)"]);
+  });
+  layers.cut.push([[[TRIM_INSET, TRIM_INSET], [PW - TRIM_INSET, TRIM_INSET], [PW - TRIM_INSET, PH - TRIM_INSET], [TRIM_INSET, PH - TRIM_INSET]], true]);
+  // gates
+  const m = o.margin, b = bbox(nets.flatMap(N => [[N.b[0], N.b[1]], [N.b[2], N.b[3]]])), fits = b[0] >= m - 1e-6 && b[1] >= m - 1e-6 && b[2] <= PW - m + 1e-6 && b[3] <= PH - m + 1e-6;
+  gates.unshift(["net fits the page", fits, `${(b[2] - b[0]).toFixed(0)} x ${(b[3] - b[1]).toFixed(0)} mm inside ${PW - 2 * m} x ${PH - 2 * m}`]);
+  if (nets.length === 2) { const ov = overlaps(allPolys) - nets.reduce((a, N) => a + overlaps(N.polys), 0); gates.push(["the two nets keep clear of each other", ov === 0, ov ? ov + " overlaps" : "clear"]); }
+  gates.push(["ink clear of every cut by 0.4 mm", inkLow >= INK_GAP - 1e-9, inkLow === INF ? "no ink" : inkLow.toFixed(2) + " mm closest"]);
+  gates.push(["the beam slides through the gable holes", BEAM_CLEAR > 0, `holes ${(G.b + BEAM_CLEAR).toFixed(1)} mm for a ${G.b.toFixed(1)} mm beam`]);
+  gates.push(["hatch pitch at least 0.5 mm", o.hp >= 0.5, o.hp.toFixed(2) + " mm"]);
+  if (o.fold === "perf") gates.push(["perforation bridges at least 0.8 mm", PERF_OFF >= 0.8, `${PERF_ON} mm cut, ${PERF_OFF} mm bridge (ASSUMED)`]);
+  if (!fits) notes.push(o.piece === "both" ? "two pieces do not fit this page: print the shed and the beam on separate sheets, or lower the size" : "lower the size or the margin, or use the 12 x 12 page");
+  notes.push("glue the shed shut, then slide the beam through both gable holes, head out of the front");
+  return { o, W: PW, H: PH, layers, gates, notes, stage: stages.join(" · "), ms: performance.now() - t0, solids: [shed, beam], fold3 };
+}
+
+// ---------------- preview, export ----------------
+const COLS = o => ({ line: "#141414", shade: "#3a3a3a", c1: "#" + o.c1col, c2: "#" + o.c2col, c3: "#" + o.c2col });
+const ORDER = ["c1", "c3", "c2", "shade", "line"];
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), col = COLS(r.o), dpr = devicePixelRatio || 1;
+  const folded = r.o.view === "folded", hmm = folded ? r.W * 0.82 : r.H, s = wpx / r.W;
+  cv.width = round(wpx * dpr); cv.height = round(hmm * s * dpr); cv.style.width = wpx + "px"; cv.style.height = round(hmm * s) + "px";
+  c.setTransform(dpr * s, 0, 0, dpr * s, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, hmm); c.lineCap = c.lineJoin = "round";
+  if (folded) drawFolded(c, r, r.W, hmm, col);
+  else {
+    for (const key of ORDER) { c.strokeStyle = col[key]; c.lineWidth = PEN[key]; for (const [q, cl] of r.layers[key]) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); } }
+    c.strokeStyle = "#2a7fd4"; c.lineWidth = 0.25; c.setLineDash([0.6, 0.9]); for (const [q] of r.layers.score) { c.beginPath(); c.moveTo(...q[0]); c.lineTo(...q[1]); c.stroke(); }
+    c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); for (const [q, cl] of r.layers.cut.slice(0, -1)) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); } c.setLineDash([]);
+  }
+  const lenm = L => L.reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000;
+  $("stats").innerHTML = `<b>${r.stage}</b> · ${r.ms.toFixed(0)} ms<br>`
+    + ["line", "shade", "c1", "c2"].filter(k => r.layers[k].length).map(k => `${k}: <b>${lenm(r.layers[k]).toFixed(1)} m</b>`).join(" · ") + ` · cut: <b>${lenm(r.layers.cut.slice(0, -1)).toFixed(2)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+// The whole thing put together, shed and beam, turned and tipped. Long faces are cut into slices so the painter's
+// order holds where the beam runs inside the shed.
+function drawFolded(c, r, W, H, col) {
+  const o = r.o, cy = cos(o.turn * D2R), sy = sin(o.turn * D2R), cp = cos(o.tip * D2R), sp = sin(o.tip * D2R);
+  const rot = p => { const x1 = p[0] * cy - p[1] * sy, y1 = p[0] * sy + p[1] * cy; return [x1, -(p[2] * cp + y1 * sp), y1 * cp - p[2] * sp]; };
+  const F = r.solids.flatMap(S => S.faces), all = F.flatMap(Fc => Fc.P3.map(rot)), b = bbox(all), k = min((W - 30) / (b[2] - b[0]), (H - 30) / (b[3] - b[1])), ox = W / 2 - k * (b[0] + b[2]) / 2, oy = H / 2 - k * (b[1] + b[3]) / 2;
+  const pj = p => { const q = rot(p); return [ox + k * q[0], oy + k * q[1], q[2]]; };
+  const inkOf = new Map(); for (const { S, fink } of r.fold3) S.faces.forEach((Fc, f) => inkOf.set(Fc, fink.filter(it => it.f === f)));
+  const slices = [];
+  for (const Fc of F) {
+    const ub = bbox(Fc.poly), n = Fc.poly.length === 4 && ub[2] - ub[0] > 30 ? ceil((ub[2] - ub[0]) / 12) : 1;
+    for (let i = 0; i < n; i++) {
+      const u0 = lerp(ub[0], ub[2], i / n), u1 = lerp(ub[0], ub[2], (i + 1) / n);
+      const P = n === 1 ? Fc.poly : [[u0, ub[1]], [u1, ub[1]], [u1, ub[3]], [u0, ub[3]]];
+      const P3 = P.map(([u, v]) => to3(Fc, u, v));
+      slices.push({ Fc, P, u0, u1, n, d: P3.reduce((s, p) => s + rot(p)[2], 0) / P3.length, facing: (Fc.N[0] * sy + Fc.N[1] * cy) * cp - Fc.N[2] * sp < 0 });
+    }
+  }
+  slices.sort((p, q) => q.d - p.d);
+  const path = pts => pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y));
+  for (const sl of slices) {
+    if (!sl.facing) continue;   // a closed solid: faces turned away are never seen
+    const { Fc } = sl, P = sl.P.map(([u, v]) => pj(to3(Fc, u, v))), wins = sl.n === 1 ? Fc.windows.map(w => w.map(([u, v]) => pj(to3(Fc, u, v)))) : [];
+    c.beginPath(); path(P); c.closePath(); for (const w of wins) { path(w); c.closePath(); }
+    c.fillStyle = sl.facing ? "#fbf7ec" : "#e2d6ba"; c.fill("evenodd"); c.strokeStyle = sl.facing ? "#fbf7ec" : "#e2d6ba"; c.lineWidth = 0.3; c.stroke();
+    if (!sl.facing) continue;
+    c.strokeStyle = "#6d6450"; c.lineWidth = 0.35;
+    for (let i = 0; i < sl.P.length; i++) { const a = sl.P[i], bq = sl.P[(i + 1) % sl.P.length]; if (sl.n > 1 && abs(a[0] - bq[0]) < 1e-6 && abs(a[0] - Fc.poly.reduce((m2, p) => min(m2, p[0]), INF)) > 1e-6 && abs(a[0] - Fc.poly.reduce((m2, p) => max(m2, p[0]), -INF)) > 1e-6) continue; const A = pj(to3(Fc, ...a)), B = pj(to3(Fc, ...bq)); c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke(); }
+    for (const w of wins) { c.beginPath(); path(w); c.closePath(); c.stroke(); }
+    for (const key of ORDER) {
+      c.strokeStyle = col[key]; c.lineWidth = max(0.12, PEN[key] * k * 0.8); c.beginPath();
+      for (const it of inkOf.get(Fc) || []) if (it.layer === key) for (const [q] of (sl.n === 1 ? [[it.q]] : keepWhere([[densify(it.q, it.cl, 0.6), false]], u => u >= sl.u0 - 1e-6 && u <= sl.u1 + 1e-6))) { path(q.map(([u, v]) => pj(to3(Fc, u, v)))); if (it.cl && sl.n === 1) c.closePath(); }
+      c.stroke();
+    }
+  }
+}
+const penLayers = r => [
+  { name: "c1", colour: r.o.c1col, w: PEN.c1, paths: r.layers.c1 }, { name: "c2", colour: r.o.c2col, w: PEN.c2, paths: r.layers.c2 },
+  { name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line },
+  { name: "score", colour: "2a7fd4", w: 0.2, paths: r.layers.score, score: true }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length && !(L.cut && L.paths.length < 2));
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : L.score ? "score" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG battering ram${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["piece", "look", "size", "seed", "view", "turn", "tip", "dark", "hp", "c1col", "c2col", "page", "margin", "fold"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["view", "turn", "tip", "c1col", "c2col"]);
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 80); }
+
+const BASE = { piece: "shed", look: "ram", size: 1, seed: 5, view: "net", turn: 35, tip: 22, dark: "cross", hp: 0.75, c1col: "b8860b", c2col: "1f8a4c", page: "280x280", margin: 8, fold: "score" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  shed: P({}),
+  beam: P({ piece: "beam", page: "250x190" }),
+  built: P({ view: "folded", turn: -40, tip: 22 }),
+  wood: P({ look: "wood" }),
+  memory: P({ look: "memory", c1col: "1f8a4c", c2col: "c08a00" }),
+  ramstick: P({ piece: "beam", look: "memory", page: "250x190", c1col: "1f8a4c", c2col: "c08a00" }),
+  mini: P({ piece: "both", size: 0.62, page: "280x280" }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `battering-ram-${r.o.piece}-${r.o.look}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, drawFolded, COLS };
+run();
+</script>
+</body>
+</html>

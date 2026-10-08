@@ -164,11 +164,14 @@
       "room": "hall",
       "day": 9,
       "date": "2026-10-09",
-      "prompt": null,
-      "photo": null,
+      "prompt": "ram",
+      "photo": "prints/inktober-09-ram.png",
+      "render": true,
+      "studio": "../ram-skull-studio.html",
+      "description": "Friday 9 October 2026, prompt \"ram\". Not plotted yet: the Ram skull studio's own render of an eight-year-old ram on a shield, its horn grown along a log spiral with a ring for each year. Its companion, the Battering ram studio, folds up a siege ram with the same skull over the door. The real sheet goes in when it is inked.",
       "frame": {
-        "width": 210,
-        "height": 297
+        "width": 190,
+        "height": 250
       },
       "content": {
         "nsfw": false,
