@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flimsy bridge studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Flimsy bridge studio</h1>
+  <p class="sub">Card is a flimsy thing, so make it a bridge: six ways across a gap, each one a sheet that is plotted, cut out and folded into a truss. A small pin-jointed solver loads every one, and the pens draw what it finds: tension solid, compression dashed, the first member to go bowed or crossed, the sag drawn on the deck. A second plate keeps the one that really was flimsy. Day 13 of Inktober, "flimsy".</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="board">Truss board</button><button data-preset="pratt">Pratt, big</button><button data-preset="howe">Howe, big</button></div>
+    <div class="row"><button data-preset="bow">Bowstring, big</button><button data-preset="tacoma">Tacoma plate</button><button data-preset="tacoma12">Tacoma, wide</button></div>
+  </fieldset>
+  <fieldset><legend>The sheet</legend>
+    <label>Show <select id="show"><option value="board">the truss board (six bridges)</option><option value="single">one bridge, big</option><option value="tacoma">the Tacoma Narrows plate</option></select></label>
+    <label data-when="show=single">Bridge <select id="bridge"><option value="plank">plank</option><option value="warren">Warren</option><option value="pratt">Pratt</option><option value="howe">Howe</option><option value="k">K truss</option><option value="bowstring">bowstring</option></select></label>
+  </fieldset>
+  <fieldset data-when="show!=tacoma"><legend>The bridge</legend>
+    <label>Span, centre to centre (mm) <output id="o-span"></output><input type="range" id="span" min="60" max="160" step="5" value="100"></label>
+    <label>Truss depth, share of span <output id="o-hratio"></output><input type="range" id="hratio" min="0.12" max="0.36" step="0.01" value="0.22"></label>
+    <label>Panels (even) <output id="o-panels"></output><input type="range" id="panels" min="4" max="12" step="2" value="6"></label>
+    <label>Deck width (mm) <output id="o-deck"></output><input type="range" id="deck" min="8" max="30" step="1" value="14"></label>
+    <label>Member width (mm) <output id="o-mw"></output><input type="range" id="mw" min="3" max="8" step="0.5" value="4.5"></label>
+  </fieldset>
+  <fieldset data-when="show!=tacoma"><legend>The card and the test</legend>
+    <label>Card thickness (mm) <output id="o-thick"></output><input type="range" id="thick" min="0.4" max="2" step="0.1" value="0.9"></label>
+    <label>Card stiffness E (MPa) <output id="o-young"></output><input type="range" id="young" min="500" max="6000" step="100" value="2500"></label>
+    <label>Top chord <select id="brace"><option value="held">held sideways by the folded deck</option><option value="ties">free, with one tie at midspan</option><option value="free">free to buckle over the whole span</option></select></label>
+    <label>Test load, spread along the deck (g) <output id="o-test"></output><input type="range" id="test" min="5" max="200" step="5" value="20"></label>
+    <p class="hint">Stiffness, tearing, joint strength and the buckling knock-down are assumed numbers, not measured yet: pull and bend a strip of your card and put the real ones in. The order of the bridges is the part to trust, and "free" shows what a wobbly chord does to all of them.</p>
+  </fieldset>
+  <fieldset data-when="show!=tacoma"><legend>Cutting</legend>
+    <label>Ink line spacing across a member (mm) <output id="o-hp"></output><input type="range" id="hp" min="0.5" max="1.2" step="0.05" value="0.8"></label>
+    <label>Fold lines <select id="fold"><option value="score">scored (blue)</option><option value="perf">perforated (cut dashes)</option></select></label>
+    <label>Corner relief (mm) <output id="o-relief"></output><input type="range" id="relief" min="0" max="2" step="0.1" value="0.8"></label>
+    <label>Tension pen <input type="text" id="c1col" value="1f8a4c" maxlength="6"></label>
+    <label>Compression pen <input type="text" id="c2col" value="b8860b" maxlength="6"></label>
+  </fieldset>
+  <fieldset data-when="show=tacoma"><legend>The plate</legend>
+    <label>Moments <output id="o-rows"></output><input type="range" id="rows" min="5" max="14" step="1" value="10"></label>
+    <label>How fast the twist grows <output id="o-growth"></output><input type="range" id="growth" min="0.5" max="5" step="0.1" value="2.6"></label>
+    <label>Twist waves along the span <output id="o-waves"></output><input type="range" id="waves" min="1" max="3" step="1" value="1"></label>
+    <label>Ending <output id="o-collapse"></output><input type="range" id="collapse" min="0" max="2" step="1" value="2"></label>
+    <label>Cables <select id="cables"><option value="on">on</option><option value="off">off</option></select></label>
+    <label>Water <select id="water"><option value="on">on</option><option value="off">off</option></select></label>
+    <p class="hint">Ending 0 stops while it still stands, 1 adds the fall, 2 adds the tear before it.</p>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="8"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Plot first with the split pen files (tension, compression, thin, black), then load the card back on the mat and cut the red file with the blue file scored. Every file carries four corner ticks so they land in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: every bridge is a pin-jointed truss on centre lines, a pin at one foot and a roller at the other, loaded along the bottom chord and solved by the direct stiffness method. A member's force over its capacity gives the load the whole bridge can hold; a strut's capacity is the Euler buckling load of a thin card strip, so the long compressed diagonals of a Howe go before the long tensioned ones of a Pratt. The voids are the enclosed faces of the truss graph, shrunk by half a member width and cut; the plank is a bare strip of card with no truss at all. The deck of each net carries its own sag, drawn larger by the number printed on it.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, pow } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const PEN = { line: 0.4, shade: 0.3, tens: 0.4, comp: 0.4 };   // ASSUMED widths, same pens as the other studios
+const MIN_VOID = 1.5;       // ASSUMED: smallest hole the blade is asked for, mm
+const TRIM_INSET = 1;       // trim rectangle, mm from every page edge (the pen corner ticks sit at the same 1 mm)
+const GRAM = 0.00981;       // newtons in a gram of weight
+// The card, all ASSUMED until a strip has been pulled and bent (see 01_RESEARCH): stiffness comes from the control.
+const SIGMA_T = 20, SIGMA_C = 12;   // MPa: tearing and crushing of a card strip
+const KNOCK = 0.35;                 // a real card strut gives this share of its Euler load (crooked, creeping, glued)
+const JOINT = 0.3;                  // a glued or notched joint carries this share of the strip's tearing strength
+
+// ---------------- stroke font (capitals and figures) ----------------
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.8,3.8 L3.2,3.8", B: "M0,0 L2.4,0 A2.4,1.5,1.3,1.5,-90,90 L0,3 M0,3 L2.6,3 A2.6,4.5,1.4,1.5,-90,90 L0,6 L0,0",
+  C: "A2,3,2,3,-45,-315", D: "M0,0 L1.5,0 A1.5,3,2.5,3,-90,90 L0,6 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2,3,2,3,-45,-315 L4,3.4 L2.2,3.4", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", I: "M1,0 L3,0 M2,0 L2,6 M1,6 L3,6", J: "M4,0 L4,4.3 A2.3,4.3,1.7,1.7,0,180",
+  K: "M0,0 L0,6 M4,0 L0,4 M1.4,2.6 L4,6", L: "M0,0 L0,6 L4,6", M: "M0,6 L0,0 L2,3.5 L4,0 L4,6", N: "M0,6 L0,0 L4,6 L4,0", O: "A2,3,2,3,0,360",
+  P: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2", Q: "A2,3,2,3,0,360 M2.6,4.4 L4,6.3", R: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2 M2,3.2 L4,6",
+  S: "A2,1.5,1.8,1.5,-20,-270 A2,4.5,2,1.5,-90,160", T: "M0,0 L4,0 M2,0 L2,6", U: "M0,0 L0,4 A2,4,2,2,180,0 L4,0", V: "M0,0 L2,6 L4,0",
+  W: "M0,0 L1,6 L2,2.5 L3,6 L4,0", X: "M0,0 L4,6 M4,0 L0,6", Y: "M0,0 L2,3 L4,0 M2,3 L2,6", Z: "M0,0 L4,0 L0,6 L4,6",
+  0: "A2,3,2,3,0,360 M3.2,1 L0.8,5", 1: "M0.8,1.2 L2,0 L2,6 M0.8,6 L3.2,6", 2: "A2,1.8,1.8,1.8,-160,20 L0,6 L4,6", 3: "A2,1.5,1.7,1.5,-160,90 A2,4.5,1.9,1.5,-90,160",
+  4: "M3,6 L3,0 L0,4.2 L4,4.2", 5: "M4,0 L0.4,0 L0,2.8 A2,4.1,2,1.9,-125,155", 6: "M3.2,0 L0.1,4 M4,4.3 A2,4.3,2,1.7,0,360", 7: "M0,0 L4,0 L1.5,6",
+  8: "M3.6,1.5 A2,1.5,1.6,1.5,0,360 M4,4.5 A2,4.5,2,1.5,0,360", 9: "M3.6,1.7 A2,1.7,1.6,1.7,0,360 M3.6,1.9 L1,6", "-": "M0.8,3 L3.2,3", ".": "M2,5.6 L2,6",
+};
+function glyph(src) {
+  const S = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; S.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; S.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return S;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+// Text centred on (cx, cy), capitals h tall.
+function text(s, cx, cy, h) {
+  const k = h / 6, adv = 5.4 * k, w = [...s].reduce((a, ch) => a + (GLYPHS[ch] ? adv : 3.6 * k), 0) - adv + 4 * k, out = [];
+  let x = cx - w / 2;
+  for (const ch of s) { const G = GLYPHS[ch]; if (!G) { x += 3.6 * k; continue; } for (const S of G) out.push(S.map(([gx, gy]) => [x + gx * k, cy + (gy - 3) * k])); x += adv; }
+  return out;
+}
+
+// ---------------- small geometry ----------------
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+const unit = a => { const l = hypot(a[0], a[1]) || 1; return [a[0] / l, a[1] / l]; };
+const areaOf = P => { let s = 0; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };
+const perimOf = P => P.reduce((s, p, i) => s + hypot(p[0] - P[(i + 1) % P.length][0], p[1] - P[(i + 1) % P.length][1]), 0);
+const bboxOf = pts => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of pts) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+// Dashes along an open polyline, as separate runs.
+function dashRuns(q, on, off) {
+  const out = []; let run = [q[0]], acc = 0, drawing = true;
+  for (let i = 1; i < q.length; i++) {
+    const a = q[i - 1], b = q[i], L = hypot(b[0] - a[0], b[1] - a[1]); let s = 0;
+    while (s < L - 1e-9) {
+      const step = min(L - s, (drawing ? on : off) - acc); s += step; acc += step;
+      const p = [lerp(a[0], b[0], s / L), lerp(a[1], b[1], s / L)];
+      if (drawing) run.push(p);
+      if (acc >= (drawing ? on : off) - 1e-9) { if (drawing) { if (run.length > 1) out.push(run); run = []; } else run = [p]; drawing = !drawing; acc = 0; }
+    }
+  }
+  if (drawing && run.length > 1) out.push(run);
+  return out;
+}
+// Shrink a counter-clockwise convex polygon by d; null once it has collapsed.
+function insetPoly(P, d) {
+  const n = P.length, out = [];
+  for (let i = 0; i < n; i++) {
+    const a = P[(i + n - 1) % n], b = P[i], c = P[(i + 1) % n], e1 = unit(sub(b, a)), e2 = unit(sub(c, b));
+    const n1 = [-e1[1], e1[0]], n2 = [-e2[1], e2[0]], k = 1 + n1[0] * n2[0] + n1[1] * n2[1];
+    if (k < 1e-6) return null;
+    out.push([b[0] + (n1[0] + n2[0]) / k * d, b[1] + (n1[1] + n2[1]) / k * d]);
+  }
+  if (areaOf(out) <= 0.05) return null;
+  for (let i = 0; i < n; i++) { const j = (i + 1) % n; if ((out[j][0] - out[i][0]) * (P[j][0] - P[i][0]) + (out[j][1] - out[i][1]) * (P[j][1] - P[i][1]) <= 0) return null; }
+  return out;
+}
+// Round off sharp corners with a short chamfer so the blade does not tear a point.
+function relieve(P, r) {
+  if (r <= 0) return P;
+  const n = P.length, out = [];
+  for (let i = 0; i < n; i++) {
+    const a = P[(i + n - 1) % n], b = P[i], c = P[(i + 1) % n], l1 = hypot(a[0] - b[0], a[1] - b[1]), l2 = hypot(c[0] - b[0], c[1] - b[1]);
+    const u1 = unit(sub(a, b)), u2 = unit(sub(c, b)), cosA = u1[0] * u2[0] + u1[1] * u2[1];
+    if (cosA < -0.9) { out.push(b); continue; }
+    const t = min(r, 0.3 * l1, 0.3 * l2);
+    out.push([b[0] + u1[0] * t, b[1] + u1[1] * t], [b[0] + u2[0] * t, b[1] + u2[1] * t]);
+  }
+  return out;
+}
+// Every enclosed face of a planar straight-line graph, as lists of node indices (counter-clockwise).
+function facesOf(nodes, members) {
+  const adj = nodes.map(() => []);
+  for (const [a, b] of members) { adj[a].push(b); adj[b].push(a); }
+  adj.forEach((l, i) => l.sort((p, q) => atan2(nodes[p][1] - nodes[i][1], nodes[p][0] - nodes[i][0]) - atan2(nodes[q][1] - nodes[i][1], nodes[q][0] - nodes[i][0])));
+  const seen = new Set(), out = [];
+  for (let a = 0; a < nodes.length; a++) for (const b of adj[a]) {
+    if (seen.has(a + "," + b)) continue;
+    const cyc = []; let u = a, v = b;
+    while (!seen.has(u + "," + v)) {
+      seen.add(u + "," + v); cyc.push(u);
+      const l = adj[v], k = l.indexOf(u), nx = l[(k + l.length - 1) % l.length];
+      u = v; v = nx;
+    }
+    if (areaOf(cyc.map(i => nodes[i])) > 1e-6) out.push(cyc);
+  }
+  return out;
+}
+
+// ---------------- the trusses (centre lines, y up, mm) ----------------
+const TYPES = ["plank", "warren", "pratt", "howe", "k", "bowstring"], BOARD = ["pratt", "howe", "warren", "k", "bowstring", "plank"];
+const NAMES = { plank: "PLANK", warren: "WARREN", pratt: "PRATT", howe: "HOWE", k: "K TRUSS", bowstring: "BOWSTRING" };
+function trussOf(type, L, h, n) {
+  const nodes = [], mem = [], add = p => (nodes.push(p), nodes.length - 1), dx = L / n, m = n / 2;
+  const bot = []; for (let i = 0; i <= n; i++) bot.push(add([i * dx, 0]));
+  for (let i = 0; i < n; i++) mem.push([bot[i], bot[i + 1]]);
+  if (type === "warren") {
+    const c0 = add([0, h]), top = []; for (let i = 0; i < n; i++) top.push(add([(i + 0.5) * dx, h]));
+    const cn = add([L, h]), chain = [c0, ...top, cn];
+    for (let i = 0; i < chain.length - 1; i++) mem.push([chain[i], chain[i + 1]]);
+    mem.push([bot[0], c0], [bot[n], cn]);
+    for (let i = 0; i < n; i++) mem.push([bot[i], top[i]], [top[i], bot[i + 1]]);
+  } else if (type === "k") {
+    const U = [], M = [];
+    for (let i = 0; i <= n; i++) U.push(add([i * dx, h]));
+    for (let i = 1; i < n; i++) M.push(add([i * dx, h / 2]));
+    const mid = i => M[i - 1];
+    for (let i = 0; i < n; i++) mem.push([U[i], U[i + 1]]);
+    mem.push([bot[0], U[0]], [bot[n], U[n]]);
+    for (let i = 1; i < n; i++) mem.push([bot[i], mid(i)], [mid(i), U[i]]);
+    for (let i = 0; i < n; i++) { const j = i < m ? i + 1 : i, k = i < m ? i : i + 1; mem.push([mid(j), U[k]], [mid(j), bot[k]]); }
+  } else {
+    const U = [], ye = 0.4 * h;
+    for (let i = 0; i <= n; i++) U.push(add([i * dx, type === "bowstring" ? ye + (h - ye) * (1 - pow(2 * i / n - 1, 2)) : h]));
+    for (let i = 0; i < n; i++) mem.push([U[i], U[i + 1]]);
+    for (let i = 0; i <= n; i++) mem.push([bot[i], U[i]]);
+    for (let i = 0; i < n; i++) {
+      if (type === "howe") mem.push(i < m ? [bot[i], U[i + 1]] : [bot[i + 1], U[i]]);
+      else mem.push(i < m ? [U[i], bot[i + 1]] : [U[i + 1], bot[i]]);
+    }
+  }
+  const topSet = new Set(nodes.map((p, i) => i).filter(i => !bot.includes(i) && !(type === "k" && abs(nodes[i][1] - h / 2) < 1e-9)));
+  return { nodes, mem, bot, mid: bot[m], topSet };
+}
+// Pin-jointed 2D statics: pin at the left foot, roller at the right. loads = [[node, fy]], EA in N.
+function solveTruss(T, EA, loads) {
+  const nn = T.nodes.length, nd = nn * 2, K = Array.from({ length: nd }, () => new Float64Array(nd));
+  for (const [a, b] of T.mem) {
+    const dx = T.nodes[b][0] - T.nodes[a][0], dy = T.nodes[b][1] - T.nodes[a][1], len = hypot(dx, dy), c = dx / len, s = dy / len, k = EA / len;
+    const id = [2 * a, 2 * a + 1, 2 * b, 2 * b + 1], g = [[c * c, c * s], [c * s, s * s]];
+    for (let r = 0; r < 4; r++) for (let q = 0; q < 4; q++) K[id[r]][id[q]] += k * g[r & 1][q & 1] * ((r >> 1) === (q >> 1) ? 1 : -1);
+  }
+  const fixed = new Set([0, 1, 2 * T.bot[T.bot.length - 1] + 1]), free = []; for (let i = 0; i < nd; i++) if (!fixed.has(i)) free.push(i);
+  const nf = free.length, A = free.map(r => free.map(c => K[r][c])), F = new Float64Array(nf);
+  for (const [node, fy] of loads) { const i = free.indexOf(2 * node + 1); if (i >= 0) F[i] += fy; }
+  const scale = EA / 10; let mech = false;
+  for (let c = 0; c < nf; c++) {
+    let p = c; for (let r = c + 1; r < nf; r++) if (abs(A[r][c]) > abs(A[p][c])) p = r;
+    if (abs(A[p][c]) < scale * 1e-9) { mech = true; break; }
+    [A[c], A[p]] = [A[p], A[c]]; [F[c], F[p]] = [F[p], F[c]];
+    for (let r = c + 1; r < nf; r++) { const f = A[r][c] / A[c][c]; if (!f) continue; for (let q = c; q < nf; q++) A[r][q] -= f * A[c][q]; F[r] -= f * F[c]; }
+  }
+  const u = new Float64Array(nd);
+  if (!mech) { const x = new Float64Array(nf); for (let r = nf - 1; r >= 0; r--) { let s = F[r]; for (let q = r + 1; q < nf; q++) s -= A[r][q] * x[q]; x[r] = s / A[r][r]; } free.forEach((d, i) => { u[d] = x[i]; }); }
+  const f = T.mem.map(([a, b]) => { const dx = T.nodes[b][0] - T.nodes[a][0], dy = T.nodes[b][1] - T.nodes[a][1], len = hypot(dx, dy); return EA / len * ((u[2 * b] - u[2 * a]) * dx / len + (u[2 * b + 1] - u[2 * a + 1]) * dy / len); });
+  return { f, u, mech };
+}
+
+// ---------------- what a bridge can hold ----------------
+function analyse(type, o) {
+  const L = o.span, h = L * o.hratio, t = o.thick, w = o.mw, E = o.young, D = o.deck, test = o.test * GRAM;
+  if (type === "plank") {
+    const Z = D * t * t / 6, I = D * t ** 3 / 12, capN = 8 * SIGMA_T * Z / L, shape = u => (u - 2 * u ** 3 + u ** 4) / 0.3125;
+    const sag = 5 * test * L ** 3 / (384 * E * I);
+    return { type, ok: true, capN, capG: capN / GRAM, sag, gov: null, govWhat: "the card itself bends flat", shape };
+  }
+  const T = trussOf(type, L, h, o.panels), n = o.panels, EA = E * t * w;
+  const loads = T.bot.map((id, i) => [id, -0.5 / n * (i === 0 || i === n ? 0.5 : 1)]);
+  const S = solveTruss(T, EA, loads);
+  if (S.mech) return { type, ok: false, T, capN: 0, capG: 0, sag: 0, gov: null, govWhat: "a mechanism: it folds up" };
+  const Iw = w * t ** 3 / 12;
+  let best = INF, gov = -1, kind = "";
+  T.mem.forEach(([a, b], i) => {
+    const len = hypot(T.nodes[b][0] - T.nodes[a][0], T.nodes[b][1] - T.nodes[a][1]), F = abs(S.f[i]);
+    if (F < 1e-12) return;
+    const chord = T.topSet.has(a) && T.topSet.has(b);
+    // a chord the deck holds sideways buckles between its own joints; one left free buckles over the whole span
+    const Leff = chord && o.brace === "free" ? L : chord && o.brace === "ties" ? L / 2 : len;
+    const cap = S.f[i] < 0 ? min(KNOCK * PI * PI * E * Iw / Leff ** 2, SIGMA_C * t * w) : JOINT * SIGMA_T * t * w;
+    if (cap / F < best) { best = cap / F; gov = i; kind = S.f[i] < 0 ? "comp" : "tens"; }
+  });
+  const sag = -S.u[2 * T.mid + 1] * test;
+  const sagShape = T.bot.map(id => -S.u[2 * id + 1]);
+  return { type, ok: true, T, S, capN: best, capG: best / GRAM, sag, gov, kind, sagShape, govWhat: kind === "comp" ? "a strut buckles" : "a joint tears" };
+}
+
+// ---------------- one bridge, cut and drawn ----------------
+const fmtG = g => g >= 100 ? String(round(g)) : g >= 10 ? g.toFixed(0) : g.toFixed(1);
+const fmtMm = v => v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v >= 0.01 ? v.toFixed(2) : v.toPrecision(2);
+function cellOf(type, A, o, rank, total, Xfix) {
+  const L = o.span, h = L * o.hratio, w = o.mw, D = o.deck, relief = o.relief, fw = D / 2 + 1.5;
+  const HH = 10, Hp = type === "plank" ? 0 : h + w, Wp = L + w, Wn = Wp + (type === "plank" ? 0 : 2 * fw), Hn = HH + (type === "plank" ? D : 2 * Hp + D);
+  const Ly = { line: [], shade: [], tens: [], comp: [], score: [], cut: [] }, info = { voids: 0, dropped: 0, minVoid: INF, faces: 0, expect: 0 };
+  const x0 = type === "plank" ? 0 : fw, ya = HH, yd = HH + Hp, yb = HH + Hp + D;
+  const push = (k, q, cl = false) => Ly[k].push([q, cl]);
+  // label
+  const name = `${rank > 0 ? rank + ". " : ""}${NAMES[type]}`, line2 = A.ok ? `HOLDS ${fmtG(A.capG)} G - SAGS ${fmtMm(A.sag)} MM AT ${o.test} G` : "A MECHANISM - IT FOLDS UP";
+  for (const q of text(name + (rank > 0 && rank === total ? " - FLIMSIEST" : ""), Wn / 2, 3.2, 3.6)) push("line", q);
+  for (const q of text(line2, Wn / 2, 8, 2.2)) push("shade", q);
+  // the net outline: panel, deck, panel, with a glue flap on each end of each panel
+  const he = px => { if (type !== "bowstring") return Hp; const x = clamp(px - w / 2, 0, L), ye = 0.4 * h; return ye + (h - ye) * (1 - (2 * x / L - 1) ** 2) + w; };
+  const prof = Array.from({ length: 25 }, (_, i) => [Wp * i / 24, he(Wp * i / 24)]);
+  const outline = type === "plank" ? [[0, HH], [Wp, HH], [Wp, HH + D], [0, HH + D]]
+    : [[0, yd - he(0)], [x0, yd - he(0)], ...prof.map(([px, hh]) => [x0 + px, yd - hh]), [x0 + Wp, yd - he(Wp)], [Wn, yd - he(Wp)], [Wn, yd], [x0 + Wp, yd], [x0 + Wp, yb], [Wn, yb], [Wn, yb + he(Wp)], [x0 + Wp, yb + he(Wp)],
+      ...prof.slice().reverse().map(([px, hh]) => [x0 + px, yb + hh]), [x0, yb + he(0)], [0, yb + he(0)], [0, yb], [x0, yb], [x0, yd], [0, yd]];
+  push("cut", relieve(outline.filter((p, i, a) => { const q = a[(i + a.length - 1) % a.length], r = a[(i + 1) % a.length]; return abs((p[0] - q[0]) * (r[1] - p[1]) - (p[1] - q[1]) * (r[0] - p[0])) > 1e-6; }), relief), true);
+  if (type !== "plank") {
+    // folds: the two long edges of the deck, and the vertical edge each flap turns on
+    const folds = [[[x0, yd], [x0 + Wp, yd]], [[x0, yb], [x0 + Wp, yb]], [[x0, yd - he(0)], [x0, yd]], [[x0 + Wp, yd - he(Wp)], [x0 + Wp, yd]], [[x0, yb], [x0, yb + he(0)]], [[x0 + Wp, yb], [x0 + Wp, yb + he(Wp)]]];
+    for (const [p, q] of folds) {
+      if (o.fold === "perf") for (const d of dashRuns([p, q], 2.4, 1.2)) push("cut", d);
+      else push("score", [p, q]);
+    }
+    // the panel itself: voids and member ink
+    const A_ = A.T;
+    const toNet = (pt, up) => up ? [x0 + pt[0] + w / 2, yd - (pt[1] + w / 2)] : [x0 + pt[0] + w / 2, yd + D + (pt[1] + w / 2)];
+    const fcs = facesOf(A_.nodes, A_.mem);
+    info.faces = fcs.length; info.expect = A_.mem.length - A_.nodes.length + 1;
+    for (const cyc of fcs) {
+      const P = cyc.map(i => A_.nodes[i]), I = insetPoly(P, w / 2);
+      const r = I ? 2 * areaOf(I) / perimOf(I) : 0;
+      if (!I || r < MIN_VOID / 2) { info.dropped++; continue; }
+      info.voids++; info.minVoid = min(info.minVoid, 2 * r);
+      const R = relieve(I, relief);
+      push("cut", R.map(p => toNet(p, true)), true); push("cut", R.map(p => toNet(p, false)), true);
+    }
+    // ink: lines along every member, more of them the harder the member works
+    const fmax = max(...A.S.f.map(abs), 1e-12), half = max(0, w / 2 - 0.7);
+    A_.mem.forEach(([a, b], i) => {
+      const pa = A_.nodes[a], pb = A_.nodes[b], len = hypot(pb[0] - pa[0], pb[1] - pa[1]), u = [(pb[0] - pa[0]) / len, (pb[1] - pa[1]) / len], nrm = [-u[1], u[0]];
+      const f = A.S.f[i], util = abs(f) / fmax, k = util < 0.02 ? 0 : util < 0.25 ? 1 : util < 0.5 ? 2 : util < 0.8 ? 3 : 4;
+      const tr = min(w * 0.45, len * 0.25), isGov = i === A.gov;
+      const spread = min(2 * half, (k - 1) * o.hp), offs = k <= 1 ? [0] : Array.from({ length: k }, (_, j) => -spread / 2 + spread * j / (k - 1));
+      const pen = f < 0 ? "comp" : "tens";
+      for (const off of (k === 0 ? [0] : offs)) {
+        const line = [];
+        const steps = isGov && A.kind === "comp" ? 14 : 1;
+        for (let s = 0; s <= steps; s++) {
+          const tt = s / steps, dd = tr + (len - 2 * tr) * tt, bow = isGov && A.kind === "comp" ? 0.9 * sin(PI * tt) : 0;
+          line.push([pa[0] + u[0] * dd + nrm[0] * (off + bow), pa[1] + u[1] * dd + nrm[1] * (off + bow)]);
+        }
+        const runs = f < 0 && !(isGov && A.kind === "comp") ? dashRuns(line, 2.4, 1.1) : [line];
+        for (const r of runs) { const key = k === 0 ? "shade" : pen; for (const side of [true, false]) push(key, r.map(p => toNet(p, side))); }
+      }
+      if (isGov && A.kind === "tens") {
+        const mp = [(pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2], s = w * 0.7;
+        for (const side of [true, false]) { push("line", [toNet([mp[0] - s, mp[1] - s], side), toNet([mp[0] + s, mp[1] + s], side)]); push("line", [toNet([mp[0] - s, mp[1] + s], side), toNet([mp[0] + s, mp[1] - s], side)]); }
+      }
+    });
+  }
+  // the deck draws the sag: straight line is the bridge unloaded, the curve is the bridge at the test load
+  const dy0 = type === "plank" ? HH : yd, dh = D, dw = Wp, xs = type === "plank" ? 0 : x0, yc = dy0 + dh / 2;
+  const sagMax = A.ok ? A.sag : 0, X = Xfix || (sagMax > 1e-9 ? clamp(0.36 * dh / sagMax, 1, 500) : 1);
+  const pts = [];
+  for (let i = 0; i <= 40; i++) {
+    const u = i / 40;
+    let s;
+    if (type === "plank") s = A.shape(u) * sagMax;
+    else if (A.ok) { const nn = A.sagShape.length - 1, p = u * nn, j = min(nn - 1, floor(p)); s = lerp(A.sagShape[j], A.sagShape[j + 1], p - j) * o.test * GRAM; }
+    else s = 0;
+    pts.push([xs + w / 2 + u * L, yc - 0.0 + s * X - sagMax * X / 2]);
+  }
+  const base = [[xs + w / 2, yc - sagMax * X / 2], [xs + w / 2 + L, yc - sagMax * X / 2]];
+  for (const d of dashRuns(base, 1.6, 1.6)) push("shade", d);
+  push("line", pts);
+  for (const xx of [xs + w / 2, xs + w / 2 + L]) push("line", [[xx, yc - sagMax * X / 2 - 1.6], [xx, yc - sagMax * X / 2 + 1.6]]);
+  if (type === "plank") { for (const q of text("NO TRUSS - THE SAME CARD", Wn / 2, HH + D + 5, 2.2)) push("shade", q); for (const q of text("LAID FLAT ACROSS THE GAP", Wn / 2, HH + D + 9.2, 2.2)) push("shade", q); }
+  const lbl = text(`SAG X${X >= 10 ? X.toFixed(0) : X.toFixed(1)}`, xs + Wp / 2, dy0 + dh - 1.9, 1.7);
+  if (dh >= 10) for (const q of lbl) push("shade", q);
+  return { Wn, Hn, Ly, info, X };
+}
+
+// ---------------- the board ----------------
+function placeLayers(dst, src, ox, oy) { for (const k of Object.keys(src)) for (const [q, cl] of src[k]) dst[k].push([q.map(p => [p[0] + ox, p[1] + oy]), cl]); }
+function buildBridges(o, PW, PH, mg) {
+  const Ly = { line: [], shade: [], tens: [], comp: [], score: [], cut: [] }, gates = [], notes = [];
+  const types = o.show === "single" ? [o.bridge] : BOARD, every = BOARD.map(t => analyse(t, o));
+  const A = types.map(t => every.find(a => a.type === t)), order = every.filter(a => a.ok).sort((p, q) => q.capG - p.capG);
+  const rankOf = t => { const i = order.findIndex(a => a.type === t); return i < 0 ? order.length + 1 : i + 1; };
+  const worst = max(...A.map(a => a.ok ? a.sag : 0), 1e-12), Xall = o.show === "single" ? 0 : clamp(0.36 * o.deck / worst, 1, 500);   // one scale on the board so the sags compare
+  const cells = A.map(a => cellOf(a.type, a, o, rankOf(a.type), o.show === "single" ? 0 : order.length, Xall));
+  const gap = 4, titleH = o.show === "single" ? 0 : 15, footH = 5;
+  const availW = PW - 2 * mg, availH = PH - 2 * mg - titleH - footH;
+  let best = null;
+  for (let cols = 1; cols <= cells.length; cols++) {
+    const rows = ceil(cells.length / cols), colW = Array.from({ length: cols }, (_, c) => max(0, ...cells.filter((_, i) => i % cols === c).map(q => q.Wn)));
+    const rowH = Array.from({ length: rows }, (_, r) => max(0, ...cells.filter((_, i) => floor(i / cols) === r).map(q => q.Hn)));
+    const W = colW.reduce((a, b) => a + b, 0) + gap * (cols - 1), H = rowH.reduce((a, b) => a + b, 0) + gap * (rows - 1);
+    const over = max(W - availW, 0) + max(H - availH, 0);
+    if (!best || over < best.over) best = { cols, rows, colW, rowH, W, H, over, fit: over === 0 };
+    if (over === 0) break;
+  }
+  const { cols, colW, rowH, W, H } = best;
+  const ox0 = (PW - W) / 2, oy0 = mg + titleH + max(0, (availH - H) / 2);
+  cells.forEach((cell, i) => {
+    const r = floor(i / cols), c = i % cols;
+    const cx = ox0 + colW.slice(0, c).reduce((a, b) => a + b + gap, 0) + (colW[c] - cell.Wn) / 2, cy = oy0 + rowH.slice(0, r).reduce((a, b) => a + b + gap, 0);
+    placeLayers(Ly, cell.Ly, cx, cy);
+  });
+  if (o.show !== "single") {
+    for (const q of text("FLIMSY", PW / 2, mg + 4.2, 7)) Ly.line.push([q, false]);
+    for (const q of text(`SIX WAYS ACROSS ${o.span} MM - EACH ONE SHEET OF ${o.thick} MM CARD`, PW / 2, mg + 11.5, 2.4)) Ly.shade.push([q, false]);
+  }
+  for (const q of text(`SOLID LINES PULL - DASHED LINES PUSH - CARD E ${o.young} MPA - JOINTS ${round(JOINT * 100)} PCT - LOAD SPREAD ALONG THE DECK`, PW / 2, PH - mg - 1.2, 1.8)) Ly.shade.push([q, false]);
+  // gates
+  gates.push(["every truss can carry load (no mechanism)", A.every(a => a.ok), A.filter(a => !a.ok).map(a => a.type).join(", ") || "all stable"]);
+  const fe = cells.every((c, i) => A[i].type === "plank" || c.info.faces === c.info.expect);
+  gates.push(["every enclosed face found (Euler count)", fe, cells.map((c, i) => A[i].type === "plank" ? "-" : `${c.info.faces}/${c.info.expect}`).join(" ")]);
+  const drop = cells.reduce((s, c) => s + c.info.dropped, 0), mv = min(...cells.map(c => c.info.minVoid));
+  gates.push(["no hole under " + MIN_VOID + " mm for the blade", drop === 0, drop ? `${drop} too small, left solid` : `smallest ${isFinite(mv) ? mv.toFixed(1) : "-"} mm`]);
+  gates.push(["the net fits the page", best.fit, `${W.toFixed(0)} x ${H.toFixed(0)} in ${availW} x ${availH.toFixed(0)}`]);
+  if (o.show === "single") {
+    order.forEach((a, i) => { for (const q of text(`${i + 1}. ${NAMES[a.type]} HOLDS ${fmtG(a.capG)} G${a.type === o.bridge ? " - THIS ONE" : ""}`, PW / 2, oy0 + H + 12 + i * 5, 2.8)) Ly.shade.push([q, false]); });
+    for (const q of text(`ALL SIX AT ${o.span} MM ACROSS - THE SAME CARD EACH`, PW / 2, oy0 + H + 6, 2.6)) Ly.line.push([q, false]);
+  }
+  const table = every.map(a => ({ type: a.type, name: NAMES[a.type], capG: a.capG, sag: a.sag, why: a.govWhat, rank: rankOf(a.type), ok: a.ok }));
+  return { Ly, gates, notes, table };
+}
+
+// ---------------- the Tacoma plate ----------------
+function buildTacoma(o, PW, PH, mg) {
+  const Ly = { line: [], shade: [], tens: [], comp: [], score: [], cut: [] }, gates = [], notes = [];
+  const U = { x0: mg, y0: mg, x1: PW - mg, y1: PH - mg }, N = o.rows, push = (k, q, cl = false) => Ly[k].push([q, cl]);
+  for (const q of text("TACOMA NARROWS", PW / 2, U.y0 + 3.5, 6)) push("line", q);
+  for (const q of text("7 NOV 1940 - A DECK 2.4 M DEEP ON AN 853 M SPAN - 1 TO 350", PW / 2, U.y0 + 10.2, 2.1)) push("shade", q);
+  const top = U.y0 + 16, bottom = U.y1 - (o.water === "on" ? 12 : 5), rp = (bottom - top) / N;
+  const xa = U.x0 + 26, xb = U.x1 - 8, span = xb - xa, wv = o.waves, finalRow = o.collapse >= 1 ? N - 1 : -1, tearRow = o.collapse >= 2 ? N - 2 : -1;
+  const ampOf = f => { const g = o.growth; return (0.03 + 0.42 * (Math.exp(g * f) - 1) / (Math.exp(g) - 1)) * rp; };
+  let maxAmp = 0;
+  for (let i = 0; i < N; i++) {
+    const f = N === 1 ? 1 : i / (N - 1), yc = top + rp * (i + 1) - rp * 0.2, th = rp * 0.58, hd = rp * 0.04, A = ampOf(f), tt = yc - th;
+    maxAmp = max(maxAmp, A);
+    const mins = round(60 * f), stamp = i === finalRow ? "11.02" : `10.${String(mins).padStart(2, "0")}`.replace("10.60", "11.00");
+    for (const q of text(stamp, U.x0 + 5.2, yc, 2.2)) push("shade", q);
+    const phi = u => sin(PI * (wv + 1) * u);
+    const edge = (u, sgn) => {
+      let y = yc + sgn * (hd + A * phi(u));
+      if (i === finalRow) return null;
+      if (i === tearRow && u > 0.5) y += rp * 0.2 * clamp((u - 0.5) / 0.08, 0, 1);
+      return y;
+    };
+    // towers and side spans
+    for (const xt of [xa, xb]) {
+      for (const dx of [-0.9, 0.9]) push("line", [[xt + dx, yc + hd + 0.5], [xt + dx, tt]]);
+      push("line", [[xt - 0.9, tt], [xt + 0.9, tt]]); push("line", [[xt - 0.9, tt + th * 0.5], [xt + 0.9, tt + th * 0.5]]);
+    }
+    const ax = xa - 14, bx = xb + 4;
+    for (const s of [-1, 1]) {
+      push("line", [[ax, yc + s * hd], [xa, yc + s * hd]]);
+      push("line", [[xb, yc + s * hd], [bx, yc + s * hd]]);
+    }
+    // the main span's deck
+    const drawEdge = (sgn) => {
+      const pieces = []; let cur = [];
+      for (let k = 0; k <= 80; k++) {
+        const u = k / 80, x = xa + span * u;
+        let y;
+        if (i === finalRow) {
+          if (u > 0.22 && u < 0.78) { if (cur.length > 1) pieces.push(cur); cur = []; continue; }
+          y = u <= 0.22 ? yc + sgn * hd + (u) * span * 0.32 : yc + sgn * hd + (1 - u) * span * 0.32;
+        } else {
+          y = edge(u, sgn);
+          if (i === tearRow && abs(u - 0.5) < 0.04) { if (cur.length > 1) pieces.push(cur); cur = []; continue; }
+        }
+        cur.push([x, y]);
+      }
+      if (cur.length > 1) pieces.push(cur);
+      for (const p of pieces) push("line", p);
+    };
+    drawEdge(1); drawEdge(-1);
+    // cables and suspenders
+    if (o.cables === "on") {
+      const sagC = th * 0.78;
+      const cab = []; for (let k = 0; k <= 60; k++) { const u = k / 60; cab.push([xa + span * u, tt + sagC * (1 - 4 * (u - 0.5) ** 2)]); }
+      push("line", cab);
+      push("line", [[ax, yc - 0.1 * rp], [xa, tt]]); push("line", [[xb, tt], [bx, yc - 0.1 * rp]]);
+      const sp = 6.2;
+      for (let x = xa + sp; x < xb - 1; x += sp) {
+        const u = (x - xa) / span, yCab = tt + sagC * (1 - 4 * (u - 0.5) ** 2);
+        let yDeck;
+        if (i === finalRow) yDeck = u > 0.22 && u < 0.78 ? yCab + rp * (0.1 + 0.07 * ((round(x) % 3))) : (u <= 0.22 ? yc - hd + u * span * 0.32 : yc - hd + (1 - u) * span * 0.32);
+        else if (i === tearRow && abs(u - 0.5) < 0.04) yDeck = yCab + rp * 0.12;
+        else yDeck = edge(u, -1);
+        push("shade", [[x, yCab], [x, yDeck]]);
+      }
+    }
+    // the last row: the piece that fell, and the motion lines above it
+    if (i === finalRow) {
+      const cx = xa + span * 0.5, cyp = yc + rp * 0.22, ang = -0.3, L2 = span * 0.1, hw = hd * 1.6;
+      const R = (px, py) => [cx + px * cos(ang) - py * sin(ang), cyp + px * sin(ang) + py * cos(ang)];
+      push("line", [R(-L2, -hw), R(L2, -hw)]); push("line", [R(-L2, hw), R(L2, hw)]); push("line", [R(-L2, -hw), R(-L2, hw)]); push("line", [R(L2, -hw), R(L2, hw)]);
+      for (const dx of [-0.6, 0, 0.6]) push("shade", [[cx + dx * L2, cyp - rp * 0.5 - abs(dx) * 3], [cx + dx * L2 * 0.9, cyp - rp * 0.26]]);
+    }
+  }
+  if (o.water === "on") {
+    for (let k = 0; k < 3; k++) {
+      const y = U.y1 - 6 + k * 2.6, wl = 8 + k * 2, pts = [];
+      for (let x = U.x0; x <= U.x1; x += 0.8) pts.push([x, y + 0.7 * sin((x - U.x0) / wl * TAU + k * 1.7)]);
+      push("shade", pts);
+    }
+  }
+  let bb = [INF, INF, -INF, -INF], fin = true;
+  for (const k of ["line", "shade"]) for (const [q] of Ly[k]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) fin = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+  gates.push(["every coordinate is a number", fin, fin ? "yes" : "no"]);
+  gates.push(["twist stays inside its own row", maxAmp + rp * 0.04 <= rp * 0.5, `${(maxAmp + rp * 0.04).toFixed(1)} mm of ${(rp * 0.5).toFixed(1)}`]);
+  gates.push(["fits inside the margins", bb[0] >= mg - 0.01 && bb[1] >= mg - 0.01 && bb[2] <= PW - mg + 0.01 && bb[3] <= PH - mg + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm`]);
+  return { Ly, gates, notes, table: [] };
+}
+
+function build(o) {
+  const t0 = performance.now(), [PW, PH] = o.page.split("x").map(Number), mg = o.margin;
+  const R = o.show === "tacoma" ? buildTacoma(o, PW, PH, mg) : buildBridges(o, PW, PH, mg);
+  if (o.show !== "tacoma") {
+    let bb = [INF, INF, -INF, -INF], fin = true;
+    for (const k of Object.keys(R.Ly)) for (const [q] of R.Ly[k]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) fin = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+    R.gates.push(["every coordinate is a number", fin, fin ? "yes" : "no"]);
+    R.gates.push(["fits inside the margins", bb[0] >= mg - 0.01 && bb[1] >= mg - 0.01 && bb[2] <= PW - mg + 0.01 && bb[3] <= PH - mg + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`]);
+    R.Ly.cut.push([[[TRIM_INSET, TRIM_INSET], [PW - TRIM_INSET, TRIM_INSET], [PW - TRIM_INSET, PH - TRIM_INSET], [TRIM_INSET, PH - TRIM_INSET]], true]);
+  }
+  return { o, W: PW, H: PH, layers: R.Ly, ...R.Ly, gates: R.gates, notes: R.notes, table: R.table, ms: performance.now() - t0 };
+}
+
+// ---------------- preview and export ----------------
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W;
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  const col = { shade: "#3a3a3a", tens: "#" + r.o.c1col, comp: "#" + r.o.c2col, line: "#141414" };
+  const path = (q, cl) => { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); };
+  for (const key of ["shade", "tens", "comp", "line"]) { c.strokeStyle = col[key]; c.lineWidth = PEN[key]; for (const [q, cl] of r.layers[key]) path(q, cl); }
+  c.setLineDash([1.6, 1.1]); c.lineWidth = 0.25; c.strokeStyle = "#2a7fd4"; for (const [q, cl] of r.layers.score) path(q, cl);
+  c.strokeStyle = "#d0271c"; for (const [q, cl] of r.layers.cut) path(q, cl); c.setLineDash([]);
+  const lenm = L => L.reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000;
+  const rows = r.table.length ? "<br>" + r.table.slice().sort((a, b) => a.rank - b.rank).map(t => `${t.rank}. <b>${t.name}</b> holds ${t.ok ? fmtG(t.capG) + " g" : "nothing"}, sags ${fmtMm(t.sag)} mm at ${r.o.test} g - ${t.why}`).join("<br>") : "";
+  $("stats").innerHTML = `<b>${r.o.show}</b> · ${r.ms.toFixed(0)} ms<br>`
+    + ["line", "shade", "tens", "comp"].filter(k => r.layers[k].length).map(k => `${k}: <b>${lenm(r.layers[k]).toFixed(1)} m</b>`).join(" · ")
+    + (r.layers.cut.length > 1 ? ` · cut: <b>${lenm(r.layers.cut.slice(0, -1)).toFixed(2)} m</b>` : "") + "<br>"
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>") + rows;
+}
+const penLayers = r => [
+  { name: "tens", colour: r.o.c1col, w: PEN.tens, paths: r.layers.tens }, { name: "comp", colour: r.o.c2col, w: PEN.comp, paths: r.layers.comp },
+  { name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line },
+  { name: "score", colour: "2a7fd4", w: 0.2, paths: r.layers.score, score: true }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length && !(L.cut && L.paths.length < 2));
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : L.score ? "score" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG flimsy bridge studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["show", "bridge", "span", "hratio", "panels", "deck", "mw", "thick", "young", "brace", "test", "hp", "fold", "relief", "c1col", "c2col", "rows", "growth", "waves", "collapse", "cables", "water", "page", "margin"];
+const NUM = new Set(["span", "hratio", "panels", "deck", "mw", "thick", "young", "test", "hp", "relief", "rows", "growth", "waves", "collapse", "margin"]);
+const read = () => Object.fromEntries(IDS.map(k => [k, NUM.has(k) ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["c1col", "c2col"]);
+function run(k) { sync(); if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 40); }
+
+const BASE = { show: "board", bridge: "pratt", span: 100, hratio: 0.22, panels: 6, deck: 14, mw: 4.5, thick: 0.9, young: 2500, brace: "held", test: 20, hp: 0.8, fold: "score", relief: 0.8, c1col: "1f8a4c", c2col: "b8860b", rows: 10, growth: 2.6, waves: 1, collapse: 2, cables: "on", water: "on", page: "280x280", margin: 8 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  board: P({}),
+  pratt: P({ show: "single", bridge: "pratt", span: 140, page: "190x250", panels: 8 }),
+  howe: P({ show: "single", bridge: "howe", span: 140, page: "190x250", panels: 8 }),
+  bow: P({ show: "single", bridge: "bowstring", span: 140, page: "190x250", panels: 8, hratio: 0.26 }),
+  tacoma: P({ show: "tacoma", page: "190x250" }),
+  tacoma12: P({ show: "tacoma", page: "250x190", rows: 7, waves: 2, collapse: 1 }),
+};
+const setAll = p => { for (const [k, v] of Object.entries(p)) if ($(k)) $(k).value = v; };
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setAll(PRESETS[b.dataset.preset]); run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text_, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text_], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => r.o.show === "tacoma" ? `flimsy-tacoma-r${r.o.rows}` : `flimsy-${r.o.show === "single" ? r.o.bridge : "board"}-${r.o.span}mm`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, analyse, trussOf, solveTruss };
+setAll(PRESETS.board);
+run();
+
+</script>
+</body>
+</html>
