@@ -31,5 +31,5 @@ Line 0.4 (the source, flies), shade 0.3 (hatching, fly trails), smell 0.4 in a c
 ## On the site
 
 - Catalogue `stink` on the Inktober 2026 shelf (axes system 3, material 1), five specimens baked to `site/art/stink-*` from the presets corpse, lifecycle, wheel, sock and stilton; they join the plotter hero pool. Thirteen presets in all.
-- Ink room day 8: `prints/inktober-08-stinky.png`, the corpse flower preset, hung as a labelled studio render (`render: true`) until the real sheet is photographed.
+- Ink room day 8: `prints/inktober-08-stinky.jpg`, the real sheet, photographed and cropped to the paper (hung since 2026-10-09).
 - `inktober-world-test.mjs` now checks the today/past/ahead labels on blank days, so it holds however much of the month is inked.

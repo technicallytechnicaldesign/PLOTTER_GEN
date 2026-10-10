@@ -25,4 +25,4 @@ Inktober day 9, prompt "ram". Two studios.
 ## On the site
 
 - Catalogue `ram` and `bram` on the Inktober 2026 shelf, five and four baked specimens, all in the plotter hero pool.
-- Ink room day 9: `prints/inktober-09-ram.png`, the old ram on a shield, hung as a labelled studio render until the real sheet is photographed. In front of it the battering ram stands on a plinth and turns: `prints/models/inktober-09-battering-ram.json`, built by `gallery-gl.js` (new: a hall day with `model` and `box` keeps its frame and gets a plinth; each face is a three.js shape with its holes, its ink drawn as its texture).
+- Ink room day 9: `prints/inktober-09-ram.jpg`, the real cut-out ram skull on pink paper, photographed and cropped (hung since 2026-10-09). In front of it the battering ram stands on a plinth and turns: `prints/models/inktober-09-battering-ram.json`, built by `gallery-gl.js` (new: a hall day with `model` and `box` keeps its frame and gets a plinth; each face is a three.js shape with its holes, its ink drawn as its texture).

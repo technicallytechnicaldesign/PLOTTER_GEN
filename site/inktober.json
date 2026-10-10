@@ -146,13 +146,12 @@
       "day": 8,
       "date": "2026-10-08",
       "prompt": "stinky",
-      "photo": "prints/inktober-08-stinky.png",
-      "render": true,
+      "photo": "prints/inktober-08-stinky.jpg",
       "studio": "../stink-plume-studio.html",
-      "description": "Thursday 8 October 2026, prompt \"stinky\". Not plotted yet: the Stink plume studio's own render of the corpse flower, the plant that smells of rotting meat, its smell rising in streamlines that go to swirls and dashes, flies looping through it. The real sheet goes in when it is inked.",
+      "description": "Thursday 8 October 2026, prompt \"stinky\". Black ink on pink paper: the corpse flower in four stages, the plant that smells of rotting meat, its smell rising in streamlines that go to swirls and dashes, flies looping through it. Drawn by the Stink plume studio.",
       "frame": {
         "width": 190,
-        "height": 250
+        "height": 243
       },
       "content": {
         "nsfw": false,
@@ -165,10 +164,9 @@
       "day": 9,
       "date": "2026-10-09",
       "prompt": "ram",
-      "photo": "prints/inktober-09-ram.png",
-      "render": true,
+      "photo": "prints/inktober-09-ram.jpg",
       "studio": "../ram-skull-studio.html",
-      "description": "Friday 9 October 2026, prompt \"ram\". Not plotted yet: the Ram skull studio’s own render of an eight-year-old ram on a shield, its horn grown along a log spiral with a ring for each year. On the plinth in front, the Battering ram studio’s siege ram as it folds up, its own faces and ink: wheels and horns on split pins, a ram’s skull over the door. Photographs of the real ones go in when they are made.",
+      "description": "Friday 9 October 2026, prompt \"ram\". Black ink on pink paper, cut out to the skull: the ram's horns grown along a log spiral with a ring for each year, circuit lines running through bone. Drawn by the Ram skull studio. On the plinth in front, the Battering ram studio's siege ram as it folds up.",
       "model": "prints/models/inktober-09-battering-ram.json",
       "box": {
         "width": 156,
