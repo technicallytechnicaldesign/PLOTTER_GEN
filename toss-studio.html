@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toss studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Toss studio</h1>
+  <p class="sub">A multiple exposure of something thrown: the same coin, die or graduation cap caught at several moments along its arc, spinning as it goes, with a dashed trail, shadows on the ground and the last one landed. Day 12 of Inktober, "toss".</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="coin">Coin flip</button><button data-preset="dice">Dice roll</button><button data-preset="cap">Cap toss</button></div>
+    <div class="row"><button data-preset="change">Pocket change</button><button data-preset="handful">Handful of dice</button><button data-preset="graduation">Graduation</button></div>
+  </fieldset>
+  <fieldset><legend>The throw</legend>
+    <label>Thing thrown <select id="object"><option value="coin">coin</option><option value="dice">die</option><option value="cap">graduation cap</option><option value="mix">a mix</option></select></label>
+    <label>Throws <output id="o-throws"></output><input type="range" id="throws" min="1" max="6" step="1" value="1"></label>
+    <label>Moments caught per throw <output id="o-frames"></output><input type="range" id="frames" min="3" max="10" step="1" value="7"></label>
+    <label>Height of the throw <output id="o-height"></output><input type="range" id="height" min="30" max="100" step="1" value="85"></label>
+    <label>Spin (turns in the air) <output id="o-turns"></output><input type="range" id="turns" min="0" max="4" step="0.25" value="2.5"></label>
+    <label>Seen from above <output id="o-pitch"></output><input type="range" id="pitch" min="0" max="50" step="1" value="26"></label>
+    <label>Size <output id="o-size"></output><input type="range" id="size" min="50" max="130" step="1" value="100"></label>
+    <label>The last one <select id="land"><option value="lands">lands on the ground</option><option value="air">stays in the air</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="99" step="1" value="4"></label>
+  </fieldset>
+  <fieldset><legend>Look</legend>
+    <label>Detail <select id="detail"><option value="ghost">earlier moments as outlines</option><option value="full">every moment detailed</option><option value="apex">only the top of the arc and the landing</option></select></label>
+    <label>Trail <select id="trail"><option value="dashed">dashed arc</option><option value="dots">dotted arc</option><option value="none">none</option></select></label>
+    <label>Shadows <select id="shadow"><option value="on">on the ground</option><option value="off">none</option></select></label>
+    <label>Ground <select id="ground"><option value="dashes">broken line</option><option value="line">one line</option><option value="none">none</option></select></label>
+    <label>Whimsy <output id="o-whimsy"></output><input type="range" id="whimsy" min="0" max="100" step="1" value="30"></label>
+    <label>Sparkles <output id="o-sparkles"></output><input type="range" id="sparkles" min="0" max="14" step="1" value="5"></label>
+    <label>Outline <select id="weight"><option value="2">two passes (bold)</option><option value="1">one pass</option></select></label>
+    <label>Preview <select id="pview"><option value="pens">pens on paper</option><option value="flash">hatching shown solid</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="250x190">250 x 190 landscape</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen in plotting order: the thin pen first, then the black line last so it sits on top. Each file carries four corner ticks so they all land in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: each thing is a small 3D model (a disc, a cube, a board on a skull cap) turned by one rotation matrix per moment and projected flat, so the pips, the star and the reeded coin edge all foreshorten correctly. Later moments sit in front of earlier ones and cut their lines. The spin runs down to nothing at the landing, so the last one comes to rest flat.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const PEN = { line: 0.4, shade: 0.3 };   // ASSUMED widths, same pens as the other studios
+const PASS = 0.28;
+
+// ---------------- geometry helpers (mm, y down) ----------------
+const ring = (x, y, rx, ry, n = 40) => Array.from({ length: n + 1 }, (_, i) => [x + rx * cos(i / n * TAU), y + ry * sin(i / n * TAU)]);
+const polyInside = (p, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+// Cut segment a-b at every crossing of polygon P; returns [t0, t1, inside] pieces.
+function splitSeg(a, b, P) {
+  const ts = [0, 1], dx = b[0] - a[0], dy = b[1] - a[1];
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const c = P[j], d = P[i], ex = d[0] - c[0], ey = d[1] - c[1], den = dx * ey - dy * ex; if (abs(den) < 1e-12) continue;
+    const t = ((c[0] - a[0]) * ey - (c[1] - a[1]) * ex) / den, u = ((c[0] - a[0]) * dy - (c[1] - a[1]) * dx) / den;
+    if (t > 0 && t < 1 && u >= 0 && u < 1) ts.push(t);
+  }
+  ts.sort((x, y) => x - y);
+  const out = [];
+  for (let k = 0; k < ts.length - 1; k++) { if (ts[k + 1] - ts[k] < 1e-9) continue; const m = (ts[k] + ts[k + 1]) / 2; out.push([ts[k], ts[k + 1], polyInside([a[0] + dx * m, a[1] + dy * m], P)]); }
+  return out;
+}
+function clipSegs(segs, P, keepIn) { const out = []; for (const [a, b] of segs) for (const [t0, t1, ins] of splitSeg(a, b, P)) if (ins === keepIn) out.push([lerp2(a, b, t0), lerp2(a, b, t1)]); return out; }
+function below(segs, y0) {
+  const out = [];
+  for (const [a, b] of segs) {
+    if (a[1] >= y0 && b[1] >= y0) { out.push([a, b]); continue; }
+    if (a[1] < y0 && b[1] < y0) continue;
+    const t = (y0 - a[1]) / (b[1] - a[1]), m = lerp2(a, b, t);
+    out.push(a[1] >= y0 ? [a, m] : [m, b]);
+  }
+  return out;
+}
+function joinSegs(segs) { const out = []; let cur = null; for (const [a, b] of segs) { if (cur && hypot(cur[cur.length - 1][0] - a[0], cur[cur.length - 1][1] - a[1]) < 1e-6) cur.push(b); else { cur = [a, b]; out.push(cur); } } return out; }
+const segsOf = pl => pl.slice(1).map((p, i) => [pl[i], p]);
+function hatch(P, sp, ang, off = 0) {
+  let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of P) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); }
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, Lh = hypot(x1 - x0, y1 - y0) / 2 + 1, a = ang * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, out = [];
+  for (let c = -Lh + off; c <= Lh; c += sp) { const px = cx + nx * c, py = cy + ny * c; out.push([[px - dx * Lh, py - dy * Lh], [px + dx * Lh, py + dy * Lh]]); }
+  return clipSegs(out, P, true);
+}
+// A rounded rectangle, used as the clear halo round props and shelf boards.
+const roundRect = (b, g, rad) => { const x0 = b[0] - g, y0 = b[1] - g, x1 = b[2] + g, y1 = b[3] + g, r = min(rad, (x1 - x0) / 2, (y1 - y0) / 2), out = [];
+  for (const [cx, cy, a0] of [[x1 - r, y0 + r, -PI / 2], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, PI / 2], [x0 + r, y0 + r, PI]]) for (let i = 0; i <= 8; i++) { const a = a0 + PI / 2 * i / 8; out.push([cx + r * cos(a), cy + r * sin(a)]); }
+  return out; };
+const bboxOf = pts => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of pts) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+const rectPoly = b => [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+const astroid = (x, y, s) => Array.from({ length: 33 }, (_, i) => { const t = i / 32 * TAU; return [x + s * cos(t) ** 3, y + s * sin(t) ** 3]; });
+const star5 = (s, rot = -PI / 2) => Array.from({ length: 11 }, (_, i) => { const a = rot + i * PI / 5, r = i % 2 ? s * 0.42 : s; return [r * cos(a), r * sin(a)]; });
+const heartPts = s => Array.from({ length: 41 }, (_, i) => { const t = i / 40 * TAU; return [s * 16 * sin(t) ** 3 / 17, -s * (13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t)) / 17 + s * 0.05]; });
+const dropPts = s => Array.from({ length: 41 }, (_, i) => { const t = i / 40 * TAU; return [s * 0.95 * sin(t) * sin(t / 2) ** 1.5, -s * 1.15 * cos(t)]; });
+function moonPts(r) {
+  const d = r * 0.42, rb = r * 0.82, xs = (d * d + r * r - rb * rb) / (2 * d), ys = sqrt(max(0, r * r - xs * xs)), o0 = atan2(ys, xs), pts = [];
+  for (let i = 0; i <= 24; i++) { const a = o0 + (TAU - 2 * o0) * i / 24; pts.push([r * cos(a), r * sin(a)]); }
+  const f0 = atan2(-ys, xs - d) + TAU, f1 = atan2(ys, xs - d);
+  for (let i = 0; i <= 24; i++) { const a = f0 + (f1 - f0) * i / 24; pts.push([d + rb * cos(a), rb * sin(a)]); }
+  return pts;
+}
+// A leaf: a lens with a midrib, centred on x,y and pointing along ang.
+function leaf(x, y, ang, len, wid) {
+  const c = cos(ang), s = sin(ang), top = [], bot = [], n = 10;
+  for (let i = 0; i <= n; i++) { const u = (i / n - 0.5) * len, w = wid / 2 * sin(PI * i / n); top.push([x + u * c + w * s, y + u * s - w * c]); bot.push([x + u * c - w * s, y + u * s + w * c]); }
+  return { outline: top.concat(bot.reverse()), rib: [[x - len / 2 * c, y - len / 2 * s], [x + len / 2 * c, y + len / 2 * s]] };
+}
+const cubic = (a, c1, c2, b, n = 18) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, u = 1 - t; return [u * u * u * a[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * b[0], u * u * u * a[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * b[1]]; });
+const quad = (a, c, b, n = 12) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, u = 1 - t; return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]; });
+
+// ---------------- a little 3D (y up, the camera looks down -z, so +z comes toward the viewer) ----------------
+const mulV = (M, v) => [M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2], M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2], M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]];
+const mulM = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+const rotX = a => [[1, 0, 0], [0, cos(a), -sin(a)], [0, sin(a), cos(a)]];
+const rotY = a => [[cos(a), 0, sin(a)], [0, 1, 0], [-sin(a), 0, cos(a)]];
+const axisRot = (ax, a) => { const l = hypot(...ax), x = ax[0] / l, y = ax[1] / l, z = ax[2] / l, c = cos(a), s = sin(a), t = 1 - c; return [[t * x * x + c, t * x * y - s * z, t * x * z + s * y], [t * x * y + s * z, t * y * y + c, t * y * z - s * x], [t * x * z - s * y, t * y * z + s * x, t * z * z + c]]; };
+function hull(pts) {
+  const P = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const p of P) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of P.slice().reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+const LIGHT = (() => { const v = [-0.4, 0.8, 0.5], l = hypot(...v); return v.map(x => x / l); })();
+const PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]], 4: [[-1, -1], [1, -1], [-1, 1], [1, 1]], 5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], 6: [[-1, -1], [-1, 0], [-1, 1], [1, -1], [1, 0], [1, 1]] };
+const FACES = [
+  { n: [0, 1, 0], u: [1, 0, 0], v: [0, 0, 1], val: 1 }, { n: [0, -1, 0], u: [1, 0, 0], v: [0, 0, -1], val: 6 },
+  { n: [1, 0, 0], u: [0, 0, -1], v: [0, 1, 0], val: 3 }, { n: [-1, 0, 0], u: [0, 0, 1], v: [0, 1, 0], val: 4 },
+  { n: [0, 0, 1], u: [1, 0, 0], v: [0, 1, 0], val: 2 }, { n: [0, 0, -1], u: [-1, 0, 0], v: [0, 1, 0], val: 5 },
+];
+
+// ---------------- the three things ----------------
+// Each returns { sil: [polygons that hide whatever is behind], own: { line, shade } } with the sheet already clipped against itself.
+function coinObj(M, cx, cy, R, full) {
+  const T = R * 0.17, N = 40, pr = p => { const q = mulV(M, p); return [cx + q[0], cy - q[1], q[2]]; }, xy = p => [p[0], p[1]];
+  const A = [], B = [];
+  for (let i = 0; i < N; i++) { const a = i / N * TAU; A.push(pr([R * cos(a), T / 2, R * sin(a)])); B.push(pr([R * cos(a), -T / 2, R * sin(a)])); }
+  const top = mulV(M, [0, 1, 0])[2] >= 0, own = { line: [], shade: [] }, H = hull(A.concat(B).map(xy)), face = top ? A : B, fy = top ? T / 2 : -T / 2;
+  own.line.push([H, true, "path"]);
+  own.line.push([face.map(xy).concat([xy(face[0])]), true, "path"]);
+  if (full) {
+    own.shade.push([Array.from({ length: N + 1 }, (_, i) => { const a = i % N / N * TAU; return xy(pr([R * 0.8 * cos(a), fy, R * 0.8 * sin(a)])); }), true, "path"]);
+    const mark = top ? star5(R * 0.5, -PI / 2) : moonPts(R * 0.42), sgn = top ? 1 : -1;
+    own.line.push([mark.map(([u, v]) => xy(pr([u * sgn, fy, v]))), true, "path"]);
+    for (let i = 0; i < N; i += 2) { const a = i / N * TAU; if (mulV(M, [cos(a), 0, sin(a)])[2] > 0.12) own.shade.push([[xy(A[i]), xy(B[i])], false, "path"]); }
+  }
+  return { sil: [H], own };
+}
+function diceObj(M, cx, cy, Hh, full) {
+  const pr = p => { const q = mulV(M, p); return [cx + q[0], cy - q[1], q[2]]; }, xy = p => [p[0], p[1]], own = { line: [], shade: [] }, all = [];
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) all.push(xy(pr([sx * Hh, sy * Hh, sz * Hh])));
+  const H = hull(all);
+  own.line.push([H, true, "path"]);
+  for (const f of FACES) {
+    const nz = mulV(M, f.n)[2]; if (nz <= 0.02) continue;
+    const at = (a, b, k = 1) => pr([0, 1, 2].map(i => f.n[i] * Hh + (f.u[i] * a + f.v[i] * b) * Hh * k));
+    const quad4 = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => xy(at(a, b)));
+    own.line.push([quad4, true, "path"]);
+    if (!full) continue;
+    own.shade.push([[[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => xy(at(a, b, 0.84))), true, "path"]);
+    const pipPolys = [];
+    for (const [a, b] of PIPS[f.val]) {
+      const c = [0, 1, 2].map(i => f.n[i] * Hh + (f.u[i] * a * 0.52 + f.v[i] * b * 0.52) * Hh), r = Hh * 0.17;
+      const ringp = k => Array.from({ length: 15 }, (_, i) => { const t = i % 14 / 14 * TAU; return xy(pr([0, 1, 2].map(j => c[j] + (f.u[j] * cos(t) + f.v[j] * sin(t)) * r * k))); });
+      pipPolys.push(ringp(1)); own.line.push([ringp(1), true, "path"]); own.shade.push([ringp(0.5), true, "path"]);
+    }
+    const s = mulV(M, f.n).reduce((q, v, i) => q + v * LIGHT[i], 0), sp = s < 0.25 ? 0.7 : s < 0.55 ? 1.4 : 0;
+    if (sp) { let segs = hatch(quad4, sp, -55); for (const pp of pipPolys) segs = clipSegs(segs, pp, false); for (const [p, q] of segs) own.shade.push([[p, q], false, "fill"]); }
+  }
+  return { sil: [H], own };
+}
+function capObj(M, cx, cy, S, full, rest, sway, lie = 1) {
+  const t = S * 0.12, N = 28, pr = p => { const q = mulV(M, p); return [cx + q[0], cy - q[1], q[2]]; }, xy = p => [p[0], p[1]], own = { line: [], shade: [] };
+  const quadAt = y => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => pr([a * S, y, b * S]));
+  const bt = quadAt(t / 2), bb = quadAt(-t / 2), yb = -t / 2 - S * 0.85;
+  const ringAt = (r, y) => Array.from({ length: N }, (_, i) => { const a = i / N * TAU; return pr([r * cos(a), y, r * sin(a)]); });
+  const c1 = ringAt(S * 0.62, -t / 2), c2 = ringAt(S * 0.52, yb);
+  const topVis = mulV(M, [0, 1, 0])[2] >= 0, boardH = hull(bt.concat(bb).map(xy)), capH = hull(c1.concat(c2).map(xy));
+  const capL = [], boardL = [];
+  capL.push([capH, true, "path", "line"]);
+  const front = c2.filter(p => true);
+  if (full) {
+    for (const [p, q] of hatch(capH, 1.3, -55)) capL.push([[p, q], false, "fill", "shade"]);
+    const arc = c2.map(xy), nfront = [];
+    for (let i = 0; i < N; i++) { const a = i / N * TAU; if (mulV(M, [cos(a), 0, sin(a)])[2] > 0) nfront.push(arc[i]); }
+    if (nfront.length > 1) capL.push([nfront, false, "path", "shade"]);
+  }
+  const vis = topVis ? bt : bb;
+  boardL.push([boardH, true, "path", "line"]); boardL.push([vis.map(xy), true, "path", "line"]);
+  if (full && topVis) {
+    for (const [p, q] of hatch(vis.map(xy), 1.05, 38)) boardL.push([[p, q], false, "fill", "shade"]);
+    const b0 = pr([0, t / 2, 0]), br = S * 0.1; boardL.push([Array.from({ length: 13 }, (_, i) => { const a = i % 12 / 12 * TAU; return xy(pr([br * cos(a), t / 2, br * sin(a)])); }), true, "path", "line"]);
+  }
+  // sheet against sheet: whichever faces the camera hides the other
+  const clipOut = (arr, poly) => { const out = []; for (const [pts, cl, kind, pen] of arr) { const segs = segsOf(pts).concat(cl ? [[pts[pts.length - 1], pts[0]]] : []); for (const q of joinSegs(clipSegs(segs, poly, false))) out.push([q, false, kind, pen]); } return out; };
+  const capOut = topVis ? clipOut(capL, boardH) : capL, boardOut = topVis ? boardL : clipOut(boardL, capH);
+  for (const [pts, cl, kind, pen] of capOut.concat(boardOut)) own[pen].push([pts, cl, kind]);
+  // tassel: from the button to a corner, then hanging (or lying, once landed)
+  const P = xy(pr([S, t / 2, S])), tassel = [];
+  if (topVis) own.shade.push([[xy(pr([0, t / 2, 0])), P], false, "path"]);
+  const len = S * 0.85, endp = rest ? [P[0] + lie * S * 0.55, P[1] + S * 0.18] : [P[0] + sway, P[1] + len];
+  const cord = quad(P, rest ? [P[0] + lie * S * 0.25, P[1] + S * 0.28] : [P[0] + sway * 0.2, P[1] + len * 0.55], endp, 10);
+  own.shade.push([cord, false, "path"]);
+  const dxv = endp[0] - cord[cord.length - 2][0], dyv = endp[1] - cord[cord.length - 2][1], dl = hypot(dxv, dyv) || 1, ux = dxv / dl, uy = dyv / dl, nx = -uy, ny = ux, th = S * 0.5, w0 = S * 0.1, w1 = S * 0.24;
+  const tp = [[endp[0] + nx * w0, endp[1] + ny * w0], [endp[0] + ux * th + nx * w1, endp[1] + uy * th + ny * w1], [endp[0] + ux * th - nx * w1, endp[1] + uy * th - ny * w1], [endp[0] - nx * w0, endp[1] - ny * w0]];
+  own.line.push([tp, true, "path"]);
+  for (const f of [-0.5, 0, 0.5]) own.shade.push([[[endp[0] + ux * th * 0.3 + nx * w1 * f * 0.9, endp[1] + uy * th * 0.3 + ny * w1 * f * 0.9], [endp[0] + ux * th + nx * w1 * f, endp[1] + uy * th + ny * w1 * f]], false, "path"]);
+  return { sil: [boardH, capH, tp], own };
+}
+const RESTH = { coin: 0.17, dice: 1, cap: 1 };
+
+// ---------------- scene ----------------
+function cutBehind(Ly, polys, counts) {
+  for (const pen of ["line", "shade"]) {
+    const arr = Ly[pen], out = [], n = counts[pen];
+    for (let i = 0; i < arr.length; i++) {
+      const p = arr[i]; if (i >= n) { out.push(p); continue; }
+      let pts = p[0], keep = [p];
+      for (const poly of polys) {
+        const bb = bboxOf(poly), next = [];
+        for (const k of keep) {
+          const b2 = bboxOf(k[0]); if (b2[2] < bb[0] || b2[0] > bb[2] || b2[3] < bb[1] || b2[1] > bb[3]) { next.push(k); continue; }
+          const segs = segsOf(k[0]).concat(k[1] ? [[k[0][k[0].length - 1], k[0][0]]] : []);
+          for (const q of joinSegs(clipSegs(segs, poly, false))) next.push([q, false, k[2]]);
+        }
+        keep = next;
+      }
+      out.push(...keep);
+    }
+    Ly[pen] = out;
+  }
+}
+function build(o) {
+  const t0 = performance.now(), [PW, PH] = o.page.split("x").map(Number), mg = o.margin, Ly = { line: [], shade: [] };
+  const rnd = mulberry(o.seed * 6007 + 11), notes = [];
+  const U = { x0: mg, y0: mg, x1: PW - mg, y1: PH - mg }, uw = U.x1 - U.x0, uh = U.y1 - U.y0;
+  const groundY = U.y1 - 10, push = (pen, pts, closed = false) => Ly[pen].push([pts, closed, "path"]);
+  const pitch = o.pitch * D2R, view = rotX(pitch), wh = o.whimsy / 100;
+  const nT = o.throws, nF = o.frames, kinds = ["coin", "dice", "cap"];
+  let minGap = INF, minR = INF;
+  if (o.ground === "line") push("line", [[U.x0, groundY], [U.x1, groundY]]);
+  else if (o.ground === "dashes") { let x = U.x0 + 4; while (x < U.x1 - 4) { const len = 6 + rnd() * 22; push("shade", [[x, groundY], [min(U.x1 - 2, x + len), groundY]]); x += len + 5 + rnd() * 16; } }
+  const sparks = [];
+  for (let k = 0; k < nT; k++) {
+    const kind = o.object === "mix" ? kinds[(k + floor(rnd() * 3)) % 3] : o.object;
+    let xs, xe;
+    if (nT === 1) { xs = U.x0 + uw * 0.1; xe = U.x1 - uw * 0.1; }
+    else { const slot = uw / nT, c = U.x0 + slot * (k + 0.5), half = slot * 0.4, flip = rnd() < 0.5 ? -1 : 1; xs = c - flip * half; xe = c + flip * half; }
+    const apex = (groundY - U.y0 - 32) * o.height / 100 * (nT > 1 ? 0.6 + 0.4 * rnd() : 1), h0 = apex * 0.1;
+    const dir = xe >= xs ? 1 : -1, dxF = abs(xe - xs) / max(1, nF - 1), landed = o.land === "lands";
+    const tEnd = landed ? 1 : 0.9;
+    const Reff = min(uw * 0.08, dxF * 0.72 / (tEnd < 1 ? tEnd : 1), apex * 0.28) * o.size / 100;
+    xs = clamp(xs, U.x0 + 1.7 * Reff, U.x1 - 1.7 * Reff); xe = clamp(xe, U.x0 + 1.7 * Reff, U.x1 - 1.7 * Reff);
+    const size = kind === "coin" ? Reff * 0.95 : kind === "dice" ? Reff / 1.5 : Reff * 0.82;
+    const axis = kind === "coin" ? [1, 0.15 * (rnd() - 0.5) * 2, 0.1] : kind === "dice" ? [rnd() - 0.5, rnd() - 0.2, rnd() - 0.5] : [0.15 * (rnd() - 0.5), 1, 0.2 * (rnd() - 0.5)];
+    if (hypot(...axis) < 0.2) axis[0] = 1;
+    const yaw = rnd() * TAU, turns = o.turns * (1 + 0.15 * wh * (rnd() - 0.5));
+    const orient = t => mulM(view, mulM(axisRot(axis, turns * TAU * (1 - t) * dir), rotY(yaw)));
+    const make = (M, cx, cy, full, rest, sway) => kind === "coin" ? coinObj(M, cx, cy, size, full) : kind === "dice" ? diceObj(M, cx, cy, size, full) : capObj(M, cx, cy, size, full, rest, sway, -dir);
+    // where the landed one sits, from its lowest point
+    const probe = make(orient(1), 0, 0, false, true, 0);
+    let maxY = -INF; for (const poly of probe.sil) for (const q of poly) maxY = max(maxY, q[1]);
+    const restH = maxY, height = t => h0 * (1 - t) + apex * 4 * t * (1 - t);
+    const jit = () => (rnd() - 0.5) * 2 * wh * uw * 0.006;
+    const centreAt = t => [lerp(xs, xe, t), groundY - restH - height(t)];
+    const frames = [];
+    for (let i = 0; i < nF; i++) { const t = nF === 1 ? 1 : i / (nF - 1) * tEnd, c = centreAt(t); frames.push({ t, x: c[0] + (i && i < nF - 1 ? jit() : 0), y: c[1] + (i && i < nF - 1 ? jit() : 0) }); }
+    // shadows first, so everything above can cut them
+    if (o.shadow === "on") for (const f of frames) {
+      const hgt = max(0, groundY - restH - f.y), rx = Reff * 0.9 * (1 - 0.5 * clamp(hgt / max(1, apex), 0, 1)), ry = max(0.8, rx * 0.2), sp = lerp(0.8, 1.6, clamp(hgt / max(1, apex), 0, 1)), ell = ring(f.x, groundY + 3.5, rx, ry, 28);
+      push("shade", ell, true); for (const [a, b] of hatch(ell, sp, 0)) Ly.shade.push([[a, b], false, "fill"]);
+    }
+    // the trail
+    if (o.trail !== "none") {
+      const path = Array.from({ length: 121 }, (_, i) => centreAt(i / 120 * tEnd)); let acc = 0, on = true; const dash = o.trail === "dots" ? 0.01 : 3.2, gap = o.trail === "dots" ? 4.5 : 2.6;
+      let cur = [path[0]];
+      for (let i = 1; i < path.length; i++) {
+        const l = hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]); acc += l;
+        if (on) cur.push(path[i]);
+        if (acc >= (on ? dash : gap)) { acc = 0; if (on) { if (o.trail === "dots") pushRing2(path[i]); else push("shade", cur); cur = []; } else cur = [path[i]]; on = !on; }
+      }
+      if (on && cur.length > 1 && o.trail !== "dots") push("shade", cur);
+    }
+    function pushRing2(p) { push("shade", ring(p[0], p[1], 0.55, 0.55, 8), true); }
+    // the things themselves, earliest first so later ones sit in front
+    const detailFull = i => o.detail === "full" || i === nF - 1 || (o.detail === "apex" && abs(frames[i].t - 0.5) <= 0.5 / max(1, nF - 1) + 1e-9);
+    let apexI = 0, bestD = INF; frames.forEach((f, i) => { const d = abs(f.t - 0.5); if (d < bestD) { bestD = d; apexI = i; } });
+    for (let i = 0; i < nF; i++) {
+      const f = frames[i], last = i === nF - 1 && landed, M = last ? orient(1) : orient(f.t);
+      const full = o.detail === "full" || i === nF - 1 || (o.detail === "apex" && i === apexI), prev = frames[max(0, i - 1)], vx = (f.x - prev.x);
+      const cy = last ? groundY - restH : f.y;
+      const ob = make(M, f.x, cy, full, last, clamp(-vx * 0.25, -size * 0.5, size * 0.5));
+      cutBehind(Ly, ob.sil, { line: Ly.line.length, shade: Ly.shade.length });
+      for (const pen of ["line", "shade"]) for (const [pts, cl, kind] of ob.own[pen]) {
+        Ly[pen].push([pts, cl, kind]);
+        if (pen === "line" && o.weight === 2 && kind === "path") { const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]); void c; }
+      }
+      if (i) minGap = min(minGap, hypot(f.x - prev.x, f.y - prev.y));
+    }
+    minR = min(minR, Reff);
+    sparks.push([lerp(xs, xe, 0.5), groundY - restH - height(0.5), Reff]);
+  }
+  // bold outlines: a second pass beside each closed line-pen path
+  if (o.weight === 2) {
+    const extra = [];
+    for (const [pts, cl, kind] of Ly.line) if (kind === "path" && cl && pts.length > 6) {
+      const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]);
+      extra.push([pts.map(p => { const dx = p[0] - c[0], dy = p[1] - c[1], l = hypot(dx, dy) || 1; return [p[0] + dx / l * PASS * 0.5, p[1] + dy / l * PASS * 0.5]; }), true, "path"]);
+    }
+    Ly.line.push(...extra);
+  }
+  // sparkles in the free air
+  const taken = Ly.line.concat(Ly.shade).map(([pts]) => bboxOf(pts));
+  for (let i = 0; i < o.sparkles; i++) {
+    for (let tries = 0; tries < 30; tries++) {
+      const p = [lerp(mg + 6, PW - mg - 6, rnd()), lerp(mg + 6, groundY - 12, rnd())], s = 1.6 + rnd() * 3;
+      if (taken.some(b => p[0] > b[0] - 5 && p[0] < b[2] + 5 && p[1] > b[1] - 5 && p[1] < b[3] + 5)) continue;
+      push("shade", astroid(p[0], p[1], s), true); taken.push([p[0] - s, p[1] - s, p[0] + s, p[1] + s]); break;
+    }
+  }
+  // gates
+  let bb = [INF, INF, -INF, -INF], finite = true;
+  for (const pen of ["line", "shade"]) for (const [q] of Ly[pen]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) finite = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+  const gates = [
+    ["fits inside the margins", bb[0] >= mg - 0.01 && bb[1] >= mg - 0.01 && bb[2] <= PW - mg + 0.01 && bb[3] <= PH - mg + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    ["hatching at least 0.5 mm apart", true, "0.7 mm and up"],
+  ];
+  if (isFinite(minGap) && minGap < minR * 0.9) notes.push("moments crowd each other: fewer moments or a smaller size");
+  return { o, W: PW, H: PH, layers: Ly, gates, notes, ms: performance.now() - t0 };
+}
+
+// ---------------- preview, export ----------------
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, flash = r.o.pview === "flash", col = { line: "#141414", shade: "#3a3a3a" };
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of ["shade", "line"]) {
+    c.strokeStyle = col[key];
+    for (const [q, cl, kind] of r.layers[key]) {
+      c.lineWidth = flash && kind === "fill" ? 0.8 * 1.15 : PEN[key];
+      c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke();
+    }
+  }
+  const lenm = L => L.reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000;
+  $("stats").innerHTML = `<b>${r.o.object}</b> · ${r.o.throws} throw${r.o.throws > 1 ? "s" : ""} · ${r.ms.toFixed(0)} ms<br>`
+    + `line 0.4: <b>${lenm(r.layers.line).toFixed(1)} m</b> · thin 0.3: <b>${lenm(r.layers.shade).toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG toss studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["object", "throws", "frames", "height", "turns", "pitch", "size", "land", "seed", "detail", "trail", "shadow", "ground", "whimsy", "sparkles", "weight", "pview", "page", "margin", "ticks"];
+const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); const v = e.type === "range" ? +e.value : e.value; return [k, k === "weight" ? +v : v]; }));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function run(k) { sync(); if (last && k === "pview") { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 30); }
+
+const BASE = { object: "coin", throws: 1, frames: 7, height: 85, turns: 2.5, pitch: 26, size: 100, land: "lands", seed: 4, detail: "ghost", trail: "dashed", shadow: "on", ground: "dashes", whimsy: 30, sparkles: 5, weight: 2, pview: "pens", page: "250x190", margin: 10, ticks: "split" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  coin: P({}),
+  dice: P({ object: "dice", frames: 6, turns: 2, seed: 9 }),
+  cap: P({ object: "cap", frames: 6, turns: 1.5, seed: 3 }),
+  change: P({ object: "coin", throws: 3, frames: 4, height: 80, turns: 2, seed: 11, sparkles: 4 }),
+  handful: P({ object: "dice", throws: 3, frames: 4, height: 80, turns: 1.5, seed: 17, sparkles: 4 }),
+  graduation: P({ object: "cap", throws: 5, frames: 3, height: 90, turns: 1, seed: 23, sparkles: 8, detail: "full" }),
+};
+const setAll = p => { for (const [k, v] of Object.entries(p)) if ($(k)) $(k).value = v; };
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setAll(PRESETS[b.dataset.preset]); run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `toss-${r.o.object}-t${r.o.throws}-f${r.o.frames}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+setAll(PRESETS.coin);
+run();
+</script>
+</body>
+</html>

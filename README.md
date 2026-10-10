@@ -10,6 +10,8 @@ Pen-plotter generators for the Cricut Explore 5. [Open the live gallery](https:/
 - **Gears:** Gear 3D, Gear BAM, Gear Weave and Gear Reverb.
 - **Read:** the Plot Decoder accepts photos or a camera feed, settings labels and manually tapped page corners.
 - **Posthuman:** Forks, Meatsack.
+- **Apothecary:** Bottle studio: bottles, labels and a shelf or countertop of them.
+- **Motion:** Toss studio: a coin, die or cap caught at several moments along a throw.
 
 Each studio is self-contained HTML and exports millimetre SVGs, including separate pen layers for Design Space. The gallery carries saved controls and source fingerprints for its example drawings.
 
