@@ -187,8 +187,10 @@
       "room": "hall",
       "day": 10,
       "date": "2026-10-10",
-      "prompt": null,
-      "photo": null,
+      "prompt": "mystical",
+      "photo": "prints/inktober-10-mystical.jpg",
+      "studio": "../mystical-studio.html",
+      "description": "Saturday 10 October 2026, prompt \"mystical\". Black ink on lilac paper: two hands with eyes in their palms fan out a deck over five laid cards, Ace of Cups, The Key, Ace of Swords, The Seer and Fortune, under an arch of moons and stars. Drawn by the Mystical studio.",
       "frame": {
         "width": 210,
         "height": 297
@@ -203,8 +205,10 @@
       "room": "hall",
       "day": 11,
       "date": "2026-10-11",
-      "prompt": null,
-      "photo": null,
+      "prompt": "rescue",
+      "photo": "prints/inktober-11-rescue.jpg",
+      "studio": "../bottle-studio.html",
+      "description": "Sunday 11 October 2026, prompt \"rescue\". Black ink on mint paper: a corked bottle of Rescue Remedy, for a rough day, half full and hatched, on a shelf among the stars. Drawn by the Bottle studio.",
       "frame": {
         "width": 210,
         "height": 297
@@ -219,11 +223,13 @@
       "room": "hall",
       "day": 12,
       "date": "2026-10-12",
-      "prompt": null,
-      "photo": null,
+      "prompt": "toss",
+      "photo": "prints/inktober-12-toss.jpg",
+      "studio": "../toss-studio.html",
+      "description": "Monday 12 October 2026, prompt \"toss\". Black ink on yellow paper: one coin caught at eleven moments of a throw, star and moon faces turning over as it falls and rises, with the spin read off along the top. Drawn by the Toss studio.",
       "frame": {
-        "width": 210,
-        "height": 297
+        "width": 297,
+        "height": 210
       },
       "content": {
         "nsfw": false,
@@ -235,8 +241,10 @@
       "room": "hall",
       "day": 13,
       "date": "2026-10-13",
-      "prompt": null,
-      "photo": null,
+      "prompt": "flimsy",
+      "photo": "prints/inktober-13-flimsy.jpg",
+      "studio": "../flimsy-bridge-studio.html",
+      "description": "Tuesday 13 October 2026, prompt \"flimsy\". Black ink on white card: the Tacoma Narrows bridge on 7 November 1940 at 1 to 350, its deck twisting at 10.00, 10.15, 10.30 and 10.45 and in the water by 11.02. Drawn by the Flimsy bridge studio, alongside its fold-up card truss bridges.",
       "frame": {
         "width": 210,
         "height": 297

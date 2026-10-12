@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Victorian lady paper doll</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Victorian lady paper doll</h1>
+  <p class="sub">A fashion-plate lady to cut and dress: one flat doll in her corset, drawers and boots, on a stand, with gowns from three decades (crinoline 1860, bustle 1885, leg-o'-mutton 1895), a walking suit, an evening gown, and hats, parasols, fans and wraps. Everything is flat card that hangs on her with fold tabs behind the shoulders, the waist and the hands, and the hats tie on with ribbon strings.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="crinoline">Crinoline day dress</button><button data-preset="ball1860">Ball gown 1860</button><button data-preset="suit1885">Walking suit 1885</button><button data-preset="evening1885">Bustle evening gown</button><button data-preset="mutton1895">Leg-o'-mutton 1895</button><button data-preset="mutton-eve">Evening 1895</button><button data-preset="undressed">Doll and stand</button><button data-preset="hatshop">Hat shop</button><button data-preset="case">Accessory case</button></div>
+  </fieldset>
+  <fieldset><legend>The lady</legend>
+    <label>Height (mm, head to sole) <output id="o-height"></output><input type="range" id="height" min="170" max="230" step="5" value="230"></label>
+    <label>Waist (laced tighter, or looser) <output id="o-waist"></output><input type="range" id="waist" min="0.85" max="1.15" step="0.05" value="1"></label>
+    <label>Hair <select id="hair"><option value="pompadour">pompadour with top knot</option><option value="ringlets">ringlets down to the shoulder</option><option value="crown">crown of braids</option></select></label>
+  </fieldset>
+  <fieldset><legend>The gown</legend>
+    <label>Period <select id="era"><option value="crinoline">1860: crinoline</option><option value="bustle">1885: bustle</option><option value="mutton">1895: leg-o'-mutton sleeves</option></select></label>
+    <label>Outfit <select id="kind"><option value="dress">day dress (one piece)</option><option value="suit">walking suit (skirt, blouse, jacket)</option><option value="evening">evening gown</option><option value="none">no gown</option></select></label>
+    <label data-when="kind!=none">Neckline <select id="neck"><option value="auto">as the outfit</option><option value="high">high lace collar</option><option value="jewel">jewel</option><option value="square">square</option><option value="off">off the shoulder</option></select></label>
+    <label data-when="kind!=none">Sleeves <select id="sleeves"><option value="auto">as the period</option><option value="long">long and tight</option><option value="pagoda">pagoda (bell)</option><option value="mutton">leg-o'-mutton</option><option value="puff">short puff</option><option value="cap">cap</option></select></label>
+    <label data-when="kind!=none">Hem <select id="hem"><option value="scallop">scalloped, cut</option><option value="straight">straight</option></select></label>
+    <label>Petticoat piece <select id="petti"><option value="on">on (cage, bustle pad or flounces)</option><option value="off">off</option></select></label>
+  </fieldset>
+  <fieldset><legend>Cloth and trim</legend>
+    <label>Fabric <select id="pattern"><option value="plain">plain</option><option value="stripes">stripes</option><option value="check">check</option><option value="dots">dots</option><option value="tucks">tucks</option><option value="damask">damask lattice</option></select></label>
+    <label>Colour fill (hatching) <select id="fill"><option value="none">none, line only</option><option value="light">light</option><option value="rich">rich</option></select></label>
+    <label>Trim: lace, bows, buttons <output id="o-trim"></output><input type="range" id="trim" min="0" max="1.5" step="0.25" value="1"></label>
+    <label>Cloth pen (preview) <select id="colA"><option value="7a1f3d">burgundy</option><option value="b0126b">magenta</option><option value="d7263d">red</option><option value="1d3a8a">navy</option><option value="0078bf">blue</option><option value="2e7d32">green</option><option value="0e7c7b">teal</option><option value="7b2d8b">purple</option><option value="c8920a">gold</option></select></label>
+    <label>Trim pen (preview) <select id="colB"><option value="c8920a">gold</option><option value="000000">black</option><option value="0e7c7b">teal</option><option value="b0126b">magenta</option><option value="1d3a8a">navy</option><option value="2e7d32">green</option><option value="7b2d8b">purple</option></select></label>
+  </fieldset>
+  <fieldset><legend>Hats and things</legend>
+    <label>Hat <select id="hat"><option value="none">none</option><option value="bonnet">poke bonnet</option><option value="toque">toque with a plume</option><option value="picture">picture hat</option><option value="boater">boater</option><option value="all">all four (on a hat sheet)</option></select></label>
+    <label>Wrap <select id="wrap"><option value="none">none</option><option value="capelet">capelet with fringe</option></select></label>
+    <label>Neck <select id="jewel"><option value="none">nothing</option><option value="cameo">cameo choker</option></select></label>
+    <label>Held at the picture's left <select id="lhand"><option value="none">nothing</option><option value="parasol">parasol</option><option value="fan">fan</option><option value="bag">reticule</option><option value="muff">muff</option><option value="bouquet">bouquet</option></select></label>
+    <label>Held at the picture's right <select id="rhand"><option value="none">nothing</option><option value="parasol">parasol</option><option value="fan">fan</option><option value="bag">reticule</option><option value="muff">muff</option><option value="bouquet">bouquet</option></select></label>
+  </fieldset>
+  <fieldset><legend>Sheet</legend>
+    <label>Sheet holds <select id="sheet"><option value="gown">the gown (dress, or skirt, blouse and jacket)</option><option value="doll">the doll, her stand and petticoat</option><option value="extras">hats, wraps and things</option><option value="all">everything</option></select></label>
+    <label>Stand <select id="stand"><option value="on">with a cross base (notch between her legs)</option><option value="off">no base</option></select></label>
+    <label>Draw the outlines with a pen <select id="outlines"><option value="on">on, their own layer</option><option value="off">off</option></select></label>
+    <label data-when="outlines=on">Outline inset (mm, 0 draws on the cut line) <output id="o-outlinein"></output><input type="range" id="outlinein" min="0" max="2" step="0.1" value="0.7"></label>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="dressed">the lady, dressed</option><option value="sheet">the sheet, as cut</option></select></label>
+    <label data-when="view=dressed">Show the doll in her underthings <select id="under"><option value="off">no</option><option value="on">yes</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="280x580">280 x 580 (12 x 24 mat)</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="8"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <p class="hint">Split export saves one SVG per layer in job order: the pens (black outline and detail, grey shading, cloth colour, trim colour), then the cut. The pen files carry four corner ticks at 1 mm and the cut file carries a trim rectangle at 1 mm.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it goes together: the doll is one flat piece with a tab under her boots that slides into a slot in the stand. Every garment is cut to her outline grown by about a millimetre, with fold tabs that stick out past her edge (over the shoulders, at the waist, round the hands) and fold behind her. A dress hangs from two shoulder tabs, a skirt from two waist tabs. Hats have two ribbon strings that run down the cheeks and fold behind at the jaw. Things held in a hand have a band across the wrist with a tab each side. The gowns are built from measurements of the doll's outline, so they only fit this doll at this height and waist: change either and cut the gown again. All cut sizes (tab width 7 mm, slot 1.2 mm, the thinnest card bridge) are assumptions until the cut calibration sheet has been read.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, pow, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerpN = (a, b, t) => a + (b - a) * t;
+
+// ---------------- cut sizes (ASSUMED until the cut calibration sheet is read) ----------------
+const EASE = 1.1;        // ASSUMED: clothes stand this far proud of the doll's outline, mm
+const TAB_W = 7;         // fold tab width, mm
+const TAB_FREE = 5;      // tab length that must stand free of everything past the fold, mm
+const MIN_HALF = 1.0;    // ASSUMED: no cut feature narrower than 2 mm
+const INK_GAP = 0.4;     // ASSUMED: clear space between ink and any cut line
+const PART_GAP = 3.0;    // space between pieces on the sheet
+const TRIM_INSET = 1.0;  // trim rectangle, mm from every page edge
+const SLOT_W = 1.2, SLOT_DEPTH = 15; // ASSUMED: the notch up between her legs and the matching notch down in the base, mm
+const PALE = "#fbf7ec";
+
+// ---------------- shapes: signed distance (negative inside) ----------------
+const Circ = (x, y, r) => ({ t: "c", x, y, r: max(r, MIN_HALF) });
+const Limb = (ax, ay, ra, bx, by, rb) => ({ t: "k", ax, ay, ra: max(ra, MIN_HALF), bx, by, rb: max(rb, MIN_HALF) });
+function primDist(p, x, y) {
+  if (p.t === "c") return hypot(x - p.x, y - p.y) - p.r;
+  const dx = p.bx - p.ax, dy = p.by - p.ay, L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - p.ax) * dx + (y - p.ay) * dy) / L2, 0, 1);
+  return hypot(x - p.ax - t * dx, y - p.ay - t * dy) - (p.ra + (p.rb - p.ra) * t);
+}
+const primBox = p => p.t === "c" ? [p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r] : [min(p.ax - p.ra, p.bx - p.rb), min(p.ay - p.ra, p.by - p.rb), max(p.ax + p.ra, p.bx + p.rb), max(p.ay + p.ra, p.by + p.rb)];
+const smin = (a, b, k) => { if (k <= 0) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+function fastPoly(pts) { // exact signed distance to a closed polygon (negative inside)
+  const n = pts.length, ax = new Float64Array(n), ay = new Float64Array(n), ex = new Float64Array(n), ey = new Float64Array(n), il = new Float64Array(n), by = new Float64Array(n);
+  for (let i = 0, j = n - 1; i < n; j = i++) { ax[i] = pts[j][0]; ay[i] = pts[j][1]; ex[i] = pts[i][0] - pts[j][0]; ey[i] = pts[i][1] - pts[j][1]; by[i] = pts[i][1]; il[i] = 1 / (ex[i] * ex[i] + ey[i] * ey[i] || 1e-9); }
+  return (x, y) => {
+    let d = INF, s = 1;
+    for (let i = 0; i < n; i++) {
+      const wx = x - ax[i], wy = y - ay[i], t = clamp((wx * ex[i] + wy * ey[i]) * il[i], 0, 1), dx = wx - ex[i] * t, dy = wy - ey[i] * t, dd = dx * dx + dy * dy;
+      if (dd < d) d = dd;
+      const c1 = y >= ay[i], c2 = y < by[i], c3 = ex[i] * wy > ey[i] * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * sqrt(d);
+  };
+}
+const polyBox = pts => { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of pts) { a = min(a, x); b = min(b, y); c = max(c, x); d = max(d, y); } return [a, b, c, d]; };
+const primsBox = ps => ps.reduce((B, q) => { const k = primBox(q); return [min(B[0], k[0]), min(B[1], k[1]), max(B[2], k[2]), max(B[3], k[3])]; }, [INF, INF, -INF, -INF]);
+const joinB = (A, B) => [min(A[0], B[0]), min(A[1], B[1]), max(A[2], B[2]), max(A[3], B[3])];
+const growB = (B, e) => [B[0] - e, B[1] - e, B[2] + e, B[3] + e];
+const unionF = fs => (x, y) => { let d = INF; for (const f of fs) d = min(d, f(x, y)); return d; };
+const smoothF = (fs, k) => (x, y) => { let d = 1e6; for (const f of fs) d = smin(d, f(x, y), k); return d; };
+const primF = p => (x, y) => primDist(p, x, y);
+const subF = (a, b) => (x, y) => max(a(x, y), -b(x, y));
+const interF = (a, b) => (x, y) => max(a(x, y), b(x, y));
+
+// ---------------- curves ----------------
+function curve(pts, per = 6, closed = false) { // uniform Catmull-Rom through the points
+  const n = pts.length, out = [], g = i => closed ? pts[(i + n) % n] : pts[clamp(i, 0, n - 1)], m = closed ? n : n - 1;
+  for (let i = 0; i < m; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let j = 0; j < per; j++) {
+      const t = j / per, t2 = t * t, t3 = t2 * t;
+      out.push([0, 1].map(a => 0.5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3)));
+    }
+  }
+  if (!closed) out.push(pts[n - 1].slice());
+  return out;
+}
+const bez = (a, b, c, n = 12) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, u = 1 - t; return [u * u * a[0] + 2 * u * t * b[0] + t * t * c[0], u * u * a[1] + 2 * u * t * b[1] + t * t * c[1]]; });
+const circle = (x, y, r, n = 0) => { n = n || max(12, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+const arcP = (x, y, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [x + rx * cos(a), y + ry * sin(a)]; });
+const mir = p => p.map(([x, y]) => [-x, y]);
+const symm = r => [...r, ...mir(r).reverse()];
+const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl && q.length > 1) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
+function resample(q, step) {
+  const out = [q[0].slice()]; let carry = 0;
+  for (let i = 1; i < q.length; i++) {
+    const a = q[i - 1], b = q[i], L = hypot(b[0] - a[0], b[1] - a[1]); if (!L) continue;
+    let d = step - carry;
+    while (d <= L) { const t = d / L; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); d += step; }
+    carry = L - (d - step);
+  }
+  const last = q.at(-1); if (hypot(last[0] - out.at(-1)[0], last[1] - out.at(-1)[1]) > step * 0.3) out.push(last.slice());
+  return out;
+}
+// scallops along a path: one arch per w mm, bulging toward nfn(x, y) (a unit vector)
+function scallopPath(path, w, depth, nfn) {
+  const r = resample(path, w / 8), nodes = []; for (let i = 0; i < r.length; i += 8) nodes.push(r[i]);
+  if (r.length % 8 !== 1) nodes.push(r.at(-1));
+  const out = [];
+  for (let i = 0; i + 1 < nodes.length; i++) {
+    const a = nodes[i], b = nodes[i + 1], n = nfn((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), dd = depth * min(1, hypot(b[0] - a[0], b[1] - a[1]) / w);
+    for (let j = (i ? 1 : 0); j <= 10; j++) { const t = j / 10, s = sin(PI * t) * dd; out.push([a[0] + (b[0] - a[0]) * t + n[0] * s, a[1] + (b[1] - a[1]) * t + n[1] * s]); }
+  }
+  return out;
+}
+const zigPath = (path, step, amp, nfn) => { const r = resample(path, step), out = []; r.forEach((p, i) => { const n = nfn(p[0], p[1]), s = i % 2 ? amp : -amp; out.push([p[0] + n[0] * s, p[1] + n[1] * s]); }); return out; };
+const dots = (path, step, rad) => resample(path, step).map(p => circle(p[0], p[1], rad, 8));
+function ribbonBow(c, size, ang) { // two loops, a knot and two tails, as closed polylines around c
+  const R = (x, y) => [c[0] + (x * cos(ang) - y * sin(ang)) * size, c[1] + (x * sin(ang) + y * cos(ang)) * size];
+  const loop = s => [R(0, 0), ...bez([0, 0], [s * 1.2, -0.9], [s * 1.7, -0.1], 8).slice(1).map(([x, y]) => R(x, y)), ...bez([s * 1.7, -0.1], [s * 1.4, 0.9], [0, 0], 8).slice(1).map(([x, y]) => R(x, y))];
+  return [loop(-1), loop(1), circle(...R(0, 0), 0.22 * size, 8), [R(0.1, 0.2), R(-0.5, 1.5), R(-0.15, 1.35), R(-0.3, 1.9)], [R(-0.1, 0.2), R(0.5, 1.5), R(0.15, 1.35), R(0.3, 1.9)]];
+}
+function rosette(c, r) { const out = [circle(c[0], c[1], r, 18)]; for (let a = 0; a < 360; a += 72) out.push(arcP(c[0] + r * 0.45 * cos(a * D2R), c[1] + r * 0.45 * sin(a * D2R), r * 0.55, r * 0.55, a - 60, a + 200, 10)); out.push(circle(c[0], c[1], r * 0.18, 8)); return out; }
+
+// ---------------- iso-lines (marching squares, from the jointed figure studio) ----------------
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+const loopArea = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+function smooth(l, passes = 2) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function fieldOf(sdf, B, h) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[j * nx + i] = sdf(x0 + i * h, y0 + j * h);
+  return { F, nx, ny, h, x0, y0 };
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+const gradF = (G, x, y) => { const e = G.h, g = [sampleF(G, x + e, y) - sampleF(G, x - e, y), sampleF(G, x, y + e) - sampleF(G, x, y - e)], l = hypot(g[0], g[1]) || 1; return [g[0] / l, g[1] / l]; };
+const room = (pc, x, y) => -sampleF(pc.Gd, x, y); // how far inside the cut card a point is
+function clip(pc, lines) { // keep ink that is at least INK_GAP inside the card
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)) : 1;
+      for (let k = 0; k < n; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n;
+        if (room(pc, x, y) > INK_GAP + 0.02) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; }
+      }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.02));
+}
+function hatch(G, gap, ang, filter) {
+  const c = cos(ang), s = sin(ang), cx = G.x0 + G.nx * G.h / 2, cy = G.y0 + G.ny * G.h / 2, R = hypot(G.nx, G.ny) * G.h / 2, out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.35) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (filter(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } } if (run.length > 1) out.push(run); }
+  return out;
+}
+// runs of the outline, d mm in from the cut line, where pred(x, y) holds
+function edgeRuns(pc, d, pred) {
+  const out = [];
+  for (const l of contours(pc.Gd, -d)) {
+    if (abs(loopArea(l)) < 4) continue;
+    const q = smooth(l, 1); let run = [];
+    for (const p of q) { if (pred(p[0], p[1])) run.push(p); else { if (run.length > 2) out.push(run); run = []; } }
+    if (run.length > 2) out.push(run);
+  }
+  return out;
+}
+const outward = pc => (x, y) => gradF(pc.Gd, x, y);
+
+// ---------------- the doll ----------------
+// y is measured from the top of the head in percent of her height (y 0 to 100), x from her middle line.
+function geom(o) {
+  const k = o.height / 100, Q = (x, y) => [x * k, y * k], wv = y => 1 + (o.waist - 1) * Math.exp(-(((y - 33) / 4.8) ** 2));
+  // her right half, from the neck down: full bust, a laced waist, rounded hips, a long taper to the ankle
+  const RR = [[1.9, 12.6], [3.4, 13.5], [5.4, 14.6], [7.6, 15.8], [9.1, 16.9], [9.3, 18.6], [8.7, 21.0], [8.0, 23.4], [7.9, 25.6], [7.3, 28.0], [6.1, 30.6], [5.0, 32.8], [4.8, 34.0], [5.6, 36.2], [7.2, 39.0], [8.8, 42.0], [9.7, 45.0], [9.8, 47.4], [9.3, 51.0], [8.4, 56.0], [7.5, 63.0], [6.8, 70.0], [6.4, 77.0], [6.0, 85.0], [5.2, 92.0], [4.9, 95.0], [5.6, 97.0], [6.1, 99.0], [6.1, 100.35]];
+  const half = RR.map(([x, y]) => [x * wv(y), y]);
+  const hwAt = y => { if (y <= half[0][1]) return half[0][0]; for (let i = 1; i < half.length; i++) if (y <= half[i][1]) { const a = half[i - 1], b = half[i], t = (y - a[1]) / (b[1] - a[1]); return a[0] + (b[0] - a[0]) * t; } return half.at(-1)[0]; };
+  const arm = s => ({ S: Q(s * 9.0, 17.6), E: Q(s * 13.9, 31.5), W: Q(s * 17.8, 43.0), Hd: Q(s * 18.9, 49.6) });
+  const E = (cx, cy, rx, ry, ang = 0) => fastPoly(Array.from({ length: 40 }, (_, i) => { const t = i / 40 * TAU, x = rx * cos(t), y = ry * sin(t); return Q(cx + x * cos(ang) - y * sin(ang), cy + x * sin(ang) + y * cos(ang)); }));
+  const Cc = (x, y, r) => primF(Circ(...Q(x, y), r * k)), Lb = (x0, y0, r0, x1, y1, r1) => primF(Limb(...Q(x0, y0), r0 * k, ...Q(x1, y1), r1 * k));
+  const body = [fastPoly(symm(curve(half, 4)).map(([x, y]) => Q(x, y)))], hair = [];
+  const headPts = []; for (let i = 0; i < 40; i++) { const t = i / 40 * TAU, sn = sin(t); let x = 4.6 * cos(t); if (sn > 0) x *= 1 - 0.42 * pow(sn, 1.7); headPts.push(Q(x, 6.0 + 6.0 * sn)); }
+  body.push(fastPoly(headPts), Lb(0, 10.4, 2.0, 0, 14.8, 2.5));
+  for (const s of [-1, 1]) {
+    const A = arm(s), hx = Q(s * 18.2, 45.2), tip = Q(s * 19.2, 49.4);
+    body.push(primF(Limb(A.S[0], A.S[1], 2.9 * k, A.E[0], A.E[1], 2.4 * k)), primF(Limb(A.E[0], A.E[1], 2.4 * k, A.W[0], A.W[1], 1.8 * k)), primF(Limb(hx[0], hx[1], 1.9 * k, tip[0], tip[1], 1.25 * k)));
+  }
+  const botY = 100.35 * k;
+  // hair: sculpted masses, so the outline flows (the fine strands are drawn in dollInk)
+  const comb = (cx, cy, n, r0, r1) => { for (let i = 0; i < n; i++) { const a = (230 + 80 * i / (n - 1)) * D2R, c = cos(a), s = sin(a); hair.push(Lb(cx + r0 * c, cy + r0 * s * 0.8, 1.0, cx + r1 * c, cy + r1 * s * 0.8, 0.55), Cc(cx + (r1 + 0.7) * c, cy + (r1 + 0.7) * s * 0.8, 0.95)); } };
+  if (o.hair === "pompadour") {
+    hair.push(E(0, 0.2, 7.2, 5.4), E(-5.2, 3.6, 2.1, 3.4, 0.2), E(5.2, 3.6, 2.1, 3.4, -0.2), E(0, -6.0, 4.8, 3.2));
+    comb(0, -6.0, 5, 3.4, 5.4);
+  } else if (o.hair === "ringlets") {
+    hair.push(E(0, 1.0, 7.0, 5.0), E(-5.2, 6.4, 2.7, 4.8, 0.1), E(5.2, 6.4, 2.7, 4.8, -0.1), Cc(0, -4.8, 3.0), Cc(-3.4, -3.4, 2.6), Cc(3.4, -3.4, 2.6), Cc(-5.8, -1.0, 2.0), Cc(5.8, -1.0, 2.0), Cc(0, -8.0, 1.6));
+    for (const s of [-1, 1]) hair.push(Lb(s * 6.0, 8.0, 2.0, s * 6.9, 11.0, 2.0), Cc(s * 7.0, 13.2, 2.0), Cc(s * 7.6, 16.0, 1.8), Cc(s * 8.0, 18.8, 1.5));
+  } else {
+    hair.push(E(0, 1.6, 7.8, 6.8), E(0, -5.6, 4.6, 3.4), Cc(0, -9.2, 1.7));
+    for (const s of [-1, 1]) hair.push(Cc(s * 6.9, 6.6, 2.7), Cc(s * 7.3, 10.0, 2.0));
+    comb(0, -5.6, 5, 3.2, 5.2);
+  }
+  let sdf = smoothF([...body, ...hair], 1.6);
+  if (o.stand === "on") { const base = sdf, y0 = botY - SLOT_DEPTH, y1 = botY + 2, cy = (y0 + y1) / 2, hh = (y1 - y0) / 2; sdf = (x, y) => max(base(x, y), -max(abs(x) - SLOT_W / 2, abs(y - cy) - hh)); }
+  return { k, Q, half, hwAt, arm, sdf, botY, box: [-26 * k, -14 * k, 26 * k, botY + 2] };
+}
+
+// ---------------- garments ----------------
+function skirtHalf(o, D, ev, yw, yh, under) { // right half profile in percent, from waist to hem
+  const a = D.hwAt(yw + 1) + (under ? 0.5 : 0.9), era = o.era;
+  if (era === "crinoline") { const b = (ev ? 36 : 33.5) - (under ? 1.5 : 0), pts = []; for (let i = 0; i <= 12; i++) { const s = i / 12; pts.push([a + (b - a) * pow(s, 0.95), yw + (yh - yw) * s]); } return pts; }
+  const e = under ? -1.2 : 0, d = yh - yw;
+  const ctl = era === "bustle"
+    ? [[a, yw], [a + 2.0, yw + 0.08 * d], [11 + e * 0.3, yw + 0.20 * d], [11.6 + e * 0.4, yw + 0.40 * d], [12.8 + e * 0.6, yw + 0.62 * d], [15.6 + e, yw + 0.82 * d], [(ev ? 24 : 20.5) + e, yh]]
+    : [[a, yw], [a + 2.0, yw + 0.09 * d], [11 + e * 0.3, yw + 0.21 * d], [13.6 + e * 0.5, yw + 0.40 * d], [17.6 + e * 0.7, yw + 0.62 * d], [21.6 + e, yw + 0.82 * d], [(ev ? 26.5 : 24.6) + e, yh]];
+  return curve(ctl, 5);
+}
+// skirt outline, in mm; the hem may be scalloped (cut)
+function skirtShape(o, D, opt) {
+  const { Q, k } = D, right = skirtHalf(o, D, opt.ev, opt.yw, opt.yh, opt.under), xr = right.at(-1)[0], sag = opt.under ? 1.0 : 1.7;
+  const hemP = []; const n = 28; for (let i = 0; i <= n; i++) { const u = 1 - 2 * i / n; hemP.push(Q(xr * u, opt.yh + sag * (1 - u * u))); }
+  let hem = hemP;
+  if (opt.scallop && !opt.under) { const w = max(7, 3.4 * k); hem = scallopPath(hemP, w, 1.5 + 0.4 * (k - 2), (x, y) => [0, 1]); }
+  const r = right.map(([x, y]) => Q(x, y)), l = right.map(([x, y]) => Q(-x, y)).reverse();
+  return { poly: [...r, ...hem, ...l], right, xr, sag, hemP };
+}
+function bodiceShape(o, D, opt) { // the bodice as a polygon in mm; opt: neck, bottom
+  const { Q, hwAt } = D, e = 0.55;
+  const neck = { high: [[0, 12.7], [2.8, 12.5], [3.2, 13.9], [4.5, 14.2]], jewel: [[0, 14.9], [1.7, 14.7], [3.1, 14.1], [4.5, 14.0]], square: [[0, 19.4], [4.8, 19.4], [5.0, 15.6], [5.8, 15.0]], off: [[0, 21.4], [3.6, 20.4], [7.0, 19.3], [9.6, 19.0]] }[opt.neck];
+  const shoulder = opt.neck === "off" ? [] : [[7.6, 15.3], [9.6, 16.6]];
+  const side = [[10.0, 19.4], [9.2, 22.6], [hwAt(26) + e, 26], [hwAt(30) + e, 30], [hwAt(33) + e, 33.2]];
+  const bottoms = { point: [[hwAt(35) + e, 35.4], [3.3, 37.8], [0, 39.6]], cuirass: [[hwAt(37) + e, 37], [hwAt(42) + 0.8, 42], [hwAt(46) + 0.6, 46], [3.5, 47.2], [0, 48.4]], belt: [[hwAt(34) + e + 0.3, 34.4], [0, 35.0]], peplum: [[hwAt(36) + 1.6, 37.5], [hwAt(41) + 4.0, 42.0], [hwAt(41) + 1.4, 45.0], [0, 46.0]] };
+  return symm([...neck, ...shoulder, ...side, ...bottoms[opt.bottom]]).map(([x, y]) => Q(x, y));
+}
+function sleeveFn(D, type, s) { // distance field of one sleeve, from the doll's own arm
+  const { k } = D, A = D.arm(s), L = (a, ra, b, rb) => primF(Limb(a[0], a[1], ra * k, b[0], b[1], rb * k)), C = (c, r) => primF(Circ(c[0], c[1], r * k));
+  const at = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  let fs;
+  if (type === "long") fs = [L(A.S, 3.7, A.E, 3.1), L(A.E, 3.1, A.W, 2.5), C(A.W, 2.6)];
+  else if (type === "pagoda") fs = [L(A.S, 3.7, A.E, 3.4), L(A.E, 3.4, at(A.E, A.W, 1.0), 5.4)];
+  else if (type === "mutton") { const c = at(A.S, A.E, 0.42); fs = [C([c[0] + s * 1.2 * k, c[1] - 1.8 * k], 6.4), L(A.S, 4.4, A.E, 3.9), L(A.E, 3.2, A.W, 2.5), C(A.W, 2.6)]; }
+  else if (type === "puff") fs = [C(at(A.S, A.E, 0.28), 5.0), L(A.S, 4.0, at(A.S, A.E, 0.55), 3.8)];
+  else if (type === "threeq") fs = [L(A.S, 3.7, A.E, 3.1), L(A.E, 3.1, at(A.E, A.W, 0.6), 2.8)];
+  else fs = [C(at(A.S, A.E, 0.1), 3.8)]; // cap
+  return { f: smoothF(fs, 1.2), A };
+}
+function fabricInk(pc, o, extra = {}) { // cloth tint and pattern; returns pen polylines
+  const out = { colour: [], trim: [], shade: [] }, G = pc.Gd, inside = (x, y) => room(pc, x, y) > INK_GAP + 0.3;
+  const gap = { none: 0, light: 2.5, rich: 1.6 }[o.fill];
+  if (gap) out.colour.push(...hatch(G, gap, -PI / 4, inside));
+  if (o.pattern === "stripes") out.trim.push(...hatch(G, 4.4, PI / 2, inside));
+  else if (o.pattern === "check") out.trim.push(...hatch(G, 6, PI / 2, inside), ...hatch(G, 6, 0, inside));
+  else if (o.pattern === "tucks") out.shade.push(...hatch(G, 2.6, 0, inside));
+  else if (o.pattern === "damask") { // a diamond lattice with a small flower where the lines cross
+    const s = 11, a = 62 * D2R; out.trim.push(...hatch(G, s * 0.62, a, inside), ...hatch(G, s * 0.62, PI - a, inside));
+    for (let j = 0, y = G.y0; y < G.y0 + G.ny * G.h; y += s * 0.86, j++) for (let x = G.x0 + (j % 2 ? s / 2 : 0); x < G.x0 + G.nx * G.h; x += s) if (room(pc, x, y) > 2.6) out.trim.push(circle(x, y, 1.0, 10), circle(x, y, 0.35, 6)); }
+  else if (o.pattern === "dots") { const s = 5.2; for (let j = 0, y = G.y0; y < G.y0 + G.ny * G.h; y += s * 0.87, j++) for (let x = G.x0 + (j % 2 ? s / 2 : 0); x < G.x0 + G.nx * G.h; x += s) if (room(pc, x, y) > 2.0) out.trim.push(circle(x, y, 0.7, 10)); }
+  return out;
+}
+const mm = (D, pts) => pts.map(([x, y]) => D.Q(x, y));
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+const unit = v => { const l = hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+
+// pieces: { name, group, z, sdf, box, tabs, ink(pc) -> { line, shade, colour, trim } }
+function skirtInk(pc, o, D, sh, opt) {
+  const { Q, k } = D, L = [], S = [], T = [], era = o.era, tr = o.trim, yw = opt.yw, yh = opt.yh, xr = sh.xr, a = sh.right[0][0];
+  const hwY = y => { const r = sh.right; for (let i = 1; i < r.length; i++) if (y <= r[i][1]) { const p = r[i - 1], q = r[i], t = (y - p[1]) / (q[1] - p[1]); return p[0] + (q[0] - p[0]) * t; } return r.at(-1)[0]; };
+  const arcAt = (y, sag, inset = 0.8) => { const hw = hwY(y) - inset, out = []; for (let i = 0; i <= 28; i++) { const u = -1 + 2 * i / 28; out.push(Q(hw * u, y + sag * (1 - u * u))); } return out; };
+  const down = () => [0, 1];
+  L.push([Q(-(a - 0.4), yw + 1.5), Q(a - 0.4, yw + 1.5)]);
+  if (opt.under) { // the petticoat: hoops, tapes
+    const hoops = era === "crinoline" ? 5 : 3;
+    for (let i = 1; i <= hoops; i++) { const y = yw + (yh - yw) * i / (hoops + 0.6); L.push(arcAt(y, 1.6, 0.4)); }
+    for (let i = -2; i <= 2; i++) { const t = i / 2.6; L.push([Q(t * (a - 0.6), yw + 2), Q(t * (xr - 1.4), yh - 0.6)]); }
+    if (tr > 0) T.push(scallopPath(arcAt(yh - 1.8, 1.0, 0.6), 7, 1.4, down));
+    return { line: L, shade: S, colour: [], trim: T };
+  }
+  const n = era === "crinoline" ? 8 : 6;
+  for (let i = 0; i < n; i++) { const t = -0.9 + 1.8 * i / (n - 1); S.push([Q(t * (a - 0.7), yw + 2.0), Q(t * (xr - 1.2), yh - 1.4)]); }
+  if (era === "crinoline") {
+    for (const s of [0.36, 0.62, 0.84]) {
+      const y = yw + (yh - yw) * s, arc = arcAt(y, 1.7);
+      L.push(arc);
+      if (tr > 0) T.push(scallopPath(arc, 6.2, 1.6, down));
+      if (opt.ev && tr >= 1) for (let x = -hwY(y) + 8; x < hwY(y) - 6; x += 15) { const u = x / hwY(y), c = Q(x, y + 1.7 * (1 - u * u) + 0.3); T.push(...rosette(c, 1.1 * k)); }
+      if (tr >= 1) for (let x = -hwY(y) + 2; x < hwY(y) - 1.5; x += 1.9) { const uy = (x / hwY(y)); S.push([Q(x, y - 1.1 + 1.7 * (1 - uy * uy)), Q(x, y + 0.5 + 1.7 * (1 - uy * uy))]); }
+    }
+    if (tr >= 0.5) { for (const sx of [-1, 1]) T.push(...ribbonBow(Q(sx * (hwY(yw + 12) - 0.5), yw + 12), 1.6 * k, sx * 0.5)); }
+  } else if (era === "bustle") {
+    const sw1 = bez(Q(hwY(yw + 11) - 0.8, yw + 10), Q(2, yw + 38), Q(-hwY(yw + 22), yw + 21), 20), sw2 = bez(Q(hwY(yw + 11) - 0.8, yw + 10), Q(-3, yw + 28), Q(-hwY(yw + 16), yw + 14), 16);
+    L.push(sw1, sw2); if (tr > 0) T.push(scallopPath(sw1, 6, 1.5, down));
+    const fy = yh - 10.5, band = arcAt(fy, 1.5); L.push(band, arcAt(fy + 1.3, 1.5));
+    if (tr > 0) T.push(scallopPath(band, 6, 1.4, () => [0, -1]));
+    for (let x = -xr + 3; x < xr - 2.5; x += 1.05) { const u = x / xr, hy = hwY(fy) > abs(x) ? 1 : 0.8; if (abs(x) < hwY(fy + 5)) S.push([Q(x, fy + 2.2 + 1.5 * (1 - u * u)), Q(x * 1.04, yh - 1.2 + 1.7 * (1 - u * u))]); }
+    if (tr >= 0.5) T.push(...ribbonBow(Q(hwY(yw + 11) + 0.4, yw + 10), 2.0 * k, -0.6));
+  } else {
+    for (const s of [0.86, 0.9]) L.push(arcAt(yw + (yh - yw) * s, 1.6, 0.5));
+    if (tr > 0) { const z = zigPath(arcAt(yw + (yh - yw) * 0.88, 1.6, 0.5), 1.4, 0.55 * k * 0.5, down); T.push(z); }
+    if (tr >= 1) { for (let i = -3; i <= 3; i++) { const t = i / 3.4; L.push([Q(t * (a + 0.8), yw + 2.5), Q(t * (xr - 0.6), yw + (yh - yw) * 0.84)]); } }
+  }
+  return { line: L, shade: S, colour: [], trim: T };
+}
+function bodiceInk(pc, o, D, opt) {
+  const { Q, k, hwAt } = D, L = [], S = [], T = [], tr = o.trim, era = o.era;
+  const up = (x, y) => y < Q(0, 21)[1];
+  // lace along the neckline and the shoulder line
+  if (tr > 0 && opt.neck !== "none") for (const run of edgeRuns(pc, 2.6, (x, y) => y < Q(0, opt.neck === "off" ? 22.5 : 18)[1] && abs(x) < D.Q(9.4, 0)[0])) T.push(scallopPath(run, 4.4, 1.3, outward(pc)));
+  if (opt.neck === "high") { L.push([Q(-2.9, 13.1), Q(2.9, 13.1)]); if (tr >= 1) for (const s of [-1, 1]) { T.push(scallopPath(bez(Q(s * 1.3, 14.0), Q(s * 2.2, 17.5), Q(s * 2.6, 23.0), 10), 3.0, 1.1, () => [s, 0])); } }
+  if (opt.neck === "off" && tr >= 0.5) {
+    for (const run of edgeRuns(pc, 6.2, (x, y) => y < Q(0, 25)[1] && abs(x) < Q(9.0, 0)[0])) T.push(scallopPath(run, 5.0, 1.6, outward(pc)));
+    if (tr >= 1) { const c = Q(0, 23.4); T.push(...rosette(c, 1.9 * k), ...rosette(Q(-2.6, 22.2), 1.4 * k), ...rosette(Q(2.6, 22.2), 1.4 * k)); for (const s of [-1, 1]) L.push(bez(Q(s * 1.9, 24.4), Q(s * 4.0, 25.2), Q(s * 5.2, 23.6), 8), bez(Q(s * 1.9, 24.0), Q(s * 4.4, 23.0), Q(s * 5.6, 21.2), 8)); }
+  }
+  // centre front: buttons or a placket
+  if (opt.buttons) { const y0 = opt.neck === "high" ? 14.5 : opt.neck === "jewel" ? 17 : 21.5, y1 = opt.bottom === "cuirass" ? 44 : opt.bottom === "peplum" ? 40 : 33; L.push([Q(0, y0 - 0.5), Q(0, y1 + 1)]); if (tr > 0) for (let y = y0; y <= y1; y += 3.0) T.push(circle(...Q(0, y), 0.5 * k, 10)); }
+  // waist band and bow
+  if (opt.belt) { const y = hwAt(33) && 33.8; L.push([Q(-hwAt(34) - 0.3, 33.6), Q(hwAt(34) + 0.3, 33.6)], [Q(-hwAt(34) - 0.3, 35.0), Q(hwAt(34) + 0.3, 35.0)]); if (tr >= 0.5) T.push(...ribbonBow(Q(0, 34.3), 1.9 * k, 0)); }
+  // bodice lines: bust darts and seams from the shoulder
+  for (const s of [-1, 1]) { L.push(bez(Q(s * 5.6, 16.5), Q(s * 7.4, 23), Q(s * (hwAt(33) - 0.8), 33.2), 12)); }
+  if (opt.bottom !== "belt") { const y = opt.bottom === "cuirass" ? 46 : opt.bottom === "peplum" ? 36.6 : 36; for (const s of [-1, 1]) S.push([Q(s * 1.2, 30), Q(s * 2.6, y)]); }
+  // sleeves: cuff lines and gathers
+  for (const s of [-1, 1]) {
+    const A = D.arm(s), st = opt.sleeve;
+    const cuffAt = (t, r) => { const p = [A.E[0] + (A.W[0] - A.E[0]) * t, A.E[1] + (A.W[1] - A.E[1]) * t], d = unit(sub(A.W, A.E)), n = [-d[1], d[0]]; return [[p[0] - n[0] * r, p[1] - n[1] * r], [p[0] + n[0] * r, p[1] + n[1] * r]]; };
+    if (st === "long") { L.push(cuffAt(0.82, 2.4 * k), cuffAt(0.92, 2.2 * k)); if (tr >= 0.5) { const c = cuffAt(0.98, 2.4 * k); T.push(scallopPath(c, 3.2, 1.0, () => unit(sub(A.W, A.E)))); } }
+    if (st === "threeq") { const c = cuffAt(0.6, 2.4 * k); L.push(cuffAt(0.5, 2.5 * k)); if (tr >= 0.5) T.push(scallopPath(c, 3.2, 1.2, () => unit(sub(A.W, A.E)))); }
+    if (st === "pagoda") { const c = cuffAt(1.06, 6.0 * k); L.push(cuffAt(0.8, 4.0 * k)); if (tr > 0) T.push(scallopPath(c, 5, 1.6, () => unit(sub(A.W, A.E)))); }
+    if (st === "mutton") { for (let i = 0; i < 6; i++) { const c = [A.S[0] + (A.E[0] - A.S[0]) * 0.18, A.S[1] + (A.E[1] - A.S[1]) * 0.18]; S.push([c, [c[0] + s * (1.8 + i * 1.5) * k * 0.7, c[1] + (-1.0 + i * 1.1) * k * 0.9]]); } L.push(cuffAt(0.86, 2.2 * k), cuffAt(0.95, 2.0 * k)); if (tr >= 0.5) T.push(scallopPath(cuffAt(1.0, 2.2 * k), 3.2, 1.0, () => unit(sub(A.W, A.E)))); }
+    if (st === "puff") { const m = [A.S[0] + (A.E[0] - A.S[0]) * 0.6, A.S[1] + (A.E[1] - A.S[1]) * 0.6]; for (let i = -2; i <= 2; i++) S.push([[m[0] + i * 1.1 * k * 0.8, m[1] - 3.2 * k], [m[0] + i * 1.0 * k * 0.8, m[1] + 0.2 * k]]); if (tr > 0) { const d = unit(sub(A.E, A.S)), n = [-d[1], d[0]]; const c = [[m[0] - n[0] * 3.2 * k, m[1] - n[1] * 3.2 * k], [m[0] + n[0] * 3.2 * k, m[1] + n[1] * 3.2 * k]]; T.push(scallopPath(c, 3.2, 1.2, () => d)); } }
+  }
+  return { line: L, shade: S, colour: [], trim: T };
+}
+
+// ---- the wardrobe ----
+const shoulderTabs = (D, off) => [-1, 1].map(s => ({ a: D.Q(s * (off ? 6.2 : 5.4), off ? 20.8 : 16.6), d: unit([s * 0.4, -1]), w: TAB_W }));
+const waistTabs = D => [-1, 1].map(s => ({ a: D.Q(s * 3.6, 33.6), d: unit([s, -0.35]), w: TAB_W }));
+function bandTabs(c, w = 4.2) { return [{ a: c, d: [1, 0], w }, { a: c, d: [-1, 0], w }]; }
+
+function wardrobe(o, D) {
+  const { Q, k } = D, out = [], era = o.era, ev = o.kind === "evening";
+  const defNeck = { dress: { crinoline: "jewel", bustle: "high", mutton: "high" }[era], evening: "off", suit: "high" }[o.kind];
+  const neck = o.neck !== "auto" ? o.neck : defNeck;
+  const defSleeve = o.kind === "evening" ? { crinoline: "puff", bustle: "puff", mutton: "puff" }[era] : { crinoline: "pagoda", bustle: "long", mutton: "mutton" }[era];
+  const sleeve = o.sleeves !== "auto" ? o.sleeves : defSleeve;
+  const bottom = { crinoline: "point", bustle: "cuirass", mutton: "belt" }[era];
+  const yw = 32.4, yh = 97.6, scallop = o.hem === "scallop";
+  // petticoat
+  if (o.kind !== "none" && o.petti === "on") {
+    const sh = skirtShape(o, D, { yw, yh, ev: false, under: true, scallop: false }), f = fastPoly(sh.poly);
+    out.push({ name: "petticoat", group: "under", z: 2, sdf: f, box: polyBox(sh.poly), tabs: waistTabs(D), ink: pc => skirtInk(pc, o, D, sh, { yw, yh, under: true }) });
+  }
+  const mkSkirt = (z, name, tabs) => {
+    const sh = skirtShape(o, D, { yw, yh, ev, scallop }), f = fastPoly(sh.poly);
+    return { sh, spec: { name, group: "gown", z, sdf: f, box: polyBox(sh.poly), tabs, ink: pc => { const a = skirtInk(pc, o, D, sh, { yw, yh, ev }), b = fabricInk(pc, o); return { line: a.line, shade: [...a.shade, ...b.shade], colour: b.colour, trim: [...a.trim, ...b.trim] }; } } };
+  };
+  const bodiceSdf = (shape, sl, cut) => { const fp = fastPoly(shape), ls = sleeveFn(D, sl, -1).f, rs = sleeveFn(D, sl, 1).f, u = smoothF([fp, ls, rs], 1.2); return cut ? subF(u, cut) : u; };
+  const sleeveBox = () => [-26 * k, 8 * k, 26 * k, 52 * k];
+  if (o.kind === "dress" || o.kind === "evening") {
+    const b = bodiceShape(o, D, { neck, bottom }), { sh, spec } = mkSkirt(5, ev ? "evening gown" : "dress", shoulderTabs(D, neck === "off"));
+    const body = bodiceSdf(b, sleeve), sk = spec.sdf;
+    spec.sdf = (x, y) => min(body(x, y), sk(x, y));
+    spec.box = joinB(joinB(polyBox(b), spec.box), sleeveBox());
+    const skInk = spec.ink;
+    spec.ink = pc => { const a = skInk(pc), s2 = bodiceInk(pc, o, D, { neck, bottom, sleeve, buttons: !ev, belt: era !== "bustle" || ev }); return { line: [...a.line, ...s2.line], shade: [...a.shade, ...s2.shade], colour: a.colour, trim: [...a.trim, ...s2.trim] }; };
+    out.push(spec);
+  } else if (o.kind === "suit") {
+    const sk = mkSkirt(3, "skirt", waistTabs(D)); out.push(sk.spec);
+    // the blouse under the jacket
+    const bb = bodiceShape(o, D, { neck: "high", bottom: "belt" }), blouse = bodiceSdf(bb, "long");
+    out.push({ name: "blouse", group: "gown", z: 4, sdf: blouse, box: joinB(polyBox(bb), sleeveBox()), tabs: shoulderTabs(D, false), ink: pc => { const a = bodiceInk(pc, o, D, { neck: "high", bottom: "belt", sleeve: "long", buttons: true, belt: false }), f = fabricInk(pc, { ...o, pattern: "plain" }); return { line: a.line, shade: a.shade, colour: f.colour, trim: a.trim }; } });
+    // the jacket, open at the front
+    const jb = bodiceShape(o, D, { neck: "jewel", bottom: "peplum" }), vee = fastPoly(mm(D, [[-3.9, 12.0], [3.9, 12.0], [0.4, 30.0], [-0.4, 30.0]])), jsl = era === "mutton" ? "mutton" : era === "crinoline" ? "pagoda" : "threeq", jacket = bodiceSdf(jb, jsl, vee);
+    out.push({ name: "jacket", group: "gown", z: 6, sdf: jacket, box: joinB(polyBox(jb), sleeveBox()), tabs: shoulderTabs(D, false), ink: pc => {
+      const a = bodiceInk(pc, o, D, { neck: "none", bottom: "peplum", sleeve: jsl, buttons: false, belt: false }), f = fabricInk(pc, o), L = [...a.line], T = [...a.trim];
+      for (const s of [-1, 1]) { L.push([Q(s * 3.5, 12.6), Q(s * 4.4, 17.6), Q(s * 1.1, 22.4)], [Q(s * 4.4, 17.6), Q(s * 0.7, 29.6)]); for (let y = 24; y <= 36; y += 4.2) T.push(circle(...Q(s * 1.6, y), 0.5 * k, 10)); }
+      if (o.trim > 0) for (const run of edgeRuns(pc, 1.9, (x, y) => y > Q(0, 36.5)[1])) T.push(zigPath(run, 1.6, 0.5, outward(pc)));
+      return { line: L, shade: a.shade, colour: f.colour, trim: [...T, ...f.trim] }; } });
+  }
+  // capelet over the shoulders
+  if (o.wrap === "capelet") {
+    const r = [[0, 14.9], [1.7, 14.7], [3.1, 14.1], [4.5, 14.0], [7.6, 14.7], [10.2, 16.2], [12.6, 20.0], [12.9, 25.0], [11.0, 28.2], [7.0, 30.6], [3.2, 32.2], [0, 33.2]];
+    const poly = mm(D, symm(r));
+    out.push({ name: "capelet", group: "wrap", z: 7, sdf: fastPoly(poly), box: polyBox(poly), tabs: shoulderTabs(D, false), ink: pc => {
+      const L = [], T = [];
+      for (const s of [-1, 1]) for (let i = 0; i < 5; i++) L.push(bez(Q(s * (3 + i * 1.5), 14.6 + i * 0.25), Q(s * (5 + i * 2.1), 18 + i * 1.2), Q(s * (4.2 + i * 2.1), 27 + i * 1.2), 10));
+      if (o.trim > 0) for (const run of edgeRuns(pc, 2.0, (x, y) => y > Q(0, 24)[1])) { T.push(scallopPath(run, 4.2, 1.3, outward(pc))); }
+      if (o.trim >= 0.5) for (const run of edgeRuns(pc, 3.7, (x, y) => y > Q(0, 24.5)[1])) { for (let i = 0; i + 1 < run.length; i += 3) { const p = run[i], n = outward(pc)(p[0], p[1]); L.push([[p[0], p[1]], [p[0] + n[0] * 1.5, p[1] + n[1] * 1.5]]); } }
+      const f = fabricInk(pc, o); return { line: L, shade: f.shade, colour: f.colour, trim: [...T, ...f.trim] }; } });
+  }
+  if (o.jewel === "cameo") {
+    const cy = 12.6, poly = mm(D, [[-2.9, cy - 0.7], [2.9, cy - 0.7], [2.9, cy + 0.7], [-2.9, cy + 0.7]]);
+    out.push({ name: "cameo choker", group: "jewel", z: 8, sdf: (x, y) => min(fastPoly(poly)(x, y), hypot(x - 0, y - Q(0, cy + 1.3)[1]) - 1.9 * k), box: [-6 * k, (cy - 2) * k, 6 * k, (cy + 4) * k], tabs: bandTabs(Q(0, cy), 2.8), ink: pc => ({ line: [circle(...Q(0, cy + 1.3), 1.45 * k, 20), arcP(...Q(0, cy + 1.2), 0.5 * k, 0.55 * k, 190, 350, 8), circle(...Q(0, cy + 0.85), 0.25 * k, 8)], shade: [], colour: [], trim: dots([Q(-2.2, cy), Q(2.2, cy)], 1.1, 0.25) }) });
+  }
+  // hats
+  const hats = o.hat === "all" ? ["bonnet", "toque", "picture", "boater"] : o.hat === "none" ? [] : [o.hat];
+  for (const h of hats) out.push(hatSpec(h, o, D));
+  // things in the hands
+  for (const [s, kind] of [[-1, o.lhand], [1, o.rhand]]) if (kind && kind !== "none") out.push(heldSpec(kind, s, o, D));
+  return out;
+}
+
+// ---- hats: ribbon strings run down the cheek and fold behind at the jaw ----
+function hatSpec(kind, o, D) {
+  const { Q, k } = D, C = (x, y, r) => primF(Circ(...Q(x, y), r * k));
+  const ell = (cx, cy, rx, ry, ang = 0, n = 40) => mm(D, Array.from({ length: n }, (_, i) => { const t = i / n * TAU, x = rx * cos(t), y = ry * sin(t); return [cx + x * cos(ang) - y * sin(ang), cy + x * sin(ang) + y * cos(ang)]; }));
+  let f, box, ink;
+  const STRAP = { bonnet: [[4.9, 4.8], [3.9, 7.4], [2.9, 9.9]], toque: [[4.0, -2.0], [5.4, 2.4], [4.3, 7.4], [2.9, 9.9]], picture: [[4.9, 2.2], [5.2, 4.6], [4.1, 7.6], [2.9, 9.9]], boater: [[5.5, 0.3], [5.4, 3.6], [4.1, 7.6], [2.9, 9.9]] }[kind];
+  const strapPts = s => STRAP.map(([x, y]) => Q(s * x, y));
+  const strap = s => { // from the hat over the cheek to the jaw, then out past her edge
+    const P = strapPts(s), out = []; for (let i = 0; i + 1 < P.length; i++) out.push(primF(Limb(P[i][0], P[i][1], 1.7, P[i + 1][0], P[i + 1][1], 1.7))); return out;
+  };
+  const tabs = [-1, 1].map(s => ({ a: Q(s * 2.9, 9.9), d: unit([s, 0.25]), w: 5 }));
+  const straps = [...strap(-1), ...strap(1)];
+  const ribbonInk = (s, L) => { const P = strapPts(s); for (const off of [-0.7, 0.7]) L.push(P.map(([x, y], i) => [x + off * (i === P.length - 1 ? 0.6 : 1), y])); };
+  if (kind === "bonnet") {
+    const crown = fastPoly(ell(0, -0.6, 9.0, 11.8)), cut = interF(crown, (x, y) => y - 10.4 * k), notch = unionF([fastPoly(ell(0, 6.8, 4.0, 5.2)), fastPoly(mm(D, [[-4.0, 6.8], [4.0, 6.8], [4.0, 15], [-4.0, 15]]))]);
+    f = unionF([subF(cut, notch), ...straps]); box = [-10 * k, -14 * k, 10 * k, 14 * k];
+    ink = pc => { const L = [], T = [], S = [];
+      L.push(arcP(...Q(0, -0.6), 7.9 * k, 10.4 * k, 200, 340, 30), bez(Q(-6.3, 3), Q(-7.0, 6.5), Q(-4.5, 9.4), 10), bez(Q(6.3, 3), Q(7.0, 6.5), Q(4.5, 9.4), 10));
+      for (let a = 200; a <= 340; a += 12) { const p = [Q(0, -0.6)[0] + cos(a * D2R) * 5.0 * k, Q(0, -0.6)[1] + sin(a * D2R) * 6.4 * k], q = [Q(0, -0.6)[0] + cos(a * D2R) * 7.9 * k, Q(0, -0.6)[1] + sin(a * D2R) * 10.4 * k]; S.push([p, q]); }
+      if (o.trim > 0) for (const run of edgeRuns(pc, 2.0, (x, y) => hypot(x, y - Q(0, 6.4)[1]) < 6.4 * k && y < Q(0, 12)[1])) T.push(scallopPath(run, 3.6, 1.1, outward(pc)));
+      if (o.trim >= 0.5) { T.push(...rosette(Q(-5.6, 2.2), 1.5 * k), ...rosette(Q(-4.2, -3.4), 1.3 * k)); T.push(...ribbonBow(Q(5.6, 3.0), 1.4 * k, 0.4)); }
+      ribbonInk(-1, L); ribbonInk(1, L); return { line: L, shade: S, colour: [], trim: T }; };
+  } else if (kind === "toque") {
+    const crown = fastPoly(ell(-1.0, -7.2, 5.4, 4.8, -0.12)), brim = fastPoly(ell(-0.8, -2.8, 6.8, 2.7, -0.16));
+    const spine = curve([[2.4, -5.0], [5.2, -10.6], [9.8, -12.8], [14.4, -10.6], [15.6, -6.0]].map(([x, y]) => [x, y]), 6), w = i => 2.7 * pow(sin(PI * (0.06 + 0.9 * i / (spine.length - 1))), 0.8);
+    const left = [], right = []; spine.forEach((p, i) => { const q = spine[min(i + 1, spine.length - 1)], r = spine[max(i - 1, 0)], d = unit(sub(q, r)), n = [-d[1], d[0]]; left.push([p[0] + n[0] * w(i), p[1] + n[1] * w(i)]); right.push([p[0] - n[0] * w(i), p[1] - n[1] * w(i)]); });
+    const plume = fastPoly(mm(D, [...left, ...right.reverse()]));
+    f = unionF([crown, brim, plume, ...straps]); box = [-10 * k, -17 * k, 20 * k, 14 * k];
+    ink = pc => { const L = [], T = [], S = []; L.push(arcP(...Q(-0.8, -2.8), 5.2 * k, 1.9 * k, 10, 170, 20), arcP(...Q(-1.0, -7.2), 4.2 * k, 3.4 * k, 190, 350, 20), mm(D, spine));
+      for (let i = 2; i < spine.length - 2; i += 1) { const p = spine[i], q = spine[min(i + 1, spine.length - 1)], r = spine[max(i - 1, 0)], d = unit(sub(q, r)), n = [-d[1], d[0]], ww = w(i); for (const sg of [-1, 1]) S.push([Q(p[0] + 0, p[1] + 0), Q(p[0] + n[0] * sg * ww * 0.9 + d[0] * 1.1, p[1] + n[1] * sg * ww * 0.9 + d[1] * 1.1)]); }
+      if (o.trim >= 0.5) { T.push(...ribbonBow(Q(-6.6, -2.6), 1.5 * k, -0.4)); T.push(...rosette(Q(2.6, -4.2), 1.4 * k)); }
+      ribbonInk(-1, L); ribbonInk(1, L); return { line: L, shade: S, colour: [], trim: T }; };
+  } else if (kind === "picture") {
+    const brim = fastPoly(ell(0, -1.4, 16.5, 4.6, -0.1)), crown = C(0, -6.4, 6.0);
+    f = unionF([brim, crown, ...straps]); box = [-18 * k, -14 * k, 18 * k, 14 * k];
+    ink = pc => { const L = [], T = [], S = []; L.push(arcP(...Q(0, -5.8), 4.8 * k, 4.0 * k, 190, 350, 20), arcP(...Q(0, -1.4), 14.4 * k, 3.2 * k, 5, 175, 40));
+      for (let a = 0; a < 360; a += 12) { const c = Q(0, -1.4); S.push([[c[0] + cos(a * D2R) * 13.2 * k, c[1] + sin(a * D2R) * 2.9 * k], [c[0] + cos(a * D2R) * 15.6 * k, c[1] + sin(a * D2R) * 4.3 * k]]); }
+      L.push(arcP(...Q(0, -2.8), 5.3 * k, 1.2 * k, 5, 175, 16));
+      if (o.trim > 0) for (const run of edgeRuns(pc, 1.9, (x, y) => true)) T.push(scallopPath(run, 5.2, 1.2, outward(pc)));
+      if (o.trim >= 0.5) { T.push(...ribbonBow(Q(-8.8, -3.0), 2.3 * k, -0.5)); T.push(...rosette(Q(-5.4, -4.0), 1.5 * k), ...rosette(Q(6.2, -3.6), 1.7 * k), ...rosette(Q(8.6, -3.0), 1.3 * k)); }
+      ribbonInk(-1, L); ribbonInk(1, L); return { line: L, shade: S, colour: [], trim: T }; };
+  } else { // boater
+    const brim = fastPoly(ell(0, -0.3, 9.2, 2.6)), crown = fastPoly(mm(D, [[-5.2, -10.2], [5.2, -10.2], [5.4, -0.3], [-5.4, -0.3]]));
+    f = unionF([brim, crown, ...straps]); box = [-11 * k, -12 * k, 11 * k, 14 * k];
+    ink = pc => { const L = [], T = [], S = []; L.push([Q(-4.7, -1.5), Q(4.7, -1.5)], [Q(-4.7, -2.7), Q(4.7, -2.7)], arcP(...Q(0, -10.2), 5.2 * k, 0.7 * k, 180, 360, 16));
+      if (o.trim > 0) for (let x = -4.4; x <= 4.4; x += 1.1) T.push([Q(x, -2.6), Q(x + 0.5, -1.6)]);
+      for (let x = -8; x <= 8; x += 1.6) S.push([Q(x, -1.2), Q(x * 1.04, 0.5)]);
+      ribbonInk(-1, L); ribbonInk(1, L); return { line: L, shade: S, colour: [], trim: T }; };
+  }
+  const tpl = { name: { bonnet: "poke bonnet", toque: "toque", picture: "picture hat", boater: "boater" }[kind], group: "hat", z: 10, sdf: f, box, tabs, hatKind: kind, ink: pc => { const a = ink(pc), fb = fabricInk(pc, { ...o, pattern: o.pattern === "dots" || o.pattern === "stripes" ? o.pattern : "plain", fill: o.fill === "none" ? "none" : "light" }); return { line: a.line, shade: [...a.shade, ...fb.shade], colour: fb.colour, trim: [...a.trim, ...fb.trim] }; } };
+  return tpl;
+}
+
+// ---- things held: a band across the wrist or hand with a tab each side ----
+function heldSpec(kind, s, o, D) {
+  const { Q, k } = D, A = D.arm(s), C = [A.W[0] + (A.Hd[0] - A.W[0]) * 0.55, A.W[1] + (A.Hd[1] - A.W[1]) * 0.55];
+  const P = (x, y) => [C[0] + x * k, C[1] + y * k], band = primF(Limb(C[0] - 4.8, C[1], 2.1, C[0] + 4.8, C[1], 2.1));
+  let fs, box, tabs = bandTabs(C), ink, name = kind;
+  if (kind === "parasol") {
+    const d = unit([s * 0.38, -1]), ua = [-d[1], d[0]], bottom = P(-d[0] * 5.0, -d[1] * 5.0), apex = P(d[0] * 26, d[1] * 26), rc = [apex[0] - d[0] * 8.2 * k, apex[1] - d[1] * 8.2 * k], hw = 14.5 * k;
+    const dome = []; for (let i = 0; i <= 24; i++) { const t = i / 24 * PI, u = hw * cos(t), v = 8.2 * k * sin(t); dome.push([rc[0] + ua[0] * u + d[0] * v, rc[1] + ua[1] * u + d[1] * v]); }
+    const rim = []; for (let i = 1; i < 5 * 8; i++) { const fr = (i % 8) / 8, u = -hw + 2 * hw * i / 40, v = -1.5 * k * sin(PI * fr); rim.push([rc[0] + ua[0] * u + d[0] * v, rc[1] + ua[1] * u + d[1] * v]); }
+    const poly = [...dome, ...rim], shaft = primF(Limb(bottom[0], bottom[1], 1.2, rc[0], rc[1], 1.2));
+    fs = [fastPoly(poly), shaft, band]; box = growB(joinB(polyBox(poly), polyBox([bottom, apex, C])), 4);
+    ink = pc => { const L = [], S = [], T = []; for (let i = 0; i <= 5; i++) { const u = -hw + 2 * hw * i / 5; L.push([[rc[0] + ua[0] * u + d[0] * (8.2 * k * sqrt(max(0, 1 - (u / hw) ** 2)) * 0.97), rc[1] + ua[1] * u + d[1] * (8.2 * k * sqrt(max(0, 1 - (u / hw) ** 2)) * 0.97)], apex]); }
+      for (let i = 1; i < 5; i++) { const u = -hw + 2 * hw * i / 5; L.push([apex, [rc[0] + ua[0] * u - d[0] * 1.3 * k, rc[1] + ua[1] * u - d[1] * 1.3 * k]]); }
+      L.push(circle(apex[0] - d[0] * 0.2 * k, apex[1] - d[1] * 0.2 * k, 0.3 * k, 8));
+      if (o.trim > 0) { const r2 = []; for (let i = 0; i <= 30; i++) { const u = -hw * 0.92 + 1.84 * hw * i / 30; r2.push([rc[0] + ua[0] * u + d[0] * 2.2 * k, rc[1] + ua[1] * u + d[1] * 2.2 * k]); } T.push(zigPath(r2, 1.5, 0.6, () => d)); }
+      const f = fabricInk(pc, o); return { line: L, shade: f.shade, colour: f.colour, trim: [...T, ...f.trim] }; };
+  } else if (kind === "fan") {
+    const c = P(s * 0.6, -0.8), dirA = atan2(-1, s * 0.55), pts = [c];
+    for (let i = 0; i <= 20; i++) { const a = dirA + (-52 + 104 * i / 20) * D2R; pts.push([c[0] + cos(a) * 17 * k, c[1] + sin(a) * 17 * k]); }
+    const stick = primF(Limb(C[0], C[1], 1.2, c[0], c[1], 1.5));
+    const arcPts = pts.slice(1), edge = scallopPath(arcPts, 5.2, 1.5, (x, y) => unit([x - c[0], y - c[1]]));
+    const poly = [c, ...edge];
+    fs = [fastPoly(poly), stick, band]; box = growB(polyBox([...poly, C]), 4);
+    ink = pc => { const L = [], T = []; for (let i = 0; i <= 8; i++) { const a = dirA + (-52 + 104 * i / 8) * D2R; L.push([c, [c[0] + cos(a) * 16 * k, c[1] + sin(a) * 16 * k]]); }
+      L.push(arcP(c[0], c[1], 11 * k, 11 * k, (dirA / D2R) - 52, (dirA / D2R) + 52, 24)); if (o.trim > 0) for (let i = 0; i < 8; i++) { const a = dirA + (-45 + 90 * (i + 0.5) / 8) * D2R; T.push(circle(c[0] + cos(a) * 13.5 * k, c[1] + sin(a) * 13.5 * k, 0.5 * k, 8)); }
+      const f = fabricInk(pc, { ...o, pattern: "plain" }); return { line: L, shade: [], colour: f.colour, trim: T }; };
+  } else if (kind === "bag") {
+    const pc0 = P(s * 0.4, 7.4), pouch = fastPoly(circle(pc0[0], pc0[1], 4.0 * k, 24).map(p => [p[0], p[1]]).slice(0, -1));
+    const loop = primF(Limb(C[0], C[1], 1.0, pc0[0], pc0[1] - 3.2 * k, 1.0));
+    fs = [pouch, loop, band]; box = growB(polyBox([...circle(pc0[0], pc0[1], 4.2 * k, 12), C]), 4);
+    ink = pc => { const L = [], T = []; L.push(arcP(pc0[0], pc0[1] - 2.2 * k, 3.2 * k, 1.2 * k, 0, 180, 14)); for (let i = -3; i <= 3; i++) L.push([[pc0[0] + i * 0.8 * k * 0.9, pc0[1] - 1.9 * k], [pc0[0] + i * 1.0 * k * 0.9, pc0[1] + 3.4 * k]]); if (o.trim > 0) T.push(...rosette([pc0[0], pc0[1] + 0.8 * k], 1.0 * k)); const f = fabricInk(pc, { ...o, pattern: "plain" }); return { line: L, shade: [], colour: f.colour, trim: T }; };
+    name = "reticule";
+  } else if (kind === "muff") { // a muff on a cord looped over the wrist
+    const mc = P(s * 1.0, 9.0), rot = s * 0.35, poly = Array.from({ length: 32 }, (_, i) => { const t = i / 32 * TAU, x = 7.6 * k * cos(t), y = 5.0 * k * sin(t); return [mc[0] + x * cos(rot) - y * sin(rot), mc[1] + x * sin(rot) + y * cos(rot)]; });
+    const cord = primF(Limb(C[0], C[1], 1.0, mc[0], mc[1] - 3.4 * k, 1.0));
+    fs = [fastPoly(poly), cord, band]; box = growB(polyBox([...poly, C]), 4);
+    ink = pc => { const L = [], S = []; for (let i = 0; i < 44; i++) { const a = i / 44 * TAU, e = (rx, ry) => { const x = rx * cos(a), y = ry * sin(a); return [mc[0] + x * cos(rot) - y * sin(rot), mc[1] + x * sin(rot) + y * cos(rot)]; }; S.push([e(3.0 * k, 1.9 * k), e(7.2 * k, 4.7 * k)]); }
+      L.push(arcP(mc[0], mc[1], 4.4 * k, 2.8 * k, 0, 360, 24).map(([x, y]) => { const dx = x - mc[0], dy = y - mc[1]; return [mc[0] + dx * cos(rot) - dy * sin(rot), mc[1] + dx * sin(rot) + dy * cos(rot)]; }));
+      const f = fabricInk(pc, { ...o, pattern: "plain" }); return { line: L, shade: S, colour: f.colour, trim: o.trim > 0 ? rosette([mc[0], mc[1] - 3.9 * k], 0.9 * k) : [] }; };
+  } else { // bouquet
+    const heads = [[0, -7], [-3.2, -5.2], [3.2, -5.2], [-1.6, -9.3], [1.8, -9.0]].map(([x, y]) => P(x, y)), stem = primF(Limb(C[0], C[1], 1.0, ...P(0, -6), 1.0));
+    fs = [...heads.map(h => primF(Circ(h[0], h[1], 2.5 * k))), stem, band]; box = growB(primsBox([...heads.map(h => Circ(h[0], h[1], 2.5 * k)), Circ(C[0], C[1], 3)]), 4);
+    ink = pc => { const T = [], L = []; for (const h of heads) T.push(...rosette(h, 2.2 * k)); L.push([P(-3.0, -2.6), P(0, -1), P(3.0, -2.6)]); const f = fabricInk(pc, { ...o, pattern: "plain", fill: "none" }); return { line: L, shade: [], colour: [], trim: T }; };
+    name = "bouquet";
+  }
+  return { name: `${name}, ${s < 0 ? "left" : "right"} hand`, group: "held", z: 9, sdf: unionF(fs), box, tabs, ink };
+}
+
+// ---- the base: a cross plate that interlocks with the notch between her legs ----
+function standSpec(o, D) {
+  const { k } = D, Ls = clamp(0.46 * o.height, 84, 120), hs = 26, hw = Ls / 2;
+  const box = (x, y) => { const qx = abs(x) - (hw - hs / 2) + 3, qy = abs(y) - hs / 2 + 3; return hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - 3; };
+  const f0 = smoothF([box, (x, y) => hypot(abs(x) - (hw - hs / 2), y) - hs / 2], 3.0);
+  const f = (x, y) => max(f0(x, y), -max(abs(x) - SLOT_W / 2, abs(y + hs / 2 - SLOT_DEPTH / 2 + 1) - (SLOT_DEPTH / 2 + 1)));
+  const prev = Array.from({ length: 48 }, (_, i) => { const t = i / 48 * TAU; return [Ls * 0.34 * cos(t), D.botY + 1.5 + 4.5 * sin(t)]; });
+  return { name: "base", group: "stand", z: 1.5, preview: prev, sdf: f, box: [-hw - 1, -hs / 2 - 1, hw + 1, hs / 2 + 1], tabs: [], noTabs: true,
+    ink: pc => { const L = [], T = [];
+      for (const r of contours(pc.Gd, 2.0)) { const q = smooth(r, 1); L.push([...q, q[0]]); }
+      for (const r of contours(pc.Gd, 3.6)) { const q = smooth(r, 1); if (o.trim > 0) T.push(dots([...q, q[0]], 5.5, 0.55)); }
+      for (const s of [-1, 1]) { T.push(...rosette([s * (hw - hs / 2), 0], 5.2)); for (let i = 1; i <= 3; i++) T.push(circle(s * (SLOT_W + 6 + i * 7), 3.5, 0.8, 8)); }
+      L.push([[-SLOT_W, -hs / 2 + 4], [-SLOT_W - 4, -hs / 2 + 4]], [[SLOT_W, -hs / 2 + 4], [SLOT_W + 4, -hs / 2 + 4]]);
+      return { line: L, shade: [], colour: [], trim: o.trim > 0 ? T : [] }; } };
+}
+
+// ---- the doll's own ink ----
+function dollInk(pc, o, D) {
+  const { Q, k, hwAt } = D, L = [], S = [], Co = [], T = [];
+  const P = (x, y) => Q(x, y), cub = (a, b, c, d, n = 16) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, u = 1 - t; return [0, 1].map(j => u * u * u * a[j] + 3 * u * u * t * b[j] + 3 * u * t * t * c[j] + t * t * t * d[j]); });
+  const B = (a, b, c, n = 10) => bez(P(...a), P(...b), P(...c), n);
+  const inFace = (x, y) => { const X = x / k, Y = y / k; return (X / 3.9) ** 2 + ((Y - 7.6) / 5.4) ** 2 < 1 || (abs(X) < 2.6 && Y > 10.2 && Y < 15.4); };
+  const mask = lines => { const out = []; for (const l of lines) { let run = []; for (const p of l) { if (inFace(p[0], p[1])) { if (run.length > 1) out.push(run); run = []; } else run.push(p); } if (run.length > 1) out.push(run); } return out; };
+  const bundle = (pts, n, gap) => { const out = [], m = pts.length; for (let j = 0; j < n; j++) { const off = (j - (n - 1) / 2) * gap; out.push(pts.map((p, i) => { const a = pts[max(i - 1, 0)], b = pts[min(i + 1, m - 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1; return [p[0] - dy / l * off, p[1] + dx / l * off]; })); } return out; };
+  const spiral = (cx, cy, r, turns = 2.2, flat = 0.85, a0 = 0, dir = 1) => { const n = ceil(turns * 18); return Array.from({ length: n + 1 }, (_, i) => { const t = i / n, a = a0 + dir * t * turns * TAU, rr = r * (0.1 + 0.9 * t); return P(cx + rr * cos(a), cy + rr * sin(a) * flat); }); };
+  // strands that leave the hairline and sweep out over a roll of hair (cx, cy, rx, ry), alternating a gentle S
+  const fan = (cx, cy, rx, ry, a0, a1, n, wave, bn, gap) => { const out = []; for (let i = 0; i < n; i++) { const a = (a0 + (a1 - a0) * (n === 1 ? 0.5 : i / (n - 1))) * D2R, c = cos(a), s = sin(a), P0 = P(3.9 * c * 0.98, 7.6 + 5.0 * s * 0.98), P3 = P(cx + rx * c, cy + ry * s), dx = P3[0] - P0[0], dy = P3[1] - P0[1], l = hypot(dx, dy) || 1, w = wave * k * (i % 2 ? 1 : -1), nx = -dy / l * w, ny = dx / l * w; out.push(...bundle(cub(P0, [P0[0] + dx * 0.3 + nx, P0[1] + dy * 0.3 + ny], [P0[0] + dx * 0.7 - nx, P0[1] + dy * 0.7 - ny], P3), bn, gap)); } return out; };
+  // contour-parallel finger waves between the hairline and the outer edge of a roll of hair (a marcel wave)
+  const marcel = (cx, cy, rx, ry, t0, t1, n, amp, freq, a0 = 182, a1 = 358) => { const out = [];
+    for (let j = 0; j < n; j++) { const t = t0 + (t1 - t0) * (n === 1 ? 0.5 : j / (n - 1)), pts = [], na = ceil((a1 - a0) / 3);
+      for (let i = 0; i <= na; i++) { const a = (a0 + (a1 - a0) * i / na) * D2R, c = cos(a), sn = sin(a), h = P(4.0 * c, 7.6 + 5.4 * sn), q = P(cx + rx * c, cy + ry * sn), w = amp * k * (0.4 + 0.6 * t) * sin(a * freq + j * 0.9), dx = q[0] - h[0], dy = q[1] - h[1], l = hypot(dx, dy) || 1;
+        pts.push([h[0] + dx * t + dx / l * w, h[1] + dy * t + dy / l * w]); }
+      out.push(pts); }
+    return out; };
+  const parting = () => [P(0, 7.6 - 5.4), P(0, -1.6)];
+  // ---- face: lidded eyes with lashes, arched brows, a small nose, bow lips, a touch of blush
+  for (const s of [-1, 1]) {
+    L.push(cub(P(s * 0.7, 6.4), P(s * 1.1, 5.4), P(s * 2.1, 5.3), P(s * 3.0, 6.1)), B([s * 0.8, 6.5], [s * 1.8, 7.0], [s * 2.9, 6.2]), cub(P(s * 0.8, 5.0), P(s * 1.3, 4.6), P(s * 2.3, 4.6), P(s * 3.0, 5.2)));
+    L.push(circle(...P(s * 1.85, 6.1), 0.55 * k, 12), circle(...P(s * 1.85, 6.1), 0.22 * k, 8), [P(s * 2.7, 5.7), P(s * 3.3, 5.1)], [P(s * 2.4, 5.4), P(s * 2.9, 4.6)], [P(s * 2.9, 6.0), P(s * 3.5, 5.7)]);
+    L.push(cub(P(s * 0.6, 4.2), P(s * 1.5, 3.3), P(s * 2.6, 3.2), P(s * 3.5, 4.1)), cub(P(s * 0.7, 4.45), P(s * 1.6, 3.65), P(s * 2.6, 3.55), P(s * 3.4, 4.3)));
+    for (let i = 0; i < 5; i++) S.push([P(s * (2.2 + i * 0.35), 8.2 + i * 0.28), P(s * (2.6 + i * 0.35), 7.7 + i * 0.28)]);
+    L.push(B([s * 0.6, 8.6], [s * 0.95, 8.9], [s * 0.55, 8.9], 6));
+    L.push(bez(P(s * 0.8, 13.0), P(s * 1.6, 13.3), P(s * 2.4, 13.9), 8));
+  }
+  L.push(B([0.35, 6.9], [0.75, 8.1], [0.5, 8.6], 8), B([-0.6, 8.7], [0, 9.2], [0.6, 8.7], 8));
+  L.push(B([-1.6, 10.2], [-0.7, 9.6], [0, 9.9], 8), B([0, 9.9], [0.7, 9.6], [1.6, 10.2], 8), B([-1.6, 10.2], [0, 10.45], [1.6, 10.2], 8), B([-1.6, 10.2], [0, 11.2], [1.6, 10.2], 10));
+  for (let i = 0; i < 7; i++) Co.push([P(-1.1 + i * 0.37, 10.55), P(-1.0 + i * 0.37, 10.95)]);
+  for (let i = 0; i < 4; i++) S.push([P(-1.5 + i * 0.5, 11.5 + i % 2 * 0.2), P(-1.3 + i * 0.5, 12.0)]);
+  for (const s of [-1, 1]) L.push(B([s * 0.9, 15.0], [s * 3.0, 14.4], [s * 5.2, 15.4], 10));
+  // ---- hair: fine etched strands in the shade pen, structure in the line pen
+  const hs = [], hl = [], ht = [];
+  const sideWaves = (n, x0, x1, y0, y1) => { for (const s of [-1, 1]) for (let j = 0; j < n; j++) { const dx = j * 0.55; hs.push(...bundle(cub(P(s * (x0 + dx), y0 + j * 0.2), P(s * (x0 + 1.3 + dx), y0 + (y1 - y0) * 0.35), P(s * (x1 - 1.0 + dx * 0.8), y0 + (y1 - y0) * 0.7), P(s * (x1 + dx * 0.8), y1 - j * 0.35)), 3, 0.42)); } };
+  if (o.hair === "pompadour") {
+    hs.push(...marcel(0, 0.2, 7.2, 5.4, 0.08, 0.97, 16, 0.75, 9)); hl.push(...marcel(0, 0.2, 7.2, 5.4, 0.3, 0.9, 4, 0.5, 6), parting());
+    sideWaves(4, 4.2, 5.6, 2.2, 7.4);
+    for (const w of [3.0, 1.6, 0.4]) hs.push(...bundle(spiral(0, -6.0, 4.4 * (w + 0.8) / 3.8, 2.6, 0.7, 0.3), 2, 0.45));
+    hl.push(spiral(0, -6.0, 4.6, 3.0, 0.7, 0.3), arcP(...P(0, -6.0), 4.7 * k, 3.1 * k, 0, 360, 36));
+    for (let i = 0; i < 5; i++) { const a = (230 + 80 * i / 4) * D2R; ht.push(circle(...P(5.4 * cos(a) + 0.7 * cos(a), -6.0 + (5.4 + 0.7) * sin(a) * 0.8), 0.45 * k, 8)); hl.push([P(3.4 * cos(a), -6.0 + 3.4 * sin(a) * 0.8), P(5.1 * cos(a), -6.0 + 5.1 * sin(a) * 0.8)]); }
+    ht.push(...[-1, 1].flatMap(s => [circle(...P(s * 3.6, 3.0), 0.5 * k, 8)]));
+  } else if (o.hair === "ringlets") {
+    hs.push(...marcel(0, 1.0, 7.0, 5.0, 0.08, 0.97, 14, 0.7, 8)); hl.push(...marcel(0, 1.0, 7.0, 5.0, 0.3, 0.9, 3, 0.5, 6), parting());
+    sideWaves(4, 4.2, 5.8, 3.0, 12.4);
+    for (const s of [-1, 1]) for (let j = 0; j < 6; j++) hs.push(...bundle(cub(P(s * (4.2 + j * 0.5), 7), P(s * (4.8 + j * 0.6), 9.5), P(s * (6.4 + j * 0.3), 12.5), P(s * (7.0 + j * 0.3), 15.5)), 3, 0.42));
+    const curls = [[0, -4.8, 3.0], [-3.4, -3.4, 2.6], [3.4, -3.4, 2.6], [-5.8, -1.0, 2.0], [5.8, -1.0, 2.0], [0, -8.0, 1.6], ...[-1, 1].flatMap(s => [[s * 6.2, 10.6, 2.1], [s * 7.1, 13.4, 2.0], [s * 7.8, 16.2, 1.8], [s * 8.2, 18.8, 1.5]])];
+    curls.forEach(([x, y, r], i) => { hl.push(spiral(x, y, r * 0.92, 2.2, 1, i, i % 2 ? 1 : -1), circle(...P(x, y), r * k, 24)); hs.push(...bundle(spiral(x, y, r * 0.72, 1.7, 1, i + 1.3, i % 2 ? 1 : -1), 2, 0.42)); });
+    ht.push(...[-1, 1].flatMap(s => [circle(...P(s * 5.2, 2.2), 0.6 * k, 8), circle(...P(s * 5.2, 2.2), 0.25 * k, 6)]));
+  } else {
+    hs.push(...marcel(0, 1.6, 7.8, 6.8, 0.06, 0.6, 9, 0.6, 8)); hl.push([P(0, 2.2), P(0, -1.0)]);
+    // the coronet: a braid over the top of the head, herringbone plaited
+    const path = Array.from({ length: 56 }, (_, i) => { const a = (178 + 184 * i / 55) * D2R; return P(0 + 6.6 * cos(a), 3.6 + 5.8 * sin(a)); });
+    hl.push(...bundle(path, 2, 2.4 * k * 1.1));
+    for (let i = 0; i + 1 < path.length; i++) { const a = path[i], b = path[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1, nx = -dy / l * 1.25 * k, ny = dx / l * 1.25 * k; hl.push([[a[0] + nx, a[1] + ny], [b[0] - nx, b[1] - ny]]); }
+    for (const s of [-1, 1]) { hl.push(spiral(s * 6.9, 6.6, 2.5, 2.4, 1, s), circle(...P(s * 6.9, 6.6), 2.7 * k, 24), spiral(s * 7.3, 10.0, 1.8, 1.8, 1, s + 1), circle(...P(s * 7.3, 10.0), 2.0 * k, 20)); hs.push(...bundle(spiral(s * 6.9, 6.6, 1.8, 1.8, 1, s + 2), 2, 0.45)); ht.push(...rosette(P(s * 7.9, 8.6), 1.0 * k)); }
+    hl.push(...bundle(spiral(0, -5.6, 4.2, 2.6, 0.72, 0.2), 2, 0.5), arcP(...P(0, -5.6), 4.6 * k, 3.3 * k, 0, 360, 36), circle(...P(0, -9.2), 1.7 * k, 16));
+    for (let i = 0; i < 5; i++) { const a = (230 + 80 * i / 4) * D2R; ht.push(circle(...P(5.2 * cos(a) + 0.7 * cos(a), -5.6 + 5.9 * sin(a) * 0.8), 0.45 * k, 8)); hl.push([P(3.2 * cos(a), -5.6 + 3.2 * sin(a) * 0.8), P(4.9 * cos(a), -5.6 + 4.9 * sin(a) * 0.8)]); }
+  }
+  S.push(...mask(hs)); L.push(...mask(hl)); T.push(...ht);
+  // ---- hands: fingers and a thumb
+  for (const s of [-1, 1]) { L.push([P(s * 17.9, 47.0), P(s * 18.1, 49.3)], [P(s * 18.5, 47.1), P(s * 18.8, 49.5)], [P(s * 18.9, 46.8), P(s * 19.3, 49.0)], B([s * 17.2, 44.8], [s * 16.9, 46.4], [s * 17.6, 47.2], 6)); }
+  // ---- chemise neckline with lace, and straps
+  const neckC = [[-5.4, 17.0], [-4.2, 19.6], [0, 21.4], [4.2, 19.6], [5.4, 17.0]];
+  const nl = curve(neckC.map(([x, y]) => Q(x, y)), 6);
+  L.push(nl); if (o.trim > 0) T.push(scallopPath(nl, 3.2, 1.1, () => [0, 1]));
+  for (const s of [-1, 1]) L.push([Q(s * 4.8, 15.4), Q(s * 5.2, 18.1)]);
+  // ---- corset: top edge, side lines, busk, gussets and the lower edge
+  L.push(curve([[-7.7, 25.0], [-4.0, 23.7], [0, 25.8], [4.0, 23.7], [7.7, 25.0]].map(([x, y]) => Q(x, y)), 6));
+  const side = s => curve([[s * 7.7, 25.0], [s * hwAt(29), 29], [s * (hwAt(33) - 0.1), 33.2], [s * (hwAt(37) + 0.3), 37.4], [s * (hwAt(41) + 0.3), 41.4]].map(([x, y]) => Q(x, y)), 5);
+  L.push(side(-1), side(1), curve([[-hwAt(41) - 0.3, 41.4], [0, 42.8], [hwAt(41) + 0.3, 41.4]].map(([x, y]) => Q(x, y)), 6));
+  L.push([Q(0, 25.9), Q(0, 42.6)]); for (let y = 27.4; y < 42; y += 1.9) T.push([Q(-0.5, y), Q(0.5, y)]);
+  for (const s of [-1, 1]) { L.push(bez(Q(s * 2.7, 24.6), Q(s * 2.2, 33), Q(s * 3.0, 41.8), 10), bez(Q(s * 5.1, 24.4), Q(s * 4.4, 33), Q(s * 5.6, 41.2), 10)); for (let i = 0; i < 6; i++) S.push([Q(s * (5.4 + i * 0.3), 26.0 + i * 2.4), Q(s * (6.6 + i * 0.25), 25.2 + i * 2.5)]); }
+  // ---- drawers: frill at the knee, centre seam; garters; stockings
+  L.push([Q(0, 50.4), Q(0, 100)]);
+  const kn = y => [Q(-7.9, y), Q(-3.8, y + 0.4), Q(0, y), Q(3.8, y + 0.4), Q(7.9, y)];
+  L.push(curve(kn(63.5), 5), curve(kn(65.0), 5)); if (o.trim > 0) T.push(scallopPath(curve(kn(65.0), 5), 3.2, 1.1, () => [0, 1]));
+  for (const s of [-1, 1]) for (let y = 66; y < 90; y += 1.6) S.push([Q(s * 0.6, y), Q(s * (hwAt(y) - 0.45), y)]);
+  L.push(curve(kn(69.5), 5));
+  // ---- boots: tops, buttons and heels
+  for (const s of [-1, 1]) { L.push(bez(Q(s * 0.4, 91.2), Q(s * 2.6, 90.2), Q(s * 4.9, 91.0), 8)); for (let y = 92.2; y < 98; y += 1.3) T.push(circle(...Q(s * 2.6, y), 0.28 * k, 6)); L.push(bez(Q(s * 0.6, 98.2), Q(s * 3.4, 97.0), Q(s * 5.9, 98.4), 8), [Q(s * 0.4, 99.7), Q(s * 5.9, 99.7)]); }
+  return { line: L, shade: S, colour: Co, trim: o.trim > 0 ? T : [] };
+}
+// the doll herself, as a piece
+function dollSpec(o, D) { return { name: "the lady", group: "doll", z: 1, sdf: D.sdf, box: D.box, tabs: [], noTabs: true, ink: pc => dollInk(pc, o, D) }; }
+
+// ================= from spec to cut piece =================
+function makePiece(spec, D, h) {
+  let sdf = spec.sdf; const tabPrims = [], folds = [], infos = [];
+  const dressed = sdf, tabs = (spec.tabs || []);
+  const gs = x => dressed(x[0], x[1]);
+  for (const t of tabs) {
+    let s = 0; while (s < 90 && D.sdf(t.a[0] + t.d[0] * s, t.a[1] + t.d[1] * s) < 0) s += 0.25;
+    if (s >= 90) { infos.push({ ok: false, why: "no edge" }); continue; }
+    let g = s; while (g < s + 30 && gs([t.a[0] + t.d[0] * g, t.a[1] + t.d[1] * g]) < 0) g += 0.25;
+    if (g - s > 10) { infos.push({ ok: false, why: "too far past her edge" }); continue; }
+    const end = g + TAB_FREE, root = [t.a[0] + t.d[0] * g, t.a[1] + t.d[1] * g], tip = [t.a[0] + t.d[0] * end, t.a[1] + t.d[1] * end];
+    tabPrims.push(Limb(t.a[0], t.a[1], t.w / 2, tip[0], tip[1], t.w / 2));
+    const px = -t.d[1], py = t.d[0];
+    for (let q = -t.w / 2 + 0.6; q < t.w / 2 - 0.3; q += 1.6) folds.push([[root[0] + px * q, root[1] + py * q], [root[0] + px * min(q + 0.8, t.w / 2 - 0.5), root[1] + py * min(q + 0.8, t.w / 2 - 0.5)]]);
+    infos.push({ ok: true, free: end - g, at: root });
+  }
+  const cut = tabPrims.length ? (x, y) => { let d = dressed(x, y); for (const q of tabPrims) d = min(d, primDist(q, x, y)); return d; } : dressed;
+  let B = spec.box; for (const q of tabPrims) B = joinB(B, growB(primBox(q), 1));
+  B = growB(B, 3);
+  const G = fieldOf(cut, B, h), Gd = tabPrims.length ? fieldOf(dressed, B, h) : G;
+  const big = F => contours(F, 0).filter(l => abs(loopArea(l)) > 1).sort((p, q) => abs(loopArea(q)) - abs(loopArea(p)));
+  const loops = big(G), dl = tabPrims.length ? big(Gd) : loops;
+  const tidy = l => l ? rdp([...smooth(l, 1), l[0]], 0.02).slice(0, -1) : [];
+  const inPoly = (pt, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; } return c; };
+  const rest = loops.slice(1), inner = rest.filter(l => loops[0] && inPoly(l[0], loops[0]));
+  const windows = inner.filter(l => abs(loopArea(l)) >= 25).map(tidy);
+  return { ...spec, G, Gd, folds, windows, tabInfo: infos, outline: tidy(loops[0]), dressedOutline: tidy(dl[0]), pieces: 1 + rest.length - inner.length };
+}
+
+// ---------------- build ----------------
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [];
+  const D = geom(o), h = clamp(o.height / 560, 0.3, 0.5);
+  const specs = [dollSpec(o, D), ...(o.stand === "on" ? [standSpec(o, D)] : []), ...wardrobe(o, D)];
+  const pieces = specs.map(s => makePiece(s, D, h));
+  for (const p of pieces) {
+    const ink = { line: [], shade: [], colour: [], trim: [], fold: [] }, raw = p.ink(p);
+    for (const key of ["line", "shade", "colour", "trim"]) ink[key].push(...clip(p, raw[key] || []));
+    ink.fold = clip({ Gd: p.G }, p.folds);
+    p.inkOut = ink;
+  }
+  const want = { gown: ["gown"], doll: ["doll", "stand", "under"], extras: ["hat", "wrap", "jewel", "held"], all: null }[o.sheet];
+  const sheet = pieces.filter(p => !want || want.includes(p.group));
+  for (const p of sheet) { const b = polyBox(p.outline); p.pbox = b; }
+  // guillotine packing: biggest piece first, into the free rectangle it leaves least spare in
+  const order = [...sheet].sort((a, b) => max(b.pbox[2] - b.pbox[0], b.pbox[3] - b.pbox[1]) - max(a.pbox[2] - a.pbox[0], a.pbox[3] - a.pbox[1]));
+  let free = [[m, m, W - m, H - m]], fits = true, spill = m;
+  for (const p of order) {
+    const w = p.pbox[2] - p.pbox[0], hh = p.pbox[3] - p.pbox[1]; let best = null, bi = -1, bs = INF;
+    free.forEach((f, i) => { const fw = f[2] - f[0], fh = f[3] - f[1]; if (w <= fw + 1e-6 && hh <= fh + 1e-6) { const sc = min(fw - w, fh - hh); if (sc < bs) { bs = sc; best = f; bi = i; } } });
+    if (!best) { fits = false; p.at = [m - p.pbox[0], H - m + spill - p.pbox[1]]; spill += hh + PART_GAP; continue; }
+    const [x0, y0, x1, y1] = best; p.at = [x0 - p.pbox[0], y0 - p.pbox[1]]; free.splice(bi, 1);
+    if (x1 - x0 - w < y1 - y0 - hh) { free.push([x0 + w + PART_GAP, y0, x1, y0 + hh], [x0, y0 + hh + PART_GAP, x1, y1]); }
+    else { free.push([x0 + w + PART_GAP, y0, x1, y1], [x0, y0 + hh + PART_GAP, x0 + w, y1]); }
+    free = free.filter(f => f[2] - f[0] > 1 && f[3] - f[1] > 1);
+  }
+  if (!sheet.length) notes.push("nothing chosen for this sheet");
+  if (!fits) notes.push("the pieces do not all fit on this page: pick another sheet, a taller page (12 x 24 mat), or a smaller height");
+  const layers = { line: [], shade: [], colour: [], trim: [], outline: [], cut: [] };
+  for (const p of sheet) {
+    const f = q => [q[0] + p.at[0], q[1] + p.at[1]];
+    for (const key of ["line", "shade", "colour", "trim"]) for (const l of p.inkOut[key]) layers[key].push([l.map(f), false]);
+    for (const l of p.inkOut.fold) layers.line.push([l.map(f), false]);
+    layers.cut.push([p.outline.map(f), true]);
+    if (o.outlines === "on") { const ls = o.outlinein < 0.05 ? [p.dressedOutline] : contours(p.Gd, -o.outlinein).filter(l => abs(loopArea(l)) > 1).map(l => smooth(l, 1)); for (const l of ls) layers.outline.push([l.map(f), true]); }
+    for (const w of p.windows) layers.cut.push([w.map(f), true]);
+    if (p.slot) layers.cut.push([p.slot.map(f), true]);
+  }
+  layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
+  // ---------------- gates ----------------
+  let gapMin = INF; for (let i = 0; i < sheet.length; i++) for (let j = i + 1; j < sheet.length; j++) { const a = sheet[i], b = sheet[j], A = [a.pbox[0] + a.at[0], a.pbox[1] + a.at[1], a.pbox[2] + a.at[0], a.pbox[3] + a.at[1]], Bb = [b.pbox[0] + b.at[0], b.pbox[1] + b.at[1], b.pbox[2] + b.at[0], b.pbox[3] + b.at[1]]; gapMin = min(gapMin, max(Bb[0] - A[2], A[0] - Bb[2], Bb[1] - A[3], A[1] - Bb[3])); }
+  let inkBad = 0, inkN = 0, onePiece = 0, tabbed = 0, tabsWanted = 0, tabsGood = 0, minFree = INF;
+  for (const p of sheet) {
+    for (const key of ["line", "shade", "colour", "trim", "fold"]) for (const l of p.inkOut[key]) for (const [px, py] of l) { inkN++; if (room({ Gd: key === "fold" ? p.G : p.Gd }, px, py) < INK_GAP - 0.05) inkBad++; }
+    if (p.pieces === 1) onePiece++;
+    if (p.noTabs) { tabbed++; continue; }
+    tabsWanted += p.tabs.length; const good = p.tabInfo.filter(t => t.ok); tabsGood += good.length; for (const t of good) minFree = min(minFree, t.free);
+    if (good.length >= 2) tabbed++;
+  }
+  const pen = ["line", "shade", "colour", "trim", "outline"].reduce((a, k) => a + layers[k].reduce((s, [q, cl]) => s + plen(q, cl), 0), 0) / 1000, cutm = layers.cut.reduce((s, [q, cl]) => s + plen(q, cl), 0) / 1000;
+  const pts = Object.values(layers).reduce((a, Ls) => a + Ls.reduce((s, [q]) => s + q.length, 0), 0);
+  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py] of q) if (px < m - 0.01 || py < m - 0.01 || px > W - m + 0.01 || py > H - m + 0.01) inside = false;
+  const ms = performance.now() - t0, tb = layers.cut.at(-1)[0].map(q => q.map(v => v.toFixed(2)).join(",")).join(" ");
+  gates.push(["build time under 6000 ms", ms < 6000, `${ms.toFixed(0)} ms`]);
+  gates.push(["total pen length under 150 m (about 45 minutes of plotting, assumed)", pen < 150, `${pen.toFixed(1)} m`]);
+  gates.push(["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]);
+  gates.push(["every piece is one piece with one closed outline", onePiece === sheet.length, `${onePiece} of ${sheet.length}`]);
+  gates.push(["every garment has two fold tabs that stand free", tabbed === sheet.length && tabsGood === tabsWanted, `${tabsGood} of ${tabsWanted} tabs, ${minFree === INF ? "-" : "least free " + minFree.toFixed(1) + " mm"}`]);
+  gates.push([`pieces at least ${PART_GAP} mm apart and inside the margin`, fits && inside && (gapMin >= PART_GAP - 0.01 || sheet.length < 2), sheet.length < 2 ? "one piece" : `closest ${gapMin.toFixed(1)} mm`]);
+  gates.push([`no ink within ${INK_GAP} mm of a cut line (assumed)`, inkBad === 0, `${inkBad} of ${inkN} points`]);
+  gates.push(["trim frame and pen corner ticks have the same bounding box", tb === `${TRIM_INSET.toFixed(2)},${TRIM_INSET.toFixed(2)} ${(W - TRIM_INSET).toFixed(2)},${TRIM_INSET.toFixed(2)} ${(W - TRIM_INSET).toFixed(2)},${(H - TRIM_INSET).toFixed(2)} ${TRIM_INSET.toFixed(2)},${(H - TRIM_INSET).toFixed(2)}`, "1 mm in"]);
+  return { W, H, o, ms, D, pieces, sheet, layers, gates, notes, pen, cutm };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = PALE; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const path = (q, cl) => { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); };
+  const COL = { line: "#26200f", shade: "#807868", colour: "#" + r.o.colA, trim: "#" + r.o.colB };
+  if (r.o.view === "dressed") {
+    const ys = r.pieces.filter(p => p.group === "doll").flatMap(p => p.dressedOutline.map(q => q[1])), xs = r.pieces.flatMap(p => p.dressedOutline.map(q => Math.abs(q[0])));
+    const dy = p => 0, ol = p => p.preview || p.dressedOutline, top = min(...r.pieces.map(p => min(...ol(p).map(q => q[1])))), bot = max(...r.pieces.map(p => max(...ol(p).map(q => q[1])))), wide = max(...xs) * 2;
+    const sc = min((r.H - 2 * r.o.margin) / (bot - top), (r.W - 2 * r.o.margin) / wide) * 0.96, ox = r.W / 2, oy = r.H / 2 - sc * (top + bot) / 2;
+    const show = r.pieces.filter(p => (r.o.under === "on" ? (p.group === "doll" || p.group === "stand") : true) && (p.group !== "hat" || r.o.hat !== "all" || p.hatKind === "picture")).sort((a, b) => a.z - b.z);
+    for (const p of show) {
+      const g = q => [ox + sc * q[0], oy + sc * (q[1] + dy(p))];
+      c.beginPath(); path(ol(p).map(g), true); c.fillStyle = p.preview ? "#e4dcc8" : p.group === "doll" ? "#f6ecd8" : PALE; c.fill(); c.strokeStyle = "#26200f"; c.lineWidth = 0.45; c.stroke();
+      if (!p.preview) for (const key of ["shade", "colour", "trim", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.22 : key === "colour" ? 0.3 : 0.38; c.beginPath(); for (const l of p.inkOut[key]) path(l.map(g), false); c.stroke(); }
+    }
+  } else {
+    for (const key of ["shade", "colour", "trim", "line", "outline"]) { c.strokeStyle = key === "outline" ? "#26200f" : COL[key]; c.lineWidth = key === "shade" ? 0.22 : 0.4; c.beginPath(); for (const [q, cl] of r.layers[key]) path(q, cl); c.stroke(); }
+    c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(q, cl); c.stroke(); c.setLineDash([]);
+  }
+  const lenm = L => L.reduce((a, [q]) => a + plen(q), 0) / 1000;
+  $("stats").innerHTML = `pieces: <b>${r.pieces.length}</b> made, <b>${r.sheet.length}</b> on this sheet (${r.sheet.map(p => p.name).join(", ") || "none"}) · ${r.ms.toFixed(0)} ms<br>`
+    + `outline 0.4: <b>${lenm(r.layers.line.concat(r.layers.outline)).toFixed(1)} m</b> · shade 0.3: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · cloth colour: <b>${lenm(r.layers.colour).toFixed(1)} m</b> · trim colour: <b>${lenm(r.layers.trim).toFixed(1)} m</b> · cut: <b>${r.cutm.toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "line", colour: "000000", w: 0.4, paths: [...r.layers.outline, ...r.layers.line] }, { name: "shade", colour: "555555", w: 0.3, paths: r.layers.shade },
+  { name: "cloth", colour: r.o.colA, w: 0.4, paths: r.layers.colour }, { name: "trim", colour: r.o.colB, w: 0.4, paths: r.layers.trim }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG Victorian lady paper doll${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["height", "waist", "hair", "era", "kind", "neck", "sleeves", "hem", "petti", "pattern", "fill", "trim", "colA", "colB", "hat", "wrap", "jewel", "lhand", "rhand", "sheet", "stand", "outlines", "outlinein", "view", "under", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["view", "under"]);
+function run(k) {
+  sync();
+  if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; }
+  $("stats").textContent = "computing"; clearTimeout(pending);
+  pending = setTimeout(() => { try { last = build(read()); draw(last); } catch (e) { $("stats").innerHTML = `<span class="fail">build failed: ${String(e && e.stack || e).replace(/</g, "&lt;")}</span>`; } }, 60);
+}
+const BASE = { height: 230, waist: 1, hair: "pompadour", era: "crinoline", kind: "dress", neck: "auto", sleeves: "auto", hem: "scallop", petti: "on", pattern: "plain", fill: "light", trim: 1, colA: "7a1f3d", colB: "c8920a", hat: "none", wrap: "none", jewel: "none", lhand: "none", rhand: "none", sheet: "gown", stand: "on", outlines: "on", outlinein: 0.7, view: "dressed", under: "off", page: "280x280", margin: 8 };
+const P = o => ({ ...BASE, ...o }), ALL = { sheet: "all", page: "280x580" };
+const PRESETS = {
+  crinoline: P({ ...ALL, era: "crinoline", kind: "dress", hat: "bonnet", rhand: "parasol", pattern: "stripes", colA: "1d3a8a", colB: "c8920a", hair: "ringlets", wrap: "capelet", jewel: "cameo" }),
+  ball1860: P({ ...ALL, era: "crinoline", kind: "evening", hat: "none", lhand: "fan", rhand: "bouquet", pattern: "plain", fill: "rich", colA: "b0126b", colB: "c8920a", hair: "crown", jewel: "cameo", petti: "on" }),
+  suit1885: P({ ...ALL, era: "bustle", kind: "suit", hat: "toque", rhand: "parasol", pattern: "check", colA: "2e7d32", colB: "000000", hair: "pompadour", lhand: "bag", jewel: "cameo" }),
+  evening1885: P({ ...ALL, era: "bustle", kind: "evening", hat: "none", lhand: "fan", pattern: "dots", fill: "rich", colA: "7b2d8b", colB: "c8920a", hair: "pompadour", jewel: "cameo" }),
+  mutton1895: P({ ...ALL, era: "mutton", kind: "dress", hat: "picture", rhand: "parasol", lhand: "bag", pattern: "tucks", colA: "0e7c7b", colB: "c8920a", hair: "pompadour", wrap: "none" }),
+  "mutton-eve": P({ ...ALL, era: "mutton", kind: "evening", lhand: "fan", rhand: "bouquet", colA: "d7263d", colB: "c8920a", fill: "rich", hair: "crown", jewel: "cameo" }),
+  undressed: P({ kind: "none", petti: "off", hat: "none", sheet: "doll", view: "sheet", under: "on" }),
+  hatshop: P({ kind: "none", petti: "off", hat: "all", sheet: "extras", view: "sheet", page: "280x280", fill: "light", colA: "b0126b" }),
+  case: P({ kind: "none", petti: "off", hat: "none", sheet: "extras", view: "sheet", lhand: "fan", rhand: "parasol", wrap: "capelet", jewel: "cameo", pattern: "dots" }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `victorian-${r.o.era}-${r.o.kind}-h${r.o.height}-${r.o.sheet}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => { if (!last) return; const ls = penLayers(last), ticks = $("ticks").value !== "off"; ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500)); };
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, geom };
+run();
+</script>
+</body>
+</html>
