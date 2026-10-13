@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hooray cards</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Hooray cards</h1>
+  <p class="sub">The word, cut through a card covered in one pen pattern, with a second pattern drawn on the coloured paper behind it. Add a middle layer and every letter gets a stepped rim. Hearts, stars and smileys are drawn on, then cut out of the front and the back panel, and everything the blade takes out goes into a printed pocket: the confetti is made from the card. The message goes on its own card in another colour, tucked into corner slits.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="hooray">Hooray.</button><button data-preset="sunburst">Sunburst</button><button data-preset="stepped">Stepped</button><button data-preset="wavy">Wavy</button><button data-preset="shadow">Shadow</button><button data-preset="loud">Loud</button><button data-preset="party">Party</button></div>
+  </fieldset>
+  <fieldset><legend>The card</legend>
+    <label>Size <select id="size"><option value="a6">A6 portrait (105 x 148)</option><option value="a6l">A6 landscape (148 x 105)</option><option value="sq">square (120 x 120)</option><option value="x57">5 x 7 portrait (127 x 178)</option><option value="slim">tall and slim (90 x 190)</option></select></label>
+    <label>Layers <select id="layers"><option value="2">two: front and back</option><option value="3">three: front, middle and back</option></select></label>
+    <label>Letter weight <output id="o-weight"></output><input type="range" id="weight" min="0.12" max="0.24" step="0.01" value="0.18"></label>
+    <label data-when="layers=3">Step between layers (mm) <output id="o-step"></output><input type="range" id="step" min="1.2" max="4" step="0.1" value="2.2"></label>
+    <label>Clear space round the cuts (mm) <output id="o-clear"></output><input type="range" id="clear" min="0.6" max="4" step="0.1" value="1.2"></label>
+    <label>Plain border (mm) <output id="o-border"></output><input type="range" id="border" min="0" max="16" step="1" value="5"></label>
+    <label>Pen ring round the cuts <select id="ring"><option value="on">on</option><option value="double">double round the letters</option><option value="off">off</option></select></label>
+    <label>Cast shadow (mm, 0 is off) <output id="o-shadow"></output><input type="range" id="shadow" min="0" max="3" step="0.1" value="0"></label>
+  </fieldset>
+  <fieldset><legend>More ink</legend>
+    <label>Frame round each panel <select id="frame"><option value="double">double line</option><option value="line">one line</option><option value="scallop">scallops</option><option value="dots">dotted</option><option value="none">none</option></select></label>
+    <label>Spirograph flourishes <output id="o-spiro"></output><input type="range" id="spiro" min="0" max="10" step="1" value="4"></label>
+    <label data-when="spiro&gt;0">Flourish size (mm) <output id="o-spiroR"></output><input type="range" id="spiroR" min="5" max="16" step="0.5" value="8"></label>
+    <label data-when="spiro&gt;0">Flourish pen <select id="spiroPen"><option value="line">black (0.4)</option><option value="shade">grey (0.3)</option></select></label>
+  </fieldset>
+  <fieldset><legend>Front pattern</legend>
+    <label>Pattern <select id="pA"><option value="none">none (plain paper)</option><option value="hatch">diagonal hatching</option><option value="stripes">pinstripes</option><option value="cross">crosshatch</option><option value="grid">graph paper</option><option value="waves">waves</option><option value="zigzag">zigzag</option><option value="dots">polka dots</option><option value="rays">sunburst rays</option><option value="rings">rings</option><option value="confetti">confetti</option><option value="sparkles">sparkles</option></select></label>
+    <label>Spacing (mm) <output id="o-gA"></output><input type="range" id="gA" min="0.8" max="10" step="0.1" value="1.6"></label>
+    <label>Pen <select id="penA"><option value="shade">grey (0.3)</option><option value="line">black (0.4)</option></select></label>
+    <label>Paper (preview) <select id="paperA"><option value="fbf9f4">white</option><option value="f4ecd8">cream</option><option value="c9a77c">kraft</option><option value="dcdcd7">pale grey</option><option value="f6c9d3">blush</option><option value="cfe3f2">sky</option></select></label>
+  </fieldset>
+  <fieldset data-when="layers=3"><legend>Middle pattern</legend>
+    <label>Pattern <select id="pB"><option value="none">none (plain paper)</option><option value="hatch">diagonal hatching</option><option value="stripes">pinstripes</option><option value="cross">crosshatch</option><option value="grid">graph paper</option><option value="waves">waves</option><option value="zigzag">zigzag</option><option value="dots">polka dots</option><option value="rays">sunburst rays</option><option value="rings">rings</option><option value="confetti">confetti</option><option value="sparkles">sparkles</option></select></label>
+    <label>Spacing (mm) <output id="o-gB"></output><input type="range" id="gB" min="0.8" max="10" step="0.1" value="1.2"></label>
+    <label>Pen <select id="penB"><option value="shade">grey (0.3)</option><option value="line">black (0.4)</option></select></label>
+    <label>Paper (preview) <select id="paperB"><option value="fbf9f4">white</option><option value="f4ecd8">cream</option><option value="c9a77c">kraft</option><option value="dcdcd7">pale grey</option><option value="f6c9d3">blush</option><option value="cfe3f2">sky</option><option value="d7263d">red</option><option value="f28c28">orange</option><option value="f2b705">yellow</option><option value="1f9d55">green</option><option value="0078bf">blue</option><option value="ff7aa8">pink</option><option value="6a3fa0">purple</option><option value="101010">black</option></select></label>
+  </fieldset>
+  <fieldset><legend>Back pattern</legend>
+    <label>Pattern <select id="pC"><option value="none">none (plain paper)</option><option value="hatch">diagonal hatching</option><option value="stripes">pinstripes</option><option value="cross">crosshatch</option><option value="grid">graph paper</option><option value="waves">waves</option><option value="zigzag">zigzag</option><option value="dots">polka dots</option><option value="rays">sunburst rays</option><option value="rings">rings</option><option value="confetti">confetti</option><option value="sparkles">sparkles</option></select></label>
+    <label>Spacing (mm) <output id="o-gC"></output><input type="range" id="gC" min="0.8" max="10" step="0.1" value="5"></label>
+    <label>Pen <select id="penC"><option value="line">black (0.4)</option><option value="shade">grey (0.3)</option></select></label>
+    <label>Paper (preview) <select id="paperC"><option value="fbf9f4">white</option><option value="f4ecd8">cream</option><option value="c9a77c">kraft</option><option value="dcdcd7">pale grey</option><option value="f6c9d3">blush</option><option value="cfe3f2">sky</option><option value="d7263d">red</option><option value="f28c28">orange</option><option value="f2b705">yellow</option><option value="1f9d55">green</option><option value="0078bf">blue</option><option value="ff7aa8">pink</option><option value="6a3fa0">purple</option><option value="101010">black</option></select></label>
+    <label>Draw it <select id="behind"><option value="shows">only where it shows (saves ink)</option><option value="all">all over</option></select></label>
+  </fieldset>
+  <fieldset><legend>Confetti</legend>
+    <label>Confetti cut from the front <output id="o-ccount"></output><input type="range" id="ccount" min="0" max="40" step="1" value="14"></label>
+    <label>Confetti cut from the back panel <output id="o-bcount"></output><input type="range" id="bcount" min="0" max="30" step="1" value="10"></label>
+    <label data-when="ccount>0 or bcount>0">Shapes <select id="cshape"><option value="trio">hearts, stars and smileys</option><option value="hearts">hearts</option><option value="stars">stars</option><option value="smileys">smileys</option><option value="mixed">mixed (all shapes)</option><option value="dots">dots</option><option value="triangles">triangles</option><option value="strips">strips</option></select></label>
+    <label data-when="ccount>0 or bcount>0">Draw on the confetti before cutting <select id="cdraw"><option value="on">on: faces, hatching, outlines</option><option value="off">off, plain</option></select></label>
+    <label data-when="cdraw=on">Confetti pen <select id="cpen"><option value="line">black (0.4)</option><option value="shade">grey (0.3)</option></select></label>
+    <label data-when="ccount>0 or bcount>0">Size (mm) <output id="o-csize"></output><input type="range" id="csize" min="4" max="12" step="0.5" value="6"></label>
+    <label>Pocket for the offcuts <select id="pocket"><option value="on">on, glued inside</option><option value="off">off</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="7"></label>
+  </fieldset>
+  <fieldset><legend>Message card</legend>
+    <label>Message <select id="plate"><option value="on">on its own card, held in corner slits</option><option value="off">on an inside page, glued in</option></select></label>
+    <label data-when="plate=on">Card size (% of the panel) <output id="o-platesize"></output><input type="range" id="platesize" min="50" max="85" step="1" value="66"></label>
+    <label data-when="plate=on">Card paper (preview) <select id="paperM"><option value="fbf9f4">white</option><option value="f4ecd8">cream</option><option value="c9a77c">kraft</option><option value="dcdcd7">pale grey</option><option value="f6c9d3">blush</option><option value="cfe3f2">sky</option><option value="d7263d">red</option><option value="f28c28">orange</option><option value="f2b705">yellow</option><option value="1f9d55">green</option><option value="0078bf">blue</option><option value="ff7aa8">pink</option><option value="6a3fa0">purple</option><option value="101010">black</option></select></label>
+    <p class="hint" data-when="plate=on">The back panel gets four diagonal slits; tuck the message card's corners into them from inside. The card is cut on the inside sheet, on whatever colour you like.</p>
+  </fieldset>
+  <fieldset><legend>Words</legend>
+    <label>Small line above <input type="text" id="top" value="" maxlength="28"></label>
+    <label>Headline <input type="text" id="headline" value="HOORAY" maxlength="16"></label>
+    <label>Small line below <input type="text" id="bottom" value="confetti enclosed." maxlength="34"></label>
+    <label data-when="pocket=on">On the pocket <input type="text" id="plabel" value="CONFETTI" maxlength="12"></label>
+    <label data-when="pocket=on">Pocket small print ({n} is the count) <input type="text" id="pline" value="{n} pieces of your card" maxlength="40"></label>
+    <label>Message (use / for a new line) <input type="text" id="inside" value="Congratulations. / Throw responsibly." maxlength="90"></label>
+    <label>To <input type="text" id="to" value="Sam" maxlength="18"></label>
+    <label>From <input type="text" id="from" value="Pat" maxlength="18"></label>
+    <label>Sign-off before From <input type="text" id="signoff" value="love," maxlength="16"></label>
+  </fieldset>
+  <fieldset><legend>Sheet</legend>
+    <label>Sheet holds <select id="sheet"><option value="card">the front (pattern, cut, score)</option><option value="behind">the layers behind (middle and back)</option><option value="inside">message card (or inside page) and pocket</option><option value="envelope">envelope</option><option value="all">everything (12 x 24 mat)</option></select></label>
+    <label>Draw the outlines with a pen <select id="outlines"><option value="off">off, the blade does it</option><option value="on">on, their own layer</option></select></label>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="assembled">the card, assembled</option><option value="exploded">the layers, pulled apart</option><option value="inside">the inside: back panel and message card</option><option value="sheet">the sheet, as cut</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="280x580">280 x 580 (12 x 24 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="8"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <p class="hint">Split export saves black (the 0.4 pen), grey (the 0.3 pen), then score, then cut, in job order with matching corner ticks. Plot each layer on its own paper: the front on pale card, the middle and back on colours.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it goes together: plot and cut the front, then the layers behind, each on its own paper. Glue the back layer behind the front panel (for three layers, the middle first, on foam tape for real depth). Every letter and confetti shape the blade lifts out of the front and the back panel is confetti, drawn on before it is cut: tip them into the pocket, fold it on its score lines, glue it on, and the small print tells them how many pieces of the card they are holding. Tuck the message card into the four corner slits from inside the card. Stencil bridges keep the middles of the O, A and R. Cut sizes (2 mm bridges, 2.6 mm stencil bridges, 4 mm smallest confetti) are assumptions until the cut calibration sheet has been read.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, pow, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerpN = (a, b, t) => a + (b - a) * t;
+const MIN_HALF = 0.4, PALE = "#fbf7ec", INK_GAP = 0.4, MIN_BRIDGE = 2.0, FLAP_HINGE = 3.0, TRIM_INSET = 1.0, PART_GAP = 3.0;
+// ---------------- shapes: signed distance (negative inside) ----------------
+const Circ = (x, y, r) => ({ t: "c", x, y, r: max(r, MIN_HALF) });
+const Limb = (ax, ay, ra, bx, by, rb) => ({ t: "k", ax, ay, ra: max(ra, MIN_HALF), bx, by, rb: max(rb, MIN_HALF) });
+function primDist(p, x, y) {
+  if (p.t === "c") return hypot(x - p.x, y - p.y) - p.r;
+  const dx = p.bx - p.ax, dy = p.by - p.ay, L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - p.ax) * dx + (y - p.ay) * dy) / L2, 0, 1);
+  return hypot(x - p.ax - t * dx, y - p.ay - t * dy) - (p.ra + (p.rb - p.ra) * t);
+}
+const primBox = p => p.t === "c" ? [p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r] : [min(p.ax - p.ra, p.bx - p.rb), min(p.ay - p.ra, p.by - p.rb), max(p.ax + p.ra, p.bx + p.rb), max(p.ay + p.ra, p.by + p.rb)];
+const smin = (a, b, k) => { if (k <= 0) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+function fastPoly(pts) { // exact signed distance to a closed polygon (negative inside)
+  const n = pts.length, ax = new Float64Array(n), ay = new Float64Array(n), ex = new Float64Array(n), ey = new Float64Array(n), il = new Float64Array(n), by = new Float64Array(n);
+  for (let i = 0, j = n - 1; i < n; j = i++) { ax[i] = pts[j][0]; ay[i] = pts[j][1]; ex[i] = pts[i][0] - pts[j][0]; ey[i] = pts[i][1] - pts[j][1]; by[i] = pts[i][1]; il[i] = 1 / (ex[i] * ex[i] + ey[i] * ey[i] || 1e-9); }
+  return (x, y) => {
+    let d = INF, s = 1;
+    for (let i = 0; i < n; i++) {
+      const wx = x - ax[i], wy = y - ay[i], t = clamp((wx * ex[i] + wy * ey[i]) * il[i], 0, 1), dx = wx - ex[i] * t, dy = wy - ey[i] * t, dd = dx * dx + dy * dy;
+      if (dd < d) d = dd;
+      const c1 = y >= ay[i], c2 = y < by[i], c3 = ex[i] * wy > ey[i] * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * sqrt(d);
+  };
+}
+const polyBox = pts => { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of pts) { a = min(a, x); b = min(b, y); c = max(c, x); d = max(d, y); } return [a, b, c, d]; };
+const primsBox = ps => ps.reduce((B, q) => { const k = primBox(q); return [min(B[0], k[0]), min(B[1], k[1]), max(B[2], k[2]), max(B[3], k[3])]; }, [INF, INF, -INF, -INF]);
+const joinB = (A, B) => [min(A[0], B[0]), min(A[1], B[1]), max(A[2], B[2]), max(A[3], B[3])];
+const growB = (B, e) => [B[0] - e, B[1] - e, B[2] + e, B[3] + e];
+const unionF = fs => (x, y) => { let d = INF; for (const f of fs) d = min(d, f(x, y)); return d; };
+const smoothF = (fs, k) => (x, y) => { let d = 1e6; for (const f of fs) d = smin(d, f(x, y), k); return d; };
+const primF = p => (x, y) => primDist(p, x, y);
+const subF = (a, b) => (x, y) => max(a(x, y), -b(x, y));
+const interF = (a, b) => (x, y) => max(a(x, y), b(x, y));
+
+// ---------------- curves ----------------
+function curve(pts, per = 6, closed = false) { // uniform Catmull-Rom through the points
+  const n = pts.length, out = [], g = i => closed ? pts[(i + n) % n] : pts[clamp(i, 0, n - 1)], m = closed ? n : n - 1;
+  for (let i = 0; i < m; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let j = 0; j < per; j++) {
+      const t = j / per, t2 = t * t, t3 = t2 * t;
+      out.push([0, 1].map(a => 0.5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3)));
+    }
+  }
+  if (!closed) out.push(pts[n - 1].slice());
+  return out;
+}
+const bez = (a, b, c, n = 12) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, u = 1 - t; return [u * u * a[0] + 2 * u * t * b[0] + t * t * c[0], u * u * a[1] + 2 * u * t * b[1] + t * t * c[1]]; });
+const circle = (x, y, r, n = 0) => { n = n || max(12, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+const arcP = (x, y, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [x + rx * cos(a), y + ry * sin(a)]; });
+const mir = p => p.map(([x, y]) => [-x, y]);
+const symm = r => [...r, ...mir(r).reverse()];
+const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl && q.length > 1) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
+function resample(q, step) {
+  const out = [q[0].slice()]; let carry = 0;
+  for (let i = 1; i < q.length; i++) {
+    const a = q[i - 1], b = q[i], L = hypot(b[0] - a[0], b[1] - a[1]); if (!L) continue;
+    let d = step - carry;
+    while (d <= L) { const t = d / L; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); d += step; }
+    carry = L - (d - step);
+  }
+  const last = q.at(-1); if (hypot(last[0] - out.at(-1)[0], last[1] - out.at(-1)[1]) > step * 0.3) out.push(last.slice());
+  return out;
+}
+// scallops along a path: one arch per w mm, bulging toward nfn(x, y) (a unit vector)
+function scallopPath(path, w, depth, nfn) {
+  const r = resample(path, w / 8), nodes = []; for (let i = 0; i < r.length; i += 8) nodes.push(r[i]);
+  if (r.length % 8 !== 1) nodes.push(r.at(-1));
+  const out = [];
+  for (let i = 0; i + 1 < nodes.length; i++) {
+    const a = nodes[i], b = nodes[i + 1], n = nfn((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), dd = depth * min(1, hypot(b[0] - a[0], b[1] - a[1]) / w);
+    for (let j = (i ? 1 : 0); j <= 10; j++) { const t = j / 10, s = sin(PI * t) * dd; out.push([a[0] + (b[0] - a[0]) * t + n[0] * s, a[1] + (b[1] - a[1]) * t + n[1] * s]); }
+  }
+  return out;
+}
+const zigPath = (path, step, amp, nfn) => { const r = resample(path, step), out = []; r.forEach((p, i) => { const n = nfn(p[0], p[1]), s = i % 2 ? amp : -amp; out.push([p[0] + n[0] * s, p[1] + n[1] * s]); }); return out; };
+const dots = (path, step, rad) => resample(path, step).map(p => circle(p[0], p[1], rad, 8));
+function ribbonBow(c, size, ang) { // two loops, a knot and two tails, as closed polylines around c
+  const R = (x, y) => [c[0] + (x * cos(ang) - y * sin(ang)) * size, c[1] + (x * sin(ang) + y * cos(ang)) * size];
+  const loop = s => [R(0, 0), ...bez([0, 0], [s * 1.2, -0.9], [s * 1.7, -0.1], 8).slice(1).map(([x, y]) => R(x, y)), ...bez([s * 1.7, -0.1], [s * 1.4, 0.9], [0, 0], 8).slice(1).map(([x, y]) => R(x, y))];
+  return [loop(-1), loop(1), circle(...R(0, 0), 0.22 * size, 8), [R(0.1, 0.2), R(-0.5, 1.5), R(-0.15, 1.35), R(-0.3, 1.9)], [R(-0.1, 0.2), R(0.5, 1.5), R(0.15, 1.35), R(0.3, 1.9)]];
+}
+function rosette(c, r) { const out = [circle(c[0], c[1], r, 18)]; for (let a = 0; a < 360; a += 72) out.push(arcP(c[0] + r * 0.45 * cos(a * D2R), c[1] + r * 0.45 * sin(a * D2R), r * 0.55, r * 0.55, a - 60, a + 200, 10)); out.push(circle(c[0], c[1], r * 0.18, 8)); return out; }
+
+// ---------------- iso-lines (marching squares, from the jointed figure studio) ----------------
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+const loopArea = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+function smooth(l, passes = 2) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function fieldOf(sdf, B, h) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[j * nx + i] = sdf(x0 + i * h, y0 + j * h);
+  return { F, nx, ny, h, x0, y0 };
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+const gradF = (G, x, y) => { const e = G.h, g = [sampleF(G, x + e, y) - sampleF(G, x - e, y), sampleF(G, x, y + e) - sampleF(G, x, y - e)], l = hypot(g[0], g[1]) || 1; return [g[0] / l, g[1] / l]; };
+const room = (pc, x, y) => -sampleF(pc.Gd, x, y); // how far inside the cut card a point is
+function clip(pc, lines) { // keep ink that is at least INK_GAP inside the card
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)) : 1;
+      for (let k = 0; k < n; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n;
+        if (room(pc, x, y) > INK_GAP + 0.02) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; }
+      }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.02));
+}
+function hatch(G, gap, ang, filter) {
+  const c = cos(ang), s = sin(ang), cx = G.x0 + G.nx * G.h / 2, cy = G.y0 + G.ny * G.h / 2, R = hypot(G.nx, G.ny) * G.h / 2, out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.35) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (filter(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } } if (run.length > 1) out.push(run); }
+  return out;
+}
+// runs of the outline, d mm in from the cut line, where pred(x, y) holds
+function edgeRuns(pc, d, pred) {
+  const out = [];
+  for (const l of contours(pc.Gd, -d)) {
+    if (abs(loopArea(l)) < 4) continue;
+    const q = smooth(l, 1); let run = [];
+    for (const p of q) { if (pred(p[0], p[1])) run.push(p); else { if (run.length > 2) out.push(run); run = []; } }
+    if (run.length > 2) out.push(run);
+  }
+  return out;
+}
+const outward = pc => (x, y) => gradF(pc.Gd, x, y);
+
+
+// ---------------- lettering: a single-stroke font, cap height 6 (y down) ----------------
+const GSRC = {
+  A: [4, "M0,6 L2,0 L4,6 M0.9,3.9 L3.1,3.9"], B: [4, "M0,6 L0,0 L2.3,0 A2.3,1.5,1.6,1.5,-90,90 L0,3 M0,3 L2.5,3 A2.5,4.5,1.6,1.5,-90,90 L0,6"],
+  C: [4, "A2.4,3,2.1,3,-45,-315"], D: [4, "M0,0 L0,6 L1.8,6 A1.8,3,2.2,3,90,-90 L0,0"], E: [3.6, "M3.6,0 L0,0 L0,6 L3.6,6 M0,3 L2.8,3"],
+  F: [3.4, "M3.4,0 L0,0 L0,6 M0,3 L2.7,3"], G: [4.4, "A2.2,3,2.2,3,-40,-320 L4.4,3.4 L2.4,3.4"], H: [4, "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3"],
+  I: [1.2, "M0.6,0 L0.6,6"], J: [3, "M3,0 L3,4.4 A1.5,4.4,1.5,1.6,0,170"], K: [4, "M0,0 L0,6 M3.8,0 L0,3.6 M1.3,2.5 L4,6"],
+  L: [3.4, "M0,0 L0,6 L3.4,6"], M: [5, "M0,6 L0,0 L2.5,4 L5,0 L5,6"], N: [4, "M0,6 L0,0 L4,6 L4,0"], O: [4.4, "A2.2,3,2.2,3,0,360"],
+  P: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2"], Q: [4.4, "A2.2,3,2.2,3,0,360 M2.8,4.4 L4.4,6.4"],
+  R: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2 M2,3.2 L4,6"], S: [4, "A2,1.5,1.9,1.5,-20,-270 A2,4.5,2.0,1.5,-90,160"],
+  T: [4, "M0,0 L4,0 M2,0 L2,6"], U: [4, "M0,0 L0,3.8 A2,3.8,2,2.2,180,0 L4,0"], V: [4.4, "M0,0 L2.2,6 L4.4,0"],
+  W: [6, "M0,0 L1.5,6 L3,1.6 L4.5,6 L6,0"], X: [4, "M0,0 L4,6 M4,0 L0,6"], Y: [4.4, "M0,0 L2.2,3 L4.4,0 M2.2,3 L2.2,6"], Z: [4, "M0,0 L4,0 L0,6 L4,6"],
+  0: [3.8, "A1.9,3,1.9,3,0,360"], 1: [2.6, "M0.4,1.4 L1.8,0 L1.8,6"], 2: [3.8, "A1.9,1.9,1.9,1.9,-170,20 L0,6 L3.8,6"],
+  3: [3.8, "A1.8,1.5,1.7,1.5,-150,90 A1.9,4.4,1.9,1.6,-90,150"], 4: [4, "M3,6 L3,0 L0,4.2 L4,4.2"], 5: [3.8, "M3.6,0 L0.4,0 L0,2.8 A1.8,4.1,2,1.9,-130,150"],
+  6: [3.8, "M3.4,0 L0.2,4.2 A1.9,4.2,1.7,1.8,180,540"], 7: [3.8, "M0,0 L3.8,0 L1.4,6"], 8: [3.8, "A1.8,1.5,1.5,1.5,0,360 M3.7,4.4 A1.9,4.4,1.8,1.6,0,360"],
+  9: [3.8, "A1.9,1.8,1.7,1.8,0,360 M3.6,1.8 L0.4,6"],
+  "!": [1, "M0.5,0 L0.5,4.1 M0.5,5.4 A0.5,5.6,0.35,0.35,0,360"], "?": [3.4, "A1.7,1.7,1.7,1.7,-170,70 L1.7,4.1 M1.7,5.2 A1.7,5.6,0.35,0.35,0,360"],
+  ".": [1, "A0.5,5.5,0.4,0.4,0,360"], ",": [1, "M0.7,5.3 L0.2,6.8"], "'": [1, "M0.5,0 L0.3,1.7"], "-": [2.6, "M0.2,3 L2.4,3"], "+": [3.2, "M0.1,3 L3.1,3 M1.6,1.5 L1.6,4.5"],
+  ":": [1, "A0.5,1.8,0.4,0.4,0,360 M0.9,5.5 A0.5,5.5,0.4,0.4,0,360"], "&": [4.2, "M4,6 L0.9,1.4 A1.6,1.1,0.9,1.1,-170,100 L3.4,4.1 A2,4.4,1.7,1.6,-10,160 L0.1,4.6"],
+  "*": [3.2, "M1.6,0.6 L1.6,5.4 M0.2,1.6 L3,4.4 M3,1.6 L0.2,4.4"], "(": [1.8, "A1.9,3,1.5,3.3,235,125"], ")": [1.8, "A-0.1,3,1.5,3.3,-55,55"],
+};
+function parseGlyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else { const [cx, cy, rx, ry, a0, a1] = n, st = max(8, ceil(abs(a1 - a0) / 9)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GL = Object.fromEntries(Object.entries(GSRC).map(([k, [w, s]]) => [k, { w, strokes: parseGlyph(s) }]));
+{ // the heart, for <3
+  const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40 * TAU, x = 16 * sin(t) ** 3, y = -(13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t)); pts.push([3 + x * 3 / 17, 3 + y * 3.2 / 17 + 0.5]); }
+  GL["♥"] = { w: 6, strokes: [pts] };
+}
+// the words as strokes: origin top-left, cap height `cap` mm; returns the glyphs and the width
+function layoutText(str, cap, gap = 1.2) {
+  const s = cap / 6, glyphs = []; let x = 0;
+  const text = String(str).toUpperCase().replace(/<3/g, "♥");
+  for (const ch of text) {
+    if (ch === " ") { x += 2.2; continue; }
+    const g = GL[ch] || GL["?"];
+    glyphs.push({ ch, x, w: g.w, strokes: g.strokes.map(st => st.map(([a, b]) => [a, b])) });
+    x += g.w + gap;
+  }
+  return { glyphs, width: max(0, x - gap) * s, s };
+}
+// capsule union of the strokes, so a letter can be outlined, hatched or cut out as a piece
+function bubbleLoops(strokes, r) {
+  const prims = []; for (const st of strokes) { const q = resample(st, 0.9); for (let i = 0; i + 1 < q.length; i++) prims.push(Limb(q[i][0], q[i][1], r, q[i + 1][0], q[i + 1][1], r)); if (q.length === 1) prims.push(Circ(q[0][0], q[0][1], r)); }
+  const B = growB(primsBox(prims), 1.5), h = 0.2;
+  const G = fieldOf((x, y) => { let d = INF; for (const p of prims) { const e = primDist(p, x, y); if (e < d) d = e; } return d; }, B, h);
+  const loops = contours(G, 0).filter(l => abs(loopArea(l)) > 0.3).map(l => { const q = smooth(l, 1); return rdp([...q, q[0]], 0.03); });
+  return { loops, G, prims };
+}
+const insideG = (G, x, y) => sampleF(G, x, y) < 0;
+// a polygon helper: even-odd test and hatch fill with pen lines, d mm in from the edge
+const inPoly = (pt, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; } return c; };
+function hatchPoly(poly, gap, ang, inset = 0.5) {
+  if (gap <= 0) return [];
+  const f = fastPoly(poly), B = polyBox(poly), cx = (B[0] + B[2]) / 2, cy = (B[1] + B[3]) / 2, R = hypot(B[2] - B[0], B[3] - B[1]) / 2 + 1, c = cos(ang), s = sin(ang), out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.3) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (f(x, y) < -inset) run.push([x, y]); else { if (run.length > 1) out.push([run[0], run.at(-1)]); run = []; } } if (run.length > 1) out.push([run[0], run.at(-1)]); }
+  return out;
+}
+const centroid = p => { let x = 0, y = 0; for (const q of p) { x += q[0]; y += q[1]; } return [x / p.length, y / p.length]; };
+const growPoly = (p, d) => { const c = centroid(p), r = p.reduce((a, q) => a + hypot(q[0] - c[0], q[1] - c[1]), 0) / p.length, k = 1 + d / max(r, 1); return p.map(q => [c[0] + (q[0] - c[0]) * k, c[1] + (q[1] - c[1]) * k]); };
+const xfPts = (pts, f) => pts.map(f);
+const rotAbout = (p, c, a) => [c[0] + (p[0] - c[0]) * cos(a) - (p[1] - c[1]) * sin(a), c[1] + (p[0] - c[0]) * sin(a) + (p[1] - c[1]) * cos(a)];
+// minimum distance between two polygons (vertex to vertex and vertex to edge), for the bridge gate
+function polyDist(A, B) {
+  let d = INF; const seg = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1e-9, t = clamp(((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L, 0, 1); return hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy); };
+  for (const p of A) for (let i = 0; i < B.length; i++) d = min(d, seg(p, B[i], B[(i + 1) % B.length]));
+  for (const p of B) for (let i = 0; i < A.length; i++) d = min(d, seg(p, A[i], A[(i + 1) % A.length]));
+  return d;
+}
+
+// ---------------- shapes ----------------
+const ellipsePoly = (cx, cy, rx, ry, rot = 0, n = 40) => Array.from({ length: n }, (_, i) => { const t = i / n * TAU, x = rx * cos(t), y = ry * sin(t); return [cx + x * cos(rot) - y * sin(rot), cy + x * sin(rot) + y * cos(rot)]; });
+const balloonPoly = (cx, cy, rx, ry, rot = 0, n = 48) => Array.from({ length: n }, (_, i) => { const t = i / n * TAU, u = sin(t), v = -cos(t), x = rx * u * (1 - 0.24 * max(0, v) ** 2), y = ry * v * (1 + 0.05 * max(0, v)); return [cx + x * cos(rot) - y * sin(rot), cy + x * sin(rot) + y * cos(rot)]; });
+const heartPoly = (cx, cy, size, rot = 0, n = 56) => Array.from({ length: n }, (_, i) => { const t = i / n * TAU, x = 16 * sin(t) ** 3, y = -(13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t)); const px = x * size / 34, py = (y + 1.5) * size / 34; return [cx + px * cos(rot) - py * sin(rot), cy + px * sin(rot) + py * cos(rot)]; });
+const starPoly = (cx, cy, r1, r2, n = 5, rot = -PI / 2) => Array.from({ length: n * 2 }, (_, i) => { const a = rot + PI * i / n, r = i % 2 ? r2 : r1; return [cx + r * cos(a), cy + r * sin(a)]; });
+const rrect = (x0, y0, x1, y1, r, n = 6) => { const out = [], c = [[x1 - r, y0 + r, -90], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, 90], [x0 + r, y0 + r, 180]]; for (const [cx, cy, a] of c) for (let i = 0; i <= n; i++) { const t = (a + 90 * i / n) * D2R; out.push([cx + r * cos(t), cy + r * sin(t)]); } return out; };
+const wavy = (a, b, amp, waves, n = 40) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1, off = amp * sin(t * waves * TAU); return [a[0] + dx * t - dy / l * off, a[1] + dy * t + dx / l * off]; });
+const sparkle = (c, r) => [[[c[0], c[1] - r], [c[0] + r * 0.18, c[1] - r * 0.18], [c[0] + r, c[1]], [c[0] + r * 0.18, c[1] + r * 0.18], [c[0], c[1] + r], [c[0] - r * 0.18, c[1] + r * 0.18], [c[0] - r, c[1]], [c[0] - r * 0.18, c[1] - r * 0.18], [c[0], c[1] - r]]];
+
+// ================= round 4: two patterns, layers, and the offcuts are the confetti =================
+const SIZES = { a6: [105, 148], a6l: [148, 105], sq: [120, 120], x57: [127, 178], slim: [90, 190] };
+const LAYERS = ["line", "shade", "score", "cut"];
+const lerp = (a, b, t) => a + (b - a) * t;
+const MIN_CONFETTI = 4.0, STENCIL_BRIDGE = 2.6, BEHIND_REACH = 2.5;
+function rng(seed) { let a = (seed >>> 0) || 1; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+// a set of cut windows: signed distance (negative inside), looking only at windows within `reach`
+function holeSet(polys) {
+  const hs = polys.map(p => ({ p, f: fastPoly(p), b: polyBox(p) }));
+  return { polys, d(x, y, reach = 8) { let d = 1e3; for (const h of hs) { const b = h.b; if (x < b[0] - reach || x > b[2] + reach || y < b[1] - reach || y > b[3] + reach) continue; const v = h.f(x, y); if (v < d) d = v; } return d; } };
+}
+// keep the parts of the lines where keep(x, y) holds, sampled every `step` mm
+function clipLines(lines, keep, step = 0.3) {
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / step)) : 1;
+      for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n; if (keep(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.03)).filter(r => plen(r) > 0.35);
+}
+
+// ---------------- patterns: raw lines over a box, clipped later; g is the spacing in mm ----------------
+function parallel(B, gap, ang) {
+  const cx = (B[0] + B[2]) / 2, cy = (B[1] + B[3]) / 2, R = hypot(B[2] - B[0], B[3] - B[1]) / 2 + 1, c = cos(ang), s = sin(ang), out = [];
+  let k = 0; for (let d = -R; d <= R; d += gap, k++) { const a = [cx - c * R - s * d, cy - s * R + c * d], b = [cx + c * R - s * d, cy + s * R + c * d]; out.push(k % 2 ? [b, a] : [a, b]); }
+  return out;
+}
+function scatter(B, g, R, make) { // Poisson-ish: things at least g apart
+  const pts = [], cell = g / SQRT2, cols = ceil((B[2] - B[0]) / cell) + 1, grid = new Map(), out = [];
+  const tries = ceil((B[2] - B[0]) * (B[3] - B[1]) / (g * g) * 6);
+  for (let i = 0; i < tries; i++) {
+    const x = lerp(B[0], B[2], R()), y = lerp(B[1], B[3], R()), ci = floor((x - B[0]) / cell), cj = floor((y - B[1]) / cell);
+    let ok = true; for (let dj = -2; dj <= 2 && ok; dj++) for (let di = -2; di <= 2 && ok; di++) { const q = grid.get((cj + dj) * cols + ci + di); if (q && hypot(q[0] - x, q[1] - y) < g) ok = false; }
+    if (!ok) continue; grid.set(cj * cols + ci, [x, y]); pts.push([x, y]);
+  }
+  for (const p of pts) out.push(...make(p, R));
+  return out;
+}
+const SQRT2 = Math.SQRT2;
+const PATTERNS = {
+  none: { name: "none (plain paper)", f: () => [] },
+  hatch: { name: "diagonal hatching", f: (B, g) => parallel(B, g, PI / 4) },
+  stripes: { name: "pinstripes", f: (B, g) => parallel(B, g, PI / 2) },
+  cross: { name: "crosshatch", f: (B, g) => [...parallel(B, g * 1.4, PI / 4), ...parallel(B, g * 1.4, -PI / 4)] },
+  grid: { name: "graph paper", f: (B, g) => [...parallel(B, g, 0), ...parallel(B, g, PI / 2)] },
+  waves: { name: "waves", f: (B, g) => { const out = []; let k = 0; for (let y = B[1] - g; y <= B[3] + g; y += g, k++) { const row = []; for (let x = B[0] - 2; x <= B[2] + 2; x += 0.6) row.push([x, y + g * 0.38 * sin((x - B[0]) / (g * 3.2) * TAU)]); out.push(k % 2 ? row.reverse() : row); } return out; } },
+  zigzag: { name: "zigzag", f: (B, g) => { const out = []; let k = 0; for (let y = B[1] - g; y <= B[3] + g; y += g, k++) { const row = []; let i = 0; for (let x = B[0] - 2; x <= B[2] + g; x += g * 0.6, i++) row.push([x, y + (i % 2 ? 0.4 : -0.4) * g]); out.push(k % 2 ? row.reverse() : row); } return out; } },
+  dots: { name: "polka dots", f: (B, g) => { const out = [], r = max(0.5, g * 0.2); let k = 0; for (let y = B[1]; y <= B[3] + g; y += g * 0.866, k++) for (let x = B[0] + (k % 2 ? g / 2 : 0); x <= B[2] + g; x += g) out.push(circle(x, y, r, 10)); return out; } },
+  rays: { name: "sunburst rays", f: (B, g, c) => { // staggered starts: rays never closer than 0.8 mm where they begin
+    const Rm = max(...[[B[0], B[1]], [B[2], B[1]], [B[2], B[3]], [B[0], B[3]]].map(p => hypot(p[0] - c[0], p[1] - c[1]))), n = max(16, round(TAU * 30 / g / 4) * 4), out = []; for (let i = 0; i < n; i++) { const a = TAU * i / n, every = i % 4 === 0 ? 4 : i % 2 === 0 ? 2 : 1, r0 = max(3, 0.8 * n / every / TAU), p = [[c[0] + r0 * cos(a), c[1] + r0 * sin(a)], [c[0] + Rm * cos(a), c[1] + Rm * sin(a)]]; out.push(i % 2 ? p.reverse() : p); } return out; } },
+  rings: { name: "rings", f: (B, g, c) => { const Rm = max(...[[B[0], B[1]], [B[2], B[1]], [B[2], B[3]], [B[0], B[3]]].map(p => hypot(p[0] - c[0], p[1] - c[1]))), out = []; for (let r = g; r <= Rm; r += g) out.push(circle(c[0], c[1], r, max(24, ceil(r * 2.2)))); return out; } },
+  confetti: { name: "confetti", f: (B, g, c, R) => scatter(B, g, R, (p, R) => {
+    const k = floor(R() * 5), a = R() * TAU, s = g * lerp(0.22, 0.34, R()), rot = q => q.map(([x, y]) => [p[0] + x * cos(a) - y * sin(a), p[1] + x * sin(a) + y * cos(a)]);
+    if (k === 0) return [circle(p[0], p[1], s * 0.55, 12)];
+    if (k === 1) return [rot([[-s, 0], [s, 0]])];
+    if (k === 2) return [rot([[0, -s * 0.8], [s * 0.75, s * 0.5], [-s * 0.75, s * 0.5], [0, -s * 0.8]])];
+    if (k === 3) return [rot(Array.from({ length: 13 }, (_, i) => [lerp(-s * 1.2, s * 1.2, i / 12), s * 0.35 * sin(i / 12 * TAU * 1.5)]))];
+    return [rot([[-s * 0.6, -s * 0.25], [s * 0.6, -s * 0.25], [s * 0.6, s * 0.25], [-s * 0.6, s * 0.25], [-s * 0.6, -s * 0.25]])];
+  }) },
+  sparkles: { name: "sparkles", f: (B, g, c, R) => scatter(B, g, R, (p, R) => R() < 0.3 ? [circle(p[0], p[1], max(0.35, g * 0.05), 8)] : sparkle(p, g * lerp(0.18, 0.32, R()))) },
+};
+
+const PAPERS = { fbf9f4: "white", f4ecd8: "cream", c9a77c: "kraft", dcdcd7: "pale grey", f6c9d3: "blush", cfe3f2: "sky", d7263d: "red", f28c28: "orange", f2b705: "yellow", "1f9d55": "green", "0078bf": "blue", ff7aa8: "pink", "6a3fa0": "purple", "101010": "black" };
+const PALE_PAPERS = ["fbf9f4", "f4ecd8", "c9a77c", "dcdcd7", "f6c9d3", "cfe3f2"];
+
+// ---------------- pen words ----------------
+function penWord(str, cx, yTop, cap, style, sink) {
+  const L = layoutText(str, cap), s = L.s, rr = max(0.9, cap * 0.1), all = [], offs = style === "thin" ? [-0.12, 0.12] : [-0.3, 0, 0.3];
+  for (const g of L.glyphs) {
+    const strokes = g.strokes.map(st => st.map(([a, b]) => [cx - L.width / 2 + g.x * s + a * s, yTop + b * s]));
+    all.push(...strokes.flat());
+    for (const st of strokes) { const q = resample(st, 0.5); for (const off of offs) sink("line", q.map((p, i) => { const a = q[max(i - 1, 0)], b = q[min(i + 1, q.length - 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1; return [p[0] - dy / l * off, p[1] + dx / l * off]; })); }
+  }
+  const bx = all.length ? polyBox(all) : [cx, yTop, cx, yTop];
+  return [bx[0] - rr, bx[1] - rr, bx[2] + rr, bx[3] + rr];
+}
+const fitCap = (str, cap, w) => min(cap, 6 * w / (layoutText(str, 6).width || 1));
+// distance to a union of capsules, stamped one capsule at a time onto the cells near it (cells further than `reach` read `reach`)
+function capsField(prims, B, h, reach) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny).fill(reach);
+  for (const p of prims) {
+    const b = primBox(p), i0 = max(0, floor((b[0] - reach - x0) / h)), i1 = min(nx - 1, ceil((b[2] + reach - x0) / h)), j0 = max(0, floor((b[1] - reach - y0) / h)), j1 = min(ny - 1, ceil((b[3] + reach - y0) / h));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * nx + i, v = primDist(p, x0 + i * h, y0 + j * h); if (v < F[k]) F[k] = v; }
+  }
+  return { F, nx, ny, h, x0, y0 };
+}
+// a stencil letter: the outline of its strokes at radius r, with a bridge of card over each counter so the middle stays
+function stencil(strokes, r) {
+  const prims = []; for (const st of strokes) { const q = resample(st, 0.9); for (let i = 0; i + 1 < q.length; i++) prims.push(Limb(q[i][0], q[i][1], r, q[i + 1][0], q[i + 1][1], r)); if (q.length === 1) prims.push(Circ(q[0][0], q[0][1], r)); }
+  const G = capsField(prims, growB(primsBox(prims), 3), 0.2, 3.5), gTop = min(...strokes.flat().map(p => p[1])) - r - 1.0;
+  const loopsOf = () => contours(G, 0).filter(l => abs(loopArea(l)) > 0.6).map(l => { const q = smooth(l, 1); return rdp([...q, q[0]], 0.03); });
+  const loops = loopsOf(), isIsland = loops.map((l, i) => loops.some((m, j) => j !== i && abs(loopArea(m)) > abs(loopArea(l)) && inPoly(l[0], m)));
+  // a counter too small to keep (a heavy G nearly closing up) just falls out with the letter: cut the outer loops only
+  const keep = loops.filter((l, i) => isIsland[i] && (() => { const b = polyBox(l); return abs(loopArea(l)) >= 12 && min(b[2] - b[0], b[3] - b[1]) >= 3.5; })());
+  const outer = loops.filter((_, i) => !isIsland[i]);
+  if (!keep.length) return { polys: outer, G };
+  const F0 = G.F.slice();
+  for (const l of keep) { // carve the bridge out of the window: max(d, -inside-the-bar)
+    const b = polyBox(l), cx = (b[0] + b[2]) / 2, bb = [cx - STENCIL_BRIDGE / 2, gTop - 1.0, cx + STENCIL_BRIDGE / 2, (b[1] + b[3]) / 2];
+    const i0 = max(0, floor((bb[0] - 2 - G.x0) / G.h)), i1 = min(G.nx - 1, ceil((bb[2] + 2 - G.x0) / G.h)), j0 = max(0, floor((bb[1] - 2 - G.y0) / G.h)), j1 = min(G.ny - 1, ceil((bb[3] + 2 - G.y0) / G.h));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const x = G.x0 + i * G.h, y = G.y0 + j * G.h, e = max(abs(x - (bb[0] + bb[2]) / 2) - (bb[2] - bb[0]) / 2, abs(y - (bb[1] + bb[3]) / 2) - (bb[3] - bb[1]) / 2), k = j * G.nx + i; if (-e > G.F[k]) G.F[k] = -e; }
+  }
+  const polys = loopsOf();
+  for (let i = 0; i < polys.length; i++) for (let j = i + 1; j < polys.length; j++) if (polyDist(polys[i], polys[j]) < MIN_BRIDGE) { G.F.set(F0); return { polys: outer, G }; } // a bridge that pinches: no bridges
+  return { polys, G };
+}
+const CONFETTI_SHAPES = {
+  dots: (c, s, a) => ellipsePoly(c[0], c[1], s / 2, s / 2, 0, 28),
+  stars: (c, s, a) => starPoly(c[0], c[1], s / 2, s / 4.2, 5, a),
+  triangles: (c, s, a) => Array.from({ length: 3 }, (_, i) => [c[0] + s * 0.64 * cos(a + TAU * i / 3), c[1] + s * 0.64 * sin(a + TAU * i / 3)]),
+  strips: (c, s, a) => { const hw = max(MIN_CONFETTI + 0.2, s * 0.45) / 2; return rrect(-s * 0.65, -hw, s * 0.65, hw, hw * 0.35, 3).map(([x, y]) => [c[0] + x * cos(a) - y * sin(a), c[1] + x * sin(a) + y * cos(a)]); },
+  hearts: (c, s, a) => heartPoly(c[0], c[1] - s * 0.05, s, (a % 0.8) - 0.4, 40),
+  smileys: (c, s) => ellipsePoly(c[0], c[1], s / 2, s / 2, 0, 32),
+};
+const CONFETTI_KINDS = { trio: ["hearts", "stars", "smileys"], mixed: ["dots", "stars", "triangles", "strips", "hearts", "smileys"] };
+// spirograph flourishes: a hypotrochoid (ring A, wheel B, pen at dk of the wheel's radius), scaled to radius rs
+const SPIRO = [[16, 5, 1.3], [18, 7, 1.2], [20, 7, 1.25], [15, 4, 1.3], [21, 8, 1.2], [24, 7, 0.85]]; // many petals round an open middle, like a real spirograph
+function spiroPts(c, rs, R) {
+  const [A, B, dk] = SPIRO[floor(R() * SPIRO.length)], d = B * dk, k = rs / (A - B + d), gcd = (a, b) => b ? gcd(b, a % b) : a, end = TAU * B / gcd(A, B), rot = R() * TAU, out = [];
+  for (let t = 0; t <= end + 1e-9; t += 0.03) { const x = (A - B) * cos(t) + d * cos((A - B) / B * t), y = (A - B) * sin(t) - d * sin((A - B) / B * t); out.push([c[0] + k * (x * cos(rot) - y * sin(rot)), c[1] + k * (x * sin(rot) + y * cos(rot))]); }
+  return out;
+}
+// what the pen draws on a confetti piece before the blade lifts it out: a face, hatching, an inset outline or a spiral
+function confettiInk(q, v) {
+  const f = fastPoly(q.poly), c = q.c, b = polyBox(q.poly), rr = min(b[2] - b[0], b[3] - b[1]) / 2, out = [], ring = k => { const g = growPoly(q.poly, -k); return [...g, g[0]]; };
+  if (q.kind === "smileys") out.push(circle(c[0] - 0.33 * rr, c[1] - 0.22 * rr, 0.09 * rr + 0.15, 8), circle(c[0] + 0.33 * rr, c[1] - 0.22 * rr, 0.09 * rr + 0.15, 8), arcP(c[0], c[1] + 0.02 * rr, 0.5 * rr, 0.42 * rr, 25, 155, 12));
+  else if (q.kind === "hearts") out.push(...(v === 0 ? [...hatchPoly(q.poly, 0.8, PI / 4, 0.7), ...hatchPoly(q.poly, 0.8, -PI / 4, 0.7)] : v === 1 ? [ring(1.1)] : hatchPoly(q.poly, 0.7, -PI / 4, 0.7)));
+  else if (q.kind === "stars") out.push(...(v === 2 ? hatchPoly(q.poly, 0.75, PI / 2, 0.7) : [ring(0.9), circle(c[0], c[1], 0.35, 8)]));
+  else if (q.kind === "dots") { const sp = []; for (let a = 0; a < 3 * TAU; a += 0.25) { const r2 = 0.25 + a / (3 * TAU) * (rr - 1.1); sp.push([c[0] + r2 * cos(a), c[1] + r2 * sin(a)]); } out.push(sp); }
+  else out.push(...hatchPoly(q.poly, 0.9, v * PI / 3, 0.7));
+  return clipLines(out, (x, y) => f(x, y) < -(INK_GAP + 0.25), 0.2);
+}
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), M = o.margin, gates = [], notes = [];
+  const [pw, ph] = SIZES[o.size], foldV = pw <= ph, sc = min(pw, ph) / 105, deep = o.layers === "3";
+  const pieces = [], mk = (name, sheet, w, h, extra = {}) => { const p = { name, sheet, w, h, L: Object.fromEntries(LAYERS.map(k => [k, []])), ...extra }; pieces.push(p); return p; };
+  const add = (p, layer, pts, closed = false) => { if (pts.length > 1) p.L[LAYERS.includes(layer) ? layer : "line"].push([pts, closed]); };
+  const cover = mk("cover", "card", foldV ? 2 * pw : pw, foldV ? ph : 2 * ph), fx = foldV ? pw : 0, fy = foldV ? 0 : ph;
+  const middle = deep ? mk("middle layer", "behind", pw, ph) : null, insert = mk("back layer", "behind", pw, ph);
+  const T = pts => pts.map(([x, y]) => [x + fx, y + fy]), pen = (lyr, pts, cl = false) => add(cover, lyr, T(pts), cl);
+  const keepOut = [], textBoxes = [], coverWin = [], midWin = [], letterWin = [], rings = [];
+
+  // ---------- the small lines ----------
+  const small = (str, y, cap) => { str = String(str || "").trim(); if (!str) return null; const c2 = fitCap(str, cap, pw - 22), b = penWord(str, pw / 2, y, c2, "thin", pen); keepOut.push(growB(b, 2.2)); textBoxes.push(growB(b, 1.5)); return b; };
+  const sCap = 4.4 * sc, hasTop = String(o.top).trim(), hasBot = String(o.bottom).trim();
+  if (hasTop) small(o.top, 12 * sc, sCap);
+  const y0 = hasTop ? 12 * sc + sCap + 7 * sc : 12 * sc, y1 = ph - (hasBot ? 22 : 12) * sc;
+
+  // ---------- the headline, cut as stencil windows; the cover's are a step bigger when there is a middle layer ----------
+  const raw = String(o.headline || "").toUpperCase().replace(/[^A-Z0-9!?.&'\- ]/g, "").trim() || "HOORAY", words = raw.split(/\s+/);
+  // the width of a line is linear in the cap height, so solve for the biggest cap that fits (gap between letters: both radii plus 2.8 mm of card)
+  const ringAt = clamp(o.clear * 0.5, INK_GAP + 0.2, 1.2), wt = o.weight, rOf = cap => cap * wt, avail = pw - 18;
+  const capOf = (line, gr) => { const L0 = layoutText(line, 6, 0), n = L0.glyphs.length; return (avail - (n - 1) * (2 * gr + 2.8) - 2 * gr) / (L0.width / 6 + 2 * wt * n); };
+  const sets = [[raw]];
+  if (words.length >= 2) { let best = null; for (let k = 1; k < words.length; k++) { const a = words.slice(0, k).join(" "), b = words.slice(k).join(" "), d = abs(a.length - b.length); if (!best || d < best.d) best = { d, l: [a, b] }; } sets.push(best.l); }
+  else if (raw.length >= 5) { const h = ceil(raw.length / 2); sets.push([raw.slice(0, h), raw.slice(h)]); }
+  if (words.length >= 3) { let best = null; for (let a = 1; a < words.length - 1; a++) for (let b = a + 1; b < words.length; b++) { const l = [words.slice(0, a), words.slice(a, b), words.slice(b)].map(w => w.join(" ")), d = max(...l.map(x => x.length)); if (!best || d < best.d) best = { d, l }; } sets.push(best.l); }
+  else if (raw.replace(/ /g, "").length >= 9) { const t = ceil(raw.length / 3); sets.push([raw.slice(0, t), raw.slice(t, 2 * t), raw.slice(2 * t)].map(x => x.trim()).filter(Boolean)); }
+  const availH = y1 - y0, LG = 3.6;
+  const choose = gr => { let pk = null; for (const st of sets) { const n = st.length; let cap = min(...st.map(l => capOf(l, gr)), (availH - (n - 1) * LG - n * 2 * gr) / (n * (1 + 2 * wt)), ph * 0.32); const score = cap * (n === 1 ? 1.08 : 1); if (!pk || score > pk.score) pk = { set: st, cap, score }; } return pk; };
+  let grow = deep ? o.step : 0, pick = choose(grow);
+  while (deep && pick.cap < 9 && grow > 1.2 + 1e-9) { grow = max(1.2, grow - 0.2); pick = choose(grow); }
+  if (deep && grow < o.step - 1e-9) notes.push(`step eased to ${grow.toFixed(1)} mm so the word fits`);
+  if (pick.cap < 7) notes.push(`a long headline for this card: the letters are only ${max(0, pick.cap).toFixed(1)} mm tall`);
+  if (pick.cap <= 2) throw new Error("the headline does not fit on this card at all: shorten it or pick a bigger size");
+  const gapU = cap => (2 * (rOf(cap) + grow) + 2.8) / (cap / 6);
+  const { set, cap } = pick, rr = rOf(cap), lineH = cap + 2 * (rr + grow), total = set.length * lineH + (set.length - 1) * LG;
+  let y = y0 + max(0, (availH - total) / 2);
+  for (const line of set) {
+    const L = layoutText(line, cap, gapU(cap)), s = L.s, top = y + rr + grow;
+    for (const g of L.glyphs) {
+      const strokes = g.strokes.map(st => st.map(([a, b]) => [pw / 2 - L.width / 2 + g.x * s + a * s, top + b * s]));
+      const front = stencil(strokes, rr + grow);
+      for (const p of front.polys) { coverWin.push(p); letterWin.push(p); }
+      if (o.ring !== "off") for (const at of o.ring === "double" ? [ringAt, ringAt + 0.8] : [ringAt]) rings.push(...contours(front.G, at).filter(l => abs(loopArea(l)) > 1 && !front.polys.some(pl => inPoly(l[0], pl))).map(l => smooth(l, 1)).map(l => [...l, l[0]]));
+      if (deep) for (const p of stencil(strokes, rr).polys) midWin.push(p);
+    }
+    y += lineH + LG;
+  }
+  const word = polyBox(letterWin.flat()), centre = [(word[0] + word[2]) / 2, (word[1] + word[3]) / 2];
+  keepOut.push(growB(word, 1));
+  if (hasBot) small(o.bottom, ph - 17 * sc, sCap);
+
+  // ---------- the message card: its own card on the back panel, held by four diagonal corner slits ----------
+  const TUCK = clamp(min(pw, ph) * 0.07, 5, 8);
+  const pr = o.plate === "on" ? (() => { const k = o.platesize / 100, w = round(pw * k), h = round(ph * k); return [(pw - w) / 2, (ph - h) / 2, (pw + w) / 2, (ph + h) / 2]; })() : null;
+  const slits = pr ? [[pr[0], pr[1], 1, 1], [pr[2], pr[1], -1, 1], [pr[2], pr[3], -1, -1], [pr[0], pr[3], 1, -1]].map(([cx, cy, sx, sy]) => [[cx + sx * TUCK, cy - sy * 1.5], [cx - sx * 1.5, cy + sy * TUCK]]) : [];
+  const segD = (x, yy, [a, b]) => { const dx = b[0] - a[0], dy = b[1] - a[1], t = clamp(((x - a[0]) * dx + (yy - a[1]) * dy) / (dx * dx + dy * dy || 1e-9), 0, 1); return hypot(x - a[0] - t * dx, yy - a[1] - t * dy); };
+  const slitD = (x, yy) => slits.reduce((d, sl) => min(d, segD(x, yy, sl)), INF);
+
+  // ---------- confetti windows: round the word on the front, and round the message card on the back panel ----------
+  const R1 = rng(o.seed * 7919 + 17), R2 = rng(o.seed * 7919 + 29), letters = holeSet(letterWin), cs = o.csize, edge = max(7, o.border + 2);
+  const kinds = CONFETTI_KINDS[o.cshape] || [o.cshape];
+  const boxHit = (pb, list, pad) => list.some(b => pb[2] > b[0] - pad && pb[0] < b[2] + pad && pb[3] > b[1] - pad && pb[1] < b[3] + pad);
+  const scatterConfetti = (count, R, clash) => {
+    const out = [];
+    for (let i = 0; i < 4000 && out.length < count; i++) {
+      const c = [lerp(edge + cs / 2, pw - edge - cs / 2, R()), lerp(edge + cs / 2, ph - edge - cs / 2, R())];
+      const kind = kinds[floor(R() * kinds.length)]; let poly = CONFETTI_SHAPES[kind](c, cs, R() * TAU), pb = polyBox(poly);
+      { const m = min(pb[2] - pb[0], pb[3] - pb[1]); if (m < MIN_CONFETTI + 0.05) { const k2 = (MIN_CONFETTI + 0.15) / m; poly = poly.map(([x, yy]) => [c[0] + (x - c[0]) * k2, c[1] + (yy - c[1]) * k2]); pb = polyBox(poly); } }
+      if (pb[0] < edge || pb[1] < edge || pb[2] > pw - edge || pb[3] > ph - edge) continue;
+      if (clash(c, poly, pb)) continue;
+      if (out.some(q => hypot(q.c[0] - c[0], q.c[1] - c[1]) < cs * 1.6 + 3 && polyDist(q.poly, poly) < 3.5)) continue;
+      out.push({ c, kind, poly });
+    }
+    return out;
+  };
+  const conf = scatterConfetti(o.ccount, R1, (c, poly, pb) => boxHit(pb, keepOut, 1) || poly.some(([x, yy]) => letters.d(x, yy, 4.5) < 4));
+  for (const q of conf) coverWin.push(q.poly);
+  if (conf.length < o.ccount) notes.push(`room for ${conf.length} of ${o.ccount} confetti on the front`);
+  const plateBox = pr ? growB(pr, 3) : null;
+  const backConf = scatterConfetti(o.bcount, R2, (c, poly, pb) => (plateBox && boxHit(pb, [plateBox], 0)) || poly.some(([x, yy]) => slitD(x, yy) < 4));
+  const backWin = backConf.map(q => q.poly);
+  if (backConf.length < o.bcount) notes.push(`room for ${backConf.length} of ${o.bcount} confetti on the back panel${pr ? " (a smaller message card leaves more)" : ""}`);
+  const holes = holeSet(coverWin), backHoles = holeSet(backWin), clr = o.clear + (o.ring === "double" ? 0.9 : 0);
+  for (const q of [...conf, ...backConf]) if (o.ring !== "off") { const G = fieldOf(fastPoly(q.poly), growB(polyBox(q.poly), ringAt + 1), 0.15); q.rings = contours(G, ringAt).map(l => { const r2 = smooth(l, 1); return [...r2, r2[0]]; }); }
+
+  // ---------- spirograph flourishes in the open spaces, on both panels ----------
+  const RS = rng(o.seed * 7919 + 41), sh = o.shadow, fd = max(2.5, o.border * 0.5), patIn = max(o.border, 2, o.frame !== "none" ? fd + 1.6 : 0);
+  const placeSpiros = (n, ok) => { const out = []; for (let i = 0; i < 1500 && out.length < n; i++) { const rs = o.spiroR * lerp(0.75, 1.15, RS()) * (1 - 0.4 * i / 1500), /* shrinks towards 60% while it looks for room */ c = [lerp(rs + patIn + 1, pw - rs - patIn - 1, RS()), lerp(rs + patIn + 1, ph - rs - patIn - 1, RS())]; if (c[0] < 0 || c[1] < 0 || !ok(c, rs) || out.some(q => hypot(q.c[0] - c[0], q.c[1] - c[1]) < q.r + rs + 2.5)) continue; out.push({ c, r: rs, pts: spiroPts(c, rs, RS) }); } return out; };
+  const nF = ceil(o.spiro / 2);
+  const spiF = placeSpiros(nF, (c, rs) => holes.d(c[0], c[1], rs + clr + 2) > rs + clr + 0.6 && !boxHit([c[0] - rs, c[1] - rs, c[0] + rs, c[1] + rs], keepOut, 1) && !(sh > 0 && letters.d(c[0] - sh, c[1] - sh, rs + 2) < rs + 1));
+  const spiB = placeSpiros(o.spiro - nF, (c, rs) => backHoles.d(c[0], c[1], rs + clr + 2) > rs + clr + 0.6 && slitD(c[0], c[1]) > rs + 2 && !(plateBox && boxHit([c[0] - rs, c[1] - rs, c[0] + rs, c[1] + rs], [plateBox], 1)));
+  if (spiF.length + spiB.length < o.spiro) notes.push(`room for ${spiF.length + spiB.length} of ${o.spiro} flourishes`);
+
+  // ---------- the front: its pattern, the shadow, the rings, the cuts ----------
+  const inPanel = (x, y, d) => x > d && y > d && x < pw - d && y < ph - d;
+  const outOfBoxes = (x, y) => !textBoxes.some(b => x > b[0] && x < b[2] && y > b[1] && y < b[3]);
+  const inShadow = (x, y, pad = 0) => sh > 0 && letters.d(x - sh, y - sh, pad + 0.3) < pad;
+  const RA = rng(o.seed * 31 + 1), RB = rng(o.seed * 31 + 2), RC = rng(o.seed * 31 + 3);
+  const offSpiro = (list, x, y) => !list.some(q => hypot(x - q.c[0], y - q.c[1]) < q.r + 1.0);
+  const frontInk = clipLines(PATTERNS[o.pA].f([0, 0, pw, ph], o.gA, centre, RA), (x, y) => inPanel(x, y, patIn) && holes.d(x, y, clr + 0.3) > clr && outOfBoxes(x, y) && !inShadow(x, y, 0.7) && offSpiro(spiF, x, y));
+  for (const q of frontInk) pen(o.penA, q);
+  // the frame, the flourishes and the drawn-on confetti, on the front and on the back panel
+  const frameLines = d0 => {
+    const path = d => [[d, d], [pw - d, d], [pw - d, ph - d], [d, ph - d], [d, d]];
+    if (o.frame === "none") return [];
+    if (o.frame === "line") return [path(d0)];
+    if (o.frame === "double") return [path(d0 - 0.6), path(d0 + 0.6)];
+    if (o.frame === "dots") return dots(path(d0), 2.2, 0.35);
+    return [scallopPath(path(d0), 6, 1.4, (x, y) => { const e = [x - d0, pw - d0 - x, y - d0, ph - d0 - y], m = e.indexOf(min(...e)); return [[1, 0], [-1, 0], [0, 1], [0, -1]][m]; })];
+  };
+  const frontOk = (x, y) => holes.d(x, y, clr + 0.3) > clr && outOfBoxes(x, y), backOk = (x, y) => backHoles.d(x, y, clr + 0.3) > clr && slitD(x, y) > clr + 0.4;
+  for (const q of clipLines(frameLines(fd), frontOk)) pen("line", q);
+  for (const q of clipLines(frameLines(fd), backOk)) add(cover, "line", q);
+  for (const sp of spiF) for (const q of clipLines([sp.pts], frontOk)) pen(o.spiroPen, q);
+  for (const sp of spiB) for (const q of clipLines([sp.pts], backOk)) add(cover, o.spiroPen, q);
+  if (o.cdraw === "on") { conf.forEach((q, i) => { for (const l of confettiInk(q, (i + o.seed) % 3)) pen(o.cpen, l); }); backConf.forEach((q, i) => { for (const l of confettiInk(q, (i + o.seed + 1) % 3)) add(cover, o.cpen, l); }); }
+  for (const q of backConf) for (const l of q.rings || []) add(cover, "shade", l);
+  if (sh > 0) for (const q of clipLines(parallel(growB(word, sh + 2), 0.7, -PI / 4), (x, y) => inShadow(x, y) && holes.d(x, y, clr + 0.3) > clr)) pen("line", q);
+  for (const l of rings) pen("shade", l);
+  for (const q of conf) for (const l of q.rings || []) pen("shade", l);
+  for (const w of coverWin) add(cover, "cut", T(w), true);
+  for (const w of backWin) add(cover, "cut", w, true);
+  for (const sl of slits) add(cover, "cut", sl);
+  add(cover, "cut", [[0.6, 0.6], [cover.w - 0.6, 0.6], [cover.w - 0.6, cover.h - 0.6], [0.6, cover.h - 0.6]], true);
+  add(cover, "score", foldV ? [[pw, 1], [pw, ph - 1]] : [[1, ph], [pw - 1, ph]]);
+
+  // ---------- the layers behind: a pattern only where it shows (or all over), kept off their own cuts ----------
+  const behind = (p, shows, own, pat, g, pn, R) => {
+    const ownH = holeSet(own);
+    const ink = clipLines(PATTERNS[pat].f([0, 0, pw, ph], g, centre, R), (x, y) => inPanel(x, y, 1.6) && ownH.d(x, y, 1.2) > max(0.6, clr * 0.5) && (o.behind === "all" || shows.d(x, y, BEHIND_REACH + 0.3) < BEHIND_REACH));
+    for (const q of ink) add(p, pn, q);
+    for (const w of own) add(p, "cut", w, true);
+    add(p, "cut", [[1, 1], [pw - 1, 1], [pw - 1, ph - 1], [1, ph - 1]], true);
+    return ink;
+  };
+  if (deep) behind(middle, holes, midWin, o.pB, o.gB, o.penB, RB);
+  behind(insert, deep ? holeSet(midWin) : holes, [], o.pC, o.gC, o.penC, RC);
+  const offcuts = coverWin.length + backWin.length + midWin.length;
+
+  // ---------- the message card (or an inside page glued in), and the pocket that holds the offcuts ----------
+  const bw = pr ? pr[2] - pr[0] : pw, bh = pr ? pr[3] - pr[1] : ph, bsc = min(bw, bh) / 105;
+  const pk = [round(bw * 0.62), round(bh * 0.36)], pkAt = [bw / 2 - pk[0] / 2, bh - pk[1] - (pr ? TUCK + 3 : 12 * sc)];
+  const page = mk(pr ? "message card" : "inside page", "inside", bw, bh);
+  { const pg = (l, q, cl = false) => add(page, l, q, cl), msg = String(o.inside).split("/").map(t => t.trim()).filter(Boolean), mc = clamp(4.6 * bsc, 3.4, 6);
+    const to = String(o.to).trim(), from = String(o.from).trim(), sign = [String(o.signoff || "").trim(), from].filter(Boolean).join(" ");
+    const inset = pr ? TUCK * 0.75 + 1 : 5;
+    pg("shade", rrect(inset, inset, bw - inset, bh - inset, 3, 5), true);
+    const topY = pr ? TUCK + 4 : 13 * sc, tc = mc * (pr ? 1.15 : 0.8);
+    if (to) { const t = pr ? to + "!" : "FOR " + to; penWord(t, bw / 2, topY, fitCap(t, tc, bw - 2 * inset - 10), pr ? "stroke" : "thin", pg); }
+    const sc2 = mc * 0.85, signY = (o.pocket === "on" ? pkAt[1] - 6 : bh - (pr ? TUCK + 4 : 14 * sc)) - sc2;
+    const mTop = topY + (to ? tc + 6 : 0), mBot = sign ? signY - 5 : signY + sc2, step2 = min(mc + 6, (mBot - mTop) / max(1, msg.length));
+    msg.forEach((ln, i) => penWord(ln, bw / 2, mTop + i * step2, fitCap(ln, mc, bw - 2 * inset - 8), "thin", pg));
+    if (sign) penWord(sign, bw / 2, signY, fitCap(sign, sc2, bw - 2 * inset - 8), "thin", pg);
+    if (o.pocket === "on") for (const [cx2, cy2, sx, sy] of [[pkAt[0], pkAt[1], 1, 1], [pkAt[0] + pk[0], pkAt[1], -1, 1], [pkAt[0] + pk[0], pkAt[1] + pk[1], -1, -1], [pkAt[0], pkAt[1] + pk[1], 1, -1]]) pg("shade", [[cx2 + sx * 4, cy2], [cx2, cy2], [cx2, cy2 + sy * 4]]);
+    pg("cut", pr ? rrect(0, 0, bw, bh, 1, 3) : [[1, 1], [pw - 1, 1], [pw - 1, ph - 1], [1, ph - 1]], true);
+  }
+  let pocket = null;
+  if (o.pocket === "on") {
+    const [w, h] = pk, tf = h * 0.34, sf = min(9, w * 0.17), ox = sf, oy = tf;
+    pocket = mk("confetti pocket", "inside", 0, 0);
+    const ad = (l, q, cl = false) => add(pocket, l, q.map(([x, yy]) => [x + ox, yy + oy]), cl);
+    const flap = [...bez([0, 0], [w * 0.02, -tf], [w * 0.5, -tf], 12), ...bez([w * 0.5, -tf], [w * 0.98, -tf], [w, 0], 12).slice(1)];
+    ad("cut", [...flap, [w + sf, 4], [w + sf, h - 4], [w, h], [w - 0.6, 2 * h - 1.5], [0.6, 2 * h - 1.5], [0, h], [-sf, h - 4], [-sf, 4]], true);
+    for (const sg of [[[0, 0], [w, 0]], [[0, 0], [0, h]], [[w, 0], [w, h]], [[0, h], [w, h]]]) ad("score", sg);
+    ad("shade", rrect(3, 3, w - 3, h - 3, 2, 4), true);
+    const lab = String(o.plabel || "CONFETTI").toUpperCase().slice(0, 12), lc = fitCap(lab, h * 0.24, w - 12);
+    penWord(lab, w / 2, h * 0.3, lc, "stroke", (l, q) => ad("line", q));
+    const fine = String(o.pline || "").replace(/\{n\}/g, String(offcuts)).trim();
+    if (fine) penWord(fine, w / 2, h * 0.3 + lc + 5, fitCap(fine, 2.6, w - 10), "thin", (l, q) => ad("line", q));
+    for (const [sx, sy, r2] of [[0.15, 0.17, 1.6], [0.86, 0.2, 1.3], [0.12, 0.82, 1.2], [0.88, 0.8, 1.7]]) for (const q of sparkle([w * sx, h * sy], r2 * sc)) ad("shade", q, true);
+    const bxp = polyBox(pocket.L.cut[0][0]); pocket.w = bxp[2] - bxp[0]; pocket.h = bxp[3] - bxp[1];
+  }
+
+  // ---------- envelope ----------
+  const env = mk("envelope", "envelope", 0, 0);
+  { const ew = pw + 8, eh = ph + 8, side = min(ew * 0.36, (W - 2 * M - ew - 4) / 2), vk = min(1, (H - 2 * M - eh - 4) / (ew * 0.3 * 1.1 + eh * 0.26)), fl = ew * 0.3 * vk, bf = eh * 0.26 * vk, ox = side + 2, oy = fl * 1.1 + 2;
+    if (side < ew * 0.2 || vk < 0.6) notes.push("the envelope's flaps are too small to work on this mat: use the 12 x 24");
+    const ad = (layer, pts, closed = false) => add(env, layer, pts.map(([x, yy]) => [x + ox, yy + oy]), closed);
+    const arch = [...bez([0, 0], [ew * 0.15, -fl * 1.1], [ew * 0.5, -fl], 12), ...bez([ew * 0.5, -fl], [ew * 0.85, -fl * 1.1], [ew, 0], 12).slice(1)];
+    const poly = [...arch, [ew + side, eh * 0.12], [ew + side, eh * 0.88], [ew, eh], [ew * 0.88, eh + bf], [ew * 0.12, eh + bf], [0, eh], [-side, eh * 0.88], [-side, eh * 0.12]];
+    ad("cut", poly, true);
+    for (const seg of [[[0, 0], [ew, 0]], [[ew, 0], [ew, eh]], [[0, 0], [0, eh]], [[0, eh], [ew, eh]]]) ad("score", seg);
+    ad("line", rrect(ew - 28, 9, ew - 10, 27, 1.5, 3), true);
+    const a0 = eh * 0.46; for (let i = 0; i < 3; i++) ad("shade", [[ew * 0.22, a0 + i * 9], [ew * 0.84, a0 + i * 9]]);
+    if (String(o.to).trim()) penWord(String(o.to).trim(), ew * 0.24 + layoutText(String(o.to).trim(), 6).width / 2, a0 - 9, 6, "stroke", (l, q) => ad("line", q));
+    const bx = polyBox(poly); env.w = bx[2] - bx[0]; env.h = bx[3] - bx[1];
+  }
+
+  // ---------- gates ----------
+  const winGate = (list, name) => {
+    let minB = INF, off = 0, small2 = 0;
+    for (let i = 0; i < list.length; i++) { const bi = polyBox(list[i]); if (bi[0] < 4 || bi[1] < 4 || bi[2] > pw - 4 || bi[3] > ph - 4) off++; for (let j = i + 1; j < list.length; j++) { const bj = polyBox(list[j]); if (bj[0] > bi[2] + 8 || bj[2] < bi[0] - 8 || bj[1] > bi[3] + 8 || bj[3] < bi[1] - 8) continue; minB = min(minB, polyDist(list[i], list[j])); } }
+    gates.push([`${name}: every window at least 4 mm inside the edge`, off === 0, `${list.length} windows, ${off} too near`]);
+    gates.push([`${name}: windows at least ${MIN_BRIDGE} mm apart so the card between holds`, minB >= MIN_BRIDGE - 0.05, minB === INF ? "one window or none" : `closest ${minB.toFixed(1)} mm`]);
+  };
+  winGate(coverWin, "front"); if (deep) winGate(midWin, "middle"); if (backWin.length) winGate(backWin, "back panel");
+  if (slits.length) { const near = backWin.length ? min(...backWin.flat().map(([x, yy]) => slitD(x, yy))) : INF; gates.push(["corner slits at least 3 mm from every confetti window", near >= 3 - 0.05, near === INF ? "no back confetti" : `closest ${near.toFixed(1)} mm`]); }
+  const smallest = conf.length + backConf.length ? min(...[...conf, ...backConf].map(q => { const b = polyBox(q.poly); return min(b[2] - b[0], b[3] - b[1]); })) : INF;
+  gates.push([`confetti at least ${MIN_CONFETTI} mm across, so the blade can lift it`, smallest >= MIN_CONFETTI - 0.05, smallest === INF ? "no confetti" : `smallest ${smallest.toFixed(1)} mm`]);
+  // ink never closer than 0.4 mm to a cut on its own layer (measured on every vertex)
+  let inkNear = 0;
+  for (const p of [cover, middle, insert].filter(Boolean)) { const own = holeSet(p.L.cut.slice(0, -1).filter(([q]) => q.length > 2).map(([q]) => q)); for (const k of ["line", "shade"]) for (const [q] of p.L[k]) for (const [x, yy] of q) if (abs(own.d(x, yy, 1)) < INK_GAP || (p === cover && slitD(x, yy) < INK_GAP)) inkNear++; }
+  gates.push([`pen ink at least ${INK_GAP} mm from every cut`, inkNear === 0, `${inkNear} points too near`]);
+  if (o.paperC === "101010" || (deep && o.paperB === "101010")) notes.push("a black pen will not show on black paper: use a white gel pen for that layer (assumed)");
+
+  // ---------- pack the sheet ----------
+  const want = { card: ["card"], behind: ["behind"], inside: ["inside"], envelope: ["envelope"], all: null }[o.sheet];
+  const sheet = pieces.filter(p => !want || want.includes(p.sheet));
+  for (const p of sheet) { const pts = p.L.cut.flatMap(([q]) => q); p.bx = pts.length ? polyBox(pts) : [0, 0, p.w, p.h]; }
+  const order = [...sheet].sort((a, b) => max(b.bx[2] - b.bx[0], b.bx[3] - b.bx[1]) - max(a.bx[2] - a.bx[0], a.bx[3] - a.bx[1]));
+  let free2 = [[M, M, W - M, H - M]], fits = true, spill = M;
+  for (const p of order) {
+    const w = p.bx[2] - p.bx[0], hh = p.bx[3] - p.bx[1]; let best = null, bi = -1, bs = INF;
+    free2.forEach((f, i) => { const fw = f[2] - f[0], fh = f[3] - f[1]; if (w <= fw + 1e-6 && hh <= fh + 1e-6) { const s2 = min(fw - w, fh - hh); if (s2 < bs) { bs = s2; best = f; bi = i; } } });
+    if (!best) { fits = false; p.at = [M - p.bx[0], H - M + spill - p.bx[1]]; spill += hh + PART_GAP; continue; }
+    const [x0, yy0, x1, yy1] = best; p.at = [x0 - p.bx[0], yy0 - p.bx[1]]; free2.splice(bi, 1);
+    if (x1 - x0 - w < yy1 - yy0 - hh) free2.push([x0 + w + PART_GAP, yy0, x1, yy0 + hh], [x0, yy0 + hh + PART_GAP, x1, yy1]); else free2.push([x0 + w + PART_GAP, yy0, x1, yy1], [x0, yy0 + hh + PART_GAP, x0 + w, yy1]);
+    free2 = free2.filter(f => f[2] - f[0] > 1 && f[3] - f[1] > 1);
+  }
+  if (!fits) notes.push("the pieces do not all fit on this page: pick a single sheet, or the 12 x 24 mat");
+  const layers = Object.fromEntries(LAYERS.map(k => [k, []])); layers.outline = [];
+  for (const p of sheet) { const f = q => [q[0] + p.at[0], q[1] + p.at[1]]; for (const k of LAYERS) for (const [pts, cl] of p.L[k]) layers[k].push([pts.map(f), cl]); if (o.outlines === "on") for (const [pts, cl] of p.L.cut) layers.outline.push([pts.map(f), cl]); }
+  layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
+  const penM = ["line", "shade", "outline"].reduce((a, k) => a + layers[k].reduce((s2, [q, cl]) => s2 + plen(q, cl), 0), 0) / 1000, cutm = layers.cut.reduce((s2, [q, cl]) => s2 + plen(q, cl), 0) / 1000, scorem = layers.score.reduce((s2, [q]) => s2 + plen(q), 0) / 1000;
+  const pts = Object.values(layers).reduce((a, Ls) => a + Ls.reduce((s2, [q]) => s2 + q.length, 0), 0);
+  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py] of q) if (px < M - 0.01 || py < M - 0.01 || px > W - M + 0.01 || py > H - M + 0.01) inside = false;
+  let gap = INF; for (let i = 0; i < sheet.length; i++) for (let j = i + 1; j < sheet.length; j++) { const a = sheet[i], b2 = sheet[j], A = [a.bx[0] + a.at[0], a.bx[1] + a.at[1], a.bx[2] + a.at[0], a.bx[3] + a.at[1]], Bb = [b2.bx[0] + b2.at[0], b2.bx[1] + b2.at[1], b2.bx[2] + b2.at[0], b2.bx[3] + b2.at[1]]; gap = min(gap, max(Bb[0] - A[2], A[0] - Bb[2], Bb[1] - A[3], A[1] - Bb[3])); }
+  const ms = performance.now() - t0, tb = layers.cut.at(-1)[0].map(q => q.map(v => v.toFixed(2)).join(",")).join(" ");
+  gates.unshift(["build time under 6000 ms", ms < 6000, `${ms.toFixed(0)} ms`]);
+  gates.push(["total pen length under 150 m (about 45 minutes of plotting, assumed)", penM < 150, `${penM.toFixed(1)} m`]);
+  gates.push(["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]);
+  gates.push([`pieces at least ${PART_GAP} mm apart and inside the margin`, fits && inside && (gap >= PART_GAP - 0.01 || sheet.length < 2), sheet.length < 2 ? "one piece" : `closest ${gap.toFixed(1)} mm`]);
+  gates.push(["trim frame and pen corner ticks have the same bounding box", tb === `${TRIM_INSET.toFixed(2)},${TRIM_INSET.toFixed(2)} ${(W - TRIM_INSET).toFixed(2)},${TRIM_INSET.toFixed(2)} ${(W - TRIM_INSET).toFixed(2)},${(H - TRIM_INSET).toFixed(2)} ${TRIM_INSET.toFixed(2)},${(H - TRIM_INSET).toFixed(2)}`, "1 mm in"]);
+  return { W, H, o, ms, pw, ph, fx, fy, foldV, deep, cover, middle, insert, page, pocket, coverWin, midWin, conf, backConf, backWin, pr, slits, TUCK, offcuts, pieces, sheet, layers, gates, notes, pen: penM, cutm, scorem };
+}
+
+// ---------------- draw + export ----------------
+function draw(r) {
+  const cv = $("cv"), o = r.o, view = o.view, { pw, ph } = r;
+  const stack = [{ p: r.insert, holes: [], paper: o.paperC, dx: 0, dy: 0 }];
+  if (r.deep) stack.push({ p: r.middle, holes: r.midWin, paper: o.paperB, dx: 0, dy: 0 });
+  stack.push({ p: r.cover, holes: r.coverWin, paper: o.paperA, dx: -r.fx, dy: -r.fy });
+  // the exploded view: each layer lies flat, seen from above and in front, pulled apart
+  const A = [0.8, 0.3, -0.52, 0.5], Z = ph * 0.42, X = (x, y, i) => [A[0] * x + A[2] * y, A[1] * x + A[3] * y - i * Z];
+  let WW, HH, ox = 0, oy = 0;
+  if (view === "sheet") { WW = r.W; HH = r.H; }
+  else if (view === "exploded") { const c4 = stack.flatMap((_, i) => [[0, 0], [pw, 0], [pw, ph], [0, ph]].map(([x, y]) => X(x, y, i))), b = polyBox(c4); WW = b[2] - b[0] + 16; HH = b[3] - b[1] + 16; ox = 8 - b[0]; oy = 8 - b[1]; }
+  else { WW = pw; HH = ph; }
+  const maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / WW, max(1.2, (innerHeight - 90) / HH)), dpr = devicePixelRatio;
+  cv.width = round(WW * k * dpr); cv.height = round(HH * k * dpr); cv.style.width = round(WW * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * dpr, 0, 0, k * dpr, 0, 0);
+  c.fillStyle = view === "sheet" ? "#fbf7ec" : "#efe9dc"; c.fillRect(0, 0, WW, HH); c.lineJoin = c.lineCap = "round";
+  const path = (q, cl, dx = 0, dy = 0) => { q.forEach(([x, y], i) => i ? c.lineTo(x + dx, y + dy) : c.moveTo(x + dx, y + dy)); if (cl) c.closePath(); };
+  const ink = hex => { const n = parseInt(hex, 16), l = 0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255); return l < 70; };
+  const stroke = (list, key, dx = 0, dy = 0, light = false) => { c.strokeStyle = light ? (key === "shade" ? "#bdb7ab" : "#f4f0e6") : key === "shade" ? "#6f685c" : "#1c1810"; c.lineWidth = key === "shade" ? 0.25 : 0.4; c.beginPath(); for (const [q, cl] of list) path(q, cl, dx, dy); c.stroke(); };
+  const layer = (L, shadow) => { // a sheet of paper with its windows, its shadow, and its ink
+    c.beginPath(); c.rect(0, 0, pw, ph); for (const h of L.holes) path(h, true);
+    if (shadow) { c.save(); c.translate(0.5, 0.75); c.fillStyle = "rgba(40,30,10,0.28)"; c.fill("evenodd"); c.restore(); }
+    c.fillStyle = "#" + L.paper; c.fill("evenodd");
+    c.save(); c.beginPath(); c.rect(0, 0, pw, ph); for (const h of L.holes) path(h, true); c.clip("evenodd"); // ink drawn on a cut-out piece leaves with it
+    for (const key of ["shade", "line"]) stroke(L.p.L[key], key, L.dx, L.dy, ink(L.paper));
+    c.strokeStyle = "rgba(0,0,0,0.25)"; c.lineWidth = 0.15; c.beginPath(); for (const h of L.holes) path(h, true); c.stroke(); c.restore();
+  };
+  if (view === "sheet") {
+    for (const key of ["shade", "line"]) stroke(r.layers[key], key);
+    if (r.layers.outline.length) stroke(r.layers.outline, "line");
+    c.strokeStyle = "#1f6fe0"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.4]); c.beginPath(); for (const [q] of r.layers.score) path(q, false); c.stroke();
+    c.strokeStyle = "#d0271c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(q, cl); c.stroke(); c.setLineDash([]);
+  } else if (view === "exploded") {
+    stack.forEach((L, i) => { c.setTransform(k * dpr * A[0], k * dpr * A[1], k * dpr * A[2], k * dpr * A[3], k * dpr * ox, k * dpr * (oy - i * Z)); layer(L, false); c.strokeStyle = "rgba(0,0,0,0.35)"; c.lineWidth = 0.3; c.strokeRect(0, 0, pw, ph); });
+    c.setTransform(k * dpr, 0, 0, k * dpr, 0, 0);
+  } else if (view === "inside") { // the back panel seen from inside the open card, with the message card tucked into its slits
+    const mx = r.foldV ? (q => [pw - q[0], q[1]]) : (q => [q[0], ph - q[1]]);
+    c.beginPath(); c.rect(0, 0, pw, ph); for (const h of r.backWin) path(h.map(mx), true); c.fillStyle = "#" + o.paperA; c.fill("evenodd");
+    c.strokeStyle = "rgba(0,0,0,0.3)"; c.lineWidth = 0.2; c.beginPath(); for (const h of r.backWin) path(h.map(mx), true); c.stroke();
+    if (r.pr) {
+      const at = [r.pr[0], r.pr[1]], g = q => [q[0] + at[0], q[1] + at[1]];
+      c.save(); c.translate(0.4, 0.6); c.fillStyle = "rgba(40,30,10,0.22)"; c.fillRect(at[0], at[1], r.page.w, r.page.h); c.restore();
+      c.fillStyle = "#" + o.paperM; c.fillRect(at[0], at[1], r.page.w, r.page.h);
+      for (const key of ["shade", "line"]) stroke(r.page.L[key].map(([q, cl]) => [q.map(g), cl]), key, 0, 0, ink(o.paperM));
+      // the card's corners pass under the panel beyond each slit
+      for (const sl of r.slits) { const a = mx(sl[0]), b = mx(sl[1]), cn = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], tip = [r.pr[0] + (cn[0] < pw / 2 ? 0 : r.pr[2] - r.pr[0]), r.pr[1] + (cn[1] < ph / 2 ? 0 : r.pr[3] - r.pr[1])]; c.beginPath(); path([a, b, [tip[0] + (tip[0] < pw / 2 ? -2 : 2), tip[1] + (tip[1] < ph / 2 ? -2 : 2)]], true); c.fillStyle = "#" + o.paperA; c.fill(); c.strokeStyle = "#1c1810"; c.lineWidth = 0.3; c.beginPath(); path([a, b], false); c.stroke(); }
+    } else { c.fillStyle = "#fbf9f4"; c.fillRect(1, 1, pw - 2, ph - 2); for (const key of ["shade", "line"]) stroke(r.page.L[key], key); }
+  } else stack.forEach((L, i) => layer(L, i > 0));
+  const lenm = L => L.reduce((a, [q]) => a + plen(q), 0) / 1000;
+  $("stats").innerHTML = `${r.coverWin.length} windows on the front (${r.conf.length} confetti), ${r.backWin.length} confetti on the back panel${r.slits.length ? ", 4 corner slits" : ""}${r.deep ? `, ${r.midWin.length} in the middle` : ""} · ${r.offcuts} offcuts for the pocket · ${r.sheet.length} pieces on this sheet (${r.sheet.map(p => p.name).join(", ") || "none"}) · ${r.ms.toFixed(0)} ms<br>`
+    + `black: <b>${lenm(r.layers.line.concat(r.layers.outline)).toFixed(1)} m</b> · grey: <b>${lenm(r.layers.shade).toFixed(1)} m</b> · score: <b>${r.scorem.toFixed(1)} m</b> · cut: <b>${r.cutm.toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "black", colour: "000000", w: 0.4, paths: [...r.layers.outline, ...r.layers.line] }, { name: "grey", colour: "555555", w: 0.3, paths: r.layers.shade },
+  { name: "score", colour: "0066ff", w: 0.2, paths: r.layers.score, score: true }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : L.score ? "score" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG hooray card${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+const IDS = ["size", "layers", "weight", "step", "clear", "border", "ring", "shadow", "frame", "spiro", "spiroR", "spiroPen", "bcount", "cdraw", "cpen", "plate", "platesize", "paperM", "signoff", "pA", "gA", "penA", "paperA", "pB", "gB", "penB", "paperB", "pC", "gC", "penC", "paperC", "behind", "ccount", "cshape", "csize", "pocket", "seed", "top", "headline", "bottom", "plabel", "pline", "inside", "to", "from", "sheet", "outlines", "view", "page", "margin"];
+const NUM = new Set(["weight", "step", "clear", "border", "shadow", "gA", "gB", "gC", "ccount", "csize", "seed", "margin", "spiro", "spiroR", "bcount", "platesize"]);
+const read = () => Object.fromEntries(IDS.map(k => [k, NUM.has(k) ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["view", "paperA", "paperB", "paperC", "paperM"]);
+function run(k) {
+  sync();
+  if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; }
+  $("stats").textContent = "computing"; clearTimeout(pending);
+  pending = setTimeout(() => { try { last = build(read()); draw(last); } catch (e) { $("stats").innerHTML = `<span class="fail">build failed: ${String(e && e.stack || e).replace(/</g, "&lt;")}</span>`; } }, 80);
+}
+const BASE = { size: "a6", layers: "2", weight: 0.18, step: 2.2, clear: 1.2, border: 5, ring: "on", shadow: 0, pA: "hatch", gA: 1.6, penA: "shade", paperA: "fbf9f4", pB: "stripes", gB: 1.2, penB: "line", paperB: "ff7aa8", pC: "confetti", gC: 5, penC: "line", paperC: "f2b705", behind: "shows",
+  frame: "double", spiro: 4, spiroR: 8, spiroPen: "line", bcount: 10, cdraw: "on", cpen: "line", plate: "on", platesize: 66, paperM: "cfe3f2", signoff: "love,",
+  ccount: 14, cshape: "trio", csize: 7, pocket: "on", seed: 7, top: "", headline: "HOORAY", bottom: "confetti enclosed.", plabel: "CONFETTI", pline: "{n} pieces of your card", inside: "Congratulations. / Throw responsibly.", to: "Sam", from: "Pat", sheet: "card", outlines: "off", view: "assembled", page: "280x280", margin: 8 };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  hooray: P({ paperM: "ff7aa8" }),
+  sunburst: P({ pA: "stripes", gA: 1.8, paperA: "f4ecd8", pC: "rays", gC: 2.6, paperC: "f28c28", ccount: 10, cshape: "dots", csize: 5, bottom: "", seed: 3 }),
+  stepped: P({ layers: "3", weight: 0.17, step: 2.4, pA: "dots", gA: 3.2, paperA: "fbf9f4", pB: "stripes", gB: 1.1, penB: "line", paperB: "ff7aa8", pC: "sparkles", gC: 6, paperC: "0078bf", ccount: 10, cshape: "stars", csize: 7, seed: 12 }),
+  wavy: P({ size: "sq", pA: "waves", gA: 2.2, paperA: "f4ecd8", pC: "zigzag", gC: 2.6, paperC: "1f9d55", ccount: 18, cshape: "strips", csize: 7, ccount: 6, bottom: "", top: "WELL.", seed: 21 }),
+  shadow: P({ size: "a6l", pA: "none", ring: "off", shadow: 1.8, pC: "cross", gC: 1.6, paperC: "d7263d", ccount: 0, bcount: 0, frame: "none", spiro: 0, bottom: "", border: 0, paperM: "fbf9f4" }),
+  party: P({ cshape: "smileys", csize: 8, ccount: 12, bcount: 12, pA: "sparkles", gA: 5, penA: "line", pC: "rays", gC: 2.4, paperC: "0078bf", paperM: "f2b705", frame: "scallop", spiro: 6, ring: "double", top: "YOU DID IT", bottom: "", inside: "Proud of you. / Go and celebrate.", seed: 41 }),
+  loud: P({ size: "x57", layers: "3", weight: 0.2, step: 2.6, pA: "grid", gA: 4, paperA: "fbf9f4", pB: "rings", gB: 1.6, penB: "line", paperB: "f2b705", pC: "confetti", gC: 4.5, paperC: "d7263d", ccount: 24, csize: 6.5, top: "VERY", bottom: "", seed: 5 }),
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `hooray-${r.o.layers}layer-${r.o.sheet}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => { if (!last) return; const ls = penLayers(last), ticks = $("ticks").value !== "off"; ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500)); };
+addEventListener("resize", () => last && draw(last));
+for (const [k, v] of Object.entries(BASE)) $(k).value = v;
+window.__studio = { build, read, PRESETS, penLayers, toSVG, draw };
+run();
+</script>
+</body>
+</html>
