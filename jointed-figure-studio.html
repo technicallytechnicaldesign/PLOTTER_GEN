@@ -225,7 +225,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
     <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
     <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
-    <p class="hint">Split export saves one SVG per layer in job order: the pen layers, then the cut. The pen files carry four corner ticks at 1 mm and the cut file carries a trim rectangle at 1 mm, so every file lands in the same place in Design Space.</p>
+    <p class="hint">If the pieces overflow the page they carry on onto page 2, 3 and so on, a whole piece at a time, and both exports save each page as its own file, so a cutting app can take in one sheet at a time. Split export saves one SVG per layer in job order: the pen layers, then the cut. The pen files carry four corner ticks at 1 mm and the cut file carries a trim rectangle at 1 mm, so every file lands in the same place in Design Space.</p>
   </fieldset>
 </aside>
 <main>
@@ -250,6 +250,7 @@ const STRING_HOLE_D = 1.6;  // ASSUMED: hole a thread can be pushed through
 const JOINT_MARGIN = 3.0;   // ASSUMED: card left round every hole, so the pin does not tear out
 const MIN_HALF = 2.5;       // ASSUMED: no part narrower than 5 mm
 const PART_GAP = 3.0;       // ASSUMED: space between parts on the sheet
+const PAGE_GAP = 14;      // space between pages in the sheet preview (and in the layers, before export splits them)
 const INK_GAP = 0.4;        // ASSUMED: clear space between ink and any cut line
 const TRIM_INSET = 1.0;     // trim rectangle, mm from every page edge (the pen corner ticks sit at the same 1 mm)
 const JR = PIN_HOLE_D / 2 + JOINT_MARGIN + 0.8; // joint disc radius round each pin hole
@@ -527,16 +528,17 @@ function build(o) {
   }
   // lay the parts out on the sheet in shelves, tallest first
   const order = [...R.parts].sort((a, b) => (b.box[3] - b.box[1]) - (a.box[3] - a.box[1]));
-  let x = m, y = m, rowH = 0, fits = true;
+  let x = m, y = m, rowH = 0, fits = true, page = 0;
   for (const p of order) {
     const w = p.box[2] - p.box[0], hh = p.box[3] - p.box[1];
+    if (w > W - 2 * m + 1e-6 || hh > H - 2 * m + 1e-6) fits = false;
     if (x + w > W - m + 1e-6) { x = m; y += rowH + PART_GAP; rowH = 0; }
-    if (y + hh > H - m + 1e-6 || w > W - 2 * m) fits = false;
-    p.at = [x - p.box[0], y - p.box[1]]; x += w + PART_GAP; rowH = max(rowH, hh);
+    if (y + hh > H - m + 1e-6 && y > m + 1e-6) { page++; x = m; y = m; rowH = 0; }
+    p.at = [x - p.box[0], y - p.box[1] + page * (H + PAGE_GAP)]; x += w + PART_GAP; rowH = max(rowH, hh);
   }
-  if (!fits) { // the layout grows about in step with the height, so scale the height by the overflow
-    const need = y + rowH - m, room = H - 2 * m, wide = max(...R.parts.map(p => p.box[2] - p.box[0])), k = min(room / need, (W - 2 * m) / wide);
-    notes.push(`the parts do not all fit on this page: try a height of about ${max(110, floor(o.height * k * 0.97 / 5) * 5)} mm, or a bigger page`); }
+  const pages = page + 1;
+  if (pages > 1) notes.push(`spread over ${pages} pages, a whole piece at a time: Export saves one file per page`);
+  if (!fits) { const big = max(...order.map(p => max((p.box[2] - p.box[0]) / (W - 2 * m), (p.box[3] - p.box[1]) / (H - 2 * m)))); notes.push(`a piece is bigger than the page: try a height of about ${max(110, floor(o.height / big * 0.97 / 5) * 5)} mm, or a bigger page`); }
   const mv = p => q => [q[0] + p.at[0], q[1] + p.at[1]];
   const layers = { line: [], shade: [], colour: [], outline: [], cut: [] };
   for (const p of R.parts) {
@@ -558,7 +560,7 @@ function build(o) {
   const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
   const pen = ["line", "shade", "colour"].reduce((a, k) => a + layers[k].reduce((s, [q, cl]) => s + plen(q, cl), 0), 0) / 1000, cutm = layers.cut.reduce((s, [q, cl]) => s + plen(q, cl), 0) / 1000;
   const pts = Object.values(layers).reduce((a, L) => a + L.reduce((s, [q]) => s + q.length, 0), 0);
-  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py] of q) if (px < m - 0.01 || py < m - 0.01 || px > W - m + 0.01 || py > H - m + 0.01) inside = false;
+  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py0] of q) { const py = py0 - floor(py0 / (H + PAGE_GAP)) * (H + PAGE_GAP); if (px < m - 0.01 || py < m - 0.01 || px > W - m + 0.01 || py > H - m + 0.01) inside = false; }
   const bbox = L => { let a = INF, b = INF, c = -INF, d = -INF; for (const [q] of L) for (const [px, py] of q) { a = min(a, px); b = min(b, py); c = max(c, px); d = max(d, py); } return [a, b, c, d].map(v => v.toFixed(2)).join(","); };
   const ms = performance.now() - t0, pins = R.parts.reduce((n, p) => n + p.holes.filter(Hh => Hh.kind === "pin").length, 0) / 2;
   gates.push(["build time under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`]);
@@ -571,7 +573,7 @@ function build(o) {
   gates.push([`no ink within ${INK_GAP} mm of a cut line or hole (assumed)`, inkBad === 0, `${inkBad} of ${inkN} points`]);
   const penBox = [[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET]].map(p => p.map(v => v.toFixed(2)).join(",")).join(",");
   gates.push(["trim frame and pen corner ticks have the same bounding box", bbox([layers.cut.at(-1)]) === penBox, bbox([layers.cut.at(-1)])]);
-  return { W, H, o, ms, R, layers, gates, notes, pen, cutm, pins };
+  return { pages, W, H, o, ms, R, layers, gates, notes, pen, cutm, pins };
 }
 
 // ---------------- draw + export ----------------
@@ -582,10 +584,10 @@ function poseXf(p, pose) {
   return q => up([px + (q[0] - px) * c - (q[1] - py) * s, py + (q[0] - px) * s + (q[1] - py) * c]);
 }
 function draw(r, pose) {
-  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
-  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(r.H * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
+  const cv = $("cv"), maxW = min(760, max(200, cv.parentElement.clientWidth - 26)), HH = r.o.view === "built" ? r.H : sheetH(r), k = min(maxW / r.W, max(1.2, (innerHeight - 90) / r.H));
+  cv.width = round(r.W * k * devicePixelRatio); cv.height = round(HH * k * devicePixelRatio); cv.style.width = round(r.W * k) + "px";
   const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
-  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, HH); if (HH !== r.H) pageGaps(c, r); c.lineJoin = c.lineCap = "round";
   const path = (q, cl) => { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); };
   const COL = { line: "#26200f", shade: "#6b6356", colour: "#b0126b" };
   if (r.o.view === "built") {
@@ -618,6 +620,20 @@ const penLayers = r => [
 ].filter(L => L.paths.length);
 // Pen files carry four corner ticks at 1 mm. The cut layer carries its own closed trim rectangle at 1 mm, so its box matches, and never gets ticks (they would slice the card).
 const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+// ---------------- pages: what overflows one page goes onto the next, a whole piece at a time ----------------
+// Page n's pieces sit n * (H + PAGE_GAP) further down in the layers. Export saves one file per page (each with its own trim
+// frame and corner ticks), so a cutting app can take in one sheet at a time; the sheet preview shows the pages stacked.
+const pageOf = (r, q) => max(0, floor(q[0][1] / (r.H + PAGE_GAP)));
+function onPage(r, page) {
+  if ((r.pages || 1) < 2) return r;
+  const dy = page * (r.H + PAGE_GAP), layers = {};
+  for (const [k, L] of Object.entries(r.layers)) layers[k] = L.filter(([q]) => q.length && pageOf(r, q) === page).map(([q, cl]) => [q.map(([x, y]) => [x, y - dy]), cl]);
+  if (page > 0) layers.cut.push([[[TRIM_INSET, TRIM_INSET], [r.W - TRIM_INSET, TRIM_INSET], [r.W - TRIM_INSET, r.H - TRIM_INSET], [TRIM_INSET, r.H - TRIM_INSET]], true]);
+  return { ...r, layers };
+}
+const sheetH = r => (r.pages || 1) * (r.H + PAGE_GAP) - PAGE_GAP;
+function pageGaps(c, r) { for (let i = 1; i < (r.pages || 1); i++) { const y = i * (r.H + PAGE_GAP) - PAGE_GAP; c.fillStyle = "#d9d0bd"; c.fillRect(0, y, r.W, PAGE_GAP); c.fillStyle = "#5b5340"; c.font = "italic 5px Georgia, serif"; c.fillText(`page ${i + 1} of ${r.pages}`, 4, y + PAGE_GAP - 4); } }
+const pageName = (r, i) => (r.pages || 1) > 1 ? `-page${i + 1}of${r.pages}` : "";
 function toSVG(r, only = null, ticks = false) {
   const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
     + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
@@ -660,11 +676,11 @@ document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for 
 IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 const stem = r => `figure-${r.o.style}-${r.o.kind}-h${r.o.height}`;
-$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("export").onclick = () => { if (!last) return; const ticks = $("ticks").value === "on"; for (let pg = 0; pg < (last.pages || 1); pg++) setTimeout(() => save(toSVG(onPage(last, pg), null, ticks), stem(last) + pageName(last, pg) + ".svg"), pg * 500); };
 $("split").onclick = () => {
   if (!last) return;
-  const ls = penLayers(last), ticks = $("ticks").value !== "off";
-  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+  const ticks = $("ticks").value !== "off"; let n = 0;
+  for (let pg = 0; pg < (last.pages || 1); pg++) { const rp = onPage(last, pg), ls = penLayers(rp); ls.forEach((L, i) => setTimeout(() => save(toSVG(rp, L.name, ticks), `${stem(last)}${pageName(last, pg)}-${i + 1}of${ls.length}-${L.name}.svg`), n++ * 500)); }
 };
 $("loadbtn").onclick = () => $("loadsvg").click();
 $("loadsvg").onchange = async e => {
@@ -675,7 +691,7 @@ $("loadsvg").onchange = async e => {
   run();
 };
 addEventListener("resize", () => last && draw(last));
-window.__studio = { build, read, PRESETS, penLayers, toSVG, rig, draw };
+window.__studio = { build, read, PRESETS, penLayers, toSVG, rig, draw, onPage };
 run();
 </script>
 </body>
