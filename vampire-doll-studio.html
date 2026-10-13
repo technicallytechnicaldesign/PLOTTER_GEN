@@ -185,8 +185,18 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 </head>
 <body>
 <header>
-  <h1>Vampire paper doll</h1>
+  <h1>Paper Dolls / Paper Clothes</h1>
   <p class="sub">A jointed cut-out vampire for spooky season: fangs, a widow's peak, pointed ears, a tailcoat with a bow tie and a medallion, and a cape with a tall collar that rides on the shoulder pins behind the body. The pen draws each part, the blade cuts them out with a pin hole at every joint, and brass split pins put it together. The body is the same doll as the jointed figure studio, so the paper doll wardrobe's clothes fit it too.</p>
+  <!-- studio-family:start -->
+<style id="studio-family-css">
+.family-tabs { display:flex; gap:2px; flex-wrap:wrap; margin:14px 0 0; border-bottom:1px solid var(--grid); }
+.family-tabs a { font-size:0.88rem; color:var(--ink-2); text-decoration:none; padding:5px 14px 4px; border:1px solid transparent; border-bottom:0; border-radius:var(--radius) var(--radius) 0 0; margin-bottom:-1px; }
+.family-tabs a:hover { color:var(--ink); border-color:var(--grid); }
+.family-tabs a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.family-tabs a[aria-current="page"] { color:var(--ink); background:var(--surface); border-color:var(--grid); border-bottom:1px solid var(--surface); font-style:italic; }
+</style>
+<nav class="family-tabs" id="studio-family" data-family="paper-dolls" aria-label="Paper Dolls / Paper Clothes studios"><a href="doll-wardrobe-studio.html">Everyday dolls</a><a href="victorian-lady-studio.html">Victorian lady</a><a href="vampire-doll-studio.html" aria-current="page">Vampire</a></nav>
+<!-- studio-family:end -->
 </header>
 <div class="wrap">
 <aside>

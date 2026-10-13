@@ -1,0 +1,11 @@
+[
+  {
+    "id": "paper-dolls",
+    "name": "Paper Dolls / Paper Clothes",
+    "members": [
+      { "page": "doll-wardrobe-studio.html", "tab": "Everyday dolls" },
+      { "page": "victorian-lady-studio.html", "tab": "Victorian lady" },
+      { "page": "vampire-doll-studio.html", "tab": "Vampire" }
+    ]
+  }
+]

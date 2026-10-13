@@ -29,7 +29,7 @@ export const PAGES = [
   ["archaeology-studio.html", "Scenes", "Archaeology studio", "Trench sections, site plans with findspots, a finds sieve and a pottery refit, drawn to excavation conventions."],
   ["flint-studio.html", "Scenes", "Flint studio", "Stones knapped into handaxes, blade cores, Levallois flakes, arrowheads and scrapers, drawn as lithic illustration plates."],
   ["jointed-figure-studio.html", "Scenes", "Jointed figure studio", "Cut-out dolls and jumping jacks: the pen draws each part, the blade cuts them out with pin holes, split pins put them together. Cut sizes untested."],
-  ["doll-wardrobe-studio.html", "Scenes", "Paper doll wardrobe", "Clothes, hair and hats for the jointed paper doll: pinned at the joints or folded on with tabs. Cut sizes untested."],
+  ["doll-wardrobe-studio.html", "Scenes", "Paper Dolls / Paper Clothes", "Everyday dolls: clothes, hair and hats for the jointed paper doll, pinned at the joints or folded on with tabs, or a gangly doll with concertina limbs. Cut sizes untested."],
   ["jointed-animal-studio.html", "Scenes", "Jointed animal studio", "Cut-out rabbits, horses, dogs, cats, elephants and pigs with legs, heads and tails on split pins; spots, stripes or patches. Cut sizes untested."],
   ["vampire-doll-studio.html", "Scenes", "Vampire paper doll", "A jointed cut-out vampire with fangs, a tailcoat and a tall-collared cape that rides on the shoulder pins. Cut sizes untested."],
   ["spooky-garland-studio.html", "Scenes", "Spooky garland", "Ghosts, pumpkins and bats to string across a window, with jack-o-lantern faces drawn in pen or cut right through to glow. Cut sizes untested."],

@@ -423,6 +423,28 @@ function clip(p, lines) {
 // ---------------- drawing helpers ----------------
 const circle = (x, y, r, n = 0) => { n = n || max(12, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
 const arc = (x, y, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [x + rx * cos(a), y + ry * sin(a)]; });
+// ---------------- the doll's face ----------------
+// In head units (head radius 1). Eyes, brows, nose and mouth go to the line pen, cheeks to the colour pen.
+// Copied unchanged from doll-wardrobe-studio.html (Paper Dolls / Paper Clothes), so the plain doll cut here matches its preview there.
+function dollFaceInk(hc, Rh, expr = "smile", cheeks = "rosy") {
+  const E = (a, b, rx, ry, a0 = 0, a1 = 360, n = 20) => arc(hc[0] + a * Rh, hc[1] + b * Rh, rx * Rh, ry * Rh, a0, a1, n), line = [], colour = [];
+  for (const s of [-1, 1]) {
+    const ex = s * 0.34, ey = -0.04, big = expr === "surprised" ? 1.2 : 1;
+    if (expr === "sleepy" || (expr === "wink" && s > 0)) line.push(E(ex, ey - 0.03, 0.11, 0.07, 15, 165, 12));
+    else line.push(E(ex, ey, 0.075 * big, 0.1 * big), E(ex, ey + 0.012, 0.045 * big, 0.065 * big), E(ex, ey + 0.02, 0.018 * big, 0.028 * big, 0, 360, 8));
+    line.push(E(ex + s * 0.02, ey - 0.2 - (expr === "surprised" ? 0.06 : 0), 0.13, 0.06, 205, 335, 10));
+    if (cheeks === "rosy") for (let i = -1; i <= 1; i++) { const cx = hc[0] + (s * 0.56 + i * 0.075) * Rh, cy = hc[1] + 0.26 * Rh; colour.push([[cx - 0.03 * Rh, cy + 0.05 * Rh], [cx + 0.03 * Rh, cy - 0.05 * Rh]]); }
+    if (cheeks === "freckles") for (const [a, b] of [[0.5, 0.18], [0.62, 0.22], [0.54, 0.29], [0.66, 0.31], [0.44, 0.26]]) line.push(E(s * a, b, 0.018, 0.018, 0, 360, 6));
+  }
+  line.push(E(0.02, 0.11, 0.06, 0.045, 20, 160, 8));
+  if (expr === "grin") { const m = E(0, 0.24, 0.25, 0.2, 0, 180, 18); line.push([...m, m[0]], E(0, 0.24, 0.18, 0.07, 15, 165, 10)); }
+  else if (expr === "surprised") line.push(E(0, 0.38, 0.075, 0.1));
+  else if (expr === "sleepy") line.push(E(0, 0.3, 0.12, 0.07, 20, 160, 10));
+  else if (expr === "wink") line.push(E(0.06, 0.22, 0.2, 0.14, 25, 140, 14));
+  else line.push(E(0, 0.2, 0.22, 0.17, 25, 155, 16));
+  return { line, colour };
+}
+
 const rect = (x, y, hw, hh) => [[x - hw, y - hh], [x + hw, y - hh], [x + hw, y + hh], [x - hw, y + hh], [x - hw, y - hh]];
 function hatch(p, gap, ang, filter) { // parallel lines over the part's box, kept where filter(x, y) holds
   const G = p.G, c = cos(ang), s = sin(ang), cx = G.x0 + G.nx * G.h / 2, cy = G.y0 + G.ny * G.h / 2, R = hypot(G.nx, G.ny) * G.h / 2, out = [];
@@ -471,7 +493,7 @@ function decorate(p, o, R, rnd) {
     // fur: short ticks inside the outline
     const ring = inset(p, 1.5)[0]; if (ring) for (let i = 0; i < ring.length; i += max(2, round(5 / det))) { const [x, y] = ring[i], [gx, gy] = grad(p.G, x, y), g = hypot(gx, gy) || 1; Sh.push([[x, y], [x - gx / g * 1.6, y - gy / g * 1.6]]); }
   } else {
-    if (head) { L.push(circle(hc[0] - 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), circle(hc[0] + 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), arc(hc[0], hc[1] + 0.05 * u, 0.22 * u, 0.2 * u, 30, 150)); }
+    if (head) { const fc = dollFaceInk(hc, 0.55 * u); L.push(...fc.line); Co.push(...fc.colour); }
     if (torso) L.push([[-0.8 * u, -0.45 * u], [0.8 * u, -0.45 * u]]);
   }
   if (o.shade === "rim") Sh.push(...hatch(p, 0.9 / det, -PI / 4, (x, y) => { const f = sampleF(p.G, x, y); if (f > -INK_GAP || f < -2.4) return false; const [gx, gy] = grad(p.G, x, y); return (gx + gy) / (hypot(gx, gy) || 1) > 0.35; }));
@@ -653,7 +675,7 @@ $("loadsvg").onchange = async e => {
   run();
 };
 addEventListener("resize", () => last && draw(last));
-window.__studio = { build, read, PRESETS, penLayers, toSVG, rig };
+window.__studio = { build, read, PRESETS, penLayers, toSVG, rig, draw };
 run();
 </script>
 </body>

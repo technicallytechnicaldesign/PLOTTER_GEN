@@ -185,8 +185,18 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 </head>
 <body>
 <header>
-  <h1>Victorian lady paper doll</h1>
+  <h1>Paper Dolls / Paper Clothes</h1>
   <p class="sub">A fashion-plate lady to cut and dress: one flat doll in her corset, drawers and boots, on a stand, with gowns from three decades (crinoline 1860, bustle 1885, leg-o'-mutton 1895), a walking suit, an evening gown, and hats, parasols, fans and wraps. Everything is flat card that hangs on her with fold tabs behind the shoulders, the waist and the hands, and the hats tie on with ribbon strings.</p>
+  <!-- studio-family:start -->
+<style id="studio-family-css">
+.family-tabs { display:flex; gap:2px; flex-wrap:wrap; margin:14px 0 0; border-bottom:1px solid var(--grid); }
+.family-tabs a { font-size:0.88rem; color:var(--ink-2); text-decoration:none; padding:5px 14px 4px; border:1px solid transparent; border-bottom:0; border-radius:var(--radius) var(--radius) 0 0; margin-bottom:-1px; }
+.family-tabs a:hover { color:var(--ink); border-color:var(--grid); }
+.family-tabs a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.family-tabs a[aria-current="page"] { color:var(--ink); background:var(--surface); border-color:var(--grid); border-bottom:1px solid var(--surface); font-style:italic; }
+</style>
+<nav class="family-tabs" id="studio-family" data-family="paper-dolls" aria-label="Paper Dolls / Paper Clothes studios"><a href="doll-wardrobe-studio.html">Everyday dolls</a><a href="victorian-lady-studio.html" aria-current="page">Victorian lady</a><a href="vampire-doll-studio.html">Vampire</a></nav>
+<!-- studio-family:end -->
 </header>
 <div class="wrap">
 <aside>

@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Paper doll wardrobe</title>
+<title>Paper Dolls / Paper Clothes</title>
 <style>
 :root {
   --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
@@ -185,19 +185,34 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
 </head>
 <body>
 <header>
-  <h1>Paper doll wardrobe</h1>
-  <p class="sub">Clothes, hair, hats and things to carry for the plain doll from the jointed figure studio. Each piece of clothing sits on one part of the doll and moves with it: where it covers a joint it has a pin hole at exactly that joint and goes on the same split pin, and where it does not, it has fold tabs that wrap behind the doll. Set the doll's size and joints to match the doll you cut, or load that doll's SVG.</p>
+  <h1>Paper Dolls / Paper Clothes</h1>
+  <p class="sub">Everyday dolls: clothes, hair, hats and things to carry for the plain doll from the jointed figure studio, or a gangly doll with concertina arms and legs cut right here. Each piece of clothing sits on one part of the doll and moves with it: where it covers a joint it has a pin hole at exactly that joint and goes on the same split pin, and where it does not, it has fold tabs that wrap behind the doll. Set the doll's size and joints to match the doll you cut, or load that doll's SVG.</p>
+  <!-- studio-family:start -->
+<style id="studio-family-css">
+.family-tabs { display:flex; gap:2px; flex-wrap:wrap; margin:14px 0 0; border-bottom:1px solid var(--grid); }
+.family-tabs a { font-size:0.88rem; color:var(--ink-2); text-decoration:none; padding:5px 14px 4px; border:1px solid transparent; border-bottom:0; border-radius:var(--radius) var(--radius) 0 0; margin-bottom:-1px; }
+.family-tabs a:hover { color:var(--ink); border-color:var(--grid); }
+.family-tabs a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.family-tabs a[aria-current="page"] { color:var(--ink); background:var(--surface); border-color:var(--grid); border-bottom:1px solid var(--surface); font-style:italic; }
+</style>
+<nav class="family-tabs" id="studio-family" data-family="paper-dolls" aria-label="Paper Dolls / Paper Clothes studios"><a href="doll-wardrobe-studio.html" aria-current="page">Everyday dolls</a><a href="victorian-lady-studio.html">Victorian lady</a><a href="vampire-doll-studio.html">Vampire</a></nav>
+<!-- studio-family:end -->
 </header>
 <div class="wrap">
 <aside>
   <fieldset><legend>Presets</legend>
-    <div class="row"><button data-preset="everyday">Everyday</button><button data-preset="party">Party dress</button><button data-preset="explorer">Explorer</button><button data-preset="winter">Winter</button><button data-preset="sporty">Sporty</button><button data-preset="royal">Royal</button><button data-preset="school">School</button><button data-preset="hairhats">Hair and hats sheet</button><button data-preset="dollkit">Doll and outfit on one sheet</button><button data-preset="picnic">Picnic</button><button data-preset="rainy">Rainy day</button><button data-preset="birthday">Birthday</button><button data-preset="magic">Magic</button><button data-preset="accessories">Accessories sheet</button></div>
+    <div class="row"><button data-preset="everyday">Everyday</button><button data-preset="party">Party dress</button><button data-preset="explorer">Explorer</button><button data-preset="winter">Winter</button><button data-preset="sporty">Sporty</button><button data-preset="royal">Royal</button><button data-preset="school">School</button><button data-preset="hairhats">Hair and hats sheet</button><button data-preset="dollkit">Doll and outfit on one sheet</button><button data-preset="picnic">Picnic</button><button data-preset="rainy">Rainy day</button><button data-preset="birthday">Birthday</button><button data-preset="magic">Magic</button><button data-preset="accessories">Accessories sheet</button><button data-preset="gangly">Gangly</button><button data-preset="ganglykit">Gangly doll kit</button></div>
   </fieldset>
   <fieldset><legend>Match your doll</legend>
     <label>Height (mm) <output id="o-height"></output><input type="range" id="height" min="110" max="420" step="5" value="300"></label>
     <label>Build <output id="o-stock"></output><input type="range" id="stock" min="0.75" max="1.35" step="0.05" value="1"></label>
     <label>Joints <select id="joints"><option value="full">shoulders, hips, elbows and knees</option><option value="simple">shoulders and hips only</option></select></label>
     <label>Head <select id="neck"><option value="pinned">pinned, it nods</option><option value="fixed">fixed to the body</option></select></label>
+    <label>Limbs <select id="limbs"><option value="jointed">jointed</option><option value="arms">concertina arms</option><option value="all">concertina arms and legs</option></select></label>
+    <label data-when="limbs!=jointed">Concertina pulled right out (x a normal limb) <output id="o-stretch"></output><input type="range" id="stretch" min="1.4" max="3" step="0.1" value="2"></label>
+    <p class="hint" data-when="limbs!=jointed">A concertina limb is one long strip folded back and forth along its dashed lines (long dashes fold away from you, short ones towards you). The jointed figure studio does not cut these: set The doll too to yes and cut the doll from this sheet. Sleeves and trousers become a cap and a cuff, so the folds show between them.</p>
+    <label>Expression <select id="expr"><option value="smile">smile</option><option value="grin">grin</option><option value="wink">wink</option><option value="sleepy">sleepy</option><option value="surprised">surprised</option></select></label>
+    <label>Cheeks <select id="cheeks"><option value="rosy">rosy, in the colour pen</option><option value="freckles">freckles</option><option value="none">plain</option></select></label>
     <p class="hint">These must be the same as the plain doll you cut in the jointed figure studio, or the pin holes will not line up. Loading that doll's SVG below sets them for you.</p>
   </fieldset>
   <fieldset><legend>Outfit</legend>
@@ -206,11 +221,11 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label>Bottoms <select id="bottom"><option value="trousers">trousers</option><option value="shorts">shorts</option><option value="skirt">skirt</option><option value="none">none</option></select></label>
     <label data-when="bottom!=none">Bottoms pattern <select id="botpat"><option value="plain">plain</option><option value="stripes">stripes</option><option value="dots">polka dots</option><option value="check">check</option><option value="hatch">hatched</option></select></label>
     <label>Shoes <select id="shoes"><option value="shoes">shoes</option><option value="boots">boots</option><option value="none">none</option></select></label>
-    <label>Hair <select id="hair"><option value="bob">bob</option><option value="crop">short crop</option><option value="long">long</option><option value="ponytail">ponytail</option><option value="bun">bun</option><option value="curly">curly</option><option value="pigtails">pigtails</option><option value="none">none</option></select></label>
+    <label>Hair <select id="hair"><option value="bob">bob</option><option value="crop">short crop</option><option value="long">long</option><option value="ponytail">ponytail</option><option value="bun">bun</option><option value="curly">curly</option><option value="pigtails">pigtails</option><option value="braids">braids</option><option value="none">none</option></select></label>
     <label>Hat <select id="hat"><option value="none">none</option><option value="beanie">bobble beanie</option><option value="crown">crown</option><option value="sunhat">sun hat</option></select></label>
     <label>Left hand holds <select id="lhand"><option value="none">nothing</option><option value="bag">bag</option><option value="teddy">teddy bear</option><option value="balloon">balloon</option><option value="flowers">flowers</option><option value="umbrella">umbrella</option><option value="icecream">ice cream</option><option value="wand">magic wand</option></select></label>
     <label>Right hand holds <select id="rhand"><option value="none">nothing</option><option value="bag">bag</option><option value="teddy">teddy bear</option><option value="balloon">balloon</option><option value="flowers">flowers</option><option value="umbrella">umbrella</option><option value="icecream">ice cream</option><option value="wand">magic wand</option></select></label>
-    <label>Face <select id="face"><option value="none">nothing</option><option value="glasses">glasses</option><option value="sunglasses">sunglasses</option></select></label>
+    <label>Glasses <select id="face"><option value="none">nothing</option><option value="glasses">glasses</option><option value="sunglasses">sunglasses</option></select></label>
     <label>Neck <select id="neckwear"><option value="none">nothing</option><option value="scarf">scarf</option><option value="bowtie">bow tie</option></select></label>
     <label>Colour pen (preview) <select id="inkcol"><option value="b0126b">magenta</option><option value="d7263d">red</option><option value="0078bf">blue</option><option value="1d3a8a">navy</option><option value="2e7d32">green</option><option value="7b2d8b">purple</option><option value="c8920a">gold</option></select></label>
   </fieldset>
@@ -228,6 +243,7 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label data-when="view=dressed">Arms (degrees) <output id="o-arms"></output><input type="range" id="arms" min="-20" max="170" step="5" value="35"></label>
     <label data-when="view=dressed">Legs (degrees) <output id="o-legs"></output><input type="range" id="legs" min="-10" max="80" step="5" value="10"></label>
     <label data-when="view=dressed; joints=full">Elbows and knees (degrees) <output id="o-bend"></output><input type="range" id="bend" min="0" max="120" step="5" value="20"></label>
+    <label data-when="view=dressed; limbs!=jointed">Concertina pulled out (%) <output id="o-pull"></output><input type="range" id="pull" min="25" max="100" step="5" value="55"></label>
     <label data-when="view=dressed; neck=pinned">Head (degrees) <output id="o-tilt"></output><input type="range" id="tilt" min="-30" max="30" step="5" value="0"></label>
     <div class="row"><button id="wiggle">Wiggle it</button></div>
     <p class="hint">Preview only. The export is always the flat sheet of pieces.</p>
@@ -477,6 +493,134 @@ function fieldOf(sdf, B, h) {
   return { F, nx, ny, h, x0, y0 };
 }
 
+// ---------------- hair ----------------
+// Every style is drawn in head units: the head is a circle of radius 1 at 0,0, y down, and the doll scales it.
+// sdf is the cut shape, strands are pen lines that follow how the hair falls (over the skull, or gathered to a tie),
+// ties are the colour pen. The face stays clear below each style's hairline.
+const bez = (p0, p1, p2, n = 28) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, a = (1 - t) * (1 - t), b = 2 * t * (1 - t), c = t * t; return [a * p0[0] + b * p1[0] + c * p2[0], a * p0[1] + b * p1[1] + c * p2[1]]; });
+const tube = (pts, rad) => (x, y) => { let d = INF; for (let i = 1; i < pts.length; i++) { const [ax, ay] = pts[i - 1], [bx, by] = pts[i], ex = bx - ax, ey = by - ay, t = clamp(((x - ax) * ex + (y - ay) * ey) / (ex * ex + ey * ey || 1e-9), 0, 1); d = min(d, hypot(x - ax - t * ex, y - ay - t * ey) - rad((i - 1 + t) / (pts.length - 1))); } return d; };
+// lines running down a tube (a tail or a bunch) at fractions k of its half-width
+const along = (pts, rad, ks, t0 = 0.06, t1 = 0.97) => ks.map(k => { const out = [], n = pts.length - 1; for (let i = round(t0 * n); i <= round(t1 * n); i++) { const a = pts[max(0, i - 1)], b = pts[min(n, i + 1)], l = hypot(b[0] - a[0], b[1] - a[1]) || 1, r = rad(i / n); out.push([pts[i][0] - (b[1] - a[1]) / l * k * r, pts[i][1] + (b[0] - a[0]) / l * k * r]); } return out; });
+// a band across a tube at t: two short lines, for the colour pen
+const band = (pts, rad, t) => { const n = pts.length - 1, i = round(t * n), a = pts[max(0, i - 1)], b = pts[min(n, i + 1)], l = hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / l, ny = (b[0] - a[0]) / l, dx = (b[0] - a[0]) / l, dy = (b[1] - a[1]) / l, r = rad(t) * 1.15; return [-0.05, 0.05].map(o => [[pts[i][0] + dx * o - nx * r, pts[i][1] + dy * o - ny * r], [pts[i][0] + dx * o + nx * r, pts[i][1] + dy * o + ny * r]]); };
+const cap = e => (x, y) => hypot(x, y + 0.03) - (1 + e);
+const rbox = (cx, cy, hw, hh, r) => (x, y) => { const qx = abs(x - cx) - hw + r, qy = abs(y - cy) - hh + r; return hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - r; };
+const HAIRLINE = {
+  bangs: x => -0.36 + 0.1 * x * x,                 // a straight fringe
+  sweep: x => -0.44 - 0.13 * x + 0.12 * x * x,      // a side-swept fringe, longer on the left
+  part: x => -0.68 + 0.42 * x * x,                  // a centre parting, forehead showing
+  back: x => -0.74 + 0.46 * x * x,                  // pulled back off the face
+  curls: x => -0.4 + 0.1 * x * x + 0.07 * abs(sin(x * 7.5)),
+};
+const faceWin = hl => (x, y) => max(hypot(x, y - 0.22) - 0.8, hl(x) - y); // negative inside the face
+const withFace = (outer, hl) => { const w = faceWin(hl); return (x, y) => max(outer(x, y), -w(x, y)); };
+const U2 = (...fs) => (x, y) => { let d = INF; for (const f of fs) d = min(d, f(x, y)); return d; };
+// strands from the crown (or a parting) over the skull and down: meridians of the head, seen from the front
+const meridians = (n, x0, wOf, yEnd, gapMid = 0) => { const out = []; for (let i = 0; i < n; i++) { const th = -1.35 + 2.7 * (i + 0.5) / n; if (abs(th) < gapMid) continue; const s = sin(th), l = []; for (let y = -1.0; y <= yEnd; y += 0.04) { const k = clamp((y + 1.0) / 0.5, 0, 1); l.push([x0 * (1 - k) + s * wOf(y) * (0.25 + 0.75 * sqrt(k)), y]); } out.push(l); } return out; };
+// strands from the hairline (or a parting) gathered into a tie point, bulging out over the skull
+// (ends spread along `spread` across the tie and stop short of it, so the pen never piles ink in one spot)
+const gather = (starts, T, bulge, spread = [0, 0], stop = 0.88) => starts.map((S, i) => { const f = starts.length > 1 ? i / (starts.length - 1) - 0.5 : 0, E = [T[0] + spread[0] * f, T[1] + spread[1] * f], m = [(S[0] + E[0]) / 2, (S[1] + E[1]) / 2], l = hypot(m[0], m[1] + 0.05) || 1; return bez(S, [m[0] + m[0] / l * bulge, m[1] + (m[1] + 0.05) / l * bulge], E, 24).slice(0, round(24 * stop) + 1); });
+// starts spread down a centre parting, from the crown to the hairline, on one side
+const partStarts = (s, n, y0 = -1.02, y1 = -0.72) => Array.from({ length: n }, (_, i) => [s * 0.035, y0 + (y1 - y0) * i / max(1, n - 1)]);
+const hairlineStarts = (hl, n, x0 = -0.9, x1 = 0.9) => Array.from({ length: n }, (_, i) => { const x = x0 + (x1 - x0) * i / (n - 1); return [x, hl(x) - 0.04]; });
+const capW = e => y => sqrt(max(0, (1 + e) * (1 + e) - (y + 0.03) * (y + 0.03)));
+const HAIR = (() => {
+  const H = {};
+  { // bob: a rounded bob to the jaw with a straight fringe
+    const w = y => y < -0.1 ? capW(0.14)(y) : 1.1;
+    H.bob = { sdf: withFace(U2((x, y) => max(cap(0.14)(x, y), y - 0.1), rbox(0, 0.38, 1.13, 0.5, 0.32)), HAIRLINE.bangs), box: [-1.4, -1.4, 1.4, 1.1],
+      strands: det => meridians(round(13 * det), 0, w, 0.86) };
+  }
+  { // short crop with a side-swept fringe
+    H.crop = { sdf: withFace((x, y) => max(cap(0.09)(x, y), y - 0.02), HAIRLINE.sweep), box: [-1.3, -1.3, 1.3, 0.3],
+      strands: det => { const n = round(9 * det); return Array.from({ length: n }, (_, i) => { const f = i / (n - 1), a = (-5 - 120 * f) * D2R, S = [1.0 * cos(a), 1.0 * sin(a) - 0.03], ex = 0.95 - 1.9 * f, E = [ex, HAIRLINE.sweep(ex) - 0.03], m = [(S[0] + E[0]) / 2, (S[1] + E[1]) / 2]; return bez(S, [m[0] * 1.25, m[1] * 1.25 - 0.1], E, 20).slice(2, 19); }); } };
+  }
+  { // long, straight, from a centre parting to below the shoulders, open over the neck and chest
+    const w = y => y < 0 ? capW(0.14)(min(y, -0.03)) : 1.12 + 0.07 * y;
+    const outer = U2(cap(0.14), (x, y) => max(abs(x) - (1.12 + 0.07 * y), -y - 0.1, y - (2.15 + 0.05 * sin(x * 11))));
+    H.long = { sdf: (x, y) => max(withFace(outer, HAIRLINE.part)(x, y), -rbox(0, 1.75, 0.62, 1.05, 0.35)(x, y)), box: [-1.5, -1.4, 1.5, 2.4],
+      strands: det => meridians(round(16 * det), 0, w, 2.1, 0.1) };
+  }
+  { // a high ponytail swinging out to one side, tied with the colour pen
+    const sp = bez([0.5, -0.88], [1.65, -0.95], [1.4, 0.95]), rad = t => 0.13 + 0.25 * sin(PI * (0.12 + 0.88 * t)) * (1 - 0.35 * t);
+    H.ponytail = { sdf: U2(withFace((x, y) => max(cap(0.1)(x, y), y - 0.02), HAIRLINE.back), tube(sp, rad)), box: [-1.3, -1.4, 2.0, 1.3],
+      strands: det => [...gather(hairlineStarts(HAIRLINE.back, round(8 * det)), sp[0], 0.32, [-0.42, 0.42], 0.8), ...along(sp, rad, [-0.6, -0.25, 0.1, 0.45].slice(0, max(2, round(4 * det))), 0.12)], ties: () => band(sp, rad, 0.07) };
+  }
+  { // a top bun, the rest pulled back into it
+    const bunC = [0, -1.22], bunR = 0.42;
+    H.bun = { sdf: U2(withFace((x, y) => max(cap(0.08)(x, y), y - 0.02), HAIRLINE.back), (x, y) => hypot(x - bunC[0], y - bunC[1]) - bunR), box: [-1.3, -1.8, 1.3, 0.3],
+      strands: det => { const sp = []; for (let a = 0; a < 2.6 * TAU; a += 0.15) { const r = 0.07 + 0.11 * a / TAU; sp.push([bunC[0] + r * cos(a), bunC[1] + r * 0.85 * sin(a)]); } return [...gather(hairlineStarts(HAIRLINE.back, round(9 * det)), [0, -0.92], 0.25, [0.58, 0], 0.9), sp]; },
+      ties: () => [arc(bunC[0], bunC[1] + 0.33, 0.32, 0.08, 20, 160, 14)] };
+  }
+  { // a cloud of curls, with a curly fringe
+    H.curly = { sdf: withFace((x, y) => { let d = max(hypot(x, y + 0.02) - 1.06, y - 0.4); for (let a = -215; a <= 35; a += 19) d = min(d, hypot(x - 1.02 * cos(a * D2R), y - 0.05 - 1.02 * sin(a * D2R)) - 0.36); return d; }, HAIRLINE.curls), box: [-1.6, -1.6, 1.6, 1.2],
+      strands: () => [] };
+  }
+  { // centre parting and two bunches at ear height, tied
+    const sp = s => bez([s * 0.82, -0.3], [s * 1.6, -0.3], [s * 1.55, 0.95]), rad = t => 0.13 + 0.25 * sin(PI * min(1, 0.18 + 0.9 * t)) * (1 - 0.3 * t) + 0.02;
+    const L = sp(-1), R = sp(1);
+    H.pigtails = { sdf: U2(withFace((x, y) => max(cap(0.1)(x, y), y - 0.05), HAIRLINE.part), tube(L, rad), tube(R, rad)), box: [-2.0, -1.4, 2.0, 1.3],
+      strands: det => [-1, 1].flatMap(s => [...gather(partStarts(s, round(6 * det)), (s < 0 ? L : R)[0], 0.3, [s * 0.1, 0.34]), ...along(s < 0 ? L : R, rad, [-0.5, 0, 0.5], 0.14)]),
+      ties: () => [...band(L, rad, 0.08), ...band(R, rad, 0.08)] };
+  }
+  { // centre parting and two plaits
+    const sp = s => bez([s * 0.86, -0.05], [s * 0.98, 1.0], [s * 0.92, 2.05], 30), rad = t => t > 0.93 ? 0.13 : 0.2 - 0.03 * t;
+    const plait = pts => (x, y) => { let d = tube(pts, rad)(x, y); for (let i = 2; i < pts.length - 2; i += 3) d = min(d, hypot(x - pts[i][0], y - pts[i][1]) - 0.215); return d; };
+    const L = sp(-1), R = sp(1);
+    H.braids = { sdf: U2(withFace((x, y) => max(cap(0.11)(x, y), y - 0.2), HAIRLINE.part), plait(L), plait(R)), box: [-1.5, -1.4, 1.5, 2.4],
+      strands: det => [-1, 1].flatMap(s => { const P = s < 0 ? L : R, out = gather(partStarts(s, round(6 * det)), P[0], 0.28, [s * 0.36, 0.06]); for (let i = 3; i < P.length * 0.9; i += 3) { const a = P[i - 1], b = P[i + 1], l = hypot(b[0] - a[0], b[1] - a[1]), dx = (b[0] - a[0]) / l, dy = (b[1] - a[1]) / l; out.push([[P[i][0] - dy * 0.17 - dx * 0.06, P[i][1] + dx * 0.17 - dy * 0.06], [P[i][0] + dx * 0.06, P[i][1] + dy * 0.06], [P[i][0] + dy * 0.17 - dx * 0.06, P[i][1] - dx * 0.17 - dy * 0.06]]); } return out; }),
+      ties: () => [...band(L, rad, 0.9), ...band(R, rad, 0.9)] };
+  }
+  return H;
+})();
+
+// ---------------- the doll's face ----------------
+// In head units (head radius 1). Eyes, brows, nose and mouth go to the line pen, cheeks to the colour pen.
+// The jointed figure studio draws its plain doll with the same function, so a doll cut there matches the preview here.
+function dollFaceInk(hc, Rh, expr = "smile", cheeks = "rosy") {
+  const E = (a, b, rx, ry, a0 = 0, a1 = 360, n = 20) => arc(hc[0] + a * Rh, hc[1] + b * Rh, rx * Rh, ry * Rh, a0, a1, n), line = [], colour = [];
+  for (const s of [-1, 1]) {
+    const ex = s * 0.34, ey = -0.04, big = expr === "surprised" ? 1.2 : 1;
+    if (expr === "sleepy" || (expr === "wink" && s > 0)) line.push(E(ex, ey - 0.03, 0.11, 0.07, 15, 165, 12));
+    else line.push(E(ex, ey, 0.075 * big, 0.1 * big), E(ex, ey + 0.012, 0.045 * big, 0.065 * big), E(ex, ey + 0.02, 0.018 * big, 0.028 * big, 0, 360, 8));
+    line.push(E(ex + s * 0.02, ey - 0.2 - (expr === "surprised" ? 0.06 : 0), 0.13, 0.06, 205, 335, 10));
+    if (cheeks === "rosy") for (let i = -1; i <= 1; i++) { const cx = hc[0] + (s * 0.56 + i * 0.075) * Rh, cy = hc[1] + 0.26 * Rh; colour.push([[cx - 0.03 * Rh, cy + 0.05 * Rh], [cx + 0.03 * Rh, cy - 0.05 * Rh]]); }
+    if (cheeks === "freckles") for (const [a, b] of [[0.5, 0.18], [0.62, 0.22], [0.54, 0.29], [0.66, 0.31], [0.44, 0.26]]) line.push(E(s * a, b, 0.018, 0.018, 0, 360, 6));
+  }
+  line.push(E(0.02, 0.11, 0.06, 0.045, 20, 160, 8));
+  if (expr === "grin") { const m = E(0, 0.24, 0.25, 0.2, 0, 180, 18); line.push([...m, m[0]], E(0, 0.24, 0.18, 0.07, 15, 165, 10)); }
+  else if (expr === "surprised") line.push(E(0, 0.38, 0.075, 0.1));
+  else if (expr === "sleepy") line.push(E(0, 0.3, 0.12, 0.07, 20, 160, 10));
+  else if (expr === "wink") line.push(E(0.06, 0.22, 0.2, 0.14, 25, 140, 14));
+  else line.push(E(0, 0.2, 0.22, 0.17, 25, 155, 16));
+  return { line, colour };
+}
+
+// ---------------- concertina limbs ----------------
+// A concertina arm or leg is one long strip pinned at the shoulder or hip and folded back and forth like a fan:
+// pushed together it is about a normal limb, pulled out it is gangly. rig() stays the jointed figure's own (the parity
+// check compares the two); this swaps the chosen limbs for strips afterwards. Clothes sit only on the stiff ends: a cap at
+// the shoulder or hip and a cuff at the wrist or ankle, so a long sleeve leaves bare concertina showing, outgrown.
+const shiftPrim = (q, [dx, dy]) => q.t === "k" ? { ...q, ax: q.ax + dx, ay: q.ay + dy, bx: q.bx + dx, by: q.by + dy } : { ...q, x: q.x + dx, y: q.y + dy };
+function concertina(R, o) {
+  const which = o.limbs === "arms" ? ["upper arm"] : o.limbs === "all" ? ["upper arm", "thigh"] : [];
+  if (!which.length) return R;
+  const parts = [...R.parts];
+  for (const first of which) for (const side of ["L", "R"]) {
+    const up = parts.find(p => p.name === `${first} ${side}`), lo = parts.find(p => p.parent === up), last = lo || up;
+    const k = last.prims.findIndex(q => q.t === "k"), lk = last.prims[k], uk = up.prims.find(q => q.t === "k");
+    const base = up.pivot, L0 = hypot(lk.bx - base[0], lk.by - base[1]), d = [(lk.bx - base[0]) / L0, (lk.by - base[1]) / L0];
+    const r = uk.ra / 1.08, L = L0 * o.stretch, sh = [d[0] * (L - L0), d[1] * (L - L0)], end = [base[0] + d[0] * L, base[1] + d[1] * L];
+    const sA = JR, sB = L - 1.1 * r, n = max(3, round((sB - sA) / (2 * r * 1.05))), pl = (sB - sA) / n;
+    const p = { ...up, prims: [Circ(base[0], base[1], JR), Limb(base[0], base[1], r, end[0], end[1], r), ...last.prims.slice(k + 1).map(q => shiftPrim(q, sh))], holes: [up.holes[0]], conc: { base, d, r, L, L0, sA, sB, n, pl } };
+    parts.splice(parts.indexOf(up), 1, p);
+    if (lo) parts.splice(parts.indexOf(lo), 1);
+  }
+  return { ...R, parts };
+}
+// the preview's squash: the middle panels close up to `pull` of their length, the stiff ends keep theirs
+const squash = (p, pull) => { const C = p.conc; if (!C) return q => q; const a = C.sA + C.pl, b = C.sB - C.pl, M = b - a; return q => { const s = (q[0] - C.base[0]) * C.d[0] + (q[1] - C.base[1]) * C.d[1], s2 = s <= a ? s : s >= b ? s - M * (1 - pull) : a + (s - a) * pull; return [q[0] + C.d[0] * (s2 - s), q[1] + C.d[1] * (s2 - s)]; }; };
+
 // ---------------- the garments ----------------
 // Each piece sits on one doll part and moves with it. Where it covers a joint it gets a disc of card and a pin hole at exactly
 // that joint, so it shares the doll's split pin. A piece held by fewer than two pins gets fold tabs that wrap behind the doll.
@@ -485,12 +629,18 @@ function wardrobe(o, R) {
   const u = R.u, st = o.stock, hc = R.hc, T = R.T, Rh = 0.55 * u, out = [];
   const byName = n => R.parts.find(p => p.name === n);
   const torso = R.parts.find(p => p.kind === "torso"), head = R.parts.find(p => p.kind === "head") || torso;
-  const full = R.parts.some(p => p.name.startsWith("forearm"));
   const axis = p => { const k = p.prims.find(q => q.t === "k"), L = hypot(k.bx - k.ax, k.by - k.ay); return { a: [k.ax, k.ay], d: [(k.bx - k.ax) / L, (k.by - k.ay) / L], L }; };
   const slab = (p, t0, t1) => { const A = axis(p); return (x, y) => { const s = (x - A.a[0]) * A.d[0] + (y - A.a[1]) * A.d[1]; return max(t0 * A.L - s, s - t1 * A.L); }; };
   const cover = (kind, side, c0, c1) => { // a share of the whole arm or leg, mapped onto its one or two parts
     const f = kind === "arm" ? 1.45 / 2.8 : 1.85 / 3.6, n1 = (kind === "arm" ? "upper arm " : "thigh ") + side, n2 = (kind === "arm" ? "forearm " : "shin ") + side, res = [];
-    if (!full) return [{ p: byName(n1), t0: c0 <= 0 ? -INF : c0, t1: c1 >= 1 ? INF : c1 }];
+    const Cc = byName(n1).conc;
+    if (Cc) { // concertina: a cap over the stiff top panel, a cuff over the stiff bottom one, the same distance from the hand or foot as before
+      const capT = (Cc.sA + Cc.pl) / Cc.L, cuffT = (Cc.sB - Cc.pl) / Cc.L, fromEnd = c => (Cc.L - (1 - c) * Cc.L0) / Cc.L;
+      if (c0 <= 0) res.push({ p: byName(n1), t0: -INF, t1: min(capT, c1 >= 1 ? INF : fromEnd(c1)) });
+      if (c1 >= 0.6) res.push({ p: byName(n1), t0: max(cuffT, c0 <= 0 ? -INF : fromEnd(c0)), t1: c1 >= 1 ? INF : fromEnd(c1) });
+      return res;
+    }
+    if (!byName(n2)) return [{ p: byName(n1), t0: c0 <= 0 ? -INF : c0, t1: c1 >= 1 ? INF : c1 }];
     if (c0 < f) res.push({ p: byName(n1), t0: c0 <= 0 ? -INF : c0 / f, t1: c1 >= f ? INF : c1 / f });
     if (c1 > f) res.push({ p: byName(n2), t0: c0 <= f ? -INF : (c0 - f) / (1 - f), t1: c1 >= 1 ? INF : (c1 - f) / (1 - f) });
     return res;
@@ -528,18 +678,9 @@ function wardrobe(o, R) {
   }
   // ---- shoes
   if (o.shoes !== "none") limbPieces("shoes", "leg", o.shoes === "boots" ? 0.78 : 0.95, 1, o.shoes === "boots" ? "boot," : "shoe,", "plain", "start");
-  // ---- hair: face window kept clear, tabs at ear height fold behind the head
-  const face = (x, y) => -(hypot(x - hc[0], y - hc[1] - 0.28 * Rh) - 0.8 * Rh);
-  const crop = (x, y) => max(hypot(x - hc[0], y - hc[1]) - Rh - 1.8, y - hc[1] - 0.25 * Rh, face(x, y));
-  const hairs = {
-    crop, bob: (x, y) => max(hypot(x - hc[0], y - hc[1]) - Rh - 3.5, y - hc[1] - 0.8 * Rh, face(x, y)),
-    long: (x, y) => max(min(hypot(x - hc[0], y - hc[1]) - Rh - 3, primDist(Box(hc[0], hc[1] + 1.1 * Rh, Rh + 3, 1.1 * Rh, 0.45 * Rh), x, y)), face(x, y), -primDist(Box(hc[0], hc[1] + 1.75 * Rh, 0.42 * Rh, 0.75 * Rh, 0.2 * Rh), x, y)),
-    ponytail: (x, y) => min(crop(x, y), primDist(Limb(hc[0] + 0.55 * Rh, hc[1] - 0.55 * Rh, 0.3 * Rh, hc[0] + 1.45 * Rh, hc[1] + 0.95 * Rh, 0.26 * Rh), x, y)),
-    bun: (x, y) => min(crop(x, y), hypot(x - hc[0], y - hc[1] + 1.08 * Rh) - 0.42 * Rh),
-    curly: (x, y) => { let d = INF; for (let a = -205; a <= 25; a += 23) d = min(d, hypot(x - hc[0] - 0.95 * Rh * cos(a * D2R), y - hc[1] - 0.95 * Rh * sin(a * D2R)) - 0.42 * Rh); return max(min(d, hypot(x - hc[0], y - hc[1]) - Rh * 0.98), face(x, y)); },
-    pigtails: (x, y) => min(crop(x, y), primDist(Limb(hc[0] - 0.85 * Rh, hc[1] + 0.05 * Rh, 0.3 * Rh, hc[0] - 1.3 * Rh, hc[1] + 1.25 * Rh, 0.24 * Rh), x, y), primDist(Limb(hc[0] + 0.85 * Rh, hc[1] + 0.05 * Rh, 0.3 * Rh, hc[0] + 1.3 * Rh, hc[1] + 1.25 * Rh, 0.24 * Rh), x, y)),
-  };
-  if (o.hair !== "none") add({ name: `hair, ${o.hair}`, group: "hair", on: head, pattern: "plain", ang: 0, sdf: hairs[o.hair], box: [hc[0] - 2.2 * Rh, hc[1] - 2 * Rh, hc[0] + 2.2 * Rh, hc[1] + 2.4 * Rh], tabAxis: { at: [hc[0], hc[1] + 0.05 * Rh], from: 0.95 * Rh, dirs: [[-1, 0], [1, 0]], len: 0.9 * Rh }, hairStyle: o.hair });
+  // ---- hair: built in head units (see HAIR), face kept clear below the hairline, tabs over the crown fold down behind the head
+  if (o.hair !== "none") { const hs = HAIR[o.hair], B = hs.box;
+    add({ name: `hair, ${o.hair}`, group: "hair", on: head, pattern: "plain", ang: 0, sdf: (x, y) => hs.sdf((x - hc[0]) / Rh, (y - hc[1]) / Rh) * Rh, box: [hc[0] + B[0] * Rh, hc[1] + B[1] * Rh, hc[0] + B[2] * Rh, hc[1] + B[3] * Rh], tabAxis: { at: [hc[0], hc[1] - 0.6 * Rh], dirs: [[0, -1], [0, -1]], offs: [-0.5 * Rh, 0.5 * Rh], len: 0.8 * Rh }, hairStyle: o.hair }); }
   // ---- hats: tabs hang from the lower edge and fold behind the head
   const hats = {
     beanie: (x, y) => min(max(hypot(x - hc[0], y - hc[1]) - Rh - 2.5, y - hc[1] + 0.38 * Rh), primDist(Box(hc[0], hc[1] - 0.48 * Rh, Rh + 3.5, 0.17 * Rh, 1.5), x, y), hypot(x - hc[0], y - hc[1] + Rh + 2.5) - 0.3 * Rh),
@@ -551,7 +692,7 @@ function wardrobe(o, R) {
 
   // ---- accessories held in a hand: each hangs off a wrist band with fold tabs, so it moves with the forearm
   const hand = side => {
-    const p = byName((full ? "forearm " : "upper arm ") + side), A = axis(p), out0 = side === "L" ? -1 : 1;
+    const p = byName("forearm " + side) || byName("upper arm " + side), A = axis(p), out0 = side === "L" ? -1 : 1;
     let n = [A.d[1], -A.d[0]]; if (n[0] * out0 < 0) n = [-n[0], -n[1]];
     const end = [A.a[0] + A.d[0] * A.L, A.a[1] + A.d[1] * A.L], H = [end[0], end[1] + 0.1 * u];
     return { p, A, n, d: A.d, H, P: (a, b) => [H[0] + A.d[0] * a * u + n[0] * b * u, H[1] + A.d[1] * a * u + n[1] * b * u], ang: atan2(n[1], n[0]) };
@@ -636,7 +777,7 @@ function pattern(pc, type, ang, det) {
   return {};
 }
 function details(pc, o, R) {
-  const u = R.u, T = R.T, hc = R.hc, Rh = 0.55 * u, L = [], Sh = [], det = o.detail;
+  const u = R.u, T = R.T, hc = R.hc, Rh = 0.55 * u, L = [], Sh = [], Co = [], det = o.detail;
   if (o.stitch === "on") for (const l of contours(pc.Gd, -1.5)) { const q = smooth(l, 2); for (let i = 0; i < q.length; i += 4) if (i + 2 < q.length) L.push([q[i], q[i + 1], q[i + 2]]); }
   if (pc.kindTop) {
     const k = pc.kindTop;
@@ -653,13 +794,12 @@ function details(pc, o, R) {
   }
   if (pc.group === "shoes") { const G = pc.Gd; L.push(...hatch({ G }, 2.2, PI / 4, (x, y) => -sampleF(G, x, y) > 1.2 && y > G.y0 + G.ny * G.h - 9 && y < G.y0 + G.ny * G.h - 6.5)); }
   if (pc.hairStyle) {
-    const s = pc.hairStyle, part = [hc[0] - 0.2 * Rh, hc[1] - Rh];
-    if (s === "curly") { const G = pc.Gd; for (let y = G.y0; y < G.y0 + G.ny * G.h; y += 2.6 / det) for (let x = G.x0 + ((y / 2.6) % 2 ? 1.3 : 0); x < G.x0 + G.nx * G.h; x += 2.6 / det) if (-sampleF(G, x, y) > 1.6) L.push(arc(x, y, 0.8, 0.8, 0, 270, 10)); }
-    // strands fan out from the parting but start a little way off it, so the pen does not pile ink in one spot
-    else for (let a = -175; a <= -5; a += 9 / det) { const r = 2.6 * Rh, r0 = 0.3 * Rh, c = cos(a * D2R) * 1.1, s = -sin(a * D2R); L.push([[part[0] + r0 * c, part[1] + r0 * s], [part[0] + r * c, part[1] + r * s]]); }
+    const hs = HAIR[pc.hairStyle], f = l => l.map(([a, b]) => [hc[0] + a * Rh, hc[1] + b * Rh]);
+    L.push(...hs.strands(det).map(f));
+    if (hs.ties) Co.push(...hs.ties().map(f));
+    if (pc.hairStyle === "curly") { const G = pc.Gd, s = 3.4 / det, rnd = mulberry(7); for (let j = 0, y = G.y0; y < G.y0 + G.ny * G.h; y += s * 0.85, j++) for (let x = G.x0 + (j % 2 ? s / 2 : 0); x < G.x0 + G.nx * G.h; x += s) { const jx = x + (rnd() - 0.5) * 1.2, jy = y + (rnd() - 0.5) * 1.2, a0 = rnd() * 360; if (-sampleF(G, jx, jy) > 2) L.push(arc(jx, jy, 0.9, 0.9, a0, a0 + 290, 12)); } }
   }
   if (pc.hatStyle === "beanie") { for (let x = -Rh; x <= Rh; x += 1.6 / det) L.push([[hc[0] + x, hc[1] - 0.6 * Rh], [hc[0] + x, hc[1] - 0.36 * Rh]]); }
-  const Co = [];
   if (pc.hatStyle === "crown") for (const x of [-0.475, 0, 0.475]) Co.push(circle(hc[0] + x * Rh, hc[1] - 0.8 * Rh, 0.1 * Rh));
   if (pc.hatStyle === "sunhat") Co.push([[hc[0] - 0.75 * Rh, hc[1] - 0.82 * Rh], [hc[0] + 0.75 * Rh, hc[1] - 0.82 * Rh]], [[hc[0] - 0.75 * Rh, hc[1] - 0.9 * Rh], [hc[0] + 0.75 * Rh, hc[1] - 0.9 * Rh]]);
   if (pc.accKind) { const k = pc.accKind, h = pc.accFrame, P = h ? h.P : null;
@@ -677,14 +817,18 @@ function details(pc, o, R) {
   }
   return { line: L, shade: Sh, colour: Co };
 }
-const dollFace = (R) => { const u = R.u, hc = R.hc; return [circle(hc[0] - 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), circle(hc[0] + 0.18 * u, hc[1] - 0.05 * u, 0.05 * u), arc(hc[0], hc[1] + 0.05 * u, 0.22 * u, 0.2 * u, 30, 150)]; };
+// fold lines across a concertina strip, dashed, alternating long dashes (fold away from you) and short (fold towards you)
+const foldLines = p => { const C = p.conc, out = []; if (!C) return out; const nx = -C.d[1], ny = C.d[0];
+  for (let i = 1; i < C.n; i++) { const s = C.sA + i * C.pl, c = [C.base[0] + C.d[0] * s, C.base[1] + C.d[1] * s], on = i % 2 ? 2.2 : 0.9, off = i % 2 ? 1.2 : 1.1;
+    for (let t = -C.r; t < C.r; t += on + off) out.push([[c[0] + nx * t, c[1] + ny * t], [c[0] + nx * min(t + on, C.r), c[1] + ny * min(t + on, C.r)]]); }
+  return out; };
 
 // the pen outline of a part, d mm inside its cut line (or on it at 0), from the part's own distance field
 const outlineOf = (p, d, G = p.G) => d < 0.05 ? [p.dressedOutline || p.outline] : contours(G, -d).filter(l => abs(loopArea(l)) > 1).map(l => smooth(l, 1));
 // ---------------- build ----------------
 function build(o) {
   const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), m = o.margin, gates = [], notes = [];
-  const R = rig({ ...o, style: "plain", kind: "doll" }), h = max(0.25, o.height / 800);
+  const R = concertina(rig({ ...o, style: "plain", kind: "doll" }), o), h = max(0.25, o.height / 800);
   for (const p of R.parts) p.G = partField(p, h);
   const specs = wardrobe(o, R), want = o.sheet === "all" ? null : o.sheet === "top" ? ["top", "hair", "hat", "acc"] : o.sheet === "acc" ? ["acc"] : ["bottom", "shoes"];
   const garments = specs.map(g => makePiece(g, o, h));
@@ -699,7 +843,8 @@ function build(o) {
     g.ink = ink;
   }
   // the doll itself, drawn plain with its face; on the sheet only when asked for
-  const dollParts = R.parts.map(p => ({ ...p, isDoll: true, ink: { line: clip(p, p.kind === "head" || (p.kind === "torso" && !R.parts.some(q => q.kind === "head")) ? dollFace(R) : []), shade: [], colour: [], fold: [] } }));
+  const face = dollFaceInk(R.hc, 0.55 * R.u, o.expr, o.cheeks), hasFace = p => p.kind === "head" || (p.kind === "torso" && !R.parts.some(q => q.kind === "head"));
+  const dollParts = R.parts.map(p => ({ ...p, isDoll: true, ink: { line: clip(p, [...(hasFace(p) ? face.line : []), ...foldLines(p)]), shade: [], colour: clip(p, hasFace(p) ? face.colour : []), fold: [] } }));
   for (const p of dollParts) { const l = contours(p.G, 0).filter(q => abs(loopArea(q)) > 1).sort((a, b) => abs(loopArea(b)) - abs(loopArea(a)))[0]; p.outline = p.dressedOutline = rdp([...smooth(l, 1), l[0]], 0.02).slice(0, -1); }
   const sheet = [...onSheet, ...(o.doll === "on" ? dollParts : [])];
   for (const p of sheet) { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of p.outline) { a = min(a, x); b = min(b, y); c = max(c, x); d = max(d, y); } p.box = [a, b, c, d]; }
@@ -750,19 +895,21 @@ function draw(r, pose) {
   const path = (q, cl) => { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); };
   const COL = { line: "#26200f", shade: "#6b6356", colour: "#" + (r.o.inkcol || "b0126b") };
   if (r.o.view === "dressed") {
-    pose = pose || { arm: r.o.arms, elbow: r.o.bend, leg: r.o.legs, knee: r.o.bend, tilt: r.o.tilt };
-    const P = r.R.parts, rest = P.flatMap(p => p.outline || []), ys = r.dollParts.flatMap(p => p.outline.map(q => q[1]));
+    pose = pose || { arm: r.o.arms, elbow: r.o.bend, leg: r.o.legs, knee: r.o.bend, tilt: r.o.tilt, pull: r.o.pull / 100 };
+    const P = r.R.parts, rest = P.flatMap(p => p.outline || []), ys = r.dollParts.flatMap(p => { const sq = squash(p, pose.pull ?? 1); return p.outline.map(q => sq(q)[1]); });
     const top = min(...ys) - 0.9 * r.R.u, bot = max(...ys), sc = min(1, (r.H - 2 * r.o.margin) / (bot - top) * 0.86), ox = r.W / 2, oy = r.H / 2 - sc * (top + bot) / 2;
     // each doll part is followed by the clothes pinned or folded onto it, bottom layer first
     const rank = { shoes: 0, bottom: 1, top: 2, hair: 3, hat: 4, acc: 5 }, legs = p => /thigh|shin/.test(p.name);
     let dp = [...r.dollParts]; const tor = dp.filter(p => p.kind === "torso"), hd = dp.filter(p => p.kind === "head"), up = dp.filter(p => /upper|thigh/.test(p.name)), lo = dp.filter(p => /forearm|shin/.test(p.name));
     dp = r.skirtish ? [...up.filter(legs), ...lo.filter(legs), ...tor, ...hd, ...up.filter(p => !legs(p)), ...lo.filter(p => !legs(p))] : [...tor, ...hd, ...up, ...lo];
     for (const p of dp) {
-      const f = poseXf(p, pose), g = q => { const [x, y] = f(q); return [ox + sc * x, oy + sc * y]; };
+      const f = poseXf(p, pose), sq = squash(p, pose.pull ?? 1), g = q => { const [x, y] = f(sq(q)); return [ox + sc * x, oy + sc * y]; };
       const items = [p, ...r.garments.filter(gm => gm.on.name === p.name).sort((a, b) => rank[a.group] - rank[b.group])];
       // hair and hats always go over everything else on the head, which for a fixed head is the body
       for (const it of items) {
         c.beginPath(); path(it.dressedOutline.map(g), true); c.fillStyle = it.isDoll ? "#f3e6cf" : PALE; c.fill(); c.strokeStyle = "#26200f"; c.lineWidth = 0.35; c.stroke();
+        if (it.isDoll && it.conc) { const C = it.conc, nx = -C.d[1], ny = C.d[0], at = (s, t) => g([C.base[0] + C.d[0] * s + nx * t, C.base[1] + C.d[1] * s + ny * t]); // every other middle panel in shadow, so the folds read
+          c.fillStyle = "rgba(120,92,40,0.22)"; for (let i = 1; i < C.n - 1; i += 2) { const s0 = C.sA + i * C.pl, s1 = s0 + C.pl; c.beginPath(); path([at(s0, -C.r), at(s1, -C.r), at(s1, C.r), at(s0, C.r)], true); c.fill(); } }
         for (const key of ["shade", "colour", "line"]) { c.strokeStyle = COL[key]; c.lineWidth = key === "shade" ? 0.25 : 0.35; c.beginPath(); for (const l of it.ink[key]) path(l.map(g), false); c.stroke(); }
       }
       for (const Hh of p.holes) if (Hh.kind === "pin") { const [x, y] = g(Hh.c); c.beginPath(); c.arc(x, y, 1.6, 0, TAU); c.fillStyle = "#b8902f"; c.fill(); }
@@ -788,27 +935,27 @@ const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [
 function toSVG(r, only = null, ticks = false) {
   const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
     + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
-  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG paper doll wardrobe${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG paper dolls / paper clothes${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
     + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
 }
 
-const IDS = ["height", "stock", "joints", "neck", "top", "toppat", "bottom", "botpat", "shoes", "hair", "hat", "lhand", "rhand", "face", "neckwear", "inkcol", "sheet", "doll", "stitch", "letters", "outlines", "outlinein", "detail", "view", "arms", "legs", "bend", "tilt", "page", "margin"];
+const IDS = ["height", "stock", "joints", "neck", "limbs", "stretch", "expr", "cheeks", "pull", "top", "toppat", "bottom", "botpat", "shoes", "hair", "hat", "lhand", "rhand", "face", "neckwear", "inkcol", "sheet", "doll", "stitch", "letters", "outlines", "outlinein", "detail", "view", "arms", "legs", "bend", "tilt", "page", "margin"];
 const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
 let last = null;
 function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
 let pending = 0;
-const POSE_ONLY = new Set(["arms", "legs", "bend", "tilt", "view"]);
+const POSE_ONLY = new Set(["arms", "legs", "bend", "tilt", "pull", "view"]);
 function run(k) { sync(); stopWiggle(); if (last && POSE_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
 function stopWiggle() { if (anim) cancelAnimationFrame(anim); anim = 0; $("wiggle").textContent = "Wiggle it"; }
 $("wiggle").onclick = () => {
   if (anim) { stopWiggle(); return; }
   if (!last) return;
   $("view").value = "dressed"; last.o.view = "dressed"; $("wiggle").textContent = "Stop";
-  const step = () => { phase += 0.06; const s = (1 - cos(phase)) / 2; draw(last, { arm: 20 + 120 * s, leg: 5 + 25 * (1 - s), elbow: 10 + 60 * s, knee: 10 + 30 * (1 - s), tilt: 12 * sin(phase * 0.5) }); anim = requestAnimationFrame(step); };
+  const step = () => { phase += 0.06; const s = (1 - cos(phase)) / 2; draw(last, { arm: 20 + 120 * s, leg: 5 + 25 * (1 - s), elbow: 10 + 60 * s, knee: 10 + 30 * (1 - s), tilt: 12 * sin(phase * 0.5), pull: 0.3 + 0.7 * s }); anim = requestAnimationFrame(step); };
   anim = requestAnimationFrame(step);
 };
 
-const BASE = { height: 300, stock: 1, joints: "full", neck: "pinned", top: "tee", toppat: "stripes", bottom: "trousers", botpat: "plain", shoes: "shoes", hair: "bob", hat: "none", lhand: "none", rhand: "none", face: "none", neckwear: "none", inkcol: "b0126b", sheet: "all", doll: "off", stitch: "on", letters: "on", outlines: "off", outlinein: 0.6, detail: 1, view: "dressed", arms: 35, legs: 10, bend: 20, tilt: 0, page: "280x280", margin: 10 };
+const BASE = { height: 300, stock: 1, joints: "full", neck: "pinned", limbs: "jointed", stretch: 2, expr: "smile", cheeks: "rosy", pull: 55, top: "tee", toppat: "stripes", bottom: "trousers", botpat: "plain", shoes: "shoes", hair: "bob", hat: "none", lhand: "none", rhand: "none", face: "none", neckwear: "none", inkcol: "b0126b", sheet: "all", doll: "off", stitch: "on", letters: "on", outlines: "off", outlinein: 0.6, detail: 1, view: "dressed", arms: 35, legs: 10, bend: 20, tilt: 0, page: "280x280", margin: 10 };
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   everyday: P({}),
@@ -824,12 +971,14 @@ const PRESETS = {
   rainy: P({ top: "coat", toppat: "plain", bottom: "trousers", shoes: "boots", hair: "bob", rhand: "umbrella", neckwear: "scarf", inkcol: "0078bf", sheet: "top" }),
   birthday: P({ top: "shirt", toppat: "stripes", bottom: "shorts", hair: "curly", lhand: "balloon", rhand: "icecream", neckwear: "bowtie", face: "glasses", inkcol: "7b2d8b" }),
   magic: P({ top: "dress", toppat: "dots", bottom: "none", hair: "long", hat: "crown", rhand: "wand", lhand: "flowers", inkcol: "c8920a" }),
+  gangly: P({ height: 200, limbs: "all", stretch: 2.4, top: "tee", toppat: "stripes", bottom: "trousers", botpat: "check", shoes: "boots", hair: "curly", expr: "grin", cheeks: "freckles", lhand: "balloon", inkcol: "2e7d32", pull: 70, arms: 55, legs: 14 }),
+  ganglykit: P({ height: 180, limbs: "all", stretch: 2.2, top: "jumper", toppat: "stripes", bottom: "shorts", botpat: "plain", shoes: "shoes", hair: "braids", expr: "smile", doll: "on", view: "sheet", inkcol: "d7263d" }),
   accessories: P({ top: "none", bottom: "none", shoes: "none", hair: "none", lhand: "teddy", rhand: "umbrella", face: "sunglasses", neckwear: "scarf", sheet: "acc", view: "sheet" }),
 };
 document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
 IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
-const stem = r => `wardrobe-h${r.o.height}-${[r.o.top, r.o.bottom, r.o.shoes, r.o.hair, r.o.hat, r.o.lhand, r.o.rhand, r.o.face, r.o.neckwear].filter(v => v !== "none").join("-")}-${r.o.sheet}`;
+const stem = r => `paper-dolls-h${r.o.height}${r.o.limbs && r.o.limbs !== "jointed" ? "-concertina-" + r.o.limbs : ""}-${[r.o.top, r.o.bottom, r.o.shoes, r.o.hair, r.o.hat, r.o.lhand, r.o.rhand, r.o.face, r.o.neckwear].filter(v => v !== "none").join("-")}-${r.o.sheet}`;
 $("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
 $("split").onclick = () => {
   if (!last) return;
@@ -845,7 +994,7 @@ $("loadsvg").onchange = async e => { // also reads a doll exported from the join
   run();
 };
 addEventListener("resize", () => last && draw(last));
-window.__studio = { build, read, PRESETS, penLayers, toSVG, rig };
+window.__studio = { build, read, PRESETS, penLayers, toSVG, rig, draw };
 run();
 </script>
 </body>
