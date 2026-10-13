@@ -43,6 +43,7 @@ export const PAGES = [
   ["forks-studio.html", "Posthuman", "Forks studio", "A copied mind drawn three ways: a family tree of forks and merges, an upload slice by slice, and a head made of its own code."],
   ["meatsack-studio.html", "Posthuman", "Meatsack studio", "The body as hardware: augmentations drawn as old patent sheets, a body replaced part by part, and a line of clones in their vats."],
   ["spirograph-studio.html", "Art", "Spirograph studio", "A wheel rolls round the outline of letters or a shape and a pen in its hole draws the loops: rings, laps and up to four pens."],
+  ["math-garden-studio.html", "Art", "Math garden studio", "Three ways to grow a drawing out of a rule: a harmonograph's damped pendulums, L-system plants and fractal curves, and Mandelbrot or Julia sets as contour lines."],
 ];
 export const SOURCES = ["plg-stego/core.js", "plg-stego/marks.js", "plg-stego/studio.js", "plg-stego/cipher-core.js", "plg-stego/cipher.js", "plg-stego/overlay.js", "plg-stego/signals.js", "plg-stego/signals-core.js", "plg-stego/decoder-core.js", "plg-stego/decoder.js",
   "plg-stego/build.mjs", "plg-stego/decoder-test.mjs", "plg-stego/decoder-debug.mjs", "plg-stego/synth_photo.py", "plg-stego/export-all.sh", "studio_export.mjs",

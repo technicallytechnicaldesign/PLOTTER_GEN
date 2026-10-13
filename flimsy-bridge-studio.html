@@ -455,6 +455,7 @@ function cellOf(type, A, o, rank, total, Xfix) {
   const Ly = { line: [], shade: [], tens: [], comp: [], score: [], cut: [] }, info = { voids: 0, dropped: 0, minVoid: INF, faces: 0, expect: 0 };
   const x0 = type === "plank" ? 0 : fw, ya = HH, yd = HH + Hp, yb = HH + Hp + D;
   const push = (k, q, cl = false) => Ly[k].push([q, cl]);
+  const net = { x0, yd, yb, Wp, Wn, D, voidsTop: [], voidsBot: [] };   // for model(): where each face sits on the net
   // label
   const name = `${rank > 0 ? rank + ". " : ""}${NAMES[type]}`, line2 = A.ok ? `HOLDS ${fmtG(A.capG)} G - SAGS ${fmtMm(A.sag)} MM AT ${o.test} G` : "A MECHANISM - IT FOLDS UP";
   for (const q of text(name + (rank > 0 && rank === total ? " - FLIMSIEST" : ""), Wn / 2, 3.2, 3.6)) push("line", q);
@@ -462,6 +463,7 @@ function cellOf(type, A, o, rank, total, Xfix) {
   // the net outline: panel, deck, panel, with a glue flap on each end of each panel
   const he = px => { if (type !== "bowstring") return Hp; const x = clamp(px - w / 2, 0, L), ye = 0.4 * h; return ye + (h - ye) * (1 - (2 * x / L - 1) ** 2) + w; };
   const prof = Array.from({ length: 25 }, (_, i) => [Wp * i / 24, he(Wp * i / 24)]);
+  Object.assign(net, { prof, hL: he(0), hR: he(Wp) });
   const outline = type === "plank" ? [[0, HH], [Wp, HH], [Wp, HH + D], [0, HH + D]]
     : [[0, yd - he(0)], [x0, yd - he(0)], ...prof.map(([px, hh]) => [x0 + px, yd - hh]), [x0 + Wp, yd - he(Wp)], [Wn, yd - he(Wp)], [Wn, yd], [x0 + Wp, yd], [x0 + Wp, yb], [Wn, yb], [Wn, yb + he(Wp)], [x0 + Wp, yb + he(Wp)],
       ...prof.slice().reverse().map(([px, hh]) => [x0 + px, yb + hh]), [x0, yb + he(0)], [0, yb + he(0)], [0, yb], [x0, yb], [x0, yd], [0, yd]];
@@ -485,6 +487,7 @@ function cellOf(type, A, o, rank, total, Xfix) {
       info.voids++; info.minVoid = min(info.minVoid, 2 * r);
       const R = relieve(I, relief);
       push("cut", R.map(p => toNet(p, true)), true); push("cut", R.map(p => toNet(p, false)), true);
+      net.voidsTop.push(R.map(p => toNet(p, true))); net.voidsBot.push(R.map(p => toNet(p, false)));
     }
     // ink: lines along every member, more of them the harder the member works
     const fmax = max(...A.S.f.map(abs), 1e-12), half = max(0, w / 2 - 0.7);
@@ -529,7 +532,7 @@ function cellOf(type, A, o, rank, total, Xfix) {
   if (type === "plank") { for (const q of text("NO TRUSS - THE SAME CARD", Wn / 2, HH + D + 5, 2.2)) push("shade", q); for (const q of text("LAID FLAT ACROSS THE GAP", Wn / 2, HH + D + 9.2, 2.2)) push("shade", q); }
   const lbl = text(`SAG X${X >= 10 ? X.toFixed(0) : X.toFixed(1)}`, xs + Wp / 2, dy0 + dh - 1.9, 1.7);
   if (dh >= 10) for (const q of lbl) push("shade", q);
-  return { Wn, Hn, Ly, info, X };
+  return { Wn, Hn, Ly, info, X, net: type === "plank" ? null : net };
 }
 
 // ---------------- the board ----------------
@@ -750,7 +753,32 @@ $("loadsvg").onchange = async e => {
   run();
 };
 addEventListener("resize", () => last && draw(last));
-window.__studio = { build, read, PRESETS, penLayers, toSVG, analyse, trussOf, solveTruss };
+// One folded truss as a model for the print gallery: the deck flat, both panels stood up on its long edges and the end flaps
+// turned in to meet; every face in 3D (mm, z up) laid out in net coordinates, with its voids as holes and its ink.
+function model(o) {
+  o = { ...o, show: "single" };
+  const cell = cellOf(o.bridge, analyse(o.bridge, o), o, 0, 0, 0), N = cell.net;
+  if (!N) return null;
+  const { x0, yd, yb, Wp, Wn, D, hL, hR, prof } = N, t = 0.3;   // t: the inner flaps sit a card's thickness inside the outer ones
+  const F = (poly, O, U, V, holes = []) => ({ poly, O, U, V, holes, ink: [] });
+  const faces = [
+    F([[x0, yd], [x0 + Wp, yd], [x0 + Wp, yb], [x0, yb]], [-x0, -yd, 0], [1, 0, 0], [0, 1, 0]),
+    F([[x0, yd], ...prof.map(([px, hh]) => [x0 + px, yd - hh]), [x0 + Wp, yd]], [-x0, 0, yd], [1, 0, 0], [0, 0, -1], N.voidsTop),
+    F([[x0, yb], [x0 + Wp, yb], ...prof.slice().reverse().map(([px, hh]) => [x0 + px, yb + hh])], [-x0, D, -yb], [1, 0, 0], [0, 0, 1], N.voidsBot),
+    F([[0, yd - hL], [x0, yd - hL], [x0, yd], [0, yd]], [0, x0, yd], [0, -1, 0], [0, 0, -1]),
+    F([[x0 + Wp, yd - hR], [Wn, yd - hR], [Wn, yd], [x0 + Wp, yd]], [Wp, -x0 - Wp, yd], [0, 1, 0], [0, 0, -1]),
+    F([[0, yb], [x0, yb], [x0, yb + hL], [0, yb + hL]], [t, D - x0, -yb], [0, 1, 0], [0, 0, 1]),
+    F([[x0 + Wp, yb], [Wn, yb], [Wn, yb + hR], [x0 + Wp, yb + hR]], [Wp - t, D + x0 + Wp, -yb], [0, -1, 0], [0, 0, 1]),
+  ];
+  const inPoly = ([x, y], P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) if ((P[i][1] > y) !== (P[j][1] > y) && x < (P[j][0] - P[i][0]) * (y - P[i][1]) / (P[j][1] - P[i][1]) + P[i][0]) c = !c; return c; };
+  const col = { shade: "#3a3a3a", tens: "#" + o.c1col, comp: "#" + o.c2col, line: "#141414" }, R = v => +v.toFixed(2), Rp = q => q.map(p => p.map(R));
+  // each ink path goes on the face its middle lies on; the label above the net is on the waste card and stays behind
+  for (const k of ["line", "shade", "tens", "comp"]) for (const [q, cl] of cell.Ly[k]) { const f = faces.find(F => inPoly(q[q.length >> 1], F.poly)); if (f) f.ink.push({ c: col[k], w: PEN[k], q: Rp(q), cl: !!cl }); }
+  const out = faces.map(f => ({ O: f.O.map(R), U: f.U, V: f.V, poly: Rp(f.poly), holes: f.holes.map(Rp), ink: f.ink }));
+  const all = out.flatMap(f => f.poly.map(([u, v]) => [0, 1, 2].map(i => f.O[i] + f.U[i] * u + f.V[i] * v))), lo = [0, 1, 2].map(i => min(...all.map(p => p[i]))), hi = [0, 1, 2].map(i => max(...all.map(p => p[i])));
+  return { version: 1, studio: "flimsy-bridge-studio.html", settings: o, min: lo.map(R), max: hi.map(R), faces: out };
+}
+window.__studio = { build, read, PRESETS, penLayers, toSVG, analyse, trussOf, solveTruss, model };
 setAll(PRESETS.board);
 run();
 

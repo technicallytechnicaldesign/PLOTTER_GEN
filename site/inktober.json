@@ -244,7 +244,13 @@
       "prompt": "flimsy",
       "photo": "prints/inktober-13-flimsy.jpg",
       "studio": "../flimsy-bridge-studio.html",
-      "description": "Tuesday 13 October 2026, prompt \"flimsy\". Black ink on white card: the Tacoma Narrows bridge on 7 November 1940 at 1 to 350, its deck twisting at 10.00, 10.15, 10.30 and 10.45 and in the water by 11.02. Drawn by the Flimsy bridge studio, alongside its fold-up card truss bridges.",
+      "description": "Tuesday 13 October 2026, prompt \"flimsy\". Black ink on white card: the Tacoma Narrows bridge on 7 November 1940 at 1 to 350, its deck twisting at 10.00, 10.15, 10.30 and 10.45 and in the water by 11.02. Drawn by the Flimsy bridge studio, alongside its fold-up card truss bridges. On the plinth in front, the Howe truss from the same studio, folded up from its net.",
+      "model": "prints/models/inktober-13-howe-truss.json",
+      "box": {
+        "width": 150,
+        "height": 40,
+        "depth": 18
+      },
       "frame": {
         "width": 210,
         "height": 297
