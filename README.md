@@ -12,6 +12,7 @@ Pen-plotter generators for the Cricut Explore 5. [Open the live gallery](https:/
 - **Posthuman:** Forks, Meatsack.
 - **Apothecary:** Bottle studio: bottles, labels and a shelf or countertop of them.
 - **Motion:** Toss studio: a coin, die or cap caught at several moments along a throw.
+- **Machines:** Contraption studio: a parts kit and chain solver drawn as a perpetual motion patent plate, a dimsa-doosa engineering drawing or an exploded view.
 
 Each studio is self-contained HTML and exports millimetre SVGs, including separate pen layers for Design Space. The gallery carries saved controls and source fingerprints for its example drawings.
 
