@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kiwi studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Kiwi studio</h1>
+  <p class="sub">Flightless, and proud of it: shaggy brown kiwi drawn in hair-fine feather strokes, standing alone under the ferns and the Southern Cross, stacked into a wobbly tower, tiled into wallpaper or packed in until the page gives up. A kiwifruit sometimes sneaks in. Day 18 of Inktober, "flightless".</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="night">Moon gazer</button><button data-preset="hopeful">Flapping hopefully</button><button data-preset="xray">Egg x-ray</button><button data-preset="tower">Tower</button></div>
+    <div class="row"><button data-preset="wobbly">Wobbly tower</button><button data-preset="wallpaper">Wallpaper</button></div>
+    <div class="row"><button data-preset="madness">Kiwi madness</button><button data-preset="salad">Fruit salad</button></div>
+  </fieldset>
+  <fieldset><legend>The kiwi</legend>
+    <label>Scene <select id="scene"><option value="lone">one kiwi</option><option value="tower">a tower, standing on backs</option><option value="wallpaper">wallpaper</option><option value="madness">packed madness</option></select></label>
+    <label>Pose <select id="pose"><option value="stand">standing</option><option value="gaze">gazing up</option><option value="probe">probing the ground</option><option value="run">running</option><option value="sleep">asleep</option><option value="mix">a mix</option></select></label>
+    <label data-when="scene=tower">Levels <output id="o-levels"></output><input type="range" id="levels" min="2" max="10" step="1" value="5"></label>
+    <label data-when="scene=tower">Each level smaller by (%) <output id="o-shrink"></output><input type="range" id="shrink" min="0" max="25" step="1" value="8"></label>
+    <label data-when="scene=wallpaper">Kiwi across <output id="o-cols"></output><input type="range" id="cols" min="2" max="10" step="1" value="4"></label>
+    <label data-when="scene=wallpaper">Rows <select id="rows"><option value="brick">brick, every other row turned round</option><option value="march">all marching one way</option></select></label>
+    <label data-when="scene=wallpaper or scene=madness">Gap (% of a kiwi) <output id="o-gap"></output><input type="range" id="gap" min="-20" max="40" step="1" value="6"></label>
+    <label data-when="scene=madness">Biggest kiwi (mm tall) <output id="o-big"></output><input type="range" id="big" min="20" max="120" step="1" value="70"></label>
+    <label data-when="scene=madness">Smallest kiwi (mm tall) <output id="o-small"></output><input type="range" id="small" min="6" max="40" step="1" value="12"></label>
+    <label data-when="scene=madness">How many to try for <output id="o-count"></output><input type="range" id="count" min="5" max="250" step="1" value="90"></label>
+    <label data-when="scene=lone">Egg <select id="egg"><option value="none">none</option><option value="beside">beside her</option><option value="xray">x-ray, inside her</option></select></label>
+    <label>Whimsy <output id="o-whimsy"></output><input type="range" id="whimsy" min="0" max="100" step="1" value="25"></label>
+    <label>Tiny wing <select id="wing"><option value="off">hidden in the fluff</option><option value="tiny">showing</option><option value="flap">flapping, hopefully</option></select></label>
+    <label>Kiwifruit sneaking in (%) <output id="o-fruit"></output><input type="range" id="fruit" min="0" max="60" step="1" value="0"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="99" step="1" value="7"></label>
+  </fieldset>
+  <fieldset><legend>Feathers</legend>
+    <label>Density <output id="o-density"></output><input type="range" id="density" min="0" max="100" step="1" value="60"></label>
+    <label>Feather length (mm) <output id="o-flen"></output><input type="range" id="flen" min="1.5" max="6" step="0.1" value="3"></label>
+    <label>Shaggy outline <output id="o-shag"></output><input type="range" id="shag" min="0" max="100" step="1" value="55"></label>
+    <label>Darker underneath <output id="o-shade"></output><input type="range" id="shade" min="0" max="100" step="1" value="50"></label>
+  </fieldset>
+  <fieldset data-when="scene=lone|tower"><legend>Night bush</legend>
+    <label>Fern fronds <output id="o-ferns"></output><input type="range" id="ferns" min="0" max="4" step="1" value="2"></label>
+    <label>Koru <output id="o-koru"></output><input type="range" id="koru" min="0" max="3" step="1" value="1"></label>
+    <label>Moon <select id="moon"><option value="crescent">crescent</option><option value="full">full</option><option value="none">none</option></select></label>
+    <label>Southern Cross <select id="cross"><option value="on">in the sky</option><option value="off">no</option></select></label>
+    <label>Other stars <output id="o-stars"></output><input type="range" id="stars" min="0" max="20" step="1" value="6"></label>
+    <label>Ground <select id="ground"><option value="dashes">broken line</option><option value="line">one line</option><option value="none">none</option></select></label>
+  </fieldset>
+  <fieldset><legend>Pens</legend>
+    <label>Colour pen draws <select id="cpen"><option value="feathers">the feathers</option><option value="plants">ferns, koru and moon</option><option value="none">nothing (two pens)</option></select></label>
+    <label>Colour pen preview <select id="ccol"><option value="7a4a1e">brown</option><option value="2f6b2f">green</option><option value="b03030">red</option><option value="2a4f9a">blue</option><option value="d07a10">orange</option></select></label>
+    <label>Outline <select id="weight"><option value="2">two passes (bold)</option><option value="1">one pass</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen in plotting order: the thin pen, then the colour pen, then the black line last so the outlines sit on top. Each file carries four corner ticks so they all land in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: each kiwi is one smooth body outline (a pear with a small head), roughened into hair-like tufts that flick back away from the head, then filled with short feather strokes that hang down and back, thicker underneath. The long beak curves down, with whiskers at its base and nostrils at the very tip, where a kiwi keeps them. Legs are stout and scaled, three toes forward and one back. Everything in front cuts the lines behind it, so a kiwi standing on another's back stands in its fluff.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, exp, sign } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const PEN = { line: 0.4, shade: 0.3, colour: 0.4 };   // ASSUMED widths, same pens as the other studios
+const PENS = ["shade", "colour", "line"];
+const PASS = 0.28;
+const KIWI_H = 1.85;   // a standing kiwi, crown to toes, in body units
+
+// ---------------- geometry helpers (mm, y down) ----------------
+const ring = (x, y, rx, ry, n = 40, rot = 0) => Array.from({ length: n }, (_, i) => { const a = i / n * TAU, px = rx * cos(a), py = ry * sin(a); return [x + px * cos(rot) - py * sin(rot), y + px * sin(rot) + py * cos(rot)]; });
+const polyInside = (p, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+function splitSeg(a, b, P) {
+  const ts = [0, 1], dx = b[0] - a[0], dy = b[1] - a[1];
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const c = P[j], d = P[i], ex = d[0] - c[0], ey = d[1] - c[1], den = dx * ey - dy * ex; if (abs(den) < 1e-12) continue;
+    const t = ((c[0] - a[0]) * ey - (c[1] - a[1]) * ex) / den, u = ((c[0] - a[0]) * dy - (c[1] - a[1]) * dx) / den;
+    if (t > 0 && t < 1 && u >= 0 && u < 1) ts.push(t);
+  }
+  ts.sort((x, y) => x - y);
+  const out = [];
+  for (let k = 0; k < ts.length - 1; k++) { if (ts[k + 1] - ts[k] < 1e-9) continue; const m = (ts[k] + ts[k + 1]) / 2; out.push([ts[k], ts[k + 1], polyInside([a[0] + dx * m, a[1] + dy * m], P)]); }
+  return out;
+}
+function clipSegs(segs, P, keepIn) { const out = []; for (const [a, b] of segs) for (const [t0, t1, ins] of splitSeg(a, b, P)) if (ins === keepIn) out.push([lerp2(a, b, t0), lerp2(a, b, t1)]); return out; }
+function joinSegs(segs) { const out = []; let cur = null; for (const [a, b] of segs) { if (cur && hypot(cur[cur.length - 1][0] - a[0], cur[cur.length - 1][1] - a[1]) < 1e-6) cur.push(b); else { cur = [a, b]; out.push(cur); } } return out; }
+const segsOf = (pl, closed = false) => pl.slice(1).map((p, i) => [pl[i], p]).concat(closed ? [[pl[pl.length - 1], pl[0]]] : []);
+const clipPath = (pts, closed, P, keepIn) => joinSegs(clipSegs(segsOf(pts, closed), P, keepIn));
+const bboxOf = pts => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of pts) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+const bbUnion = (a, b) => [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])];
+const rectPoly = b => [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+const astroid = (x, y, s) => Array.from({ length: 33 }, (_, i) => { const t = i / 32 * TAU; return [x + s * cos(t) ** 3, y + s * sin(t) ** 3]; });
+function moonPts(cx, cy, r) {
+  const d = r * 0.42, rb = r * 0.82, xs = (d * d + r * r - rb * rb) / (2 * d), ys = sqrt(max(0, r * r - xs * xs)), o0 = atan2(ys, xs), pts = [];
+  for (let i = 0; i <= 30; i++) { const a = o0 + (TAU - 2 * o0) * i / 30; pts.push([cx + r * cos(a), cy + r * sin(a)]); }
+  const f0 = atan2(-ys, xs - d) + TAU, f1 = atan2(ys, xs - d);
+  for (let i = 0; i <= 30; i++) { const a = f0 + (f1 - f0) * i / 30; pts.push([cx + d + rb * cos(a), cy + rb * sin(a)]); }
+  return pts;
+}
+function hatch(P, sp, ang) {
+  const b = bboxOf(P), cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2, Lh = hypot(b[2] - b[0], b[3] - b[1]) / 2 + 1, a = ang * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, out = [];
+  for (let c = -Lh; c <= Lh; c += sp) { const px = cx + nx * c, py = cy + ny * c; out.push([[px - dx * Lh, py - dy * Lh], [px + dx * Lh, py + dy * Lh]]); }
+  return clipSegs(out, P, true);
+}
+// closed Catmull-Rom through P, n samples per span
+function crClosed(P, n) {
+  const L = P.length, out = [];
+  for (let i = 0; i < L; i++) {
+    const p0 = P[(i - 1 + L) % L], p1 = P[i], p2 = P[(i + 1) % L], p3 = P[(i + 2) % L];
+    for (let j = 0; j < n; j++) {
+      const t = j / n, t2 = t * t, t3 = t2 * t;
+      out.push([0, 1].map(k => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3)));
+    }
+  }
+  return out;
+}
+// resample a closed loop to M points evenly spaced by arc length
+function resample(P, M) {
+  const L = P.length, cum = [0];
+  for (let i = 1; i <= L; i++) cum.push(cum[i - 1] + hypot(P[i % L][0] - P[i - 1][0], P[i % L][1] - P[i - 1][1]));
+  const tot = cum[L], out = []; let j = 0;
+  for (let k = 0; k < M; k++) { const d = tot * k / M; while (cum[j + 1] < d) j++; const t = (d - cum[j]) / max(1e-12, cum[j + 1] - cum[j]); out.push(lerp2(P[j], P[(j + 1) % L], t)); }
+  return { pts: out, len: tot };
+}
+// join open pieces end to end (flipping as needed) into as few polylines as possible; a chain that comes back to its start is closed
+function chain(pieces, tol) {
+  const near = (a, b) => abs(a[0] - b[0]) < tol && abs(a[1] - b[1]) < tol, left = pieces.map(q => q.slice()), out = [];
+  while (left.length) {
+    let cur = left.shift(), grew = true;
+    while (grew) {
+      grew = false;
+      for (let i = 0; i < left.length; i++) {
+        const q = left[i], e = cur[cur.length - 1], b = cur[0];
+        if (near(e, q[0])) cur = cur.concat(q.slice(1));
+        else if (near(e, q[q.length - 1])) cur = cur.concat(q.slice(0, -1).reverse());
+        else if (near(b, q[q.length - 1])) cur = q.slice(0, -1).concat(cur);
+        else if (near(b, q[0])) cur = q.slice(1).reverse().concat(cur);
+        else continue;
+        left.splice(i, 1); grew = true; break;
+      }
+    }
+    const closed = cur.length > 3 && near(cur[0], cur[cur.length - 1]);
+    out.push({ pts: closed ? cur.slice(0, -1) : cur, closed });
+  }
+  return out;
+}
+const polyArea = P => { let a = 0; for (let i = 0, j = P.length - 1; i < P.length; j = i++) a += (P[j][0] - P[i][0]) * (P[j][1] + P[i][1]); return a / 2; };
+// a tapered ribbon round a centreline, closed
+function ribbon(C, w0, w1, tipRound = true) {
+  const n = C.length, L = [], R = [];
+  for (let i = 0; i < n; i++) {
+    const a = C[max(0, i - 1)], b = C[min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1, w = lerp(w0, w1, i / (n - 1));
+    L.push([C[i][0] - dy / l * w, C[i][1] + dx / l * w]); R.push([C[i][0] + dy / l * w, C[i][1] - dx / l * w]);
+  }
+  return L.concat(R.reverse());
+}
+const bez2 = (a, c, b, t) => [(1 - t) ** 2 * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0], (1 - t) ** 2 * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1]];
+// a filled dot: a tight spiral, so the pen leaves a solid round blob
+function dot(cx, cy, r, step = 0.28) { const pts = [], turns = max(1, r / step); for (let i = 0; i <= turns * 24; i++) { const a = i / 24 * TAU, rr = r * (1 - i / (turns * 24)); pts.push([cx + rr * cos(a), cy + rr * sin(a)]); } return pts; }
+
+// ---------------- the kiwi (body units: about 2 long, origin mid-body, facing right) ----------------
+// body outline: [x, y, how much it follows the head]
+const BODY = [[1.30, -0.53, 1], [1.13, -0.67, 1], [0.90, -0.65, 0.7], [0.55, -0.73, 0.2], [0.0, -0.83, 0], [-0.55, -0.73, 0], [-0.92, -0.42, 0],
+  [-1.03, 0.0, 0], [-0.90, 0.36, 0], [-0.45, 0.57, 0], [0.15, 0.59, 0], [0.62, 0.42, 0], [0.92, 0.10, 0.4], [1.10, -0.18, 0.8], [1.28, -0.34, 1]];
+const POSES = {
+  stand: { head: [0, 0], beak: 38, tilt: 0, legs: "stand" },
+  gaze: { head: [-0.02, -0.12], beak: -30, tilt: -8, legs: "stand" },
+  probe: { head: [0.06, 0.24], beak: 74, tilt: 7, legs: "stand" },
+  run: { head: [0.1, 0.04], beak: 24, tilt: 10, legs: "run" },
+  sleep: { head: [-0.08, 0.06], beak: 166, tilt: 0, legs: "none", squish: [0.95, 1.04] },
+};
+const POSE_MIX = ["stand", "stand", "gaze", "probe", "run"];
+
+// A kiwi or a kiwifruit in body units. s = mm per unit (sets feather spacing), opt = feather and look settings.
+// Returns { L: {line, shade, colour}, sil: [polys], bb, contact } with every part already cut by the parts in front of it.
+function creature(spec, s, opt, seed) {
+  const rnd = mulberry(seed), parts = [];
+  const fpen = opt.cpen === "feathers" ? "colour" : "shade";
+  if (spec.fruit) fruitParts(spec.fruit, s, opt, rnd, parts, fpen);
+  else kiwiParts(spec, s, opt, rnd, parts, fpen);
+  const L = { line: [], shade: [], colour: [] }, sil = [], feet = [];
+  for (const p of parts) {
+    if (p.sil.length && !p.noCut) cutBehind(L, p.sil);
+    for (const pen of PENS) for (const q of p[pen] || []) L[pen].push(q);
+    sil.push(...p.sil);
+    if (p.ground) feet.push(...p.sil);
+  }
+  let bb = [INF, INF, -INF, -INF];
+  for (const pen of PENS) for (const [q] of L[pen]) bb = bbUnion(bb, bboxOf(q));
+  for (const P of sil) bb = bbUnion(bb, bboxOf(P));
+  // where it stands: the middle of whatever touches the bottom (toes, or a sleeper's belly; never the beak)
+  const pts = (feet.length ? feet : sil).flat(), lowY = pts.reduce((a, p) => max(a, p[1]), -INF), lows = pts.filter(p => p[1] > lowY - 0.03);
+  const contact = [lows.reduce((a, p) => a + p[0], 0) / max(1, lows.length), lowY];
+  return { L, sil, bb, contact };
+}
+
+// roughen a loop into hair tufts that flick away from the head
+function shaggy(P, s, amount, head, rnd, headW) {
+  if (amount <= 0) return P;
+  // tufts are sized in mm, so a small kiwi is as fluffy as a big one, and no two are alike
+  const samp = 0.45, { pts } = resample(P, clamp(round(len0(P) * s / samp), 60, 1600));
+  const M = pts.length, ccw = polyArea(pts) > 0 ? 1 : -1, out = [];
+  let k = 0, span = 1, amp = 0;
+  for (let i = 0; i < M; i++) {
+    const a = pts[(i - 1 + M) % M], b = pts[(i + 1) % M], tx = b[0] - a[0], ty = b[1] - a[1], tl = hypot(tx, ty) || 1;
+    const nx = ty / tl * ccw, ny = -tx / tl * ccw;
+    const p = pts[i], away = (p[0] - head[0]) * tx + (p[1] - head[1]) * ty > 0 ? 1 : -1;
+    if (k === 0) { span = max(3, round((1.2 + 2.8 * rnd()) / samp)); amp = min(0.07, amount * (rnd() < 0.25 ? 0.25 : 0.5 + 1.5 * rnd()) / s) * (headW(p) ? 0.4 : 1); }
+    const u = k / span, h = amp * (u < 0.7 ? sin(u / 0.7 * PI / 2) : (1 - u) / 0.3);
+    out.push([p[0] + nx * h + tx / tl * away * h * 1.1, p[1] + ny * h + ty / tl * away * h * 1.1]);
+    k = (k + 1) % span;
+  }
+  return out;
+}
+const len0 = P => { let t = 0; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; t += hypot(b[0] - a[0], b[1] - a[1]); } return t; };
+
+// short feather strokes filling a body, hanging down and back from the head
+function feathers(P, s, opt, rnd, head, avoid, darkBelow) {
+  const out = [];
+  if (opt.density <= 0) return out;
+  const spMM = lerp(4.2, 1.25, opt.density / 100), sp = spMM / s, flen = min(opt.flen / s, 0.26), b = bboxOf(P);
+  for (let y = b[1] + sp * 0.5; y < b[3]; y += sp * 0.87) {
+    const row = round((y - b[1]) / sp);
+    for (let x = b[0] + (row % 2 ? sp * 0.5 : 0); x < b[2]; x += sp) {
+      const p = [x + (rnd() - 0.5) * sp * 0.8, y + (rnd() - 0.5) * sp * 0.8];
+      if (!polyInside(p, P) || avoid.some(([c, r]) => hypot(p[0] - c[0], p[1] - c[1]) < r)) continue;
+      const tone = clamp((p[1] - b[1]) / (b[3] - b[1]), 0, 1);
+      if (rnd() > lerp(1, lerp(0.3, 1, tone ** 0.8), darkBelow)) continue;
+      let dx = p[0] - head[0], dy = p[1] - head[1]; const dl = hypot(dx, dy) || 1;
+      dx = dx / dl * 0.65; dy = dy / dl * 0.65 + 0.35;
+      const ang = atan2(dy, dx) + (rnd() - 0.5) * 0.6, l = flen * (0.75 + 0.5 * rnd()) * (dl < 0.38 ? 0.6 : 1), bend = (rnd() - 0.5) * 0.5 * l;
+      const e = [p[0] + cos(ang) * l, p[1] + sin(ang) * l], m = [(p[0] + e[0]) / 2 - sin(ang) * bend, (p[1] + e[1]) / 2 + cos(ang) * bend];
+      for (const q of joinSegs(clipSegs([[p, m], [m, e]], P, true))) out.push([q, false]);
+    }
+  }
+  return out;
+}
+
+function kiwiParts(spec, s, opt, rnd, parts, fpen) {
+  const P = POSES[spec.pose] || POSES.stand, sq = P.squish || [1, 1], tilt = P.tilt * D2R, pv = [0.05, 0.42];
+  const rot = p => { const dx = p[0] - pv[0], dy = p[1] - pv[1]; return [pv[0] + dx * cos(tilt) - dy * sin(tilt), pv[1] + dx * sin(tilt) + dy * cos(tilt)]; };
+  const f = (p, w) => rot([p[0] * sq[0] + w * P.head[0], (p[1] - 0.1) * sq[1] + 0.1 + w * P.head[1]]);
+  const ctrl = BODY.map(([x, y, w]) => f([x, y], w)), head = f([1.02, -0.47], 1);
+  const smooth = crClosed(ctrl, 10);
+  const body = opt.smooth ? smooth : shaggy(smooth, s, opt.shag / 100, head, rnd, p => hypot(p[0] - head[0], p[1] - head[1]) < 0.4);
+  const sleep = spec.pose === "sleep", eye = f([1.1, sleep ? -0.56 : -0.47], 1), er = 0.052;
+  // legs, back one first
+  if (P.legs !== "none") {
+    const ground = 0.97, legs = P.legs === "run"
+      ? [{ hip: rot([-0.14, 0.42]), ank: [-0.6, 0.74], toe: 118 }, { hip: rot([0.28, 0.40]), ank: [0.72, 0.86], toe: 6 }]
+      : [{ hip: rot([-0.18, 0.42]), ank: [-0.24, 0.89], toe: 4 }, { hip: rot([0.28, 0.40]), ank: [0.30, 0.89], toe: 4 }];
+    for (const g of legs) {
+      // a stout shank, rounded at the ankle, with scales across it
+      const leg = ribbon([g.hip, lerp2(g.hip, g.ank, 0.5), g.ank], 0.11, 0.075).concat([]), shade = [];
+      const ax = g.ank[0] - g.hip[0], ay = g.ank[1] - g.hip[1], al = hypot(ax, ay), st = max(0.055, 0.8 / s);
+      for (let d = 0.3; d < al - 0.03; d += st) { const c = [g.hip[0] + ax / al * d, g.hip[1] + ay / al * d], w = 0.13, bow = 0.02; for (const q of clipPath([[c[0] - ay / al * w, c[1] + ax / al * w], [c[0] + ax / al * bow, c[1] + ay / al * bow], [c[0] + ay / al * w, c[1] - ax / al * w]], false, leg, true)) shade.push([q, false]); }
+      parts.push({ sil: [leg], line: [[leg, true]], shade });
+      // toes: the hind toe, the far toe, the long middle toe, then the near toe, each ending in a claw
+      const ta = g.toe * D2R;
+      for (const [a, l, w, drop] of [[ta + PI - 0.35, 0.14, 0.04, 0], [ta - 0.16, 0.27, 0.042, -0.03], [ta + 0.02, 0.38, 0.05, 0], [ta + 0.2, 0.3, 0.046, 0.02]]) {
+        const tip = [g.ank[0] + cos(a) * l, min(ground, g.ank[1] + sin(a) * l + 0.05 + drop)], mid = [lerp(g.ank[0], tip[0], 0.55), lerp(g.ank[1], tip[1], 0.55) - 0.025];
+        const T = ribbon([g.ank, mid, tip], w, 0.016), da = atan2(tip[1] - mid[1], tip[0] - mid[0]);
+        parts.push({ sil: [T], line: [[T, true], [[tip, [tip[0] + cos(da + 0.5) * 0.045, tip[1] + sin(da + 0.5) * 0.045]], false]], ground: true });
+      }
+    }
+  }
+  // the body, its feathers and eye
+  const avoid = [[eye, er * 1.9]];
+  let eggPoly = null;
+  if (spec.xray) { eggPoly = ring(...f([-0.12, 0.06], 0), 0.52, 0.37, 48, tilt); avoid.push([f([-0.12, 0.06], 0), 0]); }
+  let fs = feathers(body, s, opt, rnd, head, avoid, opt.shade / 100);
+  const bodyPart = { sil: [body], line: [[body, true]], shade: [], colour: [], ground: P.legs === "none" };
+  if (eggPoly) {
+    fs = fs.flatMap(([q]) => clipPath(q, false, eggPoly, false).map(r => [r, false]));
+    // the shell, a dashed inner contour, and a crescent of shading low on the far side
+    bodyPart.line.push([eggPoly, true]);
+    const ec = f([-0.12, 0.06], 0), { pts } = resample(ring(ec[0], ec[1], 0.45, 0.31, 48, tilt), 48);
+    for (let i = 0; i < 48; i += 2) bodyPart.shade.push([[pts[i], pts[i + 1]], false]);
+    const lit = ring(ec[0] - 0.07, ec[1] - 0.06, 0.5, 0.35, 48, tilt);
+    for (const q of clipSegs(hatch(eggPoly, max(0.05, 0.9 / s), 30), lit, false)) bodyPart.shade.push([q, false]);
+  }
+  bodyPart[fpen].push(...fs);
+  if (sleep) {
+    // a closed eye: a sleepy curve with three lashes
+    const arc = Array.from({ length: 11 }, (_, i) => { const a = 0.1 * PI + i / 10 * 0.8 * PI; return [eye[0] + er * 1.9 * cos(a), eye[1] - er * 0.6 + er * 1.1 * sin(a)]; });
+    bodyPart.line.push([arc, false]);
+    for (const i of [3, 5, 7]) { const p = arc[i], a = 0.1 * PI + i / 10 * 0.8 * PI; bodyPart.line.push([[p, [p[0] + cos(a) * er * 0.8, p[1] + sin(a) * er * 0.8]], false]); }
+  }
+  else { bodyPart.line.push([ring(eye[0], eye[1], er, er, 20), true]); bodyPart.line.push([dot(eye[0], eye[1], er * 0.75, 0.28 / s), false]); }
+  parts.push(bodyPart);
+  // the tiny wing: a few centimetres long on a real kiwi, hidden in the fluff. Flapping, it is raised
+  // with motion marks round it, hopefully. Too small to draw on a kiwi under 14 mm, and tucked away when asleep.
+  if (opt.wing && opt.wing !== "off" && !sleep && s * KIWI_H >= 14) {
+    const flap = opt.wing === "flap", root = f(flap ? [-0.05, -0.6] : [0.38, -0.2], 0), wa = (flap ? -135 : 152) * D2R + tilt, WL = flap ? 0.52 : 0.46, ww = flap ? 0.1 : 0.1;
+    const dir = [cos(wa), sin(wa)], nrm = [-dir[1], dir[0]], at = (u, v) => [root[0] + dir[0] * WL * u + nrm[0] * v, root[1] + dir[1] * WL * u + nrm[1] * v];
+    const side = sg => Array.from({ length: 13 }, (_, i) => { const u = i / 12; return at(u, sg * ww * sin(PI * u) ** 0.7 * (1 - 0.35 * u) + (sg > 0 ? 0.02 * sin(PI * u) : 0)); });
+    const wing = side(1).concat(side(-1).reverse().slice(1, -1)), wp = { sil: [wing], line: [], shade: [], colour: [] };
+    // the outline stays open on the side nearest the head, so the wing grows out of the fluff instead of sitting on it like a leaf
+    const dh = wing.map(q => hypot(q[0] - head[0], q[1] - head[1])), cutAt = [...dh].sort((a, b) => a - b)[floor(dh.length * 0.3)];
+    const runs = []; let run = null;
+    wing.forEach((q, i) => { if (dh[i] > cutAt) { if (!run) runs.push(run = []); run.push(q); } else run = null; });
+    if (runs.length > 1 && dh[0] > cutAt && dh[dh.length - 1] > cutAt) runs[0] = runs.pop().concat(runs[0]);   // the run that wraps round the start
+    for (const r of runs) if (r.length > 1) wp.line.push([r, false]);
+    // feathers just like the body's, flowing from the root out to the tip
+    wp[fpen].push(...feathers(wing, s, opt, rnd, at(-0.6, 0), [], 0));
+    // flap marks: two arcs either side of the wing, like ( | )
+    if (flap) for (const sg of [-1, 1]) for (const k of [0, 1]) {
+      const c = at(0.55, 0), mid = atan2(nrm[1] * sg, nrm[0] * sg), r = WL * 0.42 + 0.07 * k;
+      wp.shade.push([Array.from({ length: 9 }, (_, i) => { const a = mid - 0.5 + i / 8; return [c[0] + cos(a) * r, c[1] + sin(a) * r]; }), false]);
+    }
+    parts.push(wp);
+  }
+  // the beak in front: long, curving down, nostrils at the tip
+  const a = (P.beak + P.tilt) * D2R, B0 = f(sleep ? [1.14, -0.4] : [1.24, -0.43], 1), BL = sleep ? 0.95 : 1.05, ca = a - 12 * D2R * (cos(a) >= 0 ? 1 : -1);
+  const tip = [B0[0] + cos(a) * BL, B0[1] + sin(a) * BL], cc = [B0[0] + cos(ca) * BL * 0.55, B0[1] + sin(ca) * BL * 0.55];
+  const C = Array.from({ length: 25 }, (_, i) => bez2(B0, cc, tip, i / 24));
+  // the beak and head share one outline: the head's line stops where the beak starts, and only the part of the beak
+  // outside the face is drawn, so there is no seam across its base (asleep, the beak lies on the body and keeps its own loop)
+  const beak = ribbon(C, 0.075, 0.022), bp = { sil: [beak], line: [], shade: [], noCut: !sleep };
+  if (sleep) { bp.line.push([beak, true]); bp.shade.push([C.slice(1, 8), false]); }
+  else {
+    const loop = chain(clipPath(body, true, beak, false).concat(clipPath(beak, true, body, false)), 1e-4);
+    bodyPart.line[0] = loop.length === 1 && loop[0].closed ? [loop[0].pts, true] : null;
+    if (!bodyPart.line[0]) bodyPart.line.push(...loop.map(c => [c.pts, false]));
+    bodyPart.line = bodyPart.line.filter(Boolean);
+    for (const q of clipPath(C.slice(1, 8), false, body, false)) bp.shade.push([q, false]);   // the gape
+  }
+  const n1 = C[21], n2 = C[23]; bp.shade.push([[lerp2(n1, n2, 0), lerp2(n1, n2, 1)].map(p => [p[0] + sin(a) * 0.012, p[1] - cos(a) * 0.012]), false]);
+  if (s > 6 && !sleep) for (const [da, l] of [[-0.55, 0.32], [-0.25, 0.38], [0.35, 0.3], [0.7, 0.24]]) {
+    const w0 = [B0[0] + cos(a) * 0.1, B0[1] + sin(a) * 0.1], wa = a + da, bend = da * 0.4;
+    bp.shade.push([[w0, [w0[0] + cos(wa) * l * 0.5, w0[1] + sin(wa) * l * 0.5], [w0[0] + cos(wa + bend) * l, w0[1] + sin(wa + bend) * l]], false]);
+  }
+  parts.push(bp);
+}
+
+// a kiwifruit, whole and fuzzy (much like a kiwi with no head) or cut in half
+function fruitParts(kind, s, opt, rnd, parts, fpen) {
+  if (kind === "whole") {
+    const P = ring(0, 0.38, 0.92, 0.58, 64, (rnd() - 0.5) * 0.12), sil = opt.smooth ? P : shaggy(P, s, opt.shag / 200, [1, 0.3], rnd, () => false);
+    const part = { sil: [sil], line: [[sil, true]], shade: [], colour: [], ground: true };
+    part[fpen].push(...feathers(sil, s, { ...opt, flen: opt.flen * 0.6 }, rnd, [3, 0.38], [], opt.shade / 100 * 0.6));
+    const nub = ring(0.92, 0.38, 0.07, 0.09, 16); part.line.push([nub, true]);
+    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; part.shade.push([[[0.92 + 0.07 * cos(a), 0.38 + 0.09 * sin(a)], [0.92 + 0.13 * cos(a), 0.38 + 0.15 * sin(a)]], false]); }
+    parts.push(part);
+  } else {
+    const c = [0, 0.32], R = 0.64, P = ring(c[0], c[1], R, R, 64), skin = ring(c[0], c[1], R * 0.93, R * 0.93, 64), core = ring(c[0], c[1], R * 0.22, R * 0.16, 32);
+    const part = { sil: [P], line: [[P, true], [skin, true], [core, true]], shade: [], colour: [], ground: true };
+    const nr = 40; for (let i = 0; i < nr; i++) { const a = i / nr * TAU + rnd() * 0.05; part[fpen].push([[[c[0] + cos(a) * R * 0.26, c[1] + sin(a) * R * 0.2], [c[0] + cos(a) * R * (0.78 + 0.1 * rnd()), c[1] + sin(a) * R * (0.78 + 0.1 * rnd())]], false]); }
+    const ns = 16; for (let i = 0; i < ns; i++) {
+      const a = i / ns * TAU + rnd() * 0.1, r0 = R * (0.36 + 0.08 * rnd()), sx = c[0] + cos(a) * r0, sy = c[1] + sin(a) * r0, sl = 0.06, sw = 0.022;
+      const seed = [[sx - cos(a) * sl, sy - sin(a) * sl], [sx - sin(a) * sw, sy + cos(a) * sw], [sx + cos(a) * sl * 0.7, sy + sin(a) * sl * 0.7], [sx + sin(a) * sw, sy - cos(a) * sw]];
+      part.line.push([crClosed(seed, 4), true]);
+    }
+    parts.push(part);
+  }
+}
+
+// cut every line in L (from index `from` on, per pen) that lies under any of polys
+function cutBehind(L, polys, upto = null) {
+  const pbs = polys.map(bboxOf);
+  for (const pen of PENS) {
+    const arr = L[pen], out = [], n = upto ? upto[pen] : arr.length;
+    for (let i = 0; i < arr.length; i++) {
+      const p = arr[i]; if (i >= n) { out.push(p); continue; }
+      let keep = [p];
+      polys.forEach((poly, j) => {
+        const bb = pbs[j], next = [];
+        for (const k of keep) {
+          const b2 = bboxOf(k[0]); if (b2[2] < bb[0] || b2[0] > bb[2] || b2[3] < bb[1] || b2[1] > bb[3]) { next.push(k); continue; }
+          for (const q of clipPath(k[0], k[1], poly, false)) next.push([q, false]);
+        }
+        keep = next;
+      });
+      out.push(...keep);
+    }
+    L[pen] = out;
+  }
+}
+
+// place a creature: its contact point lands on A, scaled by s, flipped (f = -1 faces left), turned by th
+const placer = (c, A, s, f, th) => p => { const x = f * (p[0] - c[0]) * s, y = (p[1] - c[1]) * s; return [A[0] + x * cos(th) - y * sin(th), A[1] + x * sin(th) + y * cos(th)]; };
+function stamp(Ly, cr, T, cut = true) {
+  const sil = cr.sil.map(P => P.map(T));
+  if (cut) cutBehind(Ly, sil);
+  for (const pen of PENS) for (const [q, cl] of cr.L[pen]) Ly[pen].push([q.map(T), cl]);
+  return sil;
+}
+// the highest point of a set of outlines straight above x (or null)
+function topAt(polys, x) {
+  let best = INF;
+  for (const P of polys) for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[j], b = P[i]; if ((a[0] - x) * (b[0] - x) <= 0 && a[0] !== b[0]) { const y = a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); best = min(best, y); } }
+  return best === INF ? null : best;
+}
+
+// ---------------- the bush ----------------
+// a ponga frond: a curving stem with toothed leaflets, tapering both ends, the tip curled
+function frond(base, ang, len, bend, side, rnd) {
+  const out = [], n = 60, stem = []; let a = ang * D2R, p = base.slice();
+  for (let i = 0; i <= n; i++) { stem.push(p.slice()); const t = i / n, da = bend / n * side; a += da; p = [p[0] + cos(a) * len / n, p[1] + sin(a) * len / n]; }
+  out.push([stem, false]);
+  const m = 26;
+  for (let k = 1; k < m; k++) {
+    const t = k / m * 0.95, i = round(t * n), q = stem[i], nx = stem[min(n, i + 1)], dir = atan2(nx[1] - q[1], nx[0] - q[0]);
+    for (const sd of [-1, 1]) {
+      // a leaflet: a rib sweeping towards the frond tip, edged with round lobes that shrink to a point
+      const pl = len * 0.17 * (1 - t * 0.9) * min(1, t * 6 + 0.35) * (0.9 + 0.2 * rnd()), pa = dir + sd * (68 - 30 * t) * D2R, sweep = -sd * 0.35, w = max(0.9, pl * 0.12);
+      const lobes = clamp(round(pl / max(1.6, w * 1.3)), 3, 30), up = [], dn = [], K = 6;
+      const rib = u => { const a = pa + sweep * u; return [q[0] + cos(a) * pl * u, q[1] + sin(a) * pl * u]; };
+      for (let j = 0; j < lobes; j++) for (let m = 0; m <= K; m++) {
+        if (j && !m) continue;
+        const u = (j + m / K) / lobes, c = rib(u), ww = w * (1 - u * 0.85) * (0.45 + 0.55 * sin(PI * m / K));
+        up.push([c[0] - sin(pa) * ww, c[1] + cos(pa) * ww]); dn.push([c[0] + sin(pa) * ww, c[1] - cos(pa) * ww]);
+      }
+      out.push([up.concat([rib(1.04)], dn.reverse()), true]);
+    }
+  }
+  return out;
+}
+// a koru: a fern shoot unrolling, as a tapered ribbon
+function koru(base, h, f) {
+  const C = [], r0 = h * 0.22;
+  for (let i = 0; i <= 24; i++) { const t = i / 24; C.push([base[0] + f * sin(t * 1.2) * h * 0.12, base[1] - t * h * 0.7]); }
+  const top = C[C.length - 1], cx = top[0] - f * r0, cy = top[1];
+  for (let i = 1; i <= 60; i++) { const th = i / 60 * 3.2 * PI, r = r0 * exp(-0.22 * th); C.push([cx + f * r * cos(th), cy - r * sin(th) * 1]); }
+  return ribbon(C, h * 0.035, h * 0.008);
+}
+
+// ---------------- scenes ----------------
+const pick = (rnd, a) => a[floor(rnd() * a.length)];
+function specFor(o, rnd, pose) {
+  if (o.fruit > 0 && rnd() * 100 < o.fruit) return { fruit: rnd() < 0.6 ? "whole" : "half" };
+  return { pose: pose === "mix" ? pick(rnd, POSE_MIX) : pose };
+}
+// world bounding box of a placed creature, lines and outlines both
+function placedBox(it) {
+  const T = placer(it.contact, it.A, it.s, it.f, it.th); let bb = [INF, INF, -INF, -INF];
+  for (const P of it.cr.sil) bb = bbUnion(bb, bboxOf(P.map(T)));
+  for (const pen of PENS) for (const [q] of it.cr.L[pen]) bb = bbUnion(bb, bboxOf(q.map(T)));
+  return bb;
+}
+function build(o) {
+  const t0 = performance.now(), [PW, PH] = o.page.split("x").map(Number), mg = o.margin, Ly = { line: [], shade: [], colour: [] };
+  const rnd = mulberry(o.seed * 7919 + 3), notes = [], wh = o.whimsy / 100;
+  const U = { x0: mg, y0: mg, x1: PW - mg, y1: PH - mg }, uw = U.x1 - U.x0, uh = U.y1 - U.y0;
+  const inU = b => b[0] >= U.x0 + 0.2 && b[1] >= U.y0 + 0.2 && b[2] <= U.x1 - 0.2 && b[3] <= U.y1 - 0.2;   // 0.2 mm spare for the bold second pass
+  const opt = { density: o.density, flen: o.flen, shag: o.shag, shade: o.shade, cpen: o.cpen, wing: o.wing || "off" };
+  const plantPen = o.cpen === "plants" ? "colour" : "line", push = (pen, pts, closed = false) => Ly[pen].push([pts, closed]);
+  const rectU = rectPoly([U.x0, U.y0, U.x1, U.y1]);
+  const pushClipped = (pen, pts, closed) => { for (const q of clipPath(pts, closed, rectU, true)) push(pen, q); };
+  const night = ["lone", "tower"].includes(o.scene);
+  const shape = (spec, seed, s = 20) => creature(spec, s, { ...opt, density: 0 }, seed);
+  let items = [], groundY = U.y1, egg = null;
+
+  // tower and lone kiwi are laid out in body units, then fitted to the page
+  const lay = [];   // { spec, seed, A, s, f, th, cr }
+  if (o.scene === "lone") {
+    const spec = { pose: o.pose === "mix" ? pick(rnd, POSE_MIX) : o.pose, xray: o.egg === "xray" };
+    const seed = floor(rnd() * 1e6), cr = shape(spec, seed), f = rnd() < 0.5 ? 1 : -1;
+    lay.push({ spec, seed, A: [0, 0], s: 1, f, th: 0, cr });
+    if (o.egg === "beside") egg = { c: [-f * (cr.contact[0] - cr.bb[0] + 0.3), -0.42], rx: 0.6, ry: 0.42 };
+  } else if (o.scene === "tower") {
+    const sh = 1 - o.shrink / 100;
+    for (let i = 0; i < o.levels; i++) {
+      const topOne = i === o.levels - 1, pose = o.pose === "mix" ? pick(rnd, ["stand", "stand", "probe", "gaze"]) : o.pose === "sleep" && !topOne ? "stand" : o.pose;
+      const spec = specFor(o, rnd, topOne && o.pose === "stand" ? "gaze" : pose), seed = floor(rnd() * 1e6), cr = shape(spec, seed);
+      const s = sh ** i, f = (i % 2 ? -1 : 1) * (rnd() < wh * 0.4 ? -1 : 1), th = i ? (rnd() - 0.5) * wh * 0.35 : 0;
+      let A = [0, 0];
+      if (i) {
+        const below = lay[i - 1], T = placer(below.cr.contact, below.A, below.s, below.f, below.th);
+        const body = below.cr.sil.reduce((a, P) => abs(polyArea(P)) > abs(polyArea(a)) ? P : a).map(T);
+        const peak = body.reduce((a, p) => p[1] < a[1] ? p : a), bw = bboxOf(body), w = bw[2] - bw[0];
+        const x = clamp(peak[0] + (rnd() - 0.5) * wh * w * 0.35, bw[0] + w * 0.25, bw[2] - w * 0.25);
+        A = [x, topAt([body], x) + 0.05 * below.s];
+      }
+      lay.push({ spec, seed, A, s, f, th, cr });
+    }
+  }
+  if (lay.length) {
+    const sky = night && o.moon !== "none" ? 0.24 : night ? 0.08 : 0, foot = night ? 0.05 : 0, room = [uw * (o.scene === "lone" ? 0.86 : 0.96), uh * (1 - sky - foot)];
+    let bbU = [INF, INF, -INF, -INF];
+    for (const it of lay) bbU = bbUnion(bbU, placedBox({ ...it, contact: it.cr.contact }));
+    if (egg) bbU = bbUnion(bbU, [egg.c[0] - egg.rx, egg.c[1] - egg.ry, egg.c[0] + egg.rx, egg.c[1] + egg.ry]);
+    // the real kiwi are a little shaggier than the layout ones, so measure them and refit once or twice
+    for (let pass = 0; pass < 3; pass++) {
+      const G = min(room[0] / (bbU[2] - bbU[0]), room[1] / (bbU[3] - bbU[1])), off = [U.x0 + (uw - (bbU[2] - bbU[0]) * G) / 2 - bbU[0] * G, U.y1 - uh * foot - bbU[3] * G];
+      const M = p => [off[0] + p[0] * G, off[1] + p[1] * G];
+      items = lay.map(it => ({ spec: it.spec, seed: it.seed, A: M(it.A), s: it.s * G, f: it.f, th: it.th, cut: true, contact: it.cr.contact, cr: creature(it.spec, it.s * G, opt, it.seed) }));
+      let wb = items.reduce((a, it) => bbUnion(a, placedBox(it)), [INF, INF, -INF, -INF]);
+      const eg = egg && { c: M(egg.c), rx: egg.rx * G, ry: egg.ry * G };
+      if (eg) wb = bbUnion(wb, [eg.c[0] - eg.rx, eg.c[1] - eg.ry, eg.c[0] + eg.rx, eg.c[1] + eg.ry]);
+      groundY = M([0, 0])[1];
+      if (inU(wb) && wb[3] <= U.y1 - uh * foot + 0.01 || pass === 2) { egg = eg; break; }
+      bbU = [(wb[0] - off[0]) / G, (wb[1] - off[1]) / G, (wb[2] - off[0]) / G, (wb[3] - off[1]) / G];
+    }
+  } else if (o.scene === "wallpaper") {
+    const ref = shape({ pose: "stand" }, 1), Wr = ref.bb[2] - ref.bb[0], Hr = ref.bb[3] - ref.bb[1], W1 = Wr * (1 + o.gap / 100), H1 = Hr * (1 + o.gap / 100);
+    const s = uw / ((o.cols - 1) * W1 + Wr * 1.06) * 0.96, rows = max(1, floor((uh / s - Hr * 1.06) / H1) + 1), y0 = U.y0 + (uh - ((rows - 1) * H1 + Hr) * s) / 2;
+    let dropped = 0;
+    for (let r = 0; r < rows; r++) {
+      const odd = o.rows === "brick" && r % 2, n = odd ? o.cols - 1 : o.cols, f = odd ? -1 : 1;
+      for (let k = 0; k < n; k++) {
+        const spec = specFor(o, rnd, o.pose), seed = floor(rnd() * 1e6), cr = creature(spec, s, opt, seed), cb = cr.bb, cx = (cb[0] + cb[2]) / 2;
+        const x = U.x0 + (Wr * 0.53 + (k + (odd ? 0.5 : 0)) * W1) * s, y = y0 + (r * H1 + (ref.contact[1] - ref.bb[1])) * s;
+        const it = { spec, seed, A: [x + f * (cr.contact[0] - cx) * s, y], s, f, th: (rnd() - 0.5) * wh * 0.3, cut: o.gap < 0, contact: cr.contact, cr };
+        if (inU(placedBox(it))) items.push(it); else dropped++;
+      }
+    }
+    if (dropped) notes.push(`${dropped} left out where they would cross the margin`);
+  } else {
+    // madness: biggest first, each one dropped where it fits on a 1 mm occupancy grid
+    const GW = ceil(PW), GH = ceil(PH), grid = new Uint8Array(GW * GH);
+    const raster = (polys, fn) => {
+      for (const P of polys) {
+        const b = bboxOf(P);
+        for (let yy = max(0, floor(b[1])); yy <= min(GH - 1, ceil(b[3])); yy++) {
+          const yc = yy + 0.5, xs = [];
+          for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[j], c = P[i]; if ((a[1] > yc) !== (c[1] > yc)) xs.push(a[0] + (c[0] - a[0]) * (yc - a[1]) / (c[1] - a[1])); }
+          xs.sort((p, q) => p - q);
+          for (let k = 0; k + 1 < xs.length; k += 2) for (let xx = max(0, round(xs[k])); xx < min(GW, round(xs[k + 1])); xx++) if (fn(xx, yy)) return true;
+        }
+      }
+      return false;
+    };
+    const big = max(o.big, o.small), small = min(o.big, o.small), N = o.count;
+    for (let i = 0; i < N; i++) {
+      const hmm = big * (small / big) ** sqrt(i / max(1, N - 1)), s = hmm / KIWI_H, g = max(0, round(o.gap / 100 * hmm * 0.5));
+      // a few different kiwi at this size, each tried in many places
+      let done = false;
+      for (let shapes = 0; shapes < 4 && !done; shapes++) {
+        const spec = specFor(o, rnd, o.pose), seed = floor(rnd() * 1e6), cr0 = shape(spec, seed, s), f = rnd() < 0.5 ? 1 : -1;
+        const th = wh > 0.9 && rnd() < (wh - 0.9) * 3 ? (rnd() - 0.5) * PI : (rnd() - 0.5) * wh * 0.25;   // upright, a little wobble; only past 90 whimsy do some tip over
+        const it = { spec, seed, A: [0, 0], s, f, th, cut: false, contact: cr0.contact, cr: cr0 }, b = placedBox(it), bw = b[2] - b[0] + 0.4, bh = b[3] - b[1] + 0.4;
+        if (bw > uw || bh > uh) continue;
+        const sil0 = cr0.sil.map(P => P.map(placer(it.contact, it.A, s, f, th)));
+        for (let tries = 0; tries < 80; tries++) {
+          const ox = U.x0 + 0.2 - b[0] + rnd() * (uw - bw), oy = U.y0 + 0.2 - b[1] + rnd() * (uh - bh);
+          const sil = sil0.map(P => P.map(p => [p[0] + ox, p[1] + oy]));
+          if (raster(sil, (x, y) => grid[y * GW + x] === 1)) continue;
+          raster(sil, (x, y) => { for (let dy = -g; dy <= g; dy++) for (let dx = -g; dx <= g; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < GW && Y < GH) grid[Y * GW + X] = 1; } return false; });
+          it.A = [ox, oy]; it.cr = creature(spec, s, opt, seed);
+          items.push(it); done = true; break;
+        }
+      }
+    }
+    if (items.length < N) notes.push(`${items.length} of ${N} found room`);
+  }
+
+  // the bush behind: ground, ferns, koru, moon and stars
+  const taken = items.map(placedBox);
+  if (egg) taken.push([egg.c[0] - egg.rx, egg.c[1] - egg.ry, egg.c[0] + egg.rx, egg.c[1] + egg.ry]);
+  if (night) {
+    if (o.ground === "line") push("line", [[U.x0, groundY], [U.x1, groundY]]);
+    else if (o.ground === "dashes") { let x = U.x0 + 2; while (x < U.x1 - 3) { const l = 5 + rnd() * 20; push("shade", [[x, groundY], [min(U.x1 - 1, x + l), groundY]]); x += l + 3 + rnd() * 12; } }
+    for (let i = 0; i < o.ferns; i++) {
+      const left = i % 2 === 0, k = floor(i / 2), bx = left ? U.x0 + uw * (0.02 + 0.1 * k) : U.x1 - uw * (0.02 + 0.1 * k);
+      // each frond leans in from its corner and arches back out, so a pair frames the scene like brackets
+      const ang = left ? -38 + k * 12 + (rnd() - 0.5) * 8 : -142 - k * 12 + (rnd() - 0.5) * 8, len = min(uh * (0.74 - 0.12 * k), uw * 0.9);
+      for (const [q, cl] of frond([bx, groundY], ang, len, 1.15 + 0.3 * rnd(), left ? -1 : 1, rnd)) pushClipped(plantPen, q, cl);
+    }
+    const free = (x, w) => !taken.some(b => x + w > b[0] - 3 && x - w < b[2] + 3 && b[3] > groundY - 2);
+    for (let i = 0, tries = 0; i < o.koru && tries < 80; tries++) {
+      const h = uh * (0.1 + 0.06 * rnd()), x = lerp(U.x0 + h * 0.4, U.x1 - h * 0.4, rnd());
+      if (!free(x, h * 0.3)) continue;
+      pushClipped(plantPen, koru([x, groundY], h, rnd() < 0.5 ? 1 : -1), true); taken.push([x - h * 0.3, groundY - h, x + h * 0.3, groundY]); i++;
+    }
+    if (o.moon !== "none") {
+      const right = o.scene !== "lone" || items[0].f > 0, r = min(uw, uh) * 0.075, mx = right ? U.x1 - r * 1.8 : U.x0 + r * 1.8, my = U.y0 + r * 1.5;
+      const moonPen = o.cpen === "plants" ? "colour" : "line";
+      if (o.moon === "full") { push(moonPen, ring(mx, my, r, r, 64), true); for (let i = 0; i < 4; i++) { const a = rnd() * TAU, d = r * 0.55 * rnd(), cr = r * (0.08 + 0.1 * rnd()); push("shade", ring(mx + d * cos(a), my + d * sin(a), cr, cr, 16), true); } }
+      else push(moonPen, moonPts(mx, my, r).map(p => [mx + (p[0] - mx) * (right ? -1 : 1), p[1]]), true);
+      taken.push([mx - r, my - r, mx + r, my + r]);
+    }
+    // the Southern Cross: Gacrux, Mimosa, Acrux, Delta and little Epsilon, in their real places (RA and dec, east on the left), sized by brightness
+    if (o.cross === "on") {
+      const right = o.scene !== "lone" || items[0].f > 0, CRUX = [[-0.15, -2.9, 1.6], [-2.21, -0.3, 1.25], [0.43, 3.1, 0.8], [1.86, -1.3, 2.8], [1.07, 0.4, 3.6]];
+      const sky = [U.y0, groundY - uh * 0.25], k = min((sky[1] - sky[0]) * 0.42, uh * 0.2) / 6, rot = (rnd() - 0.5) * 0.5;
+      const cx0 = right ? U.x0 + uw * 0.22 : U.x1 - uw * 0.22;
+      for (let tries = 0; tries < 30; tries++) {
+        const kk = k * (1 - tries * 0.02), cx = cx0 + (rnd() - 0.5) * uw * 0.12 * min(1, tries), cy = sky[0] + 3.2 * kk + 6 + rnd() * min(1, tries) * uh * 0.08;
+        const pts = CRUX.map(([x, y, m]) => [cx + (x * cos(rot) - y * sin(rot)) * kk, cy + (x * sin(rot) + y * cos(rot)) * kk, max(1.1, 3.4 - 0.75 * m)]);
+        const b = pts.reduce((a, [x, y, r]) => bbUnion(a, [x - r, y - r, x + r, y + r]), [INF, INF, -INF, -INF]);
+        if (tries < 29 && (!inU(b) || taken.some(t => b[0] < t[2] + 3 && b[2] > t[0] - 3 && b[1] < t[3] + 3 && b[3] > t[1] - 3))) continue;
+        const crossPen = o.cpen === "plants" ? "colour" : "line";
+        for (const [x, y, r] of pts) push(crossPen, Array.from({ length: 10 }, (_, i) => { const a = -PI / 2 + i * PI / 5, rr = i % 2 ? r * 0.42 : r; return [x + rr * cos(a), y + rr * sin(a)]; }), true);
+        for (const [x, y, r] of pts) taken.push([x - r - 2, y - r - 2, x + r + 2, y + r + 2]);
+        taken.push(b); break;
+      }
+    }
+    for (let i = 0; i < o.stars; i++) for (let tries = 0; tries < 40; tries++) {
+      const p = [lerp(U.x0 + 5, U.x1 - 5, rnd()), lerp(U.y0 + 5, groundY - uh * 0.3, rnd())], s = 1.4 + rnd() * 2.6;
+      if (taken.some(b => p[0] > b[0] - 5 && p[0] < b[2] + 5 && p[1] > b[1] - 5 && p[1] < b[3] + 5)) continue;
+      push("shade", astroid(p[0], p[1], s), true); taken.push([p[0] - s, p[1] - s, p[0] + s, p[1] + s]); break;
+    }
+  }
+  // an egg beside her, behind the kiwi
+  if (egg) {
+    const E = ring(egg.c[0], egg.c[1], egg.rx, egg.ry, 64);
+    cutBehind(Ly, [E]); push("line", E, true);
+    const inner = ring(egg.c[0] - egg.rx * 0.14, egg.c[1] - egg.ry * 0.14, egg.rx * 0.9, egg.ry * 0.9, 48);
+    for (const q of clipSegs(hatch(E, 0.9, 30), inner, false)) push("shade", q);
+  }
+
+  // the kiwi themselves, back to front
+  let minS = INF;
+  for (const it of items) { stamp(Ly, it.cr, placer(it.contact, it.A, it.s, it.f, it.th), it.cut); minS = min(minS, it.s); }
+  // bold outlines: a second pass beside each closed line-pen path
+  if (o.weight === 2) {
+    const extra = [];
+    for (const [pts, cl] of Ly.line) if (cl && pts.length > 12) {
+      const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]);
+      extra.push([pts.map(p => { const dx = p[0] - c[0], dy = p[1] - c[1], l = hypot(dx, dy) || 1; return [p[0] + dx / l * PASS * 0.5, p[1] + dy / l * PASS * 0.5]; }), true]);
+    }
+    Ly.line.push(...extra);
+  }
+  if (o.cpen === "none") { Ly.shade.push(...Ly.colour); Ly.colour = []; }
+  // gates
+  let bb = [INF, INF, -INF, -INF], finite = true;
+  for (const pen of PENS) for (const [q] of Ly[pen]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) finite = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+  const metres = Object.fromEntries(PENS.map(pen => [pen, Ly[pen].reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000]));
+  const total = metres.line + metres.shade + metres.colour, ms = performance.now() - t0;
+  const gates = [
+    ["fits inside the margins", bb[0] >= mg - 0.01 && bb[1] >= mg - 0.01 && bb[2] <= PW - mg + 0.01 && bb[3] <= PH - mg + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    ["at least one kiwi", items.length > 0, items.length + " drawn"],
+    ["under 150 m of pen", total < 150, total.toFixed(1) + " m"],
+    ["builds in under 4 s", ms < 4000, (ms / 1000).toFixed(2) + " s"],
+  ];
+  if (minS * KIWI_H < 9 && o.density > 0) notes.push("the smallest kiwi are under 9 mm tall, so their feathers read as fuzz");
+  return { o, W: PW, H: PH, layers: Ly, gates, notes, metres, count: items.length, ms };
+}
+
+// ---------------- preview, export ----------------
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = { line: "#141414", shade: "#3a3a3a", colour: "#" + r.o.ccol };
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of PENS) {
+    c.strokeStyle = col[key]; c.lineWidth = PEN[key];
+    for (const [q, cl] of r.layers[key]) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); }
+  }
+  $("stats").innerHTML = `<b>${r.o.scene}</b> · ${r.count} drawn · ${r.ms.toFixed(0)} ms<br>`
+    + `thin 0.3: <b>${r.metres.shade.toFixed(1)} m</b> · colour: <b>${r.metres.colour.toFixed(1)} m</b> · line 0.4: <b>${r.metres.line.toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "colour", colour: r.o.ccol, w: PEN.colour, paths: r.layers.colour }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG kiwi studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["scene", "pose", "levels", "shrink", "cols", "rows", "gap", "big", "small", "count", "egg", "whimsy", "wing", "fruit", "seed", "density", "flen", "shag", "shade", "ferns", "koru", "moon", "cross", "stars", "ground", "cpen", "ccol", "weight", "page", "margin", "ticks"];
+const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); const v = e.type === "range" ? +e.value : e.value; return [k, k === "weight" ? +v : v]; }));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function run(k) { sync(); if (last && k === "ccol") { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 30); }
+
+const BASE = { scene: "lone", pose: "stand", levels: 5, shrink: 8, cols: 4, rows: "brick", gap: 6, big: 70, small: 12, count: 90, egg: "none", whimsy: 25, wing: "off", fruit: 0, seed: 7,
+  density: 60, flen: 3, shag: 55, shade: 50, ferns: 2, koru: 1, moon: "crescent", cross: "on", stars: 6, ground: "dashes", cpen: "feathers", ccol: "7a4a1e", weight: 2, page: "190x250", margin: 10, ticks: "split" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  night: P({ pose: "gaze" }),
+  hopeful: P({ pose: "gaze", wing: "flap", seed: 11 }),
+  xray: P({ pose: "stand", egg: "xray", ferns: 0, koru: 2, moon: "none", stars: 0, page: "250x190", seed: 3 }),
+  tower: P({ scene: "tower", levels: 5, whimsy: 15, ferns: 2, koru: 0, stars: 5, seed: 12 }),
+  wobbly: P({ scene: "tower", levels: 8, shrink: 4, whimsy: 80, fruit: 12, ferns: 0, koru: 0, moon: "full", stars: 8, seed: 21, density: 50 }),
+  wallpaper: P({ scene: "wallpaper", pose: "mix", cols: 4, gap: 4, whimsy: 10, seed: 9, density: 50 }),
+  madness: P({ scene: "madness", pose: "mix", big: 60, small: 10, count: 120, gap: 8, whimsy: 45, seed: 4, density: 45, flen: 2.4 }),
+  salad: P({ scene: "madness", pose: "mix", big: 55, small: 12, count: 70, gap: 10, whimsy: 60, fruit: 35, seed: 8, density: 45, flen: 2.4, cpen: "feathers", ccol: "2f6b2f" }),
+};
+const setAll = p => { for (const [k, v] of Object.entries(p)) if ($(k)) $(k).value = v; };
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setAll(PRESETS[b.dataset.preset]); run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `kiwi-${r.o.scene}-${r.o.pose}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+setAll(PRESETS.night);
+run();
+</script>
+</body>
+</html>

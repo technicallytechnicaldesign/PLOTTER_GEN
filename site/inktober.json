@@ -292,16 +292,18 @@
       "room": "hall",
       "day": 15,
       "date": "2026-10-15",
-      "prompt": null,
-      "photo": null,
+      "prompt": "hooray",
+      "photo": "prints/inktober-15-hooray.jpg",
       "frame": {
-        "width": 210,
-        "height": 297
+        "width": 127,
+        "height": 157
       },
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../hooray-card-studio.html",
+      "description": "Thursday 15 October 2026, prompt \"hooray\". Black ink on an A6 lilac card over a pink back layer: HOORAY cut right through under a HIP HIP, the letters drop-shadowed with hatching, sunburst rays and a scalloped frame, and hearts cut out above and below, with the CONFETTI pocket holding 57 pieces of the card itself. Drawn by the Hooray card studio."
     },
     {
       "id": "ink-16",
