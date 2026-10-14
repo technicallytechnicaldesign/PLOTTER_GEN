@@ -2,7 +2,7 @@
 // draws the same rooms (CSS 3D leaves that to each browser's layer sorting, which phones get wrong).
 // Units are gallery-world.js px with y flipped: three.js y points up. Everything is unlit paper and pen lines.
 import * as THREE from './three.module.min.js';
-import { puppetPose } from './hero-motion.js?v=20261007-ogre3';
+import { puppetPose } from './hero-motion.js?v=20261014-look4';
 
 const INK = '#4c555b', FRAME = '#303a40', PAPER = '#ffffff', MUTED = '#69767d', DASH = '#a8b1b7';
 const MONO = (getComputedStyle(document.documentElement).getPropertyValue('--font-mono') || '').trim() || 'monospace';
@@ -164,12 +164,23 @@ export function createGallery(host, world, onChange) {
         m.material.alphaTest = 0.5; return m;
       };
       const joints = [], doll = new THREE.Group(); doll.rotation.z = -rad(rig.turn || 0); pivot.add(doll);   // turn: level a photo shot at a slant
+      const slides = [];
       rig.parts.forEach((p, n) => {
         const o = at(...p.pivot), g = new THREE.Group(); g.position.set(o[0], o[1], 0); doll.add(g);
-        layer(p.src, g, o, p.z ?? (p.under ? -0.6 : 0.6 + 0.3 * n)); if (!rig.moves || rig.moves.includes(p.key)) joints.push({ g, key: p.key });
+        const z = p.z ?? (p.under ? -0.6 : 0.6 + 0.3 * n);
+        if (p.slide) {
+          // A concertina limb's middle or end slice: `a` px along the limb axis from the pivot the middle squashes (mid) or the end
+          // slides back (end), by the pose's pull share of `len`. The two groups turn the axis onto +y so scale.y is along the limb.
+          const sl = p.slide, ax = [sl.axis[0], -sl.axis[1]], a = sl.a * k, phi = Math.atan2(-ax[0], ax[1]);
+          const sg = new THREE.Group(); sg.position.set(ax[0] * a, ax[1] * a, 0); sg.rotation.z = phi; g.add(sg);
+          const ig = new THREE.Group(); ig.rotation.z = -phi; sg.add(ig);
+          layer(p.src, ig, [o[0] + ax[0] * a, o[1] + ax[1] * a], z);
+          slides.push({ sg, role: sl.role, ax, a, len: sl.len * k, pull: sl.pull });
+        } else layer(p.src, g, o, z);
+        if (!rig.moves || rig.moves.includes(p.key)) joints.push({ g, key: p.key });
       });
       layer(rig.body, doll, [0, 0], 0);
-      puppets.push({ rig, joints, phase: i * 0.83 }); if (onRig) onRig(rig, k); onChange();
+      puppets.push({ rig, joints, slides, phase: i * 0.83 }); if (onRig) onRig(rig, k); onChange();
     });
   }
   // A paper doll on its own cord from the ceiling (hang: 'peg' in a hall): the cord sways from the ceiling, the peg holds the doll
@@ -196,6 +207,7 @@ export function createGallery(host, world, onChange) {
     const baseMats = [basic({ map: sideMap }), basic({ map: sideMap }), basic({ color: '#f6f7f7' }), basic({ color: PAPER }), basic({ map: label }), basic({ color: PAPER })];
     const base = new THREE.Mesh(new THREE.BoxGeometry(pw, PLINTH_H, pw), baseMats); base.position.y = -(FLOOR - PLINTH_H / 2); outline(base, base.geometry); g.add(base);
     if (s.model) { modelOn(g, s, -(FLOOR - PLINTH_H - 1)); g.userData.print = s.id; return; }
+    if (s.standee) { standeeOn(g, s, -(FLOOR - PLINTH_H - 1)); g.userData.print = s.id; return; }
     const faces = [], boxMats = [];
     for (const n of ['right', 'left', 'top', 'bottom', 'front', 'back']) {
       if (n === 'bottom') { boxMats.push(basic({ color: PAPER })); continue; }
@@ -227,10 +239,54 @@ export function createGallery(host, world, onChange) {
       onChange();
     }).catch(() => {});
   }
+  // A paper doll standing on its cross base (inktober.json `standee`: the victorian lady studio's pieces in mm, y down). Each piece is
+  // a card cut to its outline, the doll first and every garment stacked in front of it, inked on the front only; the base is the
+  // one upright plate that locks across her sole, so she is a thin edge from the side and turns slowly on the plinth.
+  function standeeOn(g, s, y0) {
+    const spin = new THREE.Group(); g.add(spin); spinners.push(spin);
+    // `standee` is the lady that faces front; an optional `standeeBack` is a second figure on the same stand, back to back with her.
+    Promise.all([s.standee, s.standeeBack].filter(Boolean).map(u => fetch(u, { cache: 'no-cache' }).then(r => r.json()))).then(sets => {
+      const k = SCALE * (s.modelScale || 1), T = 1.1, gap = 0.25, lift = 15, side = basic({ color: '#e9dfca' }), back = basic({ color: '#f8f4ea' });
+      sets.forEach((D, which) => {
+      const bottom = D.box[3], cols = { line: '#26200f', shade: '#7d7566', colour: '#' + D.colA, trim: '#' + D.colB };
+      const pieces = [...D.pieces].sort((a, b) => a.z - b.z), grp = new THREE.Group();
+      // A card sits just in front of the cards it overlaps, so a hat is pinned right against her head, not stacked behind every garment.
+      const box = pc => { const ys = pc.outline.map(q => q[1] + pc.dy), xs = pc.outline.map(q => q[0]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; };
+      pieces.forEach((pc, i) => { const b = box(pc); pc.layer = 0; for (let j = 0; j < i; j++) { const c = box(pieces[j]); if (b[0] < c[2] && c[0] < b[2] && b[1] < c[3] && c[1] < b[3]) pc.layer = Math.max(pc.layer, pieces[j].layer + 1); } });
+      const n = Math.max(...pieces.map(pc => pc.layer)) + 1, reach = ((n - 1) / 2 * (T + gap) + T / 2 + 0.3) * k;
+      grp.position.z = which ? -reach : reach; grp.rotation.y = which ? Math.PI : 0; spin.add(grp);   // backs touch, either side of the base plate
+      const yAt = v => y0 + (bottom + lift - v) * k;
+      pieces.forEach((pc, i) => {
+        const out = pc.outline.map(([x, y]) => [x, y + pc.dy]);
+        let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of out) { a = Math.min(a, x); b = Math.min(b, y); c = Math.max(c, x); d = Math.max(d, y); }
+        const w = c - a || 1, h = d - b || 1;
+        const tex = paint(w, h, ctx => {
+          const trace = l => { ctx.beginPath(); l.forEach(([x, y], j) => j ? ctx.lineTo(x - a, y + pc.dy - b) : ctx.moveTo(x - a, y + pc.dy - b)); };
+          ctx.lineJoin = ctx.lineCap = 'round'; trace(pc.outline); ctx.closePath(); ctx.fillStyle = pc.group === 'doll' ? '#f6ecd8' : '#fbf7ec'; ctx.fill();
+          for (const key of ['shade', 'colour', 'trim', 'line']) { ctx.strokeStyle = cols[key]; ctx.lineWidth = key === 'line' ? 0.4 : 0.28; for (const l of pc.ink[key]) { trace(l); ctx.stroke(); } }
+          trace(pc.outline); ctx.closePath(); ctx.strokeStyle = '#26200f'; ctx.lineWidth = 0.5; ctx.stroke();
+        }, { res: 6, cap: 1400 });
+        tex.anisotropy = aniso;
+        const shape = new THREE.Shape(out.map(([x, y]) => new THREE.Vector2(x * k, yAt(y))));
+        const geo = new THREE.ExtrudeGeometry(shape, { depth: T * k, bevelEnabled: false, curveSegments: 1 });
+        // lids: the first half is the back (blank paper), the second the front (inked); the sides are group 1
+        const lid = geo.groups[0], half = lid.count / 2; geo.clearGroups(); geo.addGroup(0, half, 2); geo.addGroup(half, half, 0); geo.addGroup(lid.start + lid.count, geo.index ? geo.index.count - lid.count : geo.attributes.position.count - lid.count, 1);
+        const pos = geo.attributes.position, uv = geo.attributes.uv;
+        for (let j = 0; j < pos.count; j++) uv.setXY(j, (pos.getX(j) / k - a) / w, 1 - ((bottom + lift - (pos.getY(j) - y0) / k) - b) / h);
+        uv.needsUpdate = true;
+        const mesh = new THREE.Mesh(geo, [basic({ map: tex, alphaTest: 0.5 }), side, back]);
+        mesh.position.z = (pc.layer - (n - 1) / 2) * (T + gap) * k - T * k / 2; grp.add(mesh);
+      });
+      });
+      // the cross base: one upright card, 30 mm tall, her sole 15 mm down in its slot
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(1.2 * k, 30 * k, sets[0].base.w * k), [side, side, back, back, back, back].map(m => m)); plate.position.set(0, y0 + 15 * k, 0); outline(plate, plate.geometry); spin.add(plate);
+      onChange();
+    }).catch(e => console.error(e));
+  }
   const spots = new Map();
   function hangAll(all) {
     // A world with one hall (inktober-world.js) hangs its 'hall' works in order along the two long walls.
-    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else if (h.s.hang === 'plinth' && h.s.box) { const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else if (h.s.model && h.s.box) { frame(h.s, h.w, h.h, h.x, h.z, h.angle); const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
+    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else if (h.s.hang === 'plinth' && h.s.box) { const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else if ((h.s.model || h.s.standee) && h.s.box) { frame(h.s, h.w, h.h, h.x, h.z, h.angle); const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
     for (const r of rooms) {
       const works = all.filter(s => s.room === r.id), pegged = works.filter(s => s.hang === 'peg'); let walls = roomWalls(r);
       if (pegged.length) { garland(pegged, walls.find(w => w.id === 'far')); walls = walls.filter(w => w.id !== 'far'); }
@@ -249,12 +305,13 @@ export function createGallery(host, world, onChange) {
     camera.updateProjectionMatrix();
   }
   function render(p, time = performance.now()) {
-    camera.position.set(p.x, 0, p.z); camera.rotation.set(0, -rad(p.yaw), 0);
+    camera.position.set(p.x, 0, p.z); camera.rotation.order = 'YXZ'; camera.rotation.set(rad(p.pitch || 0), -rad(p.yaw), 0);
     if (!still.matches) {
       for (const b of spinners) b.rotation.y = time / 28000 * 2 * Math.PI;
       for (const s of swingers) s.rotation.z = s.userData.tilt + rad(1.5) * Math.sin(time / 6000 * Math.PI + s.userData.phase);
       for (const m of movies) { const n = Math.floor(time / 1000 * (m.sh.fps || 12)) % m.sh.frames; if (n !== m.n && m.ready()) { m.n = n; m.tex.redraw(); } }
-      for (const p of puppets) { const pose = puppetPose(p.rig, (time / 1000 + p.phase) * (p.rig.speed || 1)); for (const j of p.joints) j.g.rotation.z = -rad((pose[j.key] || 0) * (p.rig.amp?.[j.key] ?? 1)); }
+      for (const p of puppets) { const pose = puppetPose(p.rig, (time / 1000 + p.phase) * (p.rig.speed || 1)); for (const j of p.joints) j.g.rotation.z = -rad((pose[j.key] || 0) * (p.rig.amp?.[j.key] ?? 1));
+        for (const m of p.slides) { const v = pose[m.pull] ?? 1; if (m.role === 'mid') m.sg.scale.y = v; else m.sg.position.set(m.ax[0] * (m.a - (1 - v) * m.len), m.ax[1] * (m.a - (1 - v) * m.len), 0); } }
     }
     renderer.render(scene, camera);
   }

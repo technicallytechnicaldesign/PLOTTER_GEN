@@ -265,16 +265,27 @@
       "room": "hall",
       "day": 14,
       "date": "2026-10-14",
-      "prompt": null,
-      "photo": null,
+      "prompt": "lady",
+      "photo": "prints/inktober-14-lady.png",
       "frame": {
-        "width": 210,
-        "height": 297
+        "width": 180,
+        "height": 272
       },
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "render": true,
+      "studio": "../victorian-lady-studio.html",
+      "standee": "prints/standees/inktober-14-lady.json",
+      "standeeBack": "prints/standees/inktober-14-lady-suit.json",
+      "box": {
+        "width": 100,
+        "height": 126,
+        "depth": 50
+      },
+      "description": "Wednesday 14 October 2026, prompt \"lady\". Not plotted yet: the Victorian lady studio's own pieces, built up as the card figure she will be: the lady in her chemise and corset, a petticoat, the 1885 evening gown (off the shoulder, bertha lace, corsage), a cameo choker and a fan, each cut to its own outline and stacked on her, standing in her cross base on the plinth and turning slowly, with a second lady in the 1885 walking suit (skirt, blouse, jacket, toque, parasol) back to back with her on the same stand. The frame holds a second plate of her: the 1860 crinoline ball gown with a crown of hair, so the wall and the plinth show two outfits.",
+      "modelScale": 0.55
     },
     {
       "id": "ink-15",
@@ -297,16 +308,22 @@
       "room": "hall",
       "day": 16,
       "date": "2026-10-16",
-      "prompt": null,
-      "photo": null,
+      "prompt": "gangly",
+      "photo": "prints/puppets/inktober-16-gangly/still.png",
       "frame": {
-        "width": 210,
-        "height": 297
+        "width": 176,
+        "height": 336
       },
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "render": true,
+      "hang": "peg",
+      "puppet": "prints/puppets/inktober-16-gangly/rig.json",
+      "reach": 0,
+      "studio": "../doll-wardrobe-studio.html",
+      "description": "Friday 16 October 2026, prompt \"gangly\". Not plotted yet: the Paper Dolls studio's gangly doll, concertina arms and legs folded from one long strip each, hung by the top of her head from the ceiling. She springs on her cord: the arms fling up and out as the folds pull right out, then close up like a fan while the legs kick the other way."
     },
     {
       "id": "ink-17",

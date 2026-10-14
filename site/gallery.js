@@ -1,12 +1,12 @@
 // One script, two floor plans: <body data-world="inktober"> walks the single Inktober hall instead of the six rooms.
 const ink=document.body.dataset.world==='inktober';
-const world=await import(ink?'./inktober-world.js?v=20261009-ram':'./gallery-world.js?v=20261009-ram');
-const {createGallery}=await import('./gallery-gl.js?v=20261009-ram');
+const world=await import(ink?'./inktober-world.js?v=20261014-look4':'./gallery-world.js?v=20261014-look4');
+const {createGallery}=await import('./gallery-gl.js?v=20261014-look4');
 const HALL_NAME=world.HALL_NAME||'Entrance corridor';
 const {rooms,HALL,ROOM_W,ROOM_D,START,END,SCALE,locationAt,advance,destination}=world;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
-let prints=[],simple=reduced.matches,p={...destination('corridor'),vf:0,vs:0,vturn:0},keys=new Set(),pulses=new Map(),drag=null,last=0,frame=0;
+let prints=[],simple=reduced.matches,p={...destination('corridor'),vf:0,vs:0,vturn:0,pitch:0},keys=new Set(),pulses=new Map(),drag=null,last=0,frame=0;
 const dims=s=>s.frame||{width:s.box.width,height:s.box.height};
 const placeholder=()=>'<span class="photo-space"><span class="empty-mark">＋</span><span>PRINT PHOTO</span><small>SPACE RESERVED</small></span>';
 function safeURL(value){if(!value)return null;try{const u=new URL(value,location.href);return ['http:','https:'].includes(u.protocol)?u.href:null}catch{return null}}
@@ -50,7 +50,8 @@ function camera(){
 }
 function engage(action){if(!keys.has(action))pulses.set(action,performance.now()+100);keys.add(action)}
 function stop(){keys.clear();pulses.clear();p.vf=p.vs=p.vturn=0;drag=null}
-function jump(id){stop();const h=gl?.spot?.(id);Object.assign(p,h?world.viewing(h):destination(id));camera();$('viewport').focus({preventScroll:true})}
+const PITCH=30;function look(d){p.pitch=Math.max(-PITCH,Math.min(PITCH,p.pitch+d));camera()}
+function jump(id){stop();p.pitch=0;const h=gl?.spot?.(id);Object.assign(p,h?world.viewing(h):destination(id));camera();$('viewport').focus({preventScroll:true})}
 function applyFilters(){
  const visible=prints.filter(admitted),real=visible.filter(s=>s.photo&&!s.render);
  $('count').textContent=ink?`${real.length} of ${visible.length} days inked`:`${real.length} print photographs / ${visible.filter(s=>!s.photo).length} reserved spaces`;
@@ -62,19 +63,19 @@ function applyFilters(){
 }
 function setSimple(){stop();$('simplify').setAttribute('aria-pressed',String(simple));document.querySelector('.gallery-stage').hidden=simple;document.querySelector('.walk-controls').hidden=simple;$('flat').hidden=!simple;$('map-toggle').hidden=simple||!$('map-panel').hidden;$('hint').textContent=simple?'Select a photograph or a reserved space to look closer.':walkHint}
 const walkHint=$('hint').textContent;
-const bindings={w:'forward',s:'back',a:'strafe-left',d:'strafe-right',arrowup:'forward',arrowdown:'back',arrowleft:'left',arrowright:'right'};
+const bindings={r:'up',f:'down',pageup:'up',pagedown:'down',w:'forward',s:'back',a:'strafe-left',d:'strafe-right',arrowup:'forward',arrowdown:'back',arrowleft:'left',arrowright:'right'};
 window.addEventListener('keydown',e=>{if(simple||$('closer').open||e.target.matches('input,select,textarea')||e.ctrlKey||e.altKey||e.metaKey)return;const action=bindings[e.key.toLowerCase()];if(action){e.preventDefault();engage(action);$('viewport').focus({preventScroll:true})}});
 window.addEventListener('keyup',e=>{const action=bindings[e.key.toLowerCase()];if(action)keys.delete(action)});
 window.addEventListener('blur',stop);document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});
-function animate(time){const dt=last?(time-last)/1000:0;last=time;if(!simple&&!document.hidden&&!$('closer').open){const held=action=>keys.has(action)||(pulses.get(action)||0)>time;const forward=Number(held('forward'))-Number(held('back')),strafe=Number(held('strafe-right'))-Number(held('strafe-left')),length=Math.max(1,Math.hypot(forward,strafe));const was=p.x+','+p.z+','+p.yaw;advance(p,{forward:forward/length,strafe:strafe/length,turn:Number(held('right'))-Number(held('left'))},dt);if(p.x+','+p.z+','+p.yaw!==was)camera();if(dirty||gl.animating(p)){gl.render(p,time);dirty=false}}frame=requestAnimationFrame(animate)}
+function animate(time){const dt=last?(time-last)/1000:0;last=time;if(!simple&&!document.hidden&&!$('closer').open){const held=action=>keys.has(action)||(pulses.get(action)||0)>time;const forward=Number(held('forward'))-Number(held('back')),strafe=Number(held('strafe-right'))-Number(held('strafe-left')),length=Math.max(1,Math.hypot(forward,strafe));const was=p.x+','+p.z+','+p.yaw;advance(p,{forward:forward/length,strafe:strafe/length,turn:Number(held('right'))-Number(held('left'))},dt);const tilt=Number(held('up'))-Number(held('down'));if(tilt)look(tilt*60*Math.min(.05,dt));if(p.x+','+p.z+','+p.yaw!==was)camera();if(dirty||gl.animating(p)){gl.render(p,time);dirty=false}}frame=requestAnimationFrame(animate)}
 document.querySelectorAll('[data-walk]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);engage(b.dataset.walk)};b.onpointerup=b.onpointercancel=()=>keys.delete(b.dataset.walk);b.onlostpointercapture=()=>keys.delete(b.dataset.walk);b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();engage(b.dataset.walk)}};b.onkeyup=()=>keys.delete(b.dataset.walk)});
-const viewport=$('viewport');viewport.onpointerdown=e=>{if(e.button!==0)return;drag={id:e.pointerId,start:e.clientX,last:e.clientX,moved:false}};
-viewport.onpointermove=e=>{if(!drag||drag.id!==e.pointerId)return;if(Math.abs(e.clientX-drag.start)>5){drag.moved=true;viewport.setPointerCapture(e.pointerId)}if(drag.moved){p.yaw+=(e.clientX-drag.last)*.18;camera()}drag.last=e.clientX};
+const viewport=$('viewport');viewport.onpointerdown=e=>{if(e.button!==0)return;drag={id:e.pointerId,start:e.clientX,last:e.clientX,lastY:e.clientY,moved:false}};
+viewport.onpointermove=e=>{if(!drag||drag.id!==e.pointerId)return;if(Math.abs(e.clientX-drag.start)>5){drag.moved=true;viewport.setPointerCapture(e.pointerId)}if(drag.moved){p.yaw+=(e.clientX-drag.last)*.18;p.pitch=Math.max(-PITCH,Math.min(PITCH,p.pitch-(e.clientY-drag.lastY)*.12));camera()}drag.last=e.clientX;drag.lastY=e.clientY};
 window.addEventListener('pointerup',()=>{if(drag?.moved)viewport.focus({preventScroll:true});setTimeout(()=>drag=null,0)});viewport.onpointercancel=()=>drag=null;viewport.addEventListener('click',e=>{if(drag?.moved){e.preventDefault();e.stopImmediatePropagation()}},true);
 // A tap or click picks whatever is drawn under it: a print to look at, or a doorway to walk through. Walls block.
 viewport.addEventListener('click',e=>{if(e.target.closest('#scene'))return;const hit=gl?.pick(e.clientX,e.clientY);if(hit?.room)jump(hit.room);else if(hit?.print)inspect(prints.find(s=>s.id===hit.print))});
 viewport.addEventListener('pointermove',e=>{if(drag||e.pointerType!=='mouse'||!gl)return;viewport.style.cursor=gl.pick(e.clientX,e.clientY)?'pointer':''});
-$('reset-view').onclick=()=>jump('corridor');$('wing').onchange=()=>jump($('wing').value);
+$('reset-view').onclick=()=>{p.pitch=0;jump('corridor')};$('wing').onchange=()=>jump($('wing').value);
 for(const id of ['nsfw','swearing'])$(id).onchange=()=>{if($('closer').open)$('closer').close();applyFilters()};
 // The map docks in the stage's top-right corner: open it is the panel, folded it is a small Map button in the same corner.
 function mapToggle(){const hidden=!$('map-panel').hidden;$('map-panel').hidden=hidden;$('map-toggle').hidden=!hidden||simple;$('map-toggle').setAttribute('aria-expanded',String(!hidden));(hidden?$('map-toggle'):$('map-close')).focus({preventScroll:true})}$('map-toggle').onclick=mapToggle;if(matchMedia('(max-width:700px)').matches){$('map-panel').hidden=true;$('map-toggle').hidden=simple;$('map-toggle').setAttribute('aria-expanded','false')}$('map-close').onclick=mapToggle;
