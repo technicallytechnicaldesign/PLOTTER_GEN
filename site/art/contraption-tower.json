@@ -1,0 +1,31 @@
+{
+  "studio": "contraption-studio.html",
+  "id": "contraption-tower",
+  "title": "Exploded tower",
+  "preset": "tower",
+  "content": {},
+  "settings": {
+    "name": "J. DOE",
+    "part": "DIMSA-DOOSA",
+    "seed": "23",
+    "parts": "6",
+    "outputs": "2",
+    "size": "100",
+    "explode": "9",
+    "pitch": "22",
+    "lean": "0",
+    "plaus": "80",
+    "bureau": "45",
+    "margin": "8",
+    "sheet": "exploded",
+    "driver": "auto",
+    "accent": "green",
+    "page": "190x250",
+    "ticks": "split"
+  },
+  "sourceHash": "89c045bcd23fc13b0c87973e41cec3a888b3d00494ef5251d38d14bd1a7aebf7",
+  "svg": "site/art/contraption-tower.svg",
+  "image": "site/art/contraption-tower.webp",
+  "page": "190x250",
+  "seed": 23
+}

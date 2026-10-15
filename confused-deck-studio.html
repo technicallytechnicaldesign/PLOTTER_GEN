@@ -1175,7 +1175,7 @@ const WORD_IDS = CARDS.flatMap(c => Object.keys(TEXT[c.id]).map(key => `t_${c.id
 const CARD_IDS = CARDS.map(c => "k_" + c.id);
 const IDS = [...CARD_IDS, "size", "headline", "weight", "confusion", "seed", "backers", "entries", "sanity", "turn", "paperA", "paperB", "paperW", "sheet", "view", "page", "margin", ...GLOBAL_WORDS, ...WORD_IDS];
 const NUM = new Set(["weight", "confusion", "seed", "entries", "sanity", "turn", "margin"]);
-const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); return [k, e.type === "checkbox" ? e.checked : NUM.has(k) ? +e.value : e.value]; }));
+const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); return [k, e.type === "checkbox" ? e.checked : CARD_IDS.includes(k) ? e.value === true || e.value === "true" : NUM.has(k) ? +e.value : e.value]; })); // the card ticks read "true"/"false" too, for headless runs
 const setV = (k, v) => { const e = $(k); if (e.type === "checkbox") e.checked = !!v; else e.value = v; };
 let last = null, pending = 0;
 function sync() { $("turn").max = $("entries").value - 1; if (+$("turn").value > +$("turn").max) $("turn").value = $("turn").max; for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
@@ -1193,9 +1193,9 @@ const BASE = { ...ALL, size: "trade", headline: "ink", weight: 0.16, confusion: 
 const P = o => ({ ...BASE, ...o });
 const PRESETS = {
   deck: P({}),
-  cutouts: P({ headline: "cut", paperB: "d7263d", confusion: 25, seed: 4 }),
+  cutouts: P({ k_ttb: false, k_spinner: false, headline: "cut", paperB: "d7263d", confusion: 25, seed: 4, page: "280x280" }),
   blueprint: P({ paperA: "1f4e8c", paperB: "fbf9f4", paperW: "f2b705", confusion: 55, seed: 23 }),
-  chaos: P({ confusion: 100, sanity: 0, entries: 12, seed: 7 }),
+  chaos: P({ k_intent: false, k_sheet2: false, confusion: 100, sanity: 0, entries: 12, seed: 7, page: "280x280" }),
   sane: P({ confusion: 0, sanity: 100, seed: 2 }),
   grumpy: P({ ...NONE, k_whoDim: true, k_whoApp: true, k_whoRel: true, confusion: 40, page: "280x280" }),
   flaps: P({ ...NONE, k_detail: true, k_sheet2: true, k_engineer: true, view: "open", sheet: "all", page: "280x280", confusion: 60 }),

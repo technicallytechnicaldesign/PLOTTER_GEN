@@ -1,0 +1,31 @@
+{
+  "studio": "contraption-studio.html",
+  "id": "contraption-perpetual",
+  "title": "Perpetual motion",
+  "preset": "perpetual",
+  "content": {},
+  "settings": {
+    "name": "J. DOE",
+    "part": "DIMSA-DOOSA",
+    "seed": "17",
+    "parts": "6",
+    "outputs": "2",
+    "size": "100",
+    "explode": "12",
+    "pitch": "26",
+    "lean": "18",
+    "plaus": "45",
+    "bureau": "40",
+    "margin": "8",
+    "sheet": "plate",
+    "driver": "wheel",
+    "accent": "red",
+    "page": "250x190",
+    "ticks": "split"
+  },
+  "sourceHash": "89c045bcd23fc13b0c87973e41cec3a888b3d00494ef5251d38d14bd1a7aebf7",
+  "svg": "site/art/contraption-perpetual.svg",
+  "image": "site/art/contraption-perpetual.webp",
+  "page": "250x190",
+  "seed": 17
+}

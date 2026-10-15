@@ -1,0 +1,32 @@
+{
+  "studio": "confused-deck-studio.html",
+  "id": "confused-flaps",
+  "title": "Flaps, with what is under them",
+  "preset": "flaps",
+  "content": {},
+  "settings": {
+    "weight": "0.16",
+    "confusion": "60",
+    "seed": "19",
+    "entries": "10",
+    "sanity": "50",
+    "turn": "0",
+    "margin": "8",
+    "size": "trade",
+    "headline": "ink",
+    "backers": "flaps",
+    "wheel": "pool",
+    "sheet": "all",
+    "view": "open",
+    "paperA": "fbf9f4",
+    "paperB": "f2b705",
+    "paperW": "cfe3f2",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "4c215e9add7ea79e2b31bff3bd0e77c52fe53f4065307cb416656b1ff48f90dc",
+  "svg": "site/art/confused-flaps.svg",
+  "image": "site/art/confused-flaps.webp",
+  "page": "280x280",
+  "seed": 19
+}
