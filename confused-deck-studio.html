@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confused deck</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+aside input[type=text], aside textarea { grid-column:1 / -1; width:100%; font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:3px 6px; margin:2px 0 0; }
+aside textarea { font-family:var(--font-mono); font-size:0.78rem; resize:vertical; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+</head>
+<body>
+<header>
+  <h1>Confused deck</h1>
+  <p class="sub">Inktober day 19, confused: a deck of trading cards, each one drawn as an engineering drawing with its own title block, and each one a small production-floor confusion. Lift detail C and find there is no detail C, lift sheet 1 and find sheet 2 blank, ask the engineer, and spin the tolerance wheel, where half the callouts are real and half are not. The checker's red pen gets crosser card by card.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="deck">The deck</button><button data-preset="cutouts">Cut-outs</button><button data-preset="blueprint">Blueprint</button><button data-preset="chaos">Total confusion</button><button data-preset="sane">Nearly sane</button><button data-preset="grumpy">Grumpy trio</button><button data-preset="flaps">Flaps</button><button data-preset="spinner">Spinner</button></div>
+  </fieldset>
+  <fieldset><legend>Cards in the deck</legend>
+    <label><span>Refer to detail C (lift: no detail C)</span><input type="checkbox" id="k_detail"></label>
+    <label><span>Design intent unclear</span><input type="checkbox" id="k_intent"></label>
+    <label><span>Drawn to scale, scale unknown</span><input type="checkbox" id="k_scale"></label>
+    <label><span>Refer to sheet 2 (lift: sheet 2 is blank)</span><input type="checkbox" id="k_sheet2"></label>
+    <label><span>The ??? title block</span><input type="checkbox" id="k_ttb"></label>
+    <label><span>Who dimensioned this?</span><input type="checkbox" id="k_whoDim"></label>
+    <label><span>Who approved this?</span><input type="checkbox" id="k_whoApp"></label>
+    <label><span>WHO RELEASED THIS?!</span><input type="checkbox" id="k_whoRel"></label>
+    <label><span>Asked engineer (lift: "I dunno")</span><input type="checkbox" id="k_engineer"></label>
+    <label><span>Tolerance spinner</span><input type="checkbox" id="k_spinner"></label>
+  </fieldset>
+  <fieldset><legend>The cards</legend>
+    <label>Size <select id="size"><option value="trade">trading card (63 x 88)</option><option value="big">big (84 x 117)</option><option value="a6">A6-ish (105 x 147)</option></select></label>
+    <label>Headline <select id="headline"><option value="ink">inked, bold pen</option><option value="cut">last word cut through (the backer shows)</option></select></label>
+    <label data-when="headline=cut">Cut letter weight <output id="o-weight"></output><input type="range" id="weight" min="0.12" max="0.22" step="0.01" value="0.16"></label>
+    <label>Confusion (the red pen) <output id="o-confusion"></output><input type="range" id="confusion" min="0" max="100" step="1" value="35"></label>
+    <label>Backers <select id="backers"><option value="flaps">only where something shows through</option><option value="all">every card (stiffer)</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="19"></label>
+    <p class="hint">Confusion adds red question marks, then a revision cloud, then (from 70) a coffee ring on the odd card. The grumpy faces are always there.</p>
+  </fieldset>
+  <fieldset><legend>Words</legend>
+    <label>Drawn by <input type="text" id="g_drawn" maxlength="16" placeholder="blank: a scrawl"></label>
+    <label>Checked by <input type="text" id="g_checked" maxlength="16" placeholder="blank: a scrawl or nobody"></label>
+    <label>Approved by <input type="text" id="g_approved" maxlength="16" placeholder="blank: nobody"></label>
+    <label>Released by <input type="text" id="g_released" maxlength="16" placeholder="blank: nobody"></label>
+    <label>Every TOL. field says <input type="text" id="g_tol" maxlength="20" placeholder="blank: each card's own"></label>
+    <label>Drawing number prefix <input type="text" id="g_dwg" maxlength="10"></label>
+    <label>Edit the words on <select id="edit"></select></label>
+    <div id="cardWords"></div>
+    <div class="row"><button type="button" id="resetWords">Reset words</button></div>
+    <p class="hint">Names go in the sign-off boxes instead of scrawls (the grumpy faces stay). Shortcuts: +/- for ±, [dia] ⌀, [flat] ⏥, [perp] ⊥, [pos] ⌖, [par] ∥, [circ] ○, [conc] ◎, [runout] ↗, [inf] ∞, [deg] °. A letter the pens have no shape for comes out as ?. Presets leave your words alone.</p>
+  </fieldset>
+  <fieldset data-when="k_spinner"><legend>Tolerance spinner</legend>
+    <label>Wheel uses <select id="wheel"><option value="pool">the pool (sanity sets the mix)</option><option value="mix">my callouts, topped up from the pool</option><option value="mine">only my callouts, round and round</option></select></label>
+    <label data-when="wheel!=pool">My callouts, one a line <textarea id="mine" rows="4" placeholder="+/-0.2&#10;+/-0.2; AGAIN&#10;[pos]|[dia]0.2|A; OBVIOUSLY"></textarea></label>
+    <p class="hint" data-when="wheel!=pool">A ; adds a small second line under a callout, and | splits a feature control frame into its boxes ([flat]|0.2 or [pos]|[dia]0.2|A|B).</p>
+    <label>Callouts on the wheel <output id="o-entries"></output><input type="range" id="entries" min="6" max="14" step="1" value="10"></label>
+    <label data-when="wheel!=mine">Sanity (% real callouts) <output id="o-sanity"></output><input type="range" id="sanity" min="0" max="100" step="5" value="50"></label>
+    <label>Wheel shows (preview) <output id="o-turn"></output><input type="range" id="turn" min="0" max="9" step="1" value="0"></label>
+    <p class="hint">A paper brad through the hub holds the wheel between the card and its backer; turn it with your thumb in the notch on the left edge. Half the callouts on a sane wheel are ones you will meet at work.</p>
+  </fieldset>
+  <fieldset><legend>Sheet</legend>
+    <label>Sheet holds <select id="sheet"><option value="fronts">the fronts</option><option value="backers">the backers and the wheel</option><option value="all">everything</option></select></label>
+  </fieldset>
+  <fieldset><legend>Preview</legend>
+    <label>Show <select id="view"><option value="closed">the deck</option><option value="open">the deck, flaps lifted</option><option value="sheet">the sheet, as cut</option></select></label>
+    <label>Front paper <select id="paperA"><option value="fbf9f4">white</option><option value="f4ecd8">cream</option><option value="dcdcd7">pale grey</option><option value="cfe3f2">sky</option><option value="1f4e8c">blueprint blue</option><option value="c9a77c">kraft</option></select></label>
+    <label>Backer paper <select id="paperB"><option value="f2b705">yellow</option><option value="d7263d">red</option><option value="ff7aa8">pink</option><option value="1f9d55">green</option><option value="cfe3f2">sky</option><option value="fbf9f4">white</option><option value="101010">black</option></select></label>
+    <label data-when="k_spinner">Wheel paper <select id="paperW"><option value="cfe3f2">sky</option><option value="fbf9f4">white</option><option value="f2b705">yellow</option><option value="f4ecd8">cream</option><option value="ff7aa8">pink</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Page <select id="page"><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="280x580">280 x 580 (12 x 24 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="8"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each layer separately</button></div>
+    <p class="hint">Split export saves fine (0.3 black), bold (0.5 black), red (the checker's pen), then score, then cut, in job order with matching corner ticks. Flap hinges are scored, everything else is cut.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="760"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it goes together: plot and cut the fronts, then the backers (and the wheel) on a coloured card. Glue each backer behind its front, keeping glue off the flaps. For the spinner, push a paper brad through the front, the wheel and the backer at the hub, and glue the card and backer together round the edges only, so the wheel turns between them. Fold each flap up on its score line once to train it. The brad hole, the flap cuts and the 2 mm bridges are assumptions until the cut calibration sheet has been read.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, pow, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerpN = (a, b, t) => a + (b - a) * t;
+const MIN_HALF = 0.4, PALE = "#fbf7ec", INK_GAP = 0.4, MIN_BRIDGE = 2.0, FLAP_HINGE = 3.0, TRIM_INSET = 1.0, PART_GAP = 3.0;
+// ---------------- shapes: signed distance (negative inside) ----------------
+const Circ = (x, y, r) => ({ t: "c", x, y, r: max(r, MIN_HALF) });
+const Limb = (ax, ay, ra, bx, by, rb) => ({ t: "k", ax, ay, ra: max(ra, MIN_HALF), bx, by, rb: max(rb, MIN_HALF) });
+function primDist(p, x, y) {
+  if (p.t === "c") return hypot(x - p.x, y - p.y) - p.r;
+  const dx = p.bx - p.ax, dy = p.by - p.ay, L2 = dx * dx + dy * dy || 1e-9, t = clamp(((x - p.ax) * dx + (y - p.ay) * dy) / L2, 0, 1);
+  return hypot(x - p.ax - t * dx, y - p.ay - t * dy) - (p.ra + (p.rb - p.ra) * t);
+}
+const primBox = p => p.t === "c" ? [p.x - p.r, p.y - p.r, p.x + p.r, p.y + p.r] : [min(p.ax - p.ra, p.bx - p.rb), min(p.ay - p.ra, p.by - p.rb), max(p.ax + p.ra, p.bx + p.rb), max(p.ay + p.ra, p.by + p.rb)];
+const smin = (a, b, k) => { if (k <= 0) return min(a, b); const h = clamp(0.5 + 0.5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+function fastPoly(pts) { // exact signed distance to a closed polygon (negative inside)
+  const n = pts.length, ax = new Float64Array(n), ay = new Float64Array(n), ex = new Float64Array(n), ey = new Float64Array(n), il = new Float64Array(n), by = new Float64Array(n);
+  for (let i = 0, j = n - 1; i < n; j = i++) { ax[i] = pts[j][0]; ay[i] = pts[j][1]; ex[i] = pts[i][0] - pts[j][0]; ey[i] = pts[i][1] - pts[j][1]; by[i] = pts[i][1]; il[i] = 1 / (ex[i] * ex[i] + ey[i] * ey[i] || 1e-9); }
+  return (x, y) => {
+    let d = INF, s = 1;
+    for (let i = 0; i < n; i++) {
+      const wx = x - ax[i], wy = y - ay[i], t = clamp((wx * ex[i] + wy * ey[i]) * il[i], 0, 1), dx = wx - ex[i] * t, dy = wy - ey[i] * t, dd = dx * dx + dy * dy;
+      if (dd < d) d = dd;
+      const c1 = y >= ay[i], c2 = y < by[i], c3 = ex[i] * wy > ey[i] * wx;
+      if ((c1 && c2 && c3) || (!c1 && !c2 && !c3)) s = -s;
+    }
+    return s * sqrt(d);
+  };
+}
+const polyBox = pts => { let a = INF, b = INF, c = -INF, d = -INF; for (const [x, y] of pts) { a = min(a, x); b = min(b, y); c = max(c, x); d = max(d, y); } return [a, b, c, d]; };
+const primsBox = ps => ps.reduce((B, q) => { const k = primBox(q); return [min(B[0], k[0]), min(B[1], k[1]), max(B[2], k[2]), max(B[3], k[3])]; }, [INF, INF, -INF, -INF]);
+const joinB = (A, B) => [min(A[0], B[0]), min(A[1], B[1]), max(A[2], B[2]), max(A[3], B[3])];
+const growB = (B, e) => [B[0] - e, B[1] - e, B[2] + e, B[3] + e];
+const unionF = fs => (x, y) => { let d = INF; for (const f of fs) d = min(d, f(x, y)); return d; };
+const smoothF = (fs, k) => (x, y) => { let d = 1e6; for (const f of fs) d = smin(d, f(x, y), k); return d; };
+const primF = p => (x, y) => primDist(p, x, y);
+const subF = (a, b) => (x, y) => max(a(x, y), -b(x, y));
+const interF = (a, b) => (x, y) => max(a(x, y), b(x, y));
+
+// ---------------- curves ----------------
+function curve(pts, per = 6, closed = false) { // uniform Catmull-Rom through the points
+  const n = pts.length, out = [], g = i => closed ? pts[(i + n) % n] : pts[clamp(i, 0, n - 1)], m = closed ? n : n - 1;
+  for (let i = 0; i < m; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let j = 0; j < per; j++) {
+      const t = j / per, t2 = t * t, t3 = t2 * t;
+      out.push([0, 1].map(a => 0.5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3)));
+    }
+  }
+  if (!closed) out.push(pts[n - 1].slice());
+  return out;
+}
+const bez = (a, b, c, n = 12) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, u = 1 - t; return [u * u * a[0] + 2 * u * t * b[0] + t * t * c[0], u * u * a[1] + 2 * u * t * b[1] + t * t * c[1]]; });
+const circle = (x, y, r, n = 0) => { n = n || max(12, ceil(r * 6)); return Array.from({ length: n + 1 }, (_, i) => [x + r * cos(TAU * i / n), y + r * sin(TAU * i / n)]); };
+const arcP = (x, y, rx, ry, a0, a1, n = 24) => Array.from({ length: n + 1 }, (_, i) => { const a = (a0 + (a1 - a0) * i / n) * D2R; return [x + rx * cos(a), y + ry * sin(a)]; });
+const mir = p => p.map(([x, y]) => [-x, y]);
+const symm = r => [...r, ...mir(r).reverse()];
+const plen = (q, cl) => { let s = 0; for (let i = 1; i < q.length; i++) s += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); if (cl && q.length > 1) s += hypot(q[0][0] - q.at(-1)[0], q[0][1] - q.at(-1)[1]); return s; };
+function resample(q, step) {
+  const out = [q[0].slice()]; let carry = 0;
+  for (let i = 1; i < q.length; i++) {
+    const a = q[i - 1], b = q[i], L = hypot(b[0] - a[0], b[1] - a[1]); if (!L) continue;
+    let d = step - carry;
+    while (d <= L) { const t = d / L; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); d += step; }
+    carry = L - (d - step);
+  }
+  const last = q.at(-1); if (hypot(last[0] - out.at(-1)[0], last[1] - out.at(-1)[1]) > step * 0.3) out.push(last.slice());
+  return out;
+}
+// scallops along a path: one arch per w mm, bulging toward nfn(x, y) (a unit vector)
+function scallopPath(path, w, depth, nfn) {
+  const r = resample(path, w / 8), nodes = []; for (let i = 0; i < r.length; i += 8) nodes.push(r[i]);
+  if (r.length % 8 !== 1) nodes.push(r.at(-1));
+  const out = [];
+  for (let i = 0; i + 1 < nodes.length; i++) {
+    const a = nodes[i], b = nodes[i + 1], n = nfn((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), dd = depth * min(1, hypot(b[0] - a[0], b[1] - a[1]) / w);
+    for (let j = (i ? 1 : 0); j <= 10; j++) { const t = j / 10, s = sin(PI * t) * dd; out.push([a[0] + (b[0] - a[0]) * t + n[0] * s, a[1] + (b[1] - a[1]) * t + n[1] * s]); }
+  }
+  return out;
+}
+const zigPath = (path, step, amp, nfn) => { const r = resample(path, step), out = []; r.forEach((p, i) => { const n = nfn(p[0], p[1]), s = i % 2 ? amp : -amp; out.push([p[0] + n[0] * s, p[1] + n[1] * s]); }); return out; };
+const dots = (path, step, rad) => resample(path, step).map(p => circle(p[0], p[1], rad, 8));
+function ribbonBow(c, size, ang) { // two loops, a knot and two tails, as closed polylines around c
+  const R = (x, y) => [c[0] + (x * cos(ang) - y * sin(ang)) * size, c[1] + (x * sin(ang) + y * cos(ang)) * size];
+  const loop = s => [R(0, 0), ...bez([0, 0], [s * 1.2, -0.9], [s * 1.7, -0.1], 8).slice(1).map(([x, y]) => R(x, y)), ...bez([s * 1.7, -0.1], [s * 1.4, 0.9], [0, 0], 8).slice(1).map(([x, y]) => R(x, y))];
+  return [loop(-1), loop(1), circle(...R(0, 0), 0.22 * size, 8), [R(0.1, 0.2), R(-0.5, 1.5), R(-0.15, 1.35), R(-0.3, 1.9)], [R(-0.1, 0.2), R(0.5, 1.5), R(0.15, 1.35), R(0.3, 1.9)]];
+}
+function rosette(c, r) { const out = [circle(c[0], c[1], r, 18)]; for (let a = 0; a < 360; a += 72) out.push(arcP(c[0] + r * 0.45 * cos(a * D2R), c[1] + r * 0.45 * sin(a * D2R), r * 0.55, r * 0.55, a - 60, a + 200, 10)); out.push(circle(c[0], c[1], r * 0.18, 8)); return out; }
+
+// ---------------- iso-lines (marching squares, from the jointed figure studio) ----------------
+function contours(G, t) {
+  const { F, nx, ny, h, x0, y0 } = G, adj = new Map();
+  const link = (e1, e2) => { let a = adj.get(e1); if (!a) adj.set(e1, a = []); a.push(e2); let b = adj.get(e2); if (!b) adj.set(e2, b = []); b.push(e1); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const ia = j * nx + i, a = F[ia] - t, b = F[ia + 1] - t, c = F[ia + nx + 1] - t, d = F[ia + nx] - t;
+    const cs = (a < 0 ? 1 : 0) | (b < 0 ? 2 : 0) | (c < 0 ? 4 : 0) | (d < 0 ? 8 : 0);
+    if (cs === 0 || cs === 15) continue;
+    const top = ia * 2, bottom = (ia + nx) * 2, left = ia * 2 + 1, right = (ia + 1) * 2 + 1, mid = a + b + c + d < 0;
+    switch (cs) {
+      case 1: case 14: link(left, top); break; case 2: case 13: link(top, right); break; case 3: case 12: link(left, right); break;
+      case 4: case 11: link(right, bottom); break; case 6: case 9: link(top, bottom); break; case 7: case 8: link(left, bottom); break;
+      case 5: if (mid) { link(top, right); link(bottom, left); } else { link(left, top); link(right, bottom); } break;
+      case 10: if (mid) { link(left, top); link(right, bottom); } else { link(top, right); link(bottom, left); } break;
+    }
+  }
+  const pt = e => { const n = e >> 1, i = n % nx, j = (n - i) / nx, n2 = e & 1 ? n + nx : n + 1, v1 = F[n] - t, v2 = F[n2] - t, f = v1 / (v1 - v2); return e & 1 ? [x0 + i * h, y0 + (j + f) * h] : [x0 + (i + f) * h, y0 + j * h]; };
+  const loops = [], seen = new Set();
+  for (const e0 of adj.keys()) {
+    if (seen.has(e0)) continue;
+    const loop = []; let prev = -1, cur = e0, closed = false;
+    for (;;) { seen.add(cur); loop.push(pt(cur)); const nb = adj.get(cur), nxt = nb.find(x => x !== prev && !seen.has(x)); if (nxt === undefined) { closed = loop.length > 2 && nb.includes(e0); break; } prev = cur; cur = nxt; }
+    if (closed) loops.push(loop);
+  }
+  return loops;
+}
+const loopArea = l => { let a = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+function smooth(l, passes = 2) { for (let k = 0; k < passes; k++) { const n = l.length, c = l.map(p => p.slice()); for (let i = 0; i < n; i++) { const a = c[(i + n - 1) % n], b = c[i], d = c[(i + 1) % n]; l[i] = [(a[0] + 2 * b[0] + d[0]) / 4, (a[1] + 2 * b[1] + d[1]) / 4]; } } return l; }
+function rdp(pts, tol) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]], t2 = tol * tol; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [a, b] = st.pop(), [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let md = 0, mi = -1;
+    for (let i = a + 1; i < b; i++) { const [px, py] = pts[i], t = L2 ? clamp(((px - ax) * dx + (py - ay) * dy) / L2, 0, 1) : 0, ex = px - ax - t * dx, ey = py - ay - t * dy, d = ex * ex + ey * ey; if (d > md) { md = d; mi = i; } }
+    if (md > t2) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function fieldOf(sdf, B, h) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) F[j * nx + i] = sdf(x0 + i * h, y0 + j * h);
+  return { F, nx, ny, h, x0, y0 };
+}
+function sampleF(G, x, y) {
+  const u = (x - G.x0) / G.h, v = (y - G.y0) / G.h;
+  if (u < 0 || v < 0 || u > G.nx - 1.001 || v > G.ny - 1.001) return 1e3;
+  const i = floor(u), j = floor(v), fu = u - i, fv = v - j, n = j * G.nx + i, F = G.F;
+  return (F[n] * (1 - fu) + F[n + 1] * fu) * (1 - fv) + (F[n + G.nx] * (1 - fu) + F[n + G.nx + 1] * fu) * fv;
+}
+const gradF = (G, x, y) => { const e = G.h, g = [sampleF(G, x + e, y) - sampleF(G, x - e, y), sampleF(G, x, y + e) - sampleF(G, x, y - e)], l = hypot(g[0], g[1]) || 1; return [g[0] / l, g[1] / l]; };
+const room = (pc, x, y) => -sampleF(pc.Gd, x, y); // how far inside the cut card a point is
+function clip(pc, lines) { // keep ink that is at least INK_GAP inside the card
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / 0.3)) : 1;
+      for (let k = 0; k < n; k++) {
+        const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n;
+        if (room(pc, x, y) > INK_GAP + 0.02) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; }
+      }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.02));
+}
+function hatch(G, gap, ang, filter) {
+  const c = cos(ang), s = sin(ang), cx = G.x0 + G.nx * G.h / 2, cy = G.y0 + G.ny * G.h / 2, R = hypot(G.nx, G.ny) * G.h / 2, out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.35) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (filter(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } } if (run.length > 1) out.push(run); }
+  return out;
+}
+// runs of the outline, d mm in from the cut line, where pred(x, y) holds
+function edgeRuns(pc, d, pred) {
+  const out = [];
+  for (const l of contours(pc.Gd, -d)) {
+    if (abs(loopArea(l)) < 4) continue;
+    const q = smooth(l, 1); let run = [];
+    for (const p of q) { if (pred(p[0], p[1])) run.push(p); else { if (run.length > 2) out.push(run); run = []; } }
+    if (run.length > 2) out.push(run);
+  }
+  return out;
+}
+const outward = pc => (x, y) => gradF(pc.Gd, x, y);
+
+
+// ---------------- lettering: a single-stroke font, cap height 6 (y down) ----------------
+const GSRC = {
+  A: [4, "M0,6 L2,0 L4,6 M0.9,3.9 L3.1,3.9"], B: [4, "M0,6 L0,0 L2.3,0 A2.3,1.5,1.6,1.5,-90,90 L0,3 M0,3 L2.5,3 A2.5,4.5,1.6,1.5,-90,90 L0,6"],
+  C: [4, "A2.4,3,2.1,3,-45,-315"], D: [4, "M0,0 L0,6 L1.8,6 A1.8,3,2.2,3,90,-90 L0,0"], E: [3.6, "M3.6,0 L0,0 L0,6 L3.6,6 M0,3 L2.8,3"],
+  F: [3.4, "M3.4,0 L0,0 L0,6 M0,3 L2.7,3"], G: [4.4, "A2.2,3,2.2,3,-40,-320 L4.4,3.4 L2.4,3.4"], H: [4, "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3"],
+  I: [1.2, "M0.6,0 L0.6,6"], J: [3, "M3,0 L3,4.4 A1.5,4.4,1.5,1.6,0,170"], K: [4, "M0,0 L0,6 M3.8,0 L0,3.6 M1.3,2.5 L4,6"],
+  L: [3.4, "M0,0 L0,6 L3.4,6"], M: [5, "M0,6 L0,0 L2.5,4 L5,0 L5,6"], N: [4, "M0,6 L0,0 L4,6 L4,0"], O: [4.4, "A2.2,3,2.2,3,0,360"],
+  P: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2"], Q: [4.4, "A2.2,3,2.2,3,0,360 M2.8,4.4 L4.4,6.4"],
+  R: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2 M2,3.2 L4,6"], S: [4, "A2,1.5,1.9,1.5,-20,-270 A2,4.5,2.0,1.5,-90,160"],
+  T: [4, "M0,0 L4,0 M2,0 L2,6"], U: [4, "M0,0 L0,3.8 A2,3.8,2,2.2,180,0 L4,0"], V: [4.4, "M0,0 L2.2,6 L4.4,0"],
+  W: [6, "M0,0 L1.5,6 L3,1.6 L4.5,6 L6,0"], X: [4, "M0,0 L4,6 M4,0 L0,6"], Y: [4.4, "M0,0 L2.2,3 L4.4,0 M2.2,3 L2.2,6"], Z: [4, "M0,0 L4,0 L0,6 L4,6"],
+  0: [3.8, "A1.9,3,1.9,3,0,360"], 1: [2.6, "M0.4,1.4 L1.8,0 L1.8,6"], 2: [3.8, "A1.9,1.9,1.9,1.9,-170,20 L0,6 L3.8,6"],
+  3: [3.8, "A1.8,1.5,1.7,1.5,-150,90 A1.9,4.4,1.9,1.6,-90,150"], 4: [4, "M3,6 L3,0 L0,4.2 L4,4.2"], 5: [3.8, "M3.6,0 L0.4,0 L0,2.8 A1.8,4.1,2,1.9,-130,150"],
+  6: [3.8, "M3.4,0 L0.2,4.2 A1.9,4.2,1.7,1.8,180,540"], 7: [3.8, "M0,0 L3.8,0 L1.4,6"], 8: [3.8, "A1.8,1.5,1.5,1.5,0,360 M3.7,4.4 A1.9,4.4,1.8,1.6,0,360"],
+  9: [3.8, "A1.9,1.8,1.7,1.8,0,360 M3.6,1.8 L0.4,6"],
+  "!": [1, "M0.5,0 L0.5,4.1 M0.5,5.4 A0.5,5.6,0.35,0.35,0,360"], "?": [3.4, "A1.7,1.7,1.7,1.7,-170,70 L1.7,4.1 M1.7,5.2 A1.7,5.6,0.35,0.35,0,360"],
+  ".": [1, "A0.5,5.5,0.4,0.4,0,360"], ",": [1, "M0.7,5.3 L0.2,6.8"], "'": [1, "M0.5,0 L0.3,1.7"], "-": [2.6, "M0.2,3 L2.4,3"], "+": [3.2, "M0.1,3 L3.1,3 M1.6,1.5 L1.6,4.5"],
+  ":": [1, "A0.5,1.8,0.4,0.4,0,360 M0.9,5.5 A0.5,5.5,0.4,0.4,0,360"], "&": [4.2, "M4,6 L0.9,1.4 A1.6,1.1,0.9,1.1,-170,100 L3.4,4.1 A2,4.4,1.7,1.6,-10,160 L0.1,4.6"],
+  "*": [3.2, "M1.6,0.6 L1.6,5.4 M0.2,1.6 L3,4.4 M3,1.6 L0.2,4.4"], "(": [1.8, "A1.9,3,1.5,3.3,235,125"], ")": [1.8, "A-0.1,3,1.5,3.3,-55,55"],
+};
+function parseGlyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else { const [cx, cy, rx, ry, a0, a1] = n, st = max(8, ceil(abs(a1 - a0) / 9)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GL = Object.fromEntries(Object.entries(GSRC).map(([k, [w, s]]) => [k, { w, strokes: parseGlyph(s) }]));
+{ // the heart, for <3
+  const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40 * TAU, x = 16 * sin(t) ** 3, y = -(13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t)); pts.push([3 + x * 3 / 17, 3 + y * 3.2 / 17 + 0.5]); }
+  GL["♥"] = { w: 6, strokes: [pts] };
+}
+// the words as strokes: origin top-left, cap height `cap` mm; returns the glyphs and the width
+function layoutText(str, cap, gap = 1.2) {
+  const s = cap / 6, glyphs = []; let x = 0;
+  const text = String(str).toUpperCase().replace(/<3/g, "♥");
+  for (const ch of text) {
+    if (ch === " ") { x += 2.2; continue; }
+    const g = GL[ch] || GL["?"];
+    glyphs.push({ ch, x, w: g.w, strokes: g.strokes.map(st => st.map(([a, b]) => [a, b])) });
+    x += g.w + gap;
+  }
+  return { glyphs, width: max(0, x - gap) * s, s };
+}
+// capsule union of the strokes, so a letter can be outlined, hatched or cut out as a piece
+function bubbleLoops(strokes, r) {
+  const prims = []; for (const st of strokes) { const q = resample(st, 0.9); for (let i = 0; i + 1 < q.length; i++) prims.push(Limb(q[i][0], q[i][1], r, q[i + 1][0], q[i + 1][1], r)); if (q.length === 1) prims.push(Circ(q[0][0], q[0][1], r)); }
+  const B = growB(primsBox(prims), 1.5), h = 0.2;
+  const G = fieldOf((x, y) => { let d = INF; for (const p of prims) { const e = primDist(p, x, y); if (e < d) d = e; } return d; }, B, h);
+  const loops = contours(G, 0).filter(l => abs(loopArea(l)) > 0.3).map(l => { const q = smooth(l, 1); return rdp([...q, q[0]], 0.03); });
+  return { loops, G, prims };
+}
+const insideG = (G, x, y) => sampleF(G, x, y) < 0;
+// a polygon helper: even-odd test and hatch fill with pen lines, d mm in from the edge
+const inPoly = (pt, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) c = !c; } return c; };
+function hatchPoly(poly, gap, ang, inset = 0.5) {
+  if (gap <= 0) return [];
+  const f = fastPoly(poly), B = polyBox(poly), cx = (B[0] + B[2]) / 2, cy = (B[1] + B[3]) / 2, R = hypot(B[2] - B[0], B[3] - B[1]) / 2 + 1, c = cos(ang), s = sin(ang), out = [];
+  for (let d = -R; d <= R; d += gap) { let run = []; for (let t = -R; t <= R; t += 0.3) { const x = cx + c * t - s * d, y = cy + s * t + c * d; if (f(x, y) < -inset) run.push([x, y]); else { if (run.length > 1) out.push([run[0], run.at(-1)]); run = []; } } if (run.length > 1) out.push([run[0], run.at(-1)]); }
+  return out;
+}
+const centroid = p => { let x = 0, y = 0; for (const q of p) { x += q[0]; y += q[1]; } return [x / p.length, y / p.length]; };
+const growPoly = (p, d) => { const c = centroid(p), r = p.reduce((a, q) => a + hypot(q[0] - c[0], q[1] - c[1]), 0) / p.length, k = 1 + d / max(r, 1); return p.map(q => [c[0] + (q[0] - c[0]) * k, c[1] + (q[1] - c[1]) * k]); };
+const xfPts = (pts, f) => pts.map(f);
+const rotAbout = (p, c, a) => [c[0] + (p[0] - c[0]) * cos(a) - (p[1] - c[1]) * sin(a), c[1] + (p[0] - c[0]) * sin(a) + (p[1] - c[1]) * cos(a)];
+// minimum distance between two polygons (vertex to vertex and vertex to edge), for the bridge gate
+function polyDist(A, B) {
+  let d = INF; const seg = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1e-9, t = clamp(((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L, 0, 1); return hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy); };
+  for (const p of A) for (let i = 0; i < B.length; i++) d = min(d, seg(p, B[i], B[(i + 1) % B.length]));
+  for (const p of B) for (let i = 0; i < A.length; i++) d = min(d, seg(p, A[i], A[(i + 1) % A.length]));
+  return d;
+}
+
+// ---------------- shapes ----------------
+const ellipsePoly = (cx, cy, rx, ry, rot = 0, n = 40) => Array.from({ length: n }, (_, i) => { const t = i / n * TAU, x = rx * cos(t), y = ry * sin(t); return [cx + x * cos(rot) - y * sin(rot), cy + x * sin(rot) + y * cos(rot)]; });
+const balloonPoly = (cx, cy, rx, ry, rot = 0, n = 48) => Array.from({ length: n }, (_, i) => { const t = i / n * TAU, u = sin(t), v = -cos(t), x = rx * u * (1 - 0.24 * max(0, v) ** 2), y = ry * v * (1 + 0.05 * max(0, v)); return [cx + x * cos(rot) - y * sin(rot), cy + x * sin(rot) + y * cos(rot)]; });
+const heartPoly = (cx, cy, size, rot = 0, n = 56) => Array.from({ length: n }, (_, i) => { const t = i / n * TAU, x = 16 * sin(t) ** 3, y = -(13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t)); const px = x * size / 34, py = (y + 1.5) * size / 34; return [cx + px * cos(rot) - py * sin(rot), cy + px * sin(rot) + py * cos(rot)]; });
+const starPoly = (cx, cy, r1, r2, n = 5, rot = -PI / 2) => Array.from({ length: n * 2 }, (_, i) => { const a = rot + PI * i / n, r = i % 2 ? r2 : r1; return [cx + r * cos(a), cy + r * sin(a)]; });
+const rrect = (x0, y0, x1, y1, r, n = 6) => { const out = [], c = [[x1 - r, y0 + r, -90], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, 90], [x0 + r, y0 + r, 180]]; for (const [cx, cy, a] of c) for (let i = 0; i <= n; i++) { const t = (a + 90 * i / n) * D2R; out.push([cx + r * cos(t), cy + r * sin(t)]); } return out; };
+const wavy = (a, b, amp, waves, n = 40) => Array.from({ length: n + 1 }, (_, i) => { const t = i / n, dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1, off = amp * sin(t * waves * TAU); return [a[0] + dx * t - dy / l * off, a[1] + dy * t + dx / l * off]; });
+const sparkle = (c, r) => [[[c[0], c[1] - r], [c[0] + r * 0.18, c[1] - r * 0.18], [c[0] + r, c[1]], [c[0] + r * 0.18, c[1] + r * 0.18], [c[0], c[1] + r], [c[0] - r * 0.18, c[1] + r * 0.18], [c[0] - r, c[1]], [c[0] - r * 0.18, c[1] - r * 0.18], [c[0], c[1] - r]]];
+
+const lerp = (a, b, t) => a + (b - a) * t;
+const MIN_CONFETTI = 4.0, STENCIL_BRIDGE = 2.6, BEHIND_REACH = 2.5;
+function rng(seed) { let a = (seed >>> 0) || 1; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+// a set of cut windows: signed distance (negative inside), looking only at windows within `reach`
+function holeSet(polys) {
+  const hs = polys.map(p => ({ p, f: fastPoly(p), b: polyBox(p) }));
+  return { polys, d(x, y, reach = 8) { let d = 1e3; for (const h of hs) { const b = h.b; if (x < b[0] - reach || x > b[2] + reach || y < b[1] - reach || y > b[3] + reach) continue; const v = h.f(x, y); if (v < d) d = v; } return d; } };
+}
+// keep the parts of the lines where keep(x, y) holds, sampled every `step` mm
+function clipLines(lines, keep, step = 0.3) {
+  const out = [];
+  for (const L of lines) {
+    let run = [];
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[i + 1] || a, n = i + 1 < L.length ? max(1, ceil(hypot(b[0] - a[0], b[1] - a[1]) / step)) : 1;
+      for (let k = 0; k < n; k++) { const x = a[0] + (b[0] - a[0]) * k / n, y = a[1] + (b[1] - a[1]) * k / n; if (keep(x, y)) run.push([x, y]); else { if (run.length > 1) out.push(run); run = []; } }
+    }
+    if (run.length > 1) out.push(run);
+  }
+  return out.map(r => rdp(r, 0.03)).filter(r => plen(r) > 0.35);
+}
+// distance to a union of capsules, stamped one capsule at a time onto the cells near it (cells further than `reach` read `reach`)
+function capsField(prims, B, h, reach) {
+  const x0 = B[0], y0 = B[1], nx = ceil((B[2] - B[0]) / h) + 1, ny = ceil((B[3] - B[1]) / h) + 1, F = new Float32Array(nx * ny).fill(reach);
+  for (const p of prims) {
+    const b = primBox(p), i0 = max(0, floor((b[0] - reach - x0) / h)), i1 = min(nx - 1, ceil((b[2] + reach - x0) / h)), j0 = max(0, floor((b[1] - reach - y0) / h)), j1 = min(ny - 1, ceil((b[3] + reach - y0) / h));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const k = j * nx + i, v = primDist(p, x0 + i * h, y0 + j * h); if (v < F[k]) F[k] = v; }
+  }
+  return { F, nx, ny, h, x0, y0 };
+}
+// a stencil letter: the outline of its strokes at radius r, with a bridge of card over each counter so the middle stays
+function stencil(strokes, r) {
+  const prims = []; for (const st of strokes) { const q = resample(st, 0.9); for (let i = 0; i + 1 < q.length; i++) prims.push(Limb(q[i][0], q[i][1], r, q[i + 1][0], q[i + 1][1], r)); if (q.length === 1) prims.push(Circ(q[0][0], q[0][1], r)); }
+  const G = capsField(prims, growB(primsBox(prims), 3), 0.2, 3.5), gTop = min(...strokes.flat().map(p => p[1])) - r - 1.0;
+  const loopsOf = () => contours(G, 0).filter(l => abs(loopArea(l)) > 0.6).map(l => { const q = smooth(l, 1); return rdp([...q, q[0]], 0.03); });
+  const loops = loopsOf(), isIsland = loops.map((l, i) => loops.some((m, j) => j !== i && abs(loopArea(m)) > abs(loopArea(l)) && inPoly(l[0], m)));
+  // a counter too small to keep (a heavy G nearly closing up) just falls out with the letter: cut the outer loops only
+  const keep = loops.filter((l, i) => isIsland[i] && (() => { const b = polyBox(l); return abs(loopArea(l)) >= 12 && min(b[2] - b[0], b[3] - b[1]) >= 3.5; })());
+  const outer = loops.filter((_, i) => !isIsland[i]);
+  if (!keep.length) return { polys: outer, G };
+  const F0 = G.F.slice();
+  for (const l of keep) { // carve the bridge out of the window: max(d, -inside-the-bar)
+    const b = polyBox(l), cx = (b[0] + b[2]) / 2, bb = [cx - STENCIL_BRIDGE / 2, gTop - 1.0, cx + STENCIL_BRIDGE / 2, (b[1] + b[3]) / 2];
+    const i0 = max(0, floor((bb[0] - 2 - G.x0) / G.h)), i1 = min(G.nx - 1, ceil((bb[2] + 2 - G.x0) / G.h)), j0 = max(0, floor((bb[1] - 2 - G.y0) / G.h)), j1 = min(G.ny - 1, ceil((bb[3] + 2 - G.y0) / G.h));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const x = G.x0 + i * G.h, y = G.y0 + j * G.h, e = max(abs(x - (bb[0] + bb[2]) / 2) - (bb[2] - bb[0]) / 2, abs(y - (bb[1] + bb[3]) / 2) - (bb[3] - bb[1]) / 2), k = j * G.nx + i; if (-e > G.F[k]) G.F[k] = -e; }
+  }
+  const polys = loopsOf();
+  for (let i = 0; i < polys.length; i++) for (let j = i + 1; j < polys.length; j++) if (polyDist(polys[i], polys[j]) < MIN_BRIDGE) { G.F.set(F0); return { polys: outer, G }; } // a bridge that pinches: no bridges
+  return { polys, G };
+}
+
+// ================= the Confused deck: title-block trading cards for Inktober day 19, "confused" =================
+// Every card is drawn in base units (a 63 x 88 card) and scaled up for the bigger sizes.
+const PENS = ["fine", "bold", "red"], LAYERS = [...PENS, "score", "cut"];
+const BW = 63, BH = 88, SIZES = { trade: 63, big: 84, a6: 105 };
+const GL2 = {
+  a: [3.2, "A1.6,4,1.6,2,0,360 M3.2,2 L3.2,6"], b: [3.2, "M0,0 L0,6 M3.2,4 A1.6,4,1.6,2,0,360"], c: [3.4, "A1.7,4,1.7,2,-40,-320"], d: [3.2, "A1.6,4,1.6,2,0,360 M3.2,0 L3.2,6"],
+  e: [3.2, "M0,4 L3.2,4 A1.6,4,1.6,2,0,-310"], f: [2.6, "A1.9,1.4,0.9,1,-30,-180 L1,6 M0,2.4 L2.4,2.4"], g: [3.2, "A1.6,4,1.6,2,0,360 M3.2,2 L3.2,6.6 A1.6,6.6,1.6,1.2,0,150"],
+  h: [3.2, "M0,0 L0,6 M0,3.8 A1.6,3.8,1.6,1.6,-180,0 L3.2,6"], i: [1, "M0.5,2 L0.5,6 M0.5,0.4 L0.5,0.9"], k: [3.2, "M0,0 L0,6 M3,2 L0,4.6 M1.1,3.8 L3.2,6"], l: [1, "M0.5,0 L0.5,6"],
+  m: [4.8, "M0,2 L0,6 M0,3.4 A1.2,3.4,1.2,1.3,-180,0 L2.4,6 M2.4,3.4 A3.6,3.4,1.2,1.3,-180,0 L4.8,6"], n: [3.2, "M0,2 L0,6 M0,3.6 A1.6,3.6,1.6,1.5,-180,0 L3.2,6"],
+  o: [3.4, "A1.7,4,1.7,2,0,360"], p: [3.2, "M0,2 L0,8 M3.2,4 A1.6,4,1.6,2,0,360"], r: [2.9, "M0,2 L0,6 M0,3.6 A1.7,3.6,1.7,1.5,-180,-45"],
+  s: [3, "A1.5,3,1.4,1,-20,-270 A1.5,5,1.5,1,-90,160"], t: [2.4, "M1,0.6 L1,6 M0,2 L2.4,2"], u: [3.2, "M0,2 L0,4.4 A1.6,4.4,1.6,1.6,180,0 L3.2,2 M3.2,2 L3.2,6"],
+  v: [3.2, "M0,2 L1.6,6 L3.2,2"], w: [4.4, "M0,2 L1.1,6 L2.2,2.8 L3.3,6 L4.4,2"], x: [3.2, "M0,2 L3.2,6 M3.2,2 L0,6"], y: [3.2, "M0,2 L1.6,6 M3.2,2 L0.8,8"], z: [3, "M0,2 L3,2 L0,6 L3,6"],
+  "/": [2.6, "M0.2,6.4 L2.4,-0.4"], "|": [1, "M0.5,-0.5 L0.5,6.5"], "=": [3.2, "M0.2,2.2 L3,2.2 M0.2,3.8 L3,3.8"], "°": [1.8, "A0.9,0.9,0.7,0.7,0,360"], "_": [3, "M0,6.4 L3,6.4"],
+  "±": [3.2, "M0.1,2.6 L3.1,2.6 M1.6,1 L1.6,4.2 M0.1,5.6 L3.1,5.6"], "⌀": [4.4, "A2.2,3,2,2,0,360 M0.2,5.8 L4.2,0.2"], "⊥": [4.4, "M2.2,0.4 L2.2,5.6 M0,5.6 L4.4,5.6"],
+  "⏥": [5, "M1.2,1.6 L5,1.6 L3.8,4.6 L0,4.6 L1.2,1.6"], "⌖": [4.6, "A2.3,3,1.7,1.7,0,360 M2.3,0.5 L2.3,5.5 M-0.2,3 L4.8,3"], "∥": [3, "M1,0.6 L0.2,5.4 M2.8,0.6 L2,5.4"],
+  "○": [4.4, "A2.2,3,2.1,2.1,0,360"], "◎": [4.4, "A2.2,3,2.1,2.1,0,360 M3.3,3 A2.2,3,1.1,1.1,0,360"], "↗": [4, "M0.3,5.7 L3.7,0.3 M1.6,0.4 L3.7,0.3 L3.6,2.4"],
+  "∞": [5, "A1.25,3,1.25,1,0,360 M5,3 A3.75,3,1.25,1,0,360"], "~": [3.4, "M0,3.6 L0.8,2.8 L1.7,3.4 L2.6,3.8 L3.4,3"], "<": [3, "M3,1 L0,3 L3,5"], ">": [3, "M0,1 L3,3 L0,5"],
+};
+for (const [ch, [w, s]] of Object.entries(GL2)) GL[ch] = { w, strokes: parseGlyph(s) };
+// typed shortcuts for the symbols: +/- gives ±, [dia] ⌀, [flat] ⏥, [perp] ⊥, [pos] ⌖, [par] ∥, [circ] ○, [conc] ◎, [runout] ↗, [inf] ∞, [deg] °
+const SYM = [[/\+\/-|\+-/g, "±"], [/\[dia\]|[Øø]/gi, "⌀"], [/\[flat\]/gi, "⏥"], [/\[perp\]/gi, "⊥"], [/\[pos\]/gi, "⌖"], [/\[par\]/gi, "∥"], [/\[circ\]/gi, "○"], [/\[conc\]/gi, "◎"], [/\[runout\]/gi, "↗"], [/\[inf\]/gi, "∞"], [/\[deg\]/gi, "°"]];
+const sym = t => SYM.reduce((a, [re, c]) => a.replace(re, c), String(t));
+const glyphOf = (ch, keep) => (keep && GL[ch]) || GL[ch.toUpperCase()] || GL[ch] || GL["?"];
+function layoutT(str, keep = false, gap = 1.2) { // in font units (cap height 6)
+  const gl = []; let x = 0;
+  for (const ch of sym(str)) { if (ch === " ") { x += 2.4; continue; } const g = glyphOf(ch, keep); gl.push({ x, g }); x += g.w + gap; }
+  return { gl, w: max(0, x - gap) };
+}
+const textW = (str, cap, keep) => layoutT(str, keep).w * cap / 6;
+// strokes of a line of text, anchored at (ax, ay): h is l|c|r, v is t|m|b of the cap box, turned by ang
+function textStrokes(str, ax, ay, cap, { h = "l", v = "t", ang = 0, keep = false } = {}) {
+  const L = layoutT(str, keep), s = cap / 6, w = L.w * s, ox = h === "c" ? -w / 2 : h === "r" ? -w : 0, oy = v === "m" ? -cap / 2 : v === "b" ? -cap : 0, c = cos(ang), sn = sin(ang), out = [];
+  for (const { x, g } of L.gl) for (const st of g.strokes) out.push(st.map(([a, b]) => { const lx = ox + (x + a) * s, ly = oy + b * s; return [ax + lx * c - ly * sn, ay + lx * sn + ly * c]; }));
+  return { strokes: out, w };
+}
+function offsetLine(q, off) { return q.map((p, i) => { const a = q[max(i - 1, 0)], b = q[min(i + 1, q.length - 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = hypot(dx, dy) || 1; return [p[0] - dy / l * off, p[1] + dx / l * off]; }); }
+function dashPts(pts, pat) { // a polyline broken into dashes: pat is on, off, on, off ... in mm
+  const out = []; let pi = 0, left = pat[0], on = true, cur = [pts[0]];
+  for (let i = 1; i < pts.length; i++) {
+    let a = pts[i - 1]; const b = pts[i]; let L = hypot(b[0] - a[0], b[1] - a[1]);
+    while (L > 1e-9) {
+      const t = min(left, L), p = [a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L];
+      if (on) cur.push(p);
+      L -= t; left -= t; a = p;
+      if (left <= 1e-9) { if (on && cur.length > 1) out.push(cur); on = !on; pi = (pi + 1) % pat.length; left = pat[pi]; cur = on ? [p] : []; }
+    }
+  }
+  if (on && cur.length > 1) out.push(cur);
+  return out;
+}
+const rectPts = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]];
+// distance to a set of polylines, with a grid so it stays quick; each segment remembers which path it came from
+function segIndex(paths, cell = 2.5) {
+  const segs = [], grid = new Map(), key = (i, j) => i * 100003 + j;
+  paths.forEach(([q, cl], id) => { const n = q.length, m = cl ? n : n - 1; for (let i = 0; i < m; i++) { const a = q[i], b = q[(i + 1) % n]; segs.push([a[0], a[1], b[0], b[1], id]); } });
+  segs.forEach((s, idx) => { const i0 = floor(min(s[0], s[2]) / cell) - 1, i1 = floor(max(s[0], s[2]) / cell) + 1, j0 = floor(min(s[1], s[3]) / cell) - 1, j1 = floor(max(s[1], s[3]) / cell) + 1; for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const k = key(i, j); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(idx); } });
+  return { d(x, y, skip = -1) { const a = grid.get(key(floor(x / cell), floor(y / cell))); let d = cell; if (a) for (const i of a) { const s = segs[i]; if (s[4] === skip) continue; const dx = s[2] - s[0], dy = s[3] - s[1], L = dx * dx + dy * dy || 1e-12, t = clamp(((x - s[0]) * dx + (y - s[1]) * dy) / L, 0, 1); d = min(d, hypot(x - s[0] - t * dx, y - s[1] - t * dy)); } return d; } };
+}
+function parallel(B, gap, ang) {
+  const cx = (B[0] + B[2]) / 2, cy = (B[1] + B[3]) / 2, R = hypot(B[2] - B[0], B[3] - B[1]) / 2 + 1, c = cos(ang), s = sin(ang), out = [];
+  let k = 0; for (let d = -R; d <= R; d += gap, k++) { const a = [cx - c * R - s * d, cy - s * R + c * d], b = [cx + c * R - s * d, cy + s * R + c * d]; out.push(k % 2 ? [b, a] : [a, b]); }
+  return out;
+}
+
+// ---------------- the red pen: faces, scrawls, clouds and question marks ----------------
+function face(k, cx, cy, r, g) { // hand-drawn, g from 0 (mildly put out) to 1 (furious)
+  const R = k.R, a0 = R() * TAU, head = [];
+  for (let i = 0; i <= 46; i++) { const a = a0 + TAU * i / 42, rr = r * (1 + (0.035 + 0.07 * g) * sin(a * 3 + a0)); head.push([cx + rr * cos(a), cy + rr * sin(a)]); }
+  k.ink("red", head);
+  const ey = cy - 0.1 * r, ex = 0.34 * r;
+  for (const s of [-1, 1]) {
+    if (g < 0.55) k.ink("red", circle(cx + s * ex, ey, max(0.2, 0.08 * r), 8));
+    else k.ink("red", [[cx + s * ex - 0.14 * r, ey + 0.03 * r], [cx + s * ex + 0.14 * r, ey - 0.02 * r * s]]);
+    k.ink("red", [[cx + s * 0.58 * r, ey - 0.3 * r - 0.08 * r * g], [cx + s * 0.12 * r, ey - 0.3 * r + 0.24 * r * g]]); // the inner ends drop as it gets crosser
+  }
+  const my = cy + 0.44 * r, mw = 0.36 * r;
+  if (g > 0.8) { // gritted teeth
+    k.ink("red", [[cx - mw, my - 0.11 * r], [cx + mw, my - 0.11 * r], [cx + mw, my + 0.13 * r], [cx - mw, my + 0.13 * r], [cx - mw, my - 0.11 * r]]);
+    for (let i = 1; i < 4; i++) k.ink("red", [[cx - mw + 2 * mw * i / 4, my - 0.11 * r], [cx - mw + 2 * mw * i / 4, my + 0.13 * r]]);
+  } else k.ink("red", Array.from({ length: 11 }, (_, i) => { const t = i / 5 - 1; return [cx + mw * t, my - 0.24 * r * g * (1 - t * t) + 0.04 * r * t * (R() - 0.5)]; }));
+  if (g > 0.5) { const p = [cx + 0.95 * r, cy - 0.9 * r]; for (let i = 0; i < 4; i++) { const a = (45 + 90 * i) * D2R, c = [p[0] + 0.34 * r * cos(a), p[1] + 0.34 * r * sin(a)]; k.ink("red", arcP(c[0], c[1], 0.2 * r, 0.2 * r, 45 + 90 * i + 130, 45 + 90 * i + 230, 6)); } }
+  if (g > 0.85 && r > 3) for (const s of [-1, 1]) k.ink("red", Array.from({ length: 13 }, (_, i) => [cx + s * (0.55 * r + 0.12 * r * sin(i * 1.3)), cy - r * 1.05 - i * 0.07 * r]));
+}
+function scrawl(k, x0, x1, y) { // a signature nobody can read
+  const R = k.R, L = x1 - x0, loops = 3 + floor(R() * 3), amp = 1.1 + R() * 0.5, pts = [];
+  for (let i = 0; i <= 90; i++) { const t = i / 90, a = t * loops * TAU; pts.push([x0 + t * L * 0.86 - 0.8 * sin(a), y - amp * cos(a) * (1 - 0.45 * t) + 0.5 * t]); }
+  k.ink("fine", pts); k.ink("fine", [[x0 + L * 0.15, y + 1.7], [x1 - 0.4, y + 1.3]]);
+}
+function wobble(k, c, rx, ry, pen = "red") { const R = k.R, a0 = R() * TAU, pts = []; for (let i = 0; i <= 50; i++) { const a = a0 + TAU * 1.1 * i / 50, j = 1 + 0.05 * sin(a * 3 + a0); pts.push([c[0] + rx * j * cos(a), c[1] + ry * j * sin(a)]); } k.ink(pen, pts); }
+function markup(k) { // confusion: red question marks, a revision cloud, a coffee ring
+  const c = k.c, R = k.R, spots = [...k.spots].sort(() => R() - 0.5);
+  for (let i = 0; i < min(spots.length, round(c * 3.2)); i++) k.text("?", spots[i][0], spots[i][1], lerp(2.4, 3.4, R()), { pen: "red", ang: (R() - 0.5) * 0.5, w: 2 });
+  if (c >= 0.45 && k.cloud) {
+    const [x0, y0, x1, y1] = k.cloud, path = rectPts(x0, y0, x1, y1);
+    k.ink("red", scallopPath(path, 3, 1, (x, y) => { const e = [x - x0, x1 - x, y - y0, y1 - y], m = e.indexOf(min(...e)); return [[-1, 0], [1, 0], [0, -1], [0, 1]][m]; }));
+    const t = [x1 + 1.2, y0 - 1.2]; k.ink("red", [[t[0] - 2, t[1] + 1.6], [t[0] + 2, t[1] + 1.6], [t[0], t[1] - 1.9], [t[0] - 2, t[1] + 1.6]]); k.text("?", t[0], t[1] + 0.4, 1.5, { pen: "red", h: "c", v: "m" });
+  }
+  if (c >= 0.7 && (k.idx * 3 + k.o.seed) % 4 === 0) { // somebody put their mug down on it
+    const cc = [lerp(16, 46, R()), lerp(26, 50, R())], r = 10.5;
+    for (const [dr, span] of [[0, 300], [-0.7, 220], [0.5, 120]]) { const a = R() * 360; k.ink("fine", arcP(cc[0], cc[1], r + dr, r + dr, a, a + span, 60)); }
+    k.ink("fine", circle(cc[0] + r * 0.8, cc[1] + r * 0.75, 0.8, 10));
+  }
+}
+
+// ---------------- the drawing kit: one card, in base units ----------------
+function cardKit(o, idx, R, id) {
+  const k = { o, idx, R, id, c: o.confusion / 100, F: { fine: [], bold: [], red: [] }, U: { fine: [], bold: [], red: [] }, holes: [], show: [], flaps: [], minCap: INF, spots: [], cloud: null, notch: null, brad: null, wheel: null, target: "F" };
+  k.f = key => { const v = o[`t_${id}_${key}`]; return v === undefined ? (TEXT[id] || {})[key] : v; };
+  k.lines = key => sym(k.f(key) || "").split("/").map(t => t.trim()).filter(Boolean);
+  k.hlOf = hl => { if (k.f("head") === TEXT[id].head) return hl; const L = k.lines("head"); return { lines: L, ink: L.slice(0, -1), cut: L.at(-1) }; };
+  k.ink = (pen, pts, cl = false) => { if (pts.length > 1) k[k.target][pen].push([pts, cl]); };
+  k.under = fn => { k.target = "U"; fn(); k.target = "F"; };
+  k.text = (str, x, y, cap, opt = {}) => {
+    const { strokes, w } = textStrokes(str, x, y, cap, opt), pen = opt.pen || "fine", reps = opt.w || 1;
+    if (cap < k.minCap) { k.minCap = cap; k.minWhat = str; }
+    for (const st of strokes) { if (reps === 1 || st.length < 2) k.ink(pen, st); else { const q = resample(st, 0.35); for (const off of reps === 2 ? [-0.12, 0.12] : [-0.22, 0, 0.22]) k.ink(pen, offsetLine(q, off)); } }
+    return w;
+  };
+  k.fit = (str, cap, w, keep) => min(cap, w * 6 / max(1, layoutT(str, keep).w));
+  k.circ = (pen, x, y, r) => k.ink(pen, circle(x, y, r));
+  k.dash = (pen, pts, pat) => { for (const q of dashPts(pts, pat)) k.ink(pen, q); };
+  k.cl = (a, b) => k.dash("fine", [a, b], [4, 0.8, 0.6, 0.8]);
+  k.hid = (a, b) => k.dash("fine", [a, b], [1.4, 0.7]);
+  k.cmark = (x, y, r) => { k.cl([x - r - 1.6, y], [x + r + 1.6, y]); k.cl([x, y - r - 1.6], [x, y + r + 1.6]); };
+  k.arrow = (tip, dx, dy, pen = "fine", len = 1.7, wd = 0.55) => { const l = hypot(dx, dy) || 1; dx /= l; dy /= l; const b = [tip[0] - dx * len, tip[1] - dy * len], n = [-dy * wd, dx * wd]; k.ink(pen, [tip, [b[0] + n[0], b[1] + n[1]], [b[0] - n[0], b[1] - n[1]], tip]); k.ink(pen, [tip, b]); };
+  k.dimH = (x1, x2, yf1, yf2, y, label, cap = 1.7) => {
+    for (const [x, yf] of [[x1, yf1], [x2, yf2]]) { const sg = Math.sign(y - yf) || 1; k.ink("fine", [[x, yf + sg * 0.8], [x, y + sg * 1.2]]); }
+    k.ink("fine", [[x1, y], [x2, y]]); k.arrow([x1, y], -1, 0); k.arrow([x2, y], 1, 0);
+    k.text(label, (x1 + x2) / 2, y - 0.7, cap, { h: "c", v: "b" });
+  };
+  k.dimV = (y1, y2, xf1, xf2, x, label, cap = 1.7) => {
+    for (const [y, xf] of [[y1, xf1], [y2, xf2]]) { const sg = Math.sign(x - xf) || 1; k.ink("fine", [[xf + sg * 0.8, y], [x + sg * 1.2, y]]); }
+    k.ink("fine", [[x, y1], [x, y2]]); k.arrow([x, y1], 0, -1); k.arrow([x, y2], 0, 1);
+    k.text(label, x - 0.7, (y1 + y2) / 2, cap, { h: "c", v: "b", ang: -PI / 2 });
+  };
+  k.flap = poly => k.flaps.push(poly); // the last edge (last point back to the first) is the hinge, scored; the rest is cut
+  k.stamp = (cx, cy, ang, lines, w, h) => { // a rubber stamp, a little crooked
+    const rot = p => [cx + p[0] * cos(ang) - p[1] * sin(ang), cy + p[0] * sin(ang) + p[1] * cos(ang)];
+    k.ink("bold", [...rrect(-w / 2, -h / 2, w / 2, h / 2, 1.2, 4).map(rot), rot([w / 2 - 1.2, -h / 2])]);
+    k.ink("fine", [...rrect(-w / 2 + 0.9, -h / 2 + 0.9, w / 2 - 0.9, h / 2 - 0.9, 0.6, 3).map(rot), rot([w / 2 - 1.5, -h / 2 + 0.9])]);
+    const cap = min(3.2, (h - 3.2 - (lines.length - 1) * 1) / lines.length), pitch = cap + 1;
+    lines.forEach((t, i) => { const c2 = k.fit(t, cap, w - 4), p = rot([0, -((lines.length - 1) * pitch) / 2 + i * pitch]); k.text(t, p[0], p[1], c2, { h: "c", v: "m", ang, pen: "bold", w: 2 }); });
+  };
+  // the headline: inked in the bold pen, or with its last word cut through as a stencil so the backer shows
+  k.headline = (hl, right = 58) => {
+    const x0 = 5.5, avail = right - x0, cut = o.headline === "cut" && hl.cut, wt = o.weight;
+    const lines = cut ? hl.ink.map(t => ({ t })).concat([{ t: hl.cut, cut: true }]) : hl.lines.map(t => ({ t }));
+    const fitCut = t => { for (let cap = 5.6; cap > 2; cap -= 0.1) { const rr = cap * wt, gU = (2 * rr + 2.3) / (cap / 6); if (layoutT(t, false, gU).w * cap / 6 + 2 * rr <= avail) return cap; } return 2; };
+    const ic = min(4.6, ...lines.filter(l => !l.cut).map(l => 6 * avail / max(1, layoutT(l.t).w)));
+    let caps = lines.map(l => l.cut ? fitCut(l.t) : ic);
+    const tall = lines.reduce((a, l, i) => a + caps[i] * (l.cut ? 1 + 2 * wt : 1), 0) + (lines.length - 1) * 1.7;
+    if (tall > 11.6) caps = caps.map(c => c * 11.6 / tall);
+    let y = 5.6;
+    lines.forEach((l, i) => {
+      const c = caps[i];
+      if (!l.cut) { k.text(l.t, x0, y, c, { pen: "bold", w: c > 3 ? 3 : 2 }); y += c + 1.7; return; }
+      const rr = c * wt, gU = (2 * rr + 2.3) / (c / 6), L = layoutT(l.t, false, gU), s = c / 6;
+      for (const { x, g } of L.gl) {
+        // a glyph in separate pieces (± ; : !) whose windows come closer than a bridge gets a short bar joining them, so no sliver of card is left between
+        const strokes = g.strokes.map(st => st.map(([a, b]) => [x0 + rr + (x + a) * s, y + rr + b * s]));
+        let polys = stencil(strokes, rr).polys;
+        for (let tries = 0; tries < 4; tries++) {
+          let near = null;
+          for (let i = 0; i < polys.length && !near; i++) for (let j = i + 1; j < polys.length && !near; j++) if (polyDist(polys[i], polys[j]) < MIN_BRIDGE + 0.05) near = [i, j];
+          if (!near) break;
+          let best = [INF]; for (const p of polys[near[0]]) for (const q of polys[near[1]]) { const d = hypot(p[0] - q[0], p[1] - q[1]); if (d < best[0]) best = [d, p, q]; }
+          const [, p, q] = best, c = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+          strokes.push([[c[0] - (c[0] - p[0]) * 2, c[1] - (c[1] - p[1]) * 2], [c[0] + (q[0] - c[0]) * 2, c[1] + (q[1] - c[1]) * 2]]);
+          polys = stencil(strokes, rr).polys;
+        }
+        for (const p of polys) { k.holes.push(p); k.show.push(p); }
+      }
+      k.minCap = min(k.minCap, c); y += c + 2 * rr + 1.7;
+    });
+    return y - 1.7;
+  };
+  // the title block along the bottom of every card
+  k.tb = f => {
+    f = { ...f, title: k.f("title"), rev: k.f("rev"), scale: k.f("scale"), sheet: k.f("sheet") || f.sheet, mat: k.f("mat"), tol: String(o.g_tol || "").trim() || k.f("tol") };
+    const names = [o.g_drawn, o.g_checked, o.g_approved, o.g_released].map(t => String(t || "").trim());
+    const [a, b, c, d, e] = [61, 67, 72, 79.5, 85];
+    k.ink("bold", [[3, a], [60, a]]);
+    for (const y of [b, c, d]) k.ink("fine", [[3, y], [60, y]]);
+    for (const [x, y0, y1] of [[25, b, c], [33, b, c], [45, b, c], [17.25, c, d], [31.5, c, d], [45.75, c, d], [30, d, e], [48, d, e]]) k.ink("fine", [[x, y0], [x, y1]]);
+    const cell = (x0, x1, y0, lab, val, cap = 1.9, pen = "fine") => { k.text(lab, x0 + 0.7, y0 + 0.6, 1.15); if (val) k.text(val, x0 + 0.8, y0 + 2.35, k.fit(val, cap, x1 - x0 - 1.6), { pen }); };
+    cell(3, 60, a, "TITLE", f.title, 2.5, "bold");
+    cell(3, 25, b, "DWG NO.", `${String(o.g_dwg ?? "").trim() || "CNF-19"}-${String(k.idx + 1).padStart(2, "0")}`); cell(25, 33, b, "REV", f.rev); cell(33, 45, b, "SCALE", f.scale); cell(45, 60, b, "SHEET", f.sheet || "1 OF ?");
+    [["DRAWN", 3, 17.25], ["CHECKED", 17.25, 31.5], ["APPROVED", 31.5, 45.75], ["RELEASED", 45.75, 60]].forEach(([lab, x0, x1], i) => {
+      k.text(lab, x0 + 0.7, c + 0.6, 1.15);
+      const v = (f.sig || [])[i], cx = (x0 + x1) / 2, cy = c + 4.45;
+      if (v && typeof v === "object") face(k, cx, cy, 2.5, v.face); else if (names[i]) k.text(names[i], cx, cy - 0.6, k.fit(names[i], 2.2, x1 - x0 - 2), { h: "c", v: "m" }); else if (v === "sig") scrawl(k, x0 + 1.6, x1 - 1.6, cy + 0.2); else if (v) k.text(v, x0 + 1, c + 2.6, k.fit(v, 2.4, x1 - x0 - 2));
+    });
+    cell(3, 30, d, "MATERIAL", f.mat); cell(30, 48, d, "TOL.", f.tol);
+    projBoth(k, 54, d + 3.05);
+  };
+  return k;
+}
+function projBoth(k, x, y) { // first and third angle at once: circles on both sides of the cone
+  k.ink("fine", [[x - 1.4, y - 0.7], [x + 1.2, y - 1.5], [x + 1.2, y + 1.5], [x - 1.4, y + 0.7], [x - 1.4, y - 0.7]]);
+  for (const cx of [x - 3.6, x + 3.4]) { k.circ("fine", cx, y, 1.5); k.circ("fine", cx, y, 0.75); }
+  k.cl([x - 5.6, y], [x + 5.6, y]);
+}
+
+// ---------------- the tolerance wheel ----------------
+const TOLS = [
+  { t: "±0.1", ok: 1 }, { t: "±0.05", ok: 1 }, { t: "H7/g6", ok: 1 }, { t: "H7/h6", ok: 1 }, { t: "+0.1/-0", ok: 1 }, { t: "ISO 2768-m", ok: 1 }, { t: "⏥|0.02", ok: 1 },
+  { t: "⊥|0.05|A", ok: 1 }, { t: "⌖|⌀0.1|A|B", ok: 1 }, { t: "○|0.01", ok: 1 }, { t: "Ra 1.6", ok: 1 }, { t: "∥|0.02|A", ok: 1 }, { t: "MATCH DRILL", ok: 1 }, { t: "◎|⌀0.02|A", ok: 1 }, { t: "↗|0.05|A", ok: 1 },
+  { t: "±0.0001", s: "ON A WELD" }, { t: "±1 m" }, { t: "+0/-0" }, { t: "⌖|⌀0.1|D", s: "NO DATUM D" }, { t: "⏥|0.005", s: "SAND CAST" }, { t: "⊥|0.05|ITSELF" }, { t: "±ish" },
+  { t: "FILE TO SUIT" }, { t: "FIT ON ASSY" }, { t: "DATUM: FLOOR" }, { t: "H7", s: "(HAMMER)" }, { t: "Ra 0.01", s: "FORGED" }, { t: "BREAK EDGES", s: "WHICH EDGES?" },
+  { t: "±vibes" }, { t: "±∞" }, { t: "±0.1", s: "(MAYBE)" }, { t: "○|0.01", s: "IT'S SQUARE" }, { t: "SEE NOTE 4", s: "NO NOTE 4" }, { t: "NOMINAL", s: "ROUGHLY" },
+];
+// one callout, laid out in the window's frame: x from 0 to cw, centred on y = 0, fitted into height ch
+function entryInk(e, cw, ch) {
+  const out = [], two = !!e.s, fcf = e.t.includes("|"), parts = fcf ? e.t.split("|") : null, pad = c => 0.32 * c;
+  const w1 = c => fcf ? parts.reduce((a, p) => a + textW(p, c, true) + 2 * pad(c), 0) : textW(e.t, c, true);
+  let c1 = two ? 2.4 : 3; while (c1 > 1.2 && w1(c1) > cw) c1 -= 0.05;
+  let c2 = 1.8; if (two) while (c2 > 1.1 && textW(e.s, c2, true) > cw) c2 -= 0.05;
+  const fixed = (fcf ? 1.2 : 0) + (two ? 0.7 : 0), need = c1 + (two ? c2 : 0) + fixed;
+  if (need > ch) { const f = (ch - fixed) / (c1 + (two ? c2 : 0)); c1 *= f; c2 *= f; }
+  let y = -(c1 + (two ? c2 : 0) + fixed) / 2;
+  if (fcf) {
+    const bh = c1 + 1.2, W1 = w1(c1); let x = (cw - W1) / 2;
+    out.push(rectPts(x, y, x + W1, y + bh));
+    parts.forEach((p, i) => { if (i) out.push([[x, y], [x, y + bh]]); out.push(...textStrokes(p, x + pad(c1), y + 0.6, c1, { keep: true }).strokes); x += textW(p, c1, true) + 2 * pad(c1); });
+    y += bh + 0.7;
+  } else { out.push(...textStrokes(e.t, cw / 2, y, c1, { h: "c", keep: true }).strokes); y += c1 + 0.7; }
+  if (two) out.push(...textStrokes(e.s, cw / 2, y, c2, { h: "c", keep: true }).strokes);
+  return { strokes: out, cap: two ? min(c1, c2) : c1 };
+}
+// the window: [r0, r1] along the hub's x axis, half height hh; r0 grows until no neighbour can show in it
+function wheelWindow(N, R) {
+  const hh = 3.0, step = TAU / N, r1 = min(26, sqrt((R - 3.9) ** 2 - hh * hh));
+  const pts = []; // the content rect, sampled
+  const clear = r0 => { for (let x = r0 + 0.5; x <= r1 - 0.5 + 1e-9; x += 0.4) for (let y = -hh + 0.5; y <= hh - 0.5 + 1e-9; y += 0.4) for (let j = 1; j < N; j++) { const a = j * step, X = x * cos(a) - y * sin(a), Y = x * sin(a) + y * cos(a); if (X > r0 - 0.5 && X < r1 + 0.5 && abs(Y) < hh + 0.5) return false; } return true; };
+  let r0 = 8.5; while (r0 < r1 - 6 && !clear(r0)) r0 += 0.1;
+  return { hh, r0, r1, step, ok: clear(r0) };
+}
+
+// ---------------- the words on every card: all editable in the studio ----------------
+const TEXT = {
+  detail: { head: "REFER TO / DETAIL C", note: "SEE DETAIL C", under: "THERE IS / NO / DETAIL C", title: "BRACKET, LH (OR RH)", rev: "C", scale: "1:1", mat: "STEEL, PROBABLY", tol: "ISO 2768-?" },
+  intent: { head: "DESIGN INTENT / UNCLEAR", notes: "? / TBC / AS REQ'D / SEE NOTE 4 / TO SUIT / SIMILAR / REF ONLY", note: "DO NOT SCALE", title: "PLATE, MOUNTING, ?", rev: "?", scale: "1:1", mat: "ALU? STEEL?", tol: "TIGHT-ISH" },
+  scale: { head: "DRAWN TO SCALE. / SCALE UNKNOWN.", bar: "0 / 10 / 7 / ? / 100 / MM?", title: "PIN, STEPPED", rev: "B", scale: "?:?", mat: "S355 OR SIMILAR", tol: "±?" },
+  sheet2: { head: "REFER TO / SHEET 2", note: "SEE SHEET 2", under: "(INTENTIONALLY LEFT BLANK)", title: "HOUSING", rev: "A", scale: "1:2", sheet: "1 OF 2", mat: "6082 (OR 7075?)", tol: "SEE SHEET 2" },
+  ttb: { big: "??????????????" },
+  whoDim: { head: "WHO DIMENSIONED / THIS?", title: "PLATE, ADAPTER", rev: "D", scale: "1:1", mat: "STEEL, PROBABLY", tol: "±0.000001" },
+  whoApp: { head: "WHO APPROVED / THIS?", stamp: "APPROVED", title: "BRACKET, FINAL_V2", rev: "E", scale: "1:1", mat: "WHATEVER'S IN STOCK", tol: "LOOSE-ISH" },
+  whoRel: { head: "WHO RELEASED / THIS?!", stamp: "RELEASED FOR / PRODUCTION", title: "SHAFT, FINAL_FINAL", rev: "F?", scale: "NTS", mat: "STEEL-ISH", tol: "±0" },
+  engineer: { head: "ASKED / ENGINEER.", q: "WHAT IS THE TOLERANCE / ON THIS BORE, PLEASE?", flap: "RESPONSE", a: "I DUNNO.", title: "RFI 0042", rev: "-", scale: "NTS", mat: "N/A", tol: "PENDING" },
+  spinner: { head: "TOLERANCE?", dim: "⌀10", notes: "1. TOLERANCES AS SHOWN. / 2. SHOWN ONE AT A TIME. / 3. TURN FOR A BETTER ONE.", title: "FLANGE, TOLERANCED", rev: "?", scale: "1:1", mat: "STEEL, PROBABLY", tol: "SEE WHEEL" },
+};
+const WORD_LABELS = { head: "Headline (/ starts a new line)", note: "Note", notes: "Notes (/ between them)", under: "Under the flap (/ starts a new line)", bar: "Scale bar labels (/ between them)", big: "The title", stamp: "Stamp (/ starts a new line)", q: "The question (/ starts a new line)", flap: "On the flap", a: "The answer (/ starts a new line)", dim: "The dimension", title: "Title block: title", rev: "Rev", scale: "Scale", sheet: "Sheet", mat: "Material", tol: "Tol." };
+// a stack of centred lines, each fitted to width w; with big set, short ones (4 characters or fewer) go bold and bigger
+function stack(k, lines, cx, cy, w, cap, big = 0, pen = "fine") {
+  const loud = t => big && t.length <= 4 && lines.length > 1, caps = lines.map(t => k.fit(t, loud(t) ? big : cap, w)), gap = 1.1, H = caps.reduce((a, c) => a + c, 0) + (lines.length - 1) * gap;
+  let y = cy - H / 2;
+  lines.forEach((t, i) => { const bold = pen === "bold" || loud(t); k.text(t, cx, y, caps[i], { h: "c", pen: bold ? "bold" : "fine", w: bold ? (caps[i] > 3 ? 3 : 2) : 1 }); y += caps[i] + gap; });
+}
+
+// ---------------- the cards ----------------
+const grumpHead = (k, hl, g, part, tb) => { k.headline(k.hlOf(hl), 47); face(k, 53, 10.8, 4.4, g); part(); k.tb(tb); };
+const CARDS = [
+  { id: "detail", name: "Refer to detail C", hl: { lines: ["REFER TO", "DETAIL C"], ink: ["REFER TO"], cut: "DETAIL C" }, build(k) {
+    k.headline(k.hlOf(this.hl));
+    k.ink("bold", [[8, 24], [34, 24], [34, 28], [12, 28], [12, 53], [8, 53]], true);
+    k.hid([21.5, 24], [21.5, 28]); k.hid([24.5, 24], [24.5, 28]); k.cl([23, 22.4], [23, 29.6]);
+    k.hid([8, 38.5], [12, 38.5]); k.hid([8, 41.5], [12, 41.5]); k.cl([6.4, 40], [13.6, 40]);
+    k.dimH(8, 34, 24, 24, 20.8, "26");
+    k.circ("fine", 12, 28, 4.2);
+    const B = [44, 46], r = 10.5, a = atan2(B[1] - 28, B[0] - 12);
+    k.ink("fine", [[12 + 4.2 * cos(a), 28 + 4.2 * sin(a)], [B[0] - r * cos(a), B[1] - r * sin(a)]]);
+    k.text("C", 5.2, 31, 2.6, { pen: "bold", w: 2 });
+    k.text(k.f("note"), 14, 50, k.fit(k.f("note"), 1.7, 18.5));
+    k.flap(arcP(B[0], B[1], r, r, -58, 238, 44));
+    k.ink("fine", arcP(B[0], B[1], r, r, -122, -58, 10));
+    k.text("C", B[0], B[1] - 1.2, 8.5, { pen: "bold", w: 3, h: "c", v: "m" });
+    k.text("SCALE 5:1", B[0], B[1] + 4.4, 1.5, { h: "c" });
+    k.text("LIFT", B[0], B[1] + 6.9, 1.3, { h: "c" });
+    k.under(() => {
+      stack(k, k.lines("under"), B[0], B[1] - 1.6, 16.5, 2.1, 3.4);
+      if (k.c >= 0.5) k.text("(SEE DETAIL D)", B[0], B[1] + 5.6, 1.3, { h: "c" });
+    });
+    k.tb({ sig: ["sig", "sig", "", ""] });
+    k.spots = [[47, 23], [24, 40], [15, 55], [36, 31]]; k.cloud = [16, 33, 31, 44];
+  } },
+  { id: "intent", name: "Design intent unclear", hl: { lines: ["DESIGN INTENT", "UNCLEAR"], ink: ["DESIGN INTENT"], cut: "UNCLEAR" }, build(k) {
+    k.headline(k.hlOf(this.hl));
+    k.ink("bold", rrect(8, 22, 36, 52, 2), true);
+    for (const [x, y] of [[13, 27], [31, 27], [13, 47]]) { k.circ("bold", x, y, 2); k.cmark(x, y, 2); }
+    const P = [31, 47];
+    const notes = k.lines("notes").slice(0, 7), pitch = notes.length > 1 ? min(5.4, 32.4 / (notes.length - 1)) : 0;
+    notes.forEach((t, i) => {
+      const y = 21 + i * pitch, s = [39.6, y + 0.85], d = [s[0] - P[0], s[1] - P[1]], l = hypot(...d), tip = [P[0] + d[0] / l * 1.3, P[1] + d[1] / l * 1.3];
+      k.text(t, 41.4, y, k.fit(t, 1.7, 16.2)); k.ink("fine", [[40.9, s[1]], s, tip]); k.arrow(tip, -d[0], -d[1]);
+    });
+    k.text(k.f("note"), 8, 55.5, k.fit(k.f("note"), 1.7, 30));
+    wobble(k, P, 3.4, 3.2);
+    k.tb({ sig: ["sig", "", "", ""] });
+    k.spots = [[20, 35], [10, 32], [25, 54]]; k.cloud = [9.5, 23.5, 34.5, 31.5];
+  } },
+  { id: "scale", name: "Drawn to scale, scale unknown", hl: { lines: ["DRAWN TO SCALE.", "SCALE UNKNOWN."], ink: ["DRAWN TO SCALE. SCALE"], cut: "UNKNOWN" }, build(k) {
+    k.headline(k.hlOf(this.hl));
+    k.ink("bold", [[8, 28], [20, 28], [20, 26], [38, 26], [38, 29], [50, 29], [50, 37], [38, 37], [38, 40], [20, 40], [20, 38], [8, 38]], true);
+    k.ink("bold", [[20, 28], [20, 38]]); k.ink("bold", [[38, 29], [38, 37]]);
+    k.cl([5.6, 33], [52.6, 33]);
+    k.dimH(8, 20, 28, 28, 23, "12"); k.dimH(20, 38, 26, 26, 23, "18"); k.dimH(38, 50, 29, 29, 23, "40");
+    k.dimH(8, 50, 38, 37, 44, "42"); k.dimH(8, 50, 38, 37, 47.8, "45");
+    for (let i = 0; i < 5; i++) { const x = 8 + i * 8, r = rectPts(x, 51, x + 8, 52.5); k.ink("fine", r); if (i % 2 === 0) for (const q of hatchPoly(r.slice(0, 4), 0.5, PI / 4, 0.05)) k.ink("fine", q); }
+    k.lines("bar").slice(0, 6).forEach((t, i) => k.text(t, 8 + i * 8, 53.3, k.fit(t, 1.35, 7.2), { h: "c" }));
+    let x = 8; for (const [t, strike] of [["1:1", 1], ["2:1", 1], ["1:?", 0]]) { const w = k.text(t, x, 56.3, 2, { pen: "red" }); if (strike) k.ink("red", [[x - 0.4, 57.5], [x + w + 0.4, 57]]); x += w + 3; }
+    k.tb({ sig: ["sig", "sig", "?", ""] });
+    k.spots = [[52.4, 39], [36, 55.6], [27, 44.6]]; k.cloud = [36, 41.5, 52, 49.5];
+  } },
+  { id: "sheet2", name: "Refer to sheet 2", hl: { lines: ["REFER TO", "SHEET 2"], ink: ["REFER TO"], cut: "SHEET 2" }, build(k) {
+    k.headline(k.hlOf(this.hl));
+    k.flap([[58, 19], [58, 59], [5, 59], [5, 19]]);
+    k.ink("bold", [[13, 24], [43, 24], [43, 48], [13, 48]], true);
+    k.circ("bold", 28, 36, 6.5); k.cl([28, 27.5], [28, 44.5]);
+    for (const [x, y] of [[17, 28], [39, 28], [17, 44], [39, 44]]) { k.circ("bold", x, y, 1.3); k.cmark(x, y, 1.3); }
+    k.dash("bold", [[11.4, 36], [44.6, 36]], [5, 1, 0.8, 1]);
+    for (const [x, lx] of [[9.8, 7.2], [46.2, 47.6]]) { k.ink("bold", [[x - 1.2, 36], [x + 1.2, 36]]); k.ink("fine", [[x, 36], [x, 33.6]]); k.arrow([x, 32.2], 0, -1, "bold"); k.text("A", lx, 30.2, 2, { pen: "bold", w: 2 }); }
+    k.text("SECTION A-A", 31.5, 50.5, 2, { h: "c" }); k.text(k.f("note"), 31.5, 53.6, k.fit(k.f("note"), 2.1, 40), { h: "c", pen: "bold", w: 2 });
+    k.text("LIFT", 56.4, 56.2, 1.3, { h: "r" }); k.ink("fine", [[50.6, 57.6], [50.6, 55.6]]); k.arrow([50.6, 54.4], 0, -1);
+    k.under(() => { k.ink("fine", rectPts(7, 21, 56, 57)); stack(k, k.lines("under"), 31.5, 39, 44, 1.5); k.text("SHEET 2 OF 2", 54.6, 54.4, 1.4, { h: "r" }); if (k.c >= 0.6) k.text("?", 31.5, 30, 3, { pen: "red", h: "c", w: 2 }); });
+    k.tb({ sig: ["sig", "sig", "sig", ""] });
+    k.spots = [[48, 41], [20, 52.2], [7, 24]]; k.cloud = [30, 26, 47, 46];
+  } },
+  { id: "ttb", name: "The ??? title block", hl: null, build(k) {
+    const M = 34, rows = [[3, 15, [["TITLE", k.f("big"), k.fit(k.f("big"), 4.4, 55), "bold"]]], [15, 23, [["DWG NO.", "???"], ["REV", "?"]]], [23, 31, [["DATE", "??.??.??"], ["SCALE", "?:?"]]], [31, 39, [["PROJECT", "???????"], ["SHEET", "? OF ?"]]],
+      [39, 47, [["MATERIAL", "?????"], ["FINISH", "??"]]], [47, 55, [["TOLERANCE", String(k.o.g_tol || "").trim() || "±?"], ["WEIGHT", "? KG"]]], [55, 63, [["CUSTOMER", "??"], ["PART OF", "????"]]], [63, 71, [["DRAWN", String(k.o.g_drawn || "").trim() || "?"], ["CHECKED", String(k.o.g_checked || "").trim() || "??"]]],
+      [71, 78, [["APPROVED", String(k.o.g_approved || "").trim() || "???"], ["RELEASED", String(k.o.g_released || "").trim() || "?????????"]]], [78, 85, [["PROJECTION", null], ["NOTES", "SEE ?"]]]];
+    rows.forEach(([y0, y1, cells], i) => {
+      if (i) k.ink(i === 1 ? "bold" : "fine", [[3, y0], [60, y0]]);
+      if (cells.length > 1) k.ink("fine", [[M, y0], [M, y1]]);
+      cells.forEach(([lab, val, cap, pen], j) => { const x0 = j ? M : 3; k.text(lab, x0 + 0.8, y0 + 0.8, 1.3); if (val) k.text(val, x0 + 1.2, y0 + (cap ? 4.6 : 3.2), cap || k.fit(val, min(3, y1 - y0 - 4.4), (j || cells.length < 2 ? 60 : M) - x0 - 2.2), { pen: pen || "fine", w: pen ? 3 : 1 }); });
+    });
+    projBoth(k, 18.5, 82.2);
+    if (k.c >= 0.3) { wobble(k, [31.5, 11.4], 25, 4.6); k.text("WHAT?", 52, 16.4, 2.4, { pen: "red", w: 2, ang: -0.15 }); }
+    k.spots = [[52, 26], [52, 41], [25, 58], [52, 66], [24, 34], [26, 74]]; k.cloud = [36, 48, 58, 61];
+  } },
+  { id: "whoDim", name: "Who dimensioned this?", hl: { lines: ["WHO DIMENSIONED", "THIS?"], ink: ["WHO DIMENSIONED"], cut: "THIS?" }, build(k) {
+    grumpHead(k, this.hl, 0.35, () => {
+      k.ink("bold", rectPts(9, 24, 43, 44));
+      for (const x of [15, 37]) { k.circ("bold", x, 34, 1.8); k.cmark(x, 34, 1.8); }
+      k.dimH(9, 20, 24, 24, 20.8, "11"); k.dimH(20, 31, 24, 24, 20.8, "11"); k.dimH(31, 43, 24, 24, 20.8, "11");
+      k.dimV(24, 44, 43, 43, 47.5, "20"); k.dimV(24, 44, 43, 43, 51.5, "20.0"); k.dimV(24, 44, 43, 43, 55.5, "SEE ABOVE");
+      k.dimH(9, 43, 44, 44, 48.5, "35"); k.dimH(15, 37, 34, 34, 53, "22.000001");
+      k.text("R5", 5.5, 56.2, 1.8); k.ink("fine", [[8.5, 57.1], [9.4, 57.1], [9.4, 46]]); k.arrow([9.4, 44.6], 0, -1);
+    }, { sig: [{ face: 0.3 }, "sig", "", ""] });
+    k.spots = [[25, 38], [20, 57]]; k.cloud = [44.5, 23, 57.5, 45];
+  } },
+  { id: "whoApp", name: "Who approved this?", hl: { lines: ["WHO APPROVED", "THIS?"], ink: ["WHO APPROVED"], cut: "THIS?" }, build(k) {
+    grumpHead(k, this.hl, 0.65, () => {
+      k.ink("bold", rectPts(9, 24, 41, 40));
+      k.circ("bold", 41, 32, 5); k.cmark(41, 32, 5); k.circ("bold", 16, 32, 2); k.cmark(16, 32, 2);
+      k.dimH(9, 41, 24, 24, 20.8, "32");
+      k.dimH(9, 25, 40, 40, 44, "100"); k.dimH(25, 41, 40, 40, 44, "100"); k.dimH(9, 41, 40, 40, 48.2, "300");
+      k.stamp(38.5, 54.4, -0.15, k.lines("stamp").slice(0, 2), 25, k.lines("stamp").length > 1 ? 10 : 7);
+    }, { sig: [{ face: 0.3 }, "sig", { face: 0.6 }, ""] });
+    k.spots = [[26, 33], [12, 55], [50, 40]]; k.cloud = [33, 26, 49, 38];
+  } },
+  { id: "whoRel", name: "Who released this?", hl: { lines: ["WHO RELEASED", "THIS?!"], ink: ["WHO RELEASED"], cut: "THIS?!" }, build(k) {
+    grumpHead(k, this.hl, 1, () => {
+      k.ink("bold", rectPts(9, 25, 44, 37)); k.cl([6.6, 31], [46.4, 31]);
+      k.circ("bold", 51.5, 22.5, 2); k.cmark(51.5, 22.5, 2);
+      k.text("⌀4 THRU", 45.6, 19.5, 1.7, { h: "r" }); { const s = [46.6, 20.35], d = [51.5 - s[0], 22.5 - s[1]], l = hypot(...d), tip = [51.5 - d[0] / l * 2.1, 22.5 - d[1] / l * 2.1]; k.ink("fine", [[46.1, s[1]], s, tip]); k.arrow(tip, d[0], d[1]); }
+      k.dimH(9, 44, 37, 37, 42, "36 ±0"); k.dimV(25, 37, 9, 9, 6.4, "12");
+      k.stamp(33, 51.6, -0.12, k.lines("stamp").slice(0, 2), 34, k.lines("stamp").length > 1 ? 10 : 7);
+    }, { sig: [{ face: 0.25 }, { face: 0.5 }, { face: 0.75 }, { face: 1 }] });
+    k.spots = [[26, 29], [52, 33]]; k.cloud = [7.5, 23.5, 45.5, 38.5];
+  } },
+  { id: "engineer", name: "Asked engineer", hl: { lines: ["ASKED", "ENGINEER."], ink: ["ASKED"], cut: "ENGINEER" }, build(k) {
+    k.headline(k.hlOf(this.hl));
+    k.ink("fine", rectPts(5, 19, 58, 59.2));
+    k.text("RFI NO. 0042", 6.5, 20.5, 1.7); k.text("DATE: ??", 56.5, 20.5, 1.7, { h: "r" }); k.ink("fine", [[5, 23.6], [58, 23.6]]);
+    k.text("Q:", 6.5, 25.4, 2, { pen: "bold", w: 2 }); k.lines("q").slice(0, 2).forEach((t, i) => k.text(t, 10.5, 25.6 + i * 2.9, k.fit(t, 1.8, 35.5)));
+    k.circ("bold", 50, 28, 2.6); k.cmark(50, 28, 2.6);
+    k.ink("fine", [[5, 32.4], [58, 32.4]]); k.text("ENGINEER SAID:", 6.5, 34, 1.8);
+    k.flap([[54, 37.6], [54, 57], [9, 57], [9, 37.6]]);
+    k.text(k.f("flap"), 31.5, 45, k.fit(k.f("flap"), 3.2, 40), { pen: "bold", w: 3, h: "c", v: "m" }); k.text("(LIFT TO READ)", 31.5, 49.6, 1.5, { h: "c" });
+    k.under(() => {
+      const b = rrect(13, 40, 50, 52, 3, 6); b.splice(14, 0, [26, 52], [18, 55.6], [21.5, 52]); k.ink("fine", [...b, b[0]]);
+      stack(k, k.lines("a").slice(0, 3), 31.5, 46, 33, k.lines("a").length > 1 ? 3 : 4, 0, "bold");
+      if (k.c >= 0.5) k.text("!?", 48, 53.4, 2.4, { pen: "red", w: 2 });
+    });
+    k.tb({ sig: ["sig", "", "", ""] });
+    k.spots = [[44, 20.6], [36, 33.4]]; k.cloud = [42, 24.6, 56.4, 31.4];
+  } },
+  { id: "spinner", name: "Tolerance spinner", hl: { lines: ["TOLERANCE?"], ink: [], cut: "TOLERANCE" }, build(k) {
+    k.headline(k.hlOf(this.hl));
+    const H = [31.5, 38], RW = 30, W = wheelWindow(k.o.entries, RW);
+    k.notch = H[1]; k.brad = H; k.wheel = { c: H, R: RW, ...W };
+    k.holes.push(rectPts(H[0] + W.r0, H[1] - W.hh, H[0] + W.r1, H[1] + W.hh).slice(0, 4));
+    k.ink("fine", rectPts(H[0] + W.r0 - 1, H[1] - W.hh - 1, H[0] + W.r1 + 1, H[1] + W.hh + 1));
+    k.circ("bold", H[0], H[1], 7.6); k.circ("bold", H[0], H[1], 3.2); k.ink("fine", circle(H[0], H[1], 5.4, 40)); // the bolt circle, under the holes
+    for (let i = 0; i < 4; i++) { const a = PI / 4 + i * PI / 2; k.circ("bold", H[0] + 5.4 * cos(a), H[1] + 5.4 * sin(a), 0.9); }
+    k.cl([H[0] - 10, H[1]], [H[0] + 8.4, H[1]]); k.cl([H[0], H[1] - 10], [H[0], H[1] + 10]);
+    const ty = H[1] - W.hh - 1.8 - 2.4, tx = H[0] + W.r0;
+    k.text(k.f("dim"), tx, ty, k.fit(k.f("dim"), 2.4, 16), { pen: "bold", w: 2 });
+    { const s = [tx - 0.6, ty + 1.2], p = [H[0] + 3.2 * cos(-PI / 4), H[1] + 3.2 * sin(-PI / 4)]; k.ink("fine", [s, [s[0] - 1.6, s[1]], p]); k.arrow(p, p[0] - s[0] + 1.6, p[1] - s[1]); }
+    k.text("NOTES:", 6, 13.6, 1.8, { pen: "bold", w: 2 }); k.lines("notes").slice(0, 4).forEach((t, i) => k.text(t, 6, 16.6 + i * 2.7, k.fit(t, 1.6, 50)));
+    k.text("TURN", 8.4, 34.2, 1.5); k.text("WHEEL", 8.4, 36.6, 1.5);
+    k.ink("bold", rectPts(23.9, 50, 39.1, 53)); k.ink("bold", rectPts(28, 53, 35, 57)); k.cl([31.5, 48.6], [31.5, 58.6]);
+    k.tb({ sig: ["sig", "", "", ""] });
+    k.spots = [[46, 47], [50, 14], [12, 50]]; k.cloud = [42, 45, 57, 58];
+  } },
+];
+
+// ---------------- pieces: scale, clip the ink off the cuts, and pack ----------------
+function cardOutline(notchY) {
+  const p = rrect(0, 0, BW, BH, 3, 6);
+  if (notchY != null) p.splice(21, 0, ...arcP(0, notchY, 6.5, 6.5, 90, -90, 18));
+  return p;
+}
+const closeQ = ([q, cl]) => cl && (q[0][0] !== q.at(-1)[0] || q[0][1] !== q.at(-1)[1]) ? [...q, q[0]] : q;
+function makePiece(name, sheet, outline, holes, slits, scores, ink, keepExtra) {
+  const p = { name, sheet, outline, holes, slits, L: Object.fromEntries(LAYERS.map(k => [k, []])) };
+  const fo = fastPoly(outline), hs = holeSet(holes), si = segIndex(slits.map(q => [q, false])), G = INK_GAP + 0.05;
+  p.keep = (x, y, g = G) => fo(x, y) < -g && hs.d(x, y, g + 0.5) > g && si.d(x, y) > g;
+  for (const pen of PENS) for (const q of clipLines(ink[pen].map(closeQ), (x, y) => p.keep(x, y) && (!keepExtra || keepExtra(x, y)), 0.25)) p.L[pen].push([q, false]);
+  p.L.cut.push([outline, true], ...holes.map(h => [h, true]), ...slits.map(q => [q, false]));
+  p.L.score.push(...scores.map(q => [q, false]));
+  return p;
+}
+const scalePts = (q, s) => q.map(([x, y]) => [x * s, y * s]);
+const scaleInk = (I, s) => Object.fromEntries(PENS.map(pen => [pen, I[pen].map(([q, cl]) => [scalePts(q, s), cl])]));
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), M = o.margin, gates = [], notes = [];
+  const s = SIZES[o.size] / BW, cw = BW * s, ch = BH * s;
+  const chosen = CARDS.map((c, i) => ({ c, i })).filter(({ c }) => o["k_" + c.id]);
+  if (!chosen.length) throw new Error("no cards ticked: tick at least one card");
+  const pieces = [], cards = []; let minWhat = "", minCap = INF, wheelInfo = null, hinges = [];
+  for (const { c: card, i } of chosen) {
+    const k = cardKit(o, i, rng(o.seed * 7919 + i * 131 + 7), card.id);
+    if (card.id !== "ttb") { k.ink("bold", rectPts(3, 3, 60, 85)); for (const [a, b] of [[[31.5, 3], [31.5, 1.2]], [[31.5, 85], [31.5, 86.8]], [[3, 44], [1.2, 44]], [[60, 44], [61.8, 44]]]) k.ink("bold", [a, b]); }
+    else k.ink("bold", rectPts(3, 3, 60, 85));
+    card.build(k); markup(k);
+    if (k.minCap * s < minCap) { minCap = k.minCap * s; minWhat = `"${sym(k.minWhat || "").slice(0, 24)}" on ${card.name}`; }
+    const outline = scalePts(cardOutline(k.notch), s), brad = k.brad ? circle(k.brad[0] * s, k.brad[1] * s, 1.2, 20).slice(0, -1) : null;
+    const flaps = k.flaps.map(f => scalePts(f, s)), slits = flaps.map(f => f.slice()), scores = flaps.map(f => [f.at(-1), f[0]]);
+    for (const f of flaps) hinges.push(hypot(f[0][0] - f.at(-1)[0], f[0][1] - f.at(-1)[1]));
+    const holes = [...k.holes.map(h => scalePts(h, s)), ...(brad ? [brad] : [])];
+    const front = makePiece(`${i + 1} ${card.name}`, "fronts", outline, holes, slits, scores, scaleInk(k.F, s));
+    pieces.push(front);
+    const show = k.show.map(h => scalePts(h, s)), needBacker = o.backers === "all" || flaps.length || k.wheel || show.length;
+    let backer = null;
+    if (needBacker) {
+      // under-flap ink only inside the opening; hatching only behind the cut letters
+      const fl = flaps.map(f => fastPoly(f)), bh = brad ? [brad] : [];
+      backer = makePiece(`${i + 1} ${card.name} (backer)`, "backers", outline, bh, [], [], scaleInk(k.U, s), (x, y) => fl.some(f => f(x, y) < -1.0));
+      if (show.length) { const sh = holeSet(show), hp = makePiece("hatch", "-", outline, bh, [], [], { fine: parallel(growB(polyBox(show.flat()), 2), 0.9, PI / 4).map(q => [q, false]), bold: [], red: [] }, (x, y) => sh.d(x, y, 2) < 1.4); backer.L.fine.push(...hp.L.fine); }
+      pieces.push(backer);
+    }
+    let wheel = null;
+    if (k.wheel) {
+      const w = k.wheel, N = o.entries, hub = [w.c[0] * s, w.c[1] * s], R = w.R * s, ink = { fine: [], bold: [], red: [] };
+      const R1 = rng(o.seed * 31 + 5), real = TOLS.filter(t => t.ok).sort(() => R1() - 0.5), silly = TOLS.filter(t => !t.ok).sort(() => R1() - 0.5);
+      const mine = String(o.mine || "").split(/\r?\n/).map(t => t.trim()).filter(Boolean).map(t => { const [a, b] = t.split(";").map(x => x.trim()); return { t: a || "?", s: b || undefined }; });
+      const pool = n => { const nReal = round(n * o.sanity / 100); return [...real.slice(0, nReal), ...silly.slice(0, n - nReal)]; };
+      const useMine = mine.length && o.wheel !== "pool";
+      const picked = !useMine ? pool(N).sort(() => R1() - 0.5) : o.wheel === "mine" ? Array.from({ length: N }, (_, j) => mine[j % mine.length]) : [...mine.slice(0, N), ...pool(max(0, N - mine.length))].sort(() => R1() - 0.5);
+      let wcap = INF;
+      picked.forEach((e, j) => {
+        const a = j * w.step, { strokes, cap } = entryInk(e, (w.r1 - w.r0 - 1) * s, (2 * w.hh - 1) * s); wcap = min(wcap, cap);
+        for (const q of strokes) ink.fine.push([q.map(([x, y]) => { const X = (w.r0 + 0.5) * s + x; return [hub[0] + X * cos(a) - y * sin(a), hub[1] + X * sin(a) + y * cos(a)]; }), false]);
+      });
+      // a diamond knurl round the rim, where the thumb finds it in the notch
+      const rA = R - 3.3 * s, rB = R - 0.7, n = round(TAU * R / 1.7), dA = 2.2 / R;
+      for (let j = 0; j < n; j++) { const a = TAU * j / n; for (const sg of [-1, 1]) ink.fine.push([[[hub[0] + rA * cos(a), hub[1] + rA * sin(a)], [hub[0] + rB * cos(a + sg * dA), hub[1] + rB * sin(a + sg * dA)]], false]); }
+      ink.fine.push([circle(hub[0], hub[1], rA - 0.5, 90), false]);
+      wheel = makePiece("tolerance wheel", "backers", circle(hub[0], hub[1], R, 140).slice(0, -1), [brad], [], [], ink);
+      pieces.push(wheel);
+      wheelInfo = { N, ok: w.ok, cap: wcap, r0: w.r0 * s, r1: w.r1 * s, picked };
+      if (!w.ok) notes.push(`${N} entries is too many for this wheel: neighbours can show in the window`);
+      if (wcap < 1.5) notes.push(`the longest callouts on the wheel come out ${wcap.toFixed(1)} mm tall`);
+      Object.assign(wheel, { hub, R });
+    }
+    cards.push({ card, i, k, front, backer, wheel, flaps, outline, holes, hub: k.wheel ? [k.wheel.c[0] * s, k.wheel.c[1] * s] : null, step: k.wheel ? k.wheel.step : 0 });
+  }
+  if (o.headline === "cut") notes.push("cut headlines: letters whose middles are too small to keep fall out whole (an O becomes an oval)");
+
+  // ---------- gates ----------
+  let inkNear = 0, bridge = INF;
+  for (const p of pieces) {
+    for (const pen of PENS) for (const [q] of p.L[pen]) for (const [x, y] of q) if (!p.keep(x, y, INK_GAP - 0.01)) inkNear++;
+    const paths = p.L.cut.map(([q, cl]) => [q, cl]);
+    if (paths.length > 1) { const si = segIndex(paths); paths.forEach(([q, cl], id) => { for (const [x, y] of resample(cl ? [...q, q[0]] : q, 0.4)) bridge = min(bridge, si.d(x, y, id)); }); }
+  }
+  gates.push([`pen ink at least ${INK_GAP} mm from every cut`, inkNear === 0, `${inkNear} points too near`]);
+  gates.push([`cuts at least ${MIN_BRIDGE} mm apart, so the card between holds`, bridge >= MIN_BRIDGE - 0.05, bridge >= 2.5 ? "all clear" : `closest ${bridge.toFixed(1)} mm`]);
+  if (hinges.length) gates.push(["every flap hinge at least 8 mm long", min(...hinges) >= 8, `shortest ${min(...hinges).toFixed(1)} mm`]);
+  if (wheelInfo) {
+    gates.push(["the window shows one tolerance at a time", wheelInfo.ok, `${wheelInfo.N} entries, window from ${wheelInfo.r0.toFixed(1)} to ${wheelInfo.r1.toFixed(1)} mm`]);
+    gates.push(["wheel lettering at least 1.2 mm tall", wheelInfo.cap >= 1.2 - 0.01, `smallest ${wheelInfo.cap.toFixed(2)} mm`]);
+  }
+  gates.push(["card lettering at least 1.1 mm tall", minCap >= 1.1 - 0.01, `smallest ${minCap.toFixed(2)} mm${minCap < 1.09 ? `, ${minWhat}: shorten it, or split it with /` : ""}`]);
+
+  // ---------- pack the sheet ----------
+  const want = { fronts: ["fronts"], backers: ["backers"], all: null }[o.sheet];
+  const sheet = pieces.filter(p => !want || want.includes(p.sheet));
+  for (const p of sheet) p.bx = polyBox(p.L.cut.flatMap(([q]) => q));
+  const order = [...sheet].sort((a, b) => (b.bx[3] - b.bx[1]) * (b.bx[2] - b.bx[0]) - (a.bx[3] - a.bx[1]) * (a.bx[2] - a.bx[0]));
+  let free2 = [[M, M, W - M, H - M]], fits = true, spill = M;
+  for (const p of order) {
+    const w = p.bx[2] - p.bx[0], hh = p.bx[3] - p.bx[1]; let best = null, bi = -1, bs = INF;
+    free2.forEach((f, i) => { const fw = f[2] - f[0], fh = f[3] - f[1]; if (w <= fw + 1e-6 && hh <= fh + 1e-6) { const s2 = (f[1] - M) * 1000 + f[0] + min(fw - w, fh - hh) * 0.01; if (s2 < bs) { bs = s2; best = f; bi = i; } } });
+    if (!best) { fits = false; p.at = [M - p.bx[0], H - M + spill - p.bx[1]]; spill += hh + PART_GAP; continue; }
+    const [x0, yy0, x1, yy1] = best; p.at = [x0 - p.bx[0], yy0 - p.bx[1]]; free2.splice(bi, 1);
+    if (x1 - x0 - w < yy1 - yy0 - hh) free2.push([x0 + w + PART_GAP, yy0, x1, yy0 + hh], [x0, yy0 + hh + PART_GAP, x1, yy1]); else free2.push([x0 + w + PART_GAP, yy0, x1, yy1], [x0, yy0 + hh + PART_GAP, x0 + w, yy1]);
+    free2 = free2.filter(f => f[2] - f[0] > 1 && f[3] - f[1] > 1);
+  }
+  if (!fits) notes.push("the pieces do not all fit on this page: untick some cards, pick fronts or backers alone, or use the 12 x 24 mat");
+  const layers = Object.fromEntries(LAYERS.map(k => [k, []]));
+  for (const p of sheet) { const f = q => [q[0] + p.at[0], q[1] + p.at[1]]; for (const k of LAYERS) for (const [pts, cl] of p.L[k]) layers[k].push([pts.map(f), cl]); }
+  layers.cut.push([[[TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, TRIM_INSET], [W - TRIM_INSET, H - TRIM_INSET], [TRIM_INSET, H - TRIM_INSET]], true]);
+  const metres = Object.fromEntries(LAYERS.map(k => [k, layers[k].reduce((a, [q, cl]) => a + plen(q, cl), 0) / 1000])), penM = metres.fine + metres.bold + metres.red;
+  const pts = Object.values(layers).reduce((a, Ls) => a + Ls.reduce((s2, [q]) => s2 + q.length, 0), 0);
+  let inside = true; for (const [q] of layers.cut.slice(0, -1)) for (const [px, py] of q) if (px < M - 0.01 || py < M - 0.01 || px > W - M + 0.01 || py > H - M + 0.01) inside = false;
+  let gap = INF; for (let i = 0; i < sheet.length; i++) for (let j = i + 1; j < sheet.length; j++) { const a = sheet[i], b2 = sheet[j], A = [a.bx[0] + a.at[0], a.bx[1] + a.at[1], a.bx[2] + a.at[0], a.bx[3] + a.at[1]], Bb = [b2.bx[0] + b2.at[0], b2.bx[1] + b2.at[1], b2.bx[2] + b2.at[0], b2.bx[3] + b2.at[1]]; gap = min(gap, max(Bb[0] - A[2], A[0] - Bb[2], Bb[1] - A[3], A[1] - Bb[3])); }
+  const ms = performance.now() - t0, tb = layers.cut.at(-1)[0].map(q => q.map(v => v.toFixed(2)).join(",")).join(" ");
+  gates.unshift(["build time under 6000 ms", ms < 6000, `${ms.toFixed(0)} ms`]);
+  gates.push(["total pen length under 150 m (about 45 minutes of plotting, assumed)", penM < 150, `${penM.toFixed(1)} m`]);
+  gates.push(["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB estimated`]);
+  gates.push([`pieces at least ${PART_GAP} mm apart and inside the margin`, fits && inside && (gap >= PART_GAP - 0.01 || sheet.length < 2), !fits ? "they do not all fit on this page" : !inside ? "a cut crosses the margin" : sheet.length < 2 ? "one piece" : `closest ${gap.toFixed(1)} mm`]);
+  gates.push(["trim frame and pen corner ticks have the same bounding box", tb === `${TRIM_INSET.toFixed(2)},${TRIM_INSET.toFixed(2)} ${(W - TRIM_INSET).toFixed(2)},${TRIM_INSET.toFixed(2)} ${(W - TRIM_INSET).toFixed(2)},${(H - TRIM_INSET).toFixed(2)} ${TRIM_INSET.toFixed(2)},${(H - TRIM_INSET).toFixed(2)}`, "1 mm in"]);
+  if (["1f4e8c", "101010"].includes(o.paperA)) notes.push("a black pen will not show on this paper: use a white gel pen for the fronts (assumed)");
+  return { W, H, o, ms, s, cw, ch, cards, pieces, sheet, layers, gates, notes, metres, pen: penM, count: pieces.length, wheelInfo };
+}
+
+// ---------------- draw + export ----------------
+const PAPERS = { fbf9f4: "white", f4ecd8: "cream", c9a77c: "kraft", dcdcd7: "pale grey", cfe3f2: "sky", "1f4e8c": "blueprint blue", f2b705: "yellow", d7263d: "red", ff7aa8: "pink", "1f9d55": "green", "101010": "black" };
+const dark = hex => { const n = parseInt(hex, 16); return 0.3 * (n >> 16) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255) < 90; };
+const INK = { fine: ["#2a2620", 0.3], bold: ["#141210", 0.5], red: ["#c62a1f", 0.4] }, INK_LIGHT = { fine: ["#e9eef5", 0.3], bold: ["#ffffff", 0.5], red: ["#ff8a7a", 0.4] };
+function draw(r) {
+  const cv = $("cv"), o = r.o, view = o.view;
+  const path = (c, q, cl) => { q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); };
+  const strokeInk = (c, L, paper) => { const pal = dark(paper) ? INK_LIGHT : INK; for (const pen of ["fine", "red", "bold"]) { c.strokeStyle = pal[pen][0]; c.lineWidth = pal[pen][1]; c.beginPath(); for (const [q, cl] of L[pen]) path(c, q, cl); c.stroke(); } };
+  let WW, HH, cols = 1, rows = 1, gap = 8 * r.s;
+  if (view === "sheet") { WW = r.W; HH = r.H; }
+  else { const n = r.cards.length; cols = n <= 3 ? n : n <= 4 ? 2 : n <= 6 ? 3 : n <= 8 ? 4 : 5; rows = ceil(n / cols); WW = cols * r.cw + (cols + 1) * gap; HH = rows * r.ch + (rows + 1) * gap; }
+  const maxW = min(980, max(200, cv.parentElement.clientWidth - 26)), k = min(maxW / WW, max(1.2, (innerHeight - 90) / HH)), dpr = devicePixelRatio;
+  cv.width = round(WW * k * dpr); cv.height = round(HH * k * dpr); cv.style.width = round(WW * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * dpr, 0, 0, k * dpr, 0, 0); c.lineJoin = c.lineCap = "round";
+  c.fillStyle = view === "sheet" ? "#fbf7ec" : "#e9e3d6"; c.fillRect(0, 0, WW, HH);
+  if (view === "sheet") {
+    strokeInk(c, r.layers, "fbf9f4");
+    c.strokeStyle = "#1f6fe0"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.4]); c.beginPath(); for (const [q] of r.layers.score) path(c, q, false); c.stroke();
+    c.strokeStyle = "#e8590c"; c.lineWidth = 0.25; c.setLineDash([1.6, 1.1]); c.beginPath(); for (const [q, cl] of r.layers.cut) path(c, q, cl); c.stroke(); c.setLineDash([]);
+  } else r.cards.forEach((cd, n) => {
+    const ox = gap + (n % cols) * (r.cw + gap), oy = gap + floor(n / cols) * (r.ch + gap), open = view === "open";
+    c.save(); c.translate(ox, oy);
+    if (cd.backer) { c.save(); c.translate(0.6, 0.9); c.fillStyle = "rgba(40,30,10,0.25)"; c.beginPath(); path(c, cd.outline, true); c.fill(); c.restore(); c.fillStyle = "#" + o.paperB; c.beginPath(); path(c, cd.outline, true); c.fill(); strokeInk(c, cd.backer.L, o.paperB); }
+    if (cd.wheel) { // turned so the chosen entry sits in the window
+      const w = cd.wheel, a = -o.turn * cd.step; c.save(); c.translate(w.hub[0], w.hub[1]); c.rotate(a); c.translate(-w.hub[0], -w.hub[1]);
+      c.fillStyle = "#" + o.paperW; c.beginPath(); path(c, w.outline, true); c.fill(); c.strokeStyle = "rgba(0,0,0,0.3)"; c.lineWidth = 0.15; c.stroke(); strokeInk(c, w.L, o.paperW); c.restore();
+    }
+    const hole = cl => { c.beginPath(); path(c, cd.outline, true); for (const h of cd.holes) path(c, h, true); if (open) for (const f of cd.flaps) path(c, f, true); };
+    c.save(); c.translate(0.45, 0.7); hole(); c.fillStyle = "rgba(40,30,10,0.28)"; c.fill("evenodd"); c.restore();
+    hole(); c.fillStyle = "#" + o.paperA; c.fill("evenodd");
+    c.save(); hole(); c.clip("evenodd"); strokeInk(c, cd.front.L, o.paperA); c.restore();
+    c.strokeStyle = "rgba(0,0,0,0.3)"; c.lineWidth = 0.15; c.beginPath(); for (const h of cd.holes) path(c, h, true); if (!open) for (const f of cd.flaps) path(c, f, false); c.stroke();
+    if (open) for (const f of cd.flaps) { // lifted: folded back over the hinge, seen from behind
+      const a = f.at(-1), b = f[0], dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+      const flip = f.map(([x, y]) => { const t = ((x - a[0]) * dx + (y - a[1]) * dy) / L2, fx = a[0] + dx * t, fy = a[1] + dy * t; return [fx - (x - fx) * 0.42, fy - (y - fy) * 0.42]; });
+      c.save(); c.translate(0.5, -0.6); c.beginPath(); path(c, flip, true); c.fillStyle = "rgba(40,30,10,0.25)"; c.fill(); c.restore();
+      c.beginPath(); path(c, flip, true); c.fillStyle = "#" + o.paperA; c.fill(); c.fillStyle = "rgba(0,0,0,0.07)"; c.fill(); c.strokeStyle = "rgba(0,0,0,0.35)"; c.lineWidth = 0.15; c.stroke();
+    }
+    c.restore();
+  });
+  const m = r.metres, wi = r.wheelInfo;
+  $("stats").innerHTML = `${r.cards.length} cards, ${r.pieces.length} pieces (${r.sheet.length} on this sheet: ${r.sheet.map(p => p.name).join(", ")}) · ${r.ms.toFixed(0)} ms<br>`
+    + `fine: <b>${m.fine.toFixed(1)} m</b> · bold: <b>${m.bold.toFixed(1)} m</b> · red: <b>${m.red.toFixed(1)} m</b> · score: <b>${m.score.toFixed(1)} m</b> · cut: <b>${m.cut.toFixed(1)} m</b><br>`
+    + (wi ? `the wheel: ${wi.picked.map((e, j) => `<span class="${j === o.turn ? "pass" : ""}">${sym(e.t + (e.s ? " " + e.s : "")).replace(/\|/g, " | ").replace(/</g, "&lt;")}</span>`).join(" · ")}<br>` : "")
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${n}: ${v}`).join("<br>");
+}
+const penLayers = r => [
+  { name: "fine", colour: "444444", w: 0.3, paths: r.layers.fine }, { name: "bold", colour: "000000", w: 0.5, paths: r.layers.bold }, { name: "red", colour: "cc0000", w: 0.4, paths: r.layers.red },
+  { name: "score", colour: "0066ff", w: 0.2, paths: r.layers.score, score: true }, { name: "cut", colour: "ff0000", w: 0.2, paths: r.layers.cut, cut: true },
+].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="${L.cut ? "cut" : L.score ? "score" : "pen-" + L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks && !L.cut ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG confused deck${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+const WORD_IDS = CARDS.flatMap(c => Object.keys(TEXT[c.id]).map(key => `t_${c.id}_${key}`)), GLOBAL_WORDS = ["g_drawn", "g_checked", "g_approved", "g_released", "g_tol", "g_dwg", "edit", "wheel", "mine"];
+{ // one row of word fields per card, shown while that card is picked in "Edit the words on"
+  const box = $("cardWords"), sel = $("edit");
+  if (box && box.appendChild) for (const c of CARDS) {
+    const op = document.createElement("option"); op.value = c.id; op.textContent = c.name; sel.appendChild(op);
+    const div = document.createElement("div"); div.dataset.when = `edit=${c.id}`;
+    for (const key of Object.keys(TEXT[c.id])) { const lab = document.createElement("label"), inp = document.createElement("input"); lab.append(WORD_LABELS[key] + " "); inp.type = "text"; inp.id = `t_${c.id}_${key}`; inp.maxLength = 90; lab.appendChild(inp); div.appendChild(lab); }
+    box.appendChild(div);
+  }
+}
+const CARD_IDS = CARDS.map(c => "k_" + c.id);
+const IDS = [...CARD_IDS, "size", "headline", "weight", "confusion", "seed", "backers", "entries", "sanity", "turn", "paperA", "paperB", "paperW", "sheet", "view", "page", "margin", ...GLOBAL_WORDS, ...WORD_IDS];
+const NUM = new Set(["weight", "confusion", "seed", "entries", "sanity", "turn", "margin"]);
+const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); return [k, e.type === "checkbox" ? e.checked : NUM.has(k) ? +e.value : e.value]; }));
+const setV = (k, v) => { const e = $(k); if (e.type === "checkbox") e.checked = !!v; else e.value = v; };
+let last = null, pending = 0;
+function sync() { $("turn").max = $("entries").value - 1; if (+$("turn").value > +$("turn").max) $("turn").value = $("turn").max; for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+const VIEW_ONLY = new Set(["view", "paperA", "paperB", "paperW", "turn", "edit"]);
+function run(k) {
+  sync();
+  if (last && VIEW_ONLY.has(k)) { last.o = { ...last.o, ...read() }; draw(last); return; }
+  $("stats").textContent = "computing"; clearTimeout(pending);
+  pending = setTimeout(() => { try { last = build(read()); draw(last); } catch (e) { $("stats").innerHTML = `<span class="fail">build failed: ${String(e && e.stack || e).replace(/</g, "&lt;")}</span>`; } }, 80);
+}
+const ALL = Object.fromEntries(CARD_IDS.map(k => [k, true])), NONE = Object.fromEntries(CARD_IDS.map(k => [k, false]));
+const BASE = { ...ALL, size: "trade", headline: "ink", weight: 0.16, confusion: 35, seed: 19, backers: "flaps", entries: 10, sanity: 50, turn: 0, paperA: "fbf9f4", paperB: "f2b705", paperW: "cfe3f2", sheet: "fronts", view: "closed", page: "280x580", margin: 8,
+  g_drawn: "", g_checked: "", g_approved: "", g_released: "", g_tol: "", g_dwg: "CNF-19", edit: "detail", wheel: "pool", mine: "",
+  ...Object.fromEntries(CARDS.flatMap(c => Object.entries(TEXT[c.id]).map(([key, v]) => [`t_${c.id}_${key}`, v]))) };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  deck: P({}),
+  cutouts: P({ headline: "cut", paperB: "d7263d", confusion: 25, seed: 4 }),
+  blueprint: P({ paperA: "1f4e8c", paperB: "fbf9f4", paperW: "f2b705", confusion: 55, seed: 23 }),
+  chaos: P({ confusion: 100, sanity: 0, entries: 12, seed: 7 }),
+  sane: P({ confusion: 0, sanity: 100, seed: 2 }),
+  grumpy: P({ ...NONE, k_whoDim: true, k_whoApp: true, k_whoRel: true, confusion: 40, page: "280x280" }),
+  flaps: P({ ...NONE, k_detail: true, k_sheet2: true, k_engineer: true, view: "open", sheet: "all", page: "280x280", confusion: 60 }),
+  spinner: P({ ...NONE, k_spinner: true, size: "big", sheet: "all", page: "280x280", sanity: 40, entries: 10, seed: 11 }),
+};
+const WORDS = new Set([...GLOBAL_WORDS, ...WORD_IDS]);
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) if (!WORDS.has(k)) setV(k, v); run(); });
+$("resetWords").onclick = () => { for (const k of WORDS) if (k !== "edit") setV(k, BASE[k]); run(); };
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `confused-${r.o.size}-${r.o.sheet}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => { if (!last) return; const ls = penLayers(last), ticks = $("ticks").value !== "off"; ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500)); };
+addEventListener("resize", () => last && draw(last));
+for (const [k, v] of Object.entries(BASE)) setV(k, v);
+window.__studio = { build, read, PRESETS, penLayers, toSVG, draw, CARDS, TOLS, TEXT };
+run();
+</script>
+</body>
+</html>
