@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lounge studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Lounge studio</h1>
+  <p class="sub">A living room drawn as a CAD plan: walls in poché, furniture as library blocks, the cats on a layer of their own, lounging wherever they please, with the sofa marked OCCUPIED in a revision cloud. Plot the cats in a colour pen to make the layer show. Day 20 of Inktober, "lounge".</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="sofa">Sofa occupied</button><button data-preset="sunny">Sunbeam</button><button data-preset="library">Block library</button></div>
+    <div class="row"><button data-preset="takeover">Cat takeover</button><button data-preset="curved">Curved sofa</button><button data-preset="mono">Black and white</button></div>
+    <div class="row"><button data-preset="square">12 x 12 sheet</button><button data-preset="fits">If I fits</button></div>
+  </fieldset>
+  <fieldset><legend>The sheet</legend>
+    <label>Sheet <select id="sheet"><option value="combo">plan, with a strip of cat blocks</option><option value="plan">floor plan only</option><option value="library">block library</option></select></label>
+    <label>Title <input type="text" id="title" maxlength="18"></label>
+    <label>Drawn by <input type="text" id="drawn" maxlength="14"></label>
+    <label data-when="sheet!=library">Notes on the star cat <select id="notes"><option value="all">revision cloud, RFI and a dimension</option><option value="dim">just the dimension</option><option value="none">none</option></select></label>
+    <label data-when="sheet!=library;notes=all">RFI says (blank: it decides) <input type="text" id="rfi" maxlength="26"></label>
+    <label>General notes <select id="gnotes"><option value="on">in the title strip</option><option value="off">no</option></select></label>
+    <label data-when="sheet!=library">Paw prints <select id="paws"><option value="on">from the door to the star</option><option value="off">no</option></select></label>
+  </fieldset>
+  <fieldset data-when="sheet!=library"><legend>The room</legend>
+    <label>Room width (cm) <output id="o-rw"></output><input type="range" id="rw" min="380" max="720" step="10" value="520"></label>
+    <label>Room depth (cm) <output id="o-rd"></output><input type="range" id="rd" min="320" max="600" step="10" value="430"></label>
+    <label>Sofa <select id="sofa"><option value="3">three-seater</option><option value="L">corner sofa with a chaise</option><option value="curved">curved</option><option value="2">two-seater</option></select></label>
+    <label>Armchairs <output id="o-chairs"></output><input type="range" id="chairs" min="0" max="2" step="1" value="1"></label>
+    <label>Coffee table <select id="table"><option value="rect">rectangle</option><option value="oval">oval</option><option value="round">round</option></select></label>
+    <label>Things on the table <select id="clutter"><option value="on">a book, a mug, the remote</option><option value="off">nothing</option></select></label>
+    <label>Rug <select id="rug"><option value="grid">grid</option><option value="diamond">diamonds</option><option value="stripes">stripes</option><option value="plain">plain</option><option value="none">no rug</option></select></label>
+    <label>Plants <output id="o-plants"></output><input type="range" id="plants" min="0" max="3" step="1" value="2"></label>
+    <label>Cat furniture <select id="catstuff"><option value="all">tree, bed and bowls</option><option value="tree">just the tree</option><option value="none">none</option></select></label>
+    <label>Window seat <select id="seat"><option value="on">yes</option><option value="off">no</option></select></label>
+    <label>Sunbeam <select id="sun"><option value="on">through the window</option><option value="off">no</option></select></label>
+    <label>Cardboard box <select id="box"><option value="on">on the floor</option><option value="off">no</option></select></label>
+    <label>Walls <select id="walls"><option value="hatch">hatched</option><option value="solid">solid</option><option value="outline">outline only</option></select></label>
+  </fieldset>
+  <fieldset><legend>The cats</legend>
+    <label data-when="sheet!=library">Cats <output id="o-cats"></output><input type="range" id="cats" min="1" max="7" step="1" value="3"></label>
+    <label data-when="sheet!=library">Star of the show <select id="hero"><option value="sofa">on the sofa</option><option value="sun">in the sunbeam</option><option value="rug">on the rug</option><option value="sill">on the window seat</option><option value="chair">in the armchair</option><option value="table">on the coffee table</option><option value="box">in the box</option><option value="tree">on the cat tree</option><option value="bed">in their own bed (never)</option></select></label>
+    <label>Poses <select id="poses"><option value="suits">whatever the spot suits</option><option value="random">random</option><option value="loaf">all loaves</option><option value="donut">all donuts</option><option value="sploot">all sploots</option><option value="liquid">all liquid</option><option value="side">all sunbathing</option></select></label>
+    <label>Markings <select id="mark"><option value="tabby">tabby stripes</option><option value="patches">patches</option><option value="plain">plain</option></select></label>
+    <label>Faces <select id="face"><option value="on">sleepy, with whiskers</option><option value="off">none, just ears</option></select></label>
+    <label>Cat size (% of a real cat) <output id="o-catsize"></output><input type="range" id="catsize" min="80" max="200" step="5" value="130"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="99" step="1" value="7"></label>
+  </fieldset>
+  <fieldset><legend>Pens</legend>
+    <label>Colour pen draws <select id="cpen"><option value="cats">the cat layer</option><option value="catsnotes">the cats and the notes on them</option><option value="none">nothing (two pens)</option></select></label>
+    <label>Colour pen preview <select id="ccol"><option value="1f9e4a">CAD green</option><option value="b8288f">magenta</option><option value="d07a10">orange</option><option value="1592a8">cyan</option><option value="c0302a">red</option><option value="2a4f9a">blue</option></select></label>
+    <label>Walls and frame <select id="weight"><option value="2">two passes (bold)</option><option value="1">one pass</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen in plotting order: the thin pen, the black line, then the colour pen last so the cats sit on top of everything. Each file carries four corner ticks so they all land in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: the room is laid out in centimetres and drawn at the largest standard scale that fits the sheet, so the scale in the title block is true. Every piece of furniture is a block with an outline that hides what is under it, so the sofa covers the rug and a cat covers the sofa. Each cat is a few overlapping shapes (body, head, ears, paws, tail) merged into one outline, with the tail laid over the top where it wraps round. Seen from above, a curled cat is a donut and a stretched one is longer than the sofa, which is the joke the dimension makes.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const PEN = { shade: 0.3, line: 0.4, colour: 0.4 };   // ASSUMED widths, same pens as the other studios
+const PENS = ["shade", "line", "colour"];   // plotting order: the cats go on last
+const PASS = 0.28;
+const SCALES = [10, 15, 20, 25, 30, 40, 50, 75, 100];
+
+// ---------------- geometry helpers (y down) ----------------
+const ring = (x, y, rx, ry, n = 40, rot = 0) => Array.from({ length: n }, (_, i) => { const a = i / n * TAU, px = rx * cos(a), py = ry * sin(a); return [x + px * cos(rot) - py * sin(rot), y + px * sin(rot) + py * cos(rot)]; });
+const pAt = (c, r, a) => [c[0] + r * cos(a), c[1] + r * sin(a)];
+const polyInside = (p, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+function splitSeg(a, b, P) {
+  const ts = [0, 1], dx = b[0] - a[0], dy = b[1] - a[1];
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const c = P[j], d = P[i], ex = d[0] - c[0], ey = d[1] - c[1], den = dx * ey - dy * ex; if (abs(den) < 1e-12) continue;
+    const t = ((c[0] - a[0]) * ey - (c[1] - a[1]) * ex) / den, u = ((c[0] - a[0]) * dy - (c[1] - a[1]) * dx) / den;
+    if (t > 0 && t < 1 && u >= 0 && u < 1) ts.push(t);
+  }
+  ts.sort((x, y) => x - y);
+  const out = [];
+  for (let k = 0; k < ts.length - 1; k++) { if (ts[k + 1] - ts[k] < 1e-9) continue; const m = (ts[k] + ts[k + 1]) / 2; out.push([ts[k], ts[k + 1], polyInside([a[0] + dx * m, a[1] + dy * m], P)]); }
+  return out;
+}
+function clipSegs(segs, P, keepIn) { const out = []; for (const [a, b] of segs) for (const [t0, t1, ins] of splitSeg(a, b, P)) if (ins === keepIn) out.push([lerp2(a, b, t0), lerp2(a, b, t1)]); return out; }
+function joinSegs(segs) { const out = []; let cur = null; for (const [a, b] of segs) { if (cur && hypot(cur[cur.length - 1][0] - a[0], cur[cur.length - 1][1] - a[1]) < 1e-6) cur.push(b); else { cur = [a, b]; out.push(cur); } } return out; }
+const segsOf = (pl, closed = false) => pl.slice(1).map((p, i) => [pl[i], p]).concat(closed ? [[pl[pl.length - 1], pl[0]]] : []);
+const clipPath = (pts, closed, P, keepIn) => joinSegs(clipSegs(segsOf(pts, closed), P, keepIn));
+const bboxOf = pts => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of pts) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+const bbUnion = (a, b) => [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])];
+const bbGrow = (b, g) => [b[0] - g, b[1] - g, b[2] + g, b[3] + g];
+const bbHit = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+const rectPoly = b => [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+const polyArea = P => { let a = 0; for (let i = 0, j = P.length - 1; i < P.length; j = i++) a += (P[j][0] - P[i][0]) * (P[j][1] + P[i][1]); return a / 2; };
+const rotPts = (P, c, a) => P.map(([x, y]) => [c[0] + (x - c[0]) * cos(a) - (y - c[1]) * sin(a), c[1] + (x - c[0]) * sin(a) + (y - c[1]) * cos(a)]);
+// a rectangle with rounded corners, clockwise from the top right
+function rrect(x0, y0, x1, y1, r, n = 5) {
+  r = min(r, (x1 - x0) / 2, (y1 - y0) / 2); const out = [];
+  for (const [cx, cy, a0] of [[x1 - r, y0 + r, -90], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, 90], [x0 + r, y0 + r, 180]]) for (let i = 0; i <= n; i++) out.push(pAt([cx, cy], r, (a0 + 90 * i / n) * D2R));
+  return out;
+}
+const arcPts = (c, r, a0, a1, n = 16) => Array.from({ length: n + 1 }, (_, i) => pAt(c, r, (a0 + (a1 - a0) * i / n) * D2R));
+// closed and open Catmull-Rom through P, n samples per span
+function crClosed(P, n) {
+  const L = P.length, out = [];
+  for (let i = 0; i < L; i++) {
+    const p0 = P[(i - 1 + L) % L], p1 = P[i], p2 = P[(i + 1) % L], p3 = P[(i + 2) % L];
+    for (let j = 0; j < n; j++) { const t = j / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map(k => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3))); }
+  }
+  return out;
+}
+function crOpen(P, n = 8) {
+  const L = P.length, g = i => P[clamp(i, 0, L - 1)], out = [];
+  for (let i = 0; i < L - 1; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let j = 0; j < n; j++) { const t = j / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map(k => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3))); }
+  }
+  out.push(P[L - 1].slice());
+  return out;
+}
+// a tube round a centreline with round ends, half width wf(t) for t from 0 to 1
+function tube(C, wf, nc = 7) {
+  const m = C.length, Lf = [], Rt = []; let a0 = 0, a1 = 0;
+  for (let i = 0; i < m; i++) {
+    const a = C[max(0, i - 1)], b = C[min(m - 1, i + 1)], ang = atan2(b[1] - a[1], b[0] - a[0]), w = wf(i / (m - 1));
+    if (i === 0) a0 = ang; if (i === m - 1) a1 = ang;
+    Lf.push([C[i][0] - sin(ang) * w, C[i][1] + cos(ang) * w]); Rt.push([C[i][0] + sin(ang) * w, C[i][1] - cos(ang) * w]);
+  }
+  const e = C[m - 1], s = C[0], w1 = wf(1), w0 = wf(0), cap1 = [], cap0 = [];
+  for (let k = 1; k < nc; k++) { cap1.push(pAt(e, w1, a1 + PI / 2 - PI * k / nc)); cap0.push(pAt(s, w0, a0 - PI / 2 - PI * k / nc)); }
+  return Lf.concat(cap1, Rt.reverse(), cap0);
+}
+// hatch lines across P at a fixed phase, so neighbouring pieces line up
+function hatchG(P, sp, ang) {
+  const b = bboxOf(P), a = ang * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, cs = rectPoly(b), out = [];
+  const cn = cs.map(p => p[0] * nx + p[1] * ny), ct = cs.map(p => p[0] * dx + p[1] * dy), t0 = min(...ct) - 1, t1 = max(...ct) + 1;
+  for (let c = floor(min(...cn) / sp) * sp; c <= max(...cn); c += sp) out.push([[nx * c + dx * t0, ny * c + dy * t0], [nx * c + dx * t1, ny * c + dy * t1]]);
+  return clipSegs(out, P, true);
+}
+function dashPts(pts, pat) {   // a polyline broken into dashes: pat is on, off, on, off ...
+  const out = []; let pi = 0, left = pat[0], on = true, cur = [pts[0]];
+  for (let i = 1; i < pts.length; i++) {
+    let a = pts[i - 1]; const b = pts[i]; let L = hypot(b[0] - a[0], b[1] - a[1]);
+    while (L > 1e-9) {
+      const t = min(left, L), p = [a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L];
+      if (on) cur.push(p);
+      L -= t; left -= t; a = p;
+      if (left <= 1e-9) { if (on && cur.length > 1) out.push(cur); on = !on; pi = (pi + 1) % pat.length; left = pat[pi]; cur = on ? [p] : []; }
+    }
+  }
+  if (on && cur.length > 1) out.push(cur);
+  return out;
+}
+// join open pieces end to end (flipping as needed); a chain that comes back to its start is closed
+function chain(pieces, tol) {
+  const near = (a, b) => abs(a[0] - b[0]) < tol && abs(a[1] - b[1]) < tol, left = pieces.map(q => q.slice()), out = [];
+  while (left.length) {
+    let cur = left.shift(), grew = true;
+    while (grew) {
+      grew = false;
+      for (let i = 0; i < left.length; i++) {
+        const q = left[i], e = cur[cur.length - 1], b = cur[0];
+        if (near(e, q[0])) cur = cur.concat(q.slice(1));
+        else if (near(e, q[q.length - 1])) cur = cur.concat(q.slice(0, -1).reverse());
+        else if (near(b, q[q.length - 1])) cur = q.slice(0, -1).concat(cur);
+        else if (near(b, q[0])) cur = q.slice(1).reverse().concat(cur);
+        else continue;
+        left.splice(i, 1); grew = true; break;
+      }
+    }
+    const closed = cur.length > 3 && near(cur[0], cur[cur.length - 1]);
+    out.push({ pts: closed ? cur.slice(0, -1) : cur, closed });
+  }
+  return out;
+}
+// points every `step` along an open polyline, with the direction there and how far along (0 to 1)
+function along(C, step) {
+  const cum = [0]; for (let i = 1; i < C.length; i++) cum.push(cum[i - 1] + hypot(C[i][0] - C[i - 1][0], C[i][1] - C[i - 1][1]));
+  const tot = cum[cum.length - 1], out = []; let j = 0;
+  for (let d = step / 2; d < tot; d += step) { while (cum[j + 1] < d) j++; const a = C[j], b = C[j + 1], t = (d - cum[j]) / max(1e-9, cum[j + 1] - cum[j]); out.push({ p: lerp2(a, b, t), a: atan2(b[1] - a[1], b[0] - a[0]), u: d / tot }); }
+  return out;
+}
+// a filled dot: a tight spiral
+function dot(cx, cy, r, step = 0.28) { const pts = [], turns = max(1, r / step); for (let i = 0; i <= turns * 24; i++) { const a = i / 24 * TAU, rr = r * (1 - i / (turns * 24)); pts.push([cx + rr * cos(a), cy + rr * sin(a)]); } return pts; }
+// cut every line in L that lies under any of polys
+function cutBehind(L, polys) {
+  const pbs = polys.map(bboxOf);
+  for (const pen of PENS) {
+    const out = [];
+    for (const p of L[pen]) {
+      let keep = [p];
+      polys.forEach((poly, j) => {
+        const bb = pbs[j], next = [];
+        for (const k of keep) {
+          const b2 = bboxOf(k[0]); if (!bbHit(b2, bb)) { next.push(k); continue; }
+          for (const q of clipPath(k[0], k[1], poly, false)) next.push([q, false]);
+        }
+        keep = next;
+      });
+      out.push(...keep);
+    }
+    L[pen] = out;
+  }
+}
+
+// ---------------- lettering: a single-stroke font, cap height 6 (y down) ----------------
+const GSRC = {
+  A: [4, "M0,6 L2,0 L4,6 M0.9,3.9 L3.1,3.9"], B: [4, "M0,6 L0,0 L2.3,0 A2.3,1.5,1.6,1.5,-90,90 L0,3 M0,3 L2.5,3 A2.5,4.5,1.6,1.5,-90,90 L0,6"],
+  C: [4, "A2.4,3,2.1,3,-45,-315"], D: [4, "M0,0 L0,6 L1.8,6 A1.8,3,2.2,3,90,-90 L0,0"], E: [3.6, "M3.6,0 L0,0 L0,6 L3.6,6 M0,3 L2.8,3"],
+  F: [3.4, "M3.4,0 L0,0 L0,6 M0,3 L2.7,3"], G: [4.4, "A2.2,3,2.2,3,-40,-320 L4.4,3.4 L2.4,3.4"], H: [4, "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3"],
+  I: [1.2, "M0.6,0 L0.6,6"], J: [3, "M3,0 L3,4.4 A1.5,4.4,1.5,1.6,0,170"], K: [4, "M0,0 L0,6 M3.8,0 L0,3.6 M1.3,2.5 L4,6"],
+  L: [3.4, "M0,0 L0,6 L3.4,6"], M: [5, "M0,6 L0,0 L2.5,4 L5,0 L5,6"], N: [4, "M0,6 L0,0 L4,6 L4,0"], O: [4.4, "A2.2,3,2.2,3,0,360"],
+  P: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2"], Q: [4.4, "A2.2,3,2.2,3,0,360 M2.8,4.4 L4.4,6.4"],
+  R: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2 M2,3.2 L4,6"], S: [4, "A2,1.5,1.9,1.5,-20,-270 A2,4.5,2.0,1.5,-90,160"],
+  T: [4, "M0,0 L4,0 M2,0 L2,6"], U: [4, "M0,0 L0,3.8 A2,3.8,2,2.2,180,0 L4,0"], V: [4.4, "M0,0 L2.2,6 L4.4,0"],
+  W: [6, "M0,0 L1.5,6 L3,1.6 L4.5,6 L6,0"], X: [4, "M0,0 L4,6 M4,0 L0,6"], Y: [4.4, "M0,0 L2.2,3 L4.4,0 M2.2,3 L2.2,6"], Z: [4, "M0,0 L4,0 L0,6 L4,6"],
+  0: [3.8, "A1.9,3,1.9,3,0,360"], 1: [2.6, "M0.4,1.4 L1.8,0 L1.8,6"], 2: [3.8, "A1.9,1.9,1.9,1.9,-170,20 L0,6 L3.8,6"],
+  3: [3.8, "A1.8,1.5,1.7,1.5,-150,90 A1.9,4.4,1.9,1.6,-90,150"], 4: [4, "M3,6 L3,0 L0,4.2 L4,4.2"], 5: [3.8, "M3.6,0 L0.4,0 L0,2.8 A1.8,4.1,2,1.9,-130,150"],
+  6: [3.8, "M3.4,0 L0.2,4.2 A1.9,4.2,1.7,1.8,180,540"], 7: [3.8, "M0,0 L3.8,0 L1.4,6"], 8: [3.8, "A1.8,1.5,1.5,1.5,0,360 M3.7,4.4 A1.9,4.4,1.8,1.6,0,360"],
+  9: [3.8, "A1.9,1.8,1.7,1.8,0,360 M3.6,1.8 L0.4,6"],
+  "!": [1, "M0.5,0 L0.5,4.1 M0.5,5.4 A0.5,5.6,0.35,0.35,0,360"], "?": [3.4, "A1.7,1.7,1.7,1.7,-170,70 L1.7,4.1 M1.7,5.2 A1.7,5.6,0.35,0.35,0,360"],
+  ".": [1, "A0.5,5.5,0.4,0.4,0,360"], ",": [1, "M0.7,5.3 L0.2,6.8"], "'": [1, "M0.5,0 L0.3,1.7"], "-": [2.6, "M0.2,3 L2.4,3"], "+": [3.2, "M0.1,3 L3.1,3 M1.6,1.5 L1.6,4.5"],
+  ":": [1, "A0.5,1.8,0.4,0.4,0,360 M0.9,5.5 A0.5,5.5,0.4,0.4,0,360"], "&": [4.2, "M4,6 L0.9,1.4 A1.6,1.1,0.9,1.1,-170,100 L3.4,4.1 A2,4.4,1.7,1.6,-10,160 L0.1,4.6"],
+  "*": [3.2, "M1.6,0.6 L1.6,5.4 M0.2,1.6 L3,4.4 M3,1.6 L0.2,4.4"], "(": [1.8, "A1.9,3,1.5,3.3,235,125"], ")": [1.8, "A-0.1,3,1.5,3.3,-55,55"],
+  "/": [2.6, "M0.2,6.4 L2.4,-0.4"], "=": [3.2, "M0.2,2.2 L3,2.2 M0.2,3.8 L3,3.8"], "_": [3, "M0,6.4 L3,6.4"], "#": [4, "M1.4,0.4 L0.8,5.6 M3.2,0.4 L2.6,5.6 M0.2,2 L3.8,2 M0.1,4 L3.7,4"],
+  "²": [2.2, "A1.1,0.9,0.9,0.8,-170,20 L0.1,2.6 L2.1,2.6"],
+};
+function parseGlyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else { const [cx, cy, rx, ry, a0, a1] = n, st = max(8, ceil(abs(a1 - a0) / 9)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GL = Object.fromEntries(Object.entries(GSRC).map(([k, [w, s]]) => [k, { w, strokes: parseGlyph(s) }]));
+const glyphOf = ch => GL[ch.toUpperCase()] || GL[ch] || GL["?"];
+function layoutT(str) { const gl = []; let x = 0; for (const ch of String(str)) { if (ch === " ") { x += 2.4; continue; } const g = glyphOf(ch); gl.push({ x, g }); x += g.w + 1.2; } return { gl, w: max(0, x - 1.2) }; }
+const textW = (str, cap) => layoutT(str).w * cap / 6;
+// strokes of a line of text anchored at (ax, ay): h is l|c|r, v is t|m|b of the cap box, turned by ang
+function textStrokes(str, ax, ay, cap, { h = "l", v = "t", ang = 0 } = {}) {
+  const L = layoutT(str), s = cap / 6, w = L.w * s, ox = h === "c" ? -w / 2 : h === "r" ? -w : 0, oy = v === "m" ? -cap / 2 : v === "b" ? -cap : 0, c = cos(ang), sn = sin(ang), out = [];
+  for (const { x, g } of L.gl) for (const st of g.strokes) out.push(st.map(([a, b]) => { const lx = ox + (x + a) * s, ly = oy + b * s; return [ax + lx * c - ly * sn, ay + lx * sn + ly * c]; }));
+  return out;
+}
+
+// ---------------- blocks: furniture in centimetres about its own origin, front facing down the page ----------------
+const blk = () => ({ L: { shade: [], line: [], colour: [] }, sil: [], spots: {} });
+const add = (B, pen, pts, cl = false) => B.L[pen].push([pts, cl]);
+const dashed = (B, pen, pts, cl, k, on = 1.1, off = 0.8) => { for (const q of dashPts(cl ? pts.concat([pts[0]]) : pts, [on / k, off / k])) add(B, pen, q); };
+function moveB(B, dx, dy) {
+  const m = P => P.map(([x, y]) => [x + dx, y + dy]);
+  for (const pen of PENS) B.L[pen] = B.L[pen].map(([q, cl]) => [m(q), cl]);
+  B.sil = B.sil.map(m); for (const s of Object.values(B.spots)) s.c = [s.c[0] + dx, s.c[1] + dy];
+  return B;
+}
+function sofaBlock(kind, k) {
+  const B = blk(), arm = 17, back = 17, d = 90;
+  if (kind === "curved") return curvedSofa(k);
+  const seats = kind === "1" ? 1 : kind === "2" ? 2 : 3, sw = kind === "1" ? 56 : kind === "2" ? 72 : 68, w = seats * sw + 2 * arm, chW = sw + arm, chL = 165;
+  const out = kind === "L" ? [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, -d / 2 + chL], [w / 2 - chW, -d / 2 + chL], [w / 2 - chW, d / 2], [-w / 2, d / 2]] : rrect(-w / 2, -d / 2, w / 2, d / 2, 5);
+  add(B, "line", out, true); B.sil.push(out);
+  const yb = -d / 2 + back, yc = yb + 12;
+  add(B, "line", kind === "L" ? [[-w / 2 + arm, d / 2], [-w / 2 + arm, yb], [w / 2 - arm, yb], [w / 2 - arm, -d / 2 + chL]] : [[-w / 2 + arm, d / 2], [-w / 2 + arm, yb], [w / 2 - arm, yb], [w / 2 - arm, d / 2]]);
+  for (let i = 0; i < seats; i++) {
+    const x0 = -w / 2 + arm + i * sw, x1 = x0 + sw, deep = kind === "L" && i === seats - 1, y1 = deep ? -d / 2 + chL - 2 : d / 2 - 2;
+    add(B, "line", rrect(x0 + 0.8, yb + 0.8, x1 - 0.8, yc, 4), true);   // back cushion
+    add(B, "line", rrect(x0 + 0.8, yc + 0.8, x1 - 0.8, y1, 3), true);   // seat cushion
+    if (k * 3.5 > 0.8) dashed(B, "shade", rrect(x0 + 4, yc + 4.5, x1 - 4, y1 - 3.5, 2), true, k);   // its stitching
+  }
+  B.spots.seat = { c: [-w / 2 + arm + (seats - (kind === "L" ? 1 : 0)) * sw / 2, (yc + d / 2) / 2], ang: 0, len: (seats - (kind === "L" ? 1 : 0)) * sw };
+  if (kind === "L") B.spots.chaise = { c: [w / 2 - arm - sw / 2, (yc - d / 2 + chL) / 2 + 8], ang: PI / 2, len: chL - back - 12 };
+  return B;
+}
+function curvedSofa(k) {
+  const B = blk(), Ro = 175, dd = 88, back = 16, sp = 104, Ri = Ro - dd, c = [0, 0], a0 = -90 - sp / 2, a1 = -90 + sp / 2;
+  const out = arcPts(c, Ro, a0, a1, 40).concat(arcPts(c, Ri, a1, a0, 40));
+  add(B, "line", out, true); B.sil.push(out);
+  add(B, "line", arcPts(c, Ro - back, a0, a1, 40)); add(B, "line", arcPts(c, Ro - back - 12, a0, a1, 40));
+  const n = 4;
+  for (let i = 1; i < n; i++) { const a = (a0 + (a1 - a0) * i / n) * D2R; add(B, "line", [pAt(c, Ri, a), pAt(c, Ro - back, a)]); }
+  for (let i = 0; i < n; i++) { const b0 = a0 + (a1 - a0) * i / n + 2.2, b1 = a0 + (a1 - a0) * (i + 1) / n - 2.2; if (k * 3.5 > 0.8) dashed(B, "shade", arcPts(c, Ri + 4, b0, b1, 12).concat(arcPts(c, Ro - back - 16, b1, b0, 12)), true, k); }
+  B.spots.seat = { c: pAt(c, (Ri + Ro - back - 12) / 2, -PI / 2), ang: 0, len: 150 };
+  const bb = bboxOf(out);
+  return moveB(B, -(bb[0] + bb[2]) / 2, -(bb[1] + bb[3]) / 2);
+}
+function tableBlock(shape, clutter, k, rnd) {
+  const B = blk(), out = shape === "round" ? ring(0, 0, 45, 45, 64) : shape === "oval" ? ring(0, 0, 65, 34, 64) : rrect(-60, -30, 60, 30, 3);
+  add(B, "line", out, true); B.sil.push(out);
+  add(B, "shade", shape === "round" ? ring(0, 0, 41, 41, 64) : shape === "oval" ? ring(0, 0, 61, 30, 64) : rrect(-56, -26, 56, 26, 2), true);
+  if (clutter) {
+    const bc = [-22, -3], book = rotPts(rrect(-34, -12, -10, 6, 1), bc, (8 + 14 * rnd()) * D2R);
+    add(B, "line", book, true); add(B, "shade", rotPts([[-32, -12], [-32, 6]], bc, (8 + 14 * rnd()) * D2R));
+    add(B, "line", ring(18, 7, 4.5, 4.5, 20), true); add(B, "line", arcPts([22.5, 7], 2.6, -70, 70, 8));
+    add(B, "shade", rotPts(rrect(26, -18, 31, -2, 1.5), [28, -10], -0.35), true);
+  }
+  B.spots.top = { c: [0, 0], ang: 0, len: shape === "round" ? 80 : 110 };
+  return B;
+}
+function sideTable() {
+  const B = blk(), out = ring(0, 0, 25, 25, 48);
+  add(B, "line", out, true); B.sil.push(out);
+  add(B, "shade", ring(0, 0, 15, 15, 40), true); add(B, "shade", ring(0, 0, 5, 5, 20), true);
+  for (const a of [45, 135, 225, 315]) add(B, "shade", [pAt([0, 0], 5, a * D2R), pAt([0, 0], 19, a * D2R)]);
+  return B;
+}
+function floorLamp() {
+  const B = blk(), out = ring(0, 0, 20, 20, 40);
+  add(B, "line", out, true); B.sil.push(out); add(B, "shade", ring(0, 0, 9, 9, 24), true);
+  for (const a of [45, 135, 225, 315]) add(B, "shade", [pAt([0, 0], 9, a * D2R), pAt([0, 0], 23, a * D2R)]);
+  return B;
+}
+function rugBlock(w, d, style, k) {
+  const B = blk(), out = rectPoly([-w / 2, -d / 2, w / 2, d / 2]), inner = rectPoly([-w / 2 + 7, -d / 2 + 7, w / 2 - 7, d / 2 - 7]);
+  add(B, "shade", out, true); B.sil.push(out); add(B, "shade", inner, true);
+  const fsp = max(4, 1.2 / k);
+  for (const sx of [-1, 1]) for (let y = -d / 2 + fsp / 2; y < d / 2; y += fsp) add(B, "shade", [[sx * w / 2, y], [sx * (w / 2 + 6), y]]);
+  const sp = max(15, 3 / k), field = rectPoly([-w / 2 + 12, -d / 2 + 12, w / 2 - 12, d / 2 - 12]);
+  if (style !== "plain") add(B, "shade", field, true);
+  const angs = style === "grid" ? [0, 90] : style === "diamond" ? [45, -45] : style === "stripes" ? [90] : [];
+  for (const a of angs) for (const s of hatchG(field, style === "stripes" ? sp * 0.6 : sp, a)) add(B, "shade", s);
+  return B;
+}
+function tvBlock(w) {
+  const B = blk(), out = rrect(-w / 2, -22, w / 2, 22, 2);
+  add(B, "line", out, true); B.sil.push(out);
+  for (const x of [-w / 6, w / 6]) add(B, "shade", [[x, -20], [x, 20]]);
+  add(B, "line", rrect(-w * 0.36, -20, w * 0.36, -14, 1), true); add(B, "shade", rrect(-14, -14, 14, -7, 1), true);
+  for (const s of [-1, 1]) { add(B, "shade", ring(s * (w / 2 - 13), 5, 8, 8, 24), true); add(B, "shade", ring(s * (w / 2 - 13), 5, 3, 3, 12), true); }
+  return B;
+}
+function plantBlock(rnd, r = 24) {
+  const B = blk(), pot = ring(0, 0, r * 0.62, r * 0.62, 40);
+  add(B, "line", pot, true); add(B, "shade", ring(0, 0, r * 0.52, r * 0.52, 36), true); B.sil.push(pot);
+  const n = 6 + floor(rnd() * 4);
+  for (let i = 0; i < n; i++) {
+    const a = i / n * TAU + rnd() * 0.5, L = r * (1.0 + 0.35 * rnd()), bend = (rnd() - 0.5) * 0.5, wl = L * 0.26;
+    const C = crOpen([pAt([0, 0], L * 0.1, a), pAt([0, 0], L * 0.55, a + bend * 0.5), pAt([0, 0], L, a + bend)], 8);
+    const leaf = tube(C, t => wl * sin(PI * clamp(t * 0.96 + 0.04, 0, 1)) ** 0.8 + 0.4, 5);
+    cutBehind(B.L, [leaf]); add(B, "line", leaf, true); add(B, "shade", C.slice(2, -2)); B.sil.push(leaf);
+  }
+  return B;
+}
+function shelfBlock(rnd, w = 100, d = 32) {
+  const B = blk(), out = rectPoly([-w / 2, -d / 2, w / 2, d / 2]);
+  add(B, "line", out, true); B.sil.push(out);
+  let x = -w / 2 + 2;
+  while (x < w / 2 - 4) {
+    if (rnd() < 0.08) { x += 6; continue; }
+    const t = min(2.5 + rnd() * 3, w / 2 - 2 - x), dep = d - 8 - rnd() * 6;
+    add(B, "shade", [[x, -d / 2 + 2], [x, -d / 2 + 2 + dep], [x + t, -d / 2 + 2 + dep], [x + t, -d / 2 + 2]]);
+    x += t;
+  }
+  return B;
+}
+function catTree() {
+  const B = blk(), base = rrect(-28, -28, 28, 28, 3);
+  add(B, "line", base, true); B.sil.push(base);
+  const post = ring(17, -17, 5, 5, 20); add(B, "shade", post, true); add(B, "shade", ring(17, -17, 2.6, 2.6, 12), true); B.sil.push(post);
+  const lo = ring(11, 11, 19, 19, 48); cutBehind(B.L, [lo]); add(B, "line", lo, true); add(B, "shade", ring(11, 11, 15, 15, 40), true); B.sil.push(lo);
+  const hi = ring(-9, -9, 22, 22, 48); cutBehind(B.L, [hi]); add(B, "line", hi, true); add(B, "line", ring(-9, -9, 17, 17, 48), true); B.sil.push(hi);
+  B.spots.top = { c: [-9, -9], ang: 0, fit: 40 };
+  return B;
+}
+function catBed(k) {
+  const B = blk(), out = ring(0, 0, 28, 28, 48);
+  add(B, "line", out, true); B.sil.push(out); add(B, "line", ring(0, 0, 20, 20, 44), true);
+  dashed(B, "shade", ring(0, 0, 24, 24, 48), true, k);
+  B.spots.top = { c: [0, 0], ang: 0, fit: 46 };
+  return B;
+}
+function bowlsBlock(k) {
+  const B = blk(), mat = rrect(-25, -14, 25, 14, 4);
+  add(B, "shade", mat, true); B.sil.push(mat);
+  for (const s of [-1, 1]) { add(B, "line", ring(s * 11.5, 0, 8.5, 8.5, 28), true); add(B, "shade", ring(s * 11.5, 0, 6, 6, 24), true); }
+  if (k > 0.25) for (const [x, y] of [[-13, -1.5], [-10, 1.5], [-12, 2.6], [-9.5, -2], [-14, 1.2]]) add(B, "shade", ring(x, y, 1.1, 1.1, 8), true);
+  return B;
+}
+function seatBlock(len) {
+  const B = blk(), out = rrect(-len / 2, -17, len / 2, 17, 2);
+  add(B, "line", out, true); B.sil.push(out); add(B, "line", rrect(-len / 2 + 3, -14, len / 2 - 3, 14, 4), true);
+  for (const s of [-1, 1]) add(B, "shade", rotPts(rrect(s * (len / 2 - 20) - 11, -10, s * (len / 2 - 20) + 11, 10, 5), [s * (len / 2 - 20), 0], s * 0.25), true);
+  B.spots.top = { c: [0, 0], ang: 0, len: len - 50 };
+  return B;
+}
+function boxBlock() {
+  const B = blk(), w = 24, h = 20, f = 14, out = rectPoly([-w, -h, w, h]);
+  const flaps = [[[-w, -h], [w, -h], [w - 4, -h - f], [-w + 4, -h - f]], [[-w, h], [w, h], [w - 4, h + f], [-w + 4, h + f]], [[-w, -h], [-w, h], [-w - f, h - 4], [-w - f, -h + 4]], [[w, -h], [w, h], [w + f, h - 4], [w + f, -h + 4]]];
+  for (const F of flaps) { add(B, "line", F, true); B.sil.push(F); }
+  add(B, "line", out, true); add(B, "shade", rectPoly([-w + 1.4, -h + 1.4, w - 1.4, h - 1.4]), true); B.sil.push(out);
+  B.spots.top = { c: [0, 0], ang: 0, fit: 38 };
+  return B;
+}
+function ottoman() {
+  const B = blk(), out = ring(0, 0, 26, 26, 48);
+  add(B, "line", out, true); B.sil.push(out); add(B, "shade", ring(0, 0, 22, 22, 44), true);
+  for (const [x, y] of [[0, 0], [-10, -6], [10, -6], [-10, 6], [10, 6], [0, -12], [0, 12]]) add(B, "shade", ring(x, y, 1, 1, 8), true);
+  return B;
+}
+
+// ---------------- the cats: seen from above, in real centimetres, facing right ----------------
+// Each pose is a few groups of overlapping shapes. A group's shapes merge into one outline; a later group lies on top and hides what is under it.
+function head(g, c, r, phi, opt) {
+  const H = ring(c[0], c[1], r, r * 1.08, 32, phi); g.polys.push(H);
+  for (const s of [-1, 1]) {
+    g.polys.push([pAt(c, r * 0.82, phi + s * 26 * D2R), pAt(c, r * 1.78, phi + s * 56 * D2R), pAt(c, r * 0.82, phi + s * 88 * D2R)]);
+    if (r * opt.k >= 1.6) g.det.push([[pAt(c, r * 1.1, phi + s * 42 * D2R), pAt(c, r * 1.52, phi + s * 56 * D2R), pAt(c, r * 1.1, phi + s * 73 * D2R)], false]);
+  }
+  // the face only where it will read: eyes from 2 mm of head on paper, whiskers from 3 mm
+  if (opt.face && r * opt.k >= 2) {
+    for (const s of [-1, 1]) {
+      const e = pAt(c, r * 0.5, phi + s * 32 * D2R);
+      g.det.push([Array.from({ length: 7 }, (_, i) => pAt(e, r * 0.22, phi + (-70 + 140 * i / 6) * D2R)), false]);   // a closed, sleepy eye
+      if (r * opt.k >= 3) for (let j = 0; j < 2; j++) {   // whiskers, two a side, sweeping out sideways from just outside the cheek
+        const st = pAt(c, r * 1.02, phi + s * (36 + j * 12) * D2R), da = phi + s * (62 + j * 26) * D2R;
+        g.det.push([[st, pAt(pAt(st, r * 0.32, da), r * 0.04, da + s * PI / 2), pAt(st, r * 0.62, da + s * 0.1)], false]);
+      }
+    }
+    const n = pAt(c, r * 0.86, phi);
+    g.det.push([[pAt(n, r * 0.13, phi), pAt(n, r * 0.13, phi + 2.2), pAt(n, r * 0.13, phi - 2.2)], true]);
+  }
+  return H;
+}
+const paw = (c, a, r = 2.8) => ring(c[0], c[1], r, r * 0.8, 14, a);
+function catPose(pose, rnd, opt) {
+  const turn = (rnd() - 0.5) * 0.5, g0 = { polys: [], det: [] }, G = [g0];
+  let C, wf, body, H, dim;
+  if (pose === "loaf") {
+    body = crClosed([[11, -9.5], [3, -12], [-8, -12.5], [-16, -10], [-20, 0], [-16, 10], [-8, 12.5], [3, 12], [11, 9.5], [14, 0]], 8);
+    g0.polys.push(body, paw([26.5, -3.8], 0, 2.6), paw([26.5, 3.8], 0, 2.6));
+    H = head(g0, [21, 0], 7.2, turn, opt);
+    const sd = rnd() < 0.5 ? 1 : -1, T = crOpen([[-18, 5 * sd], [-17.5, 12.5 * sd], [-8, 15.4 * sd], [4, 15.4 * sd], [11, 13.6 * sd]], 6);
+    G.push({ polys: [tube(T, t => lerp(2.6, 1.7, t))], det: [] });
+    C = [[-16, 0], [11, 0]]; wf = () => 12; dim = [[-20, 0], pAt([21, 0], 7.2, turn)];
+  } else if (pose === "donut") {
+    body = crClosed(Array.from({ length: 10 }, (_, i) => { const a = i / 10 * TAU, r = 16 * (1 + (rnd() - 0.5) * 0.06); return [r * cos(a) * 1.04, r * sin(a) * 0.96]; }), 8);
+    g0.polys.push(body); g0.det.push([arcPts([-2, 3], 9, 150, 290, 14), false]);   // the haunch
+    const gh = { polys: [], det: [] }; H = head(gh, [6, -5], 6.6, 200 * D2R + turn * 0.4, opt);
+    const T = crOpen([pAt([0, 0], 15, 140 * D2R), pAt([0, 0], 15.6, 175 * D2R), pAt([0, 0], 15.6, 212 * D2R), pAt([0, 0], 15, 245 * D2R), [1, -12.6]], 6);
+    G.push(gh, { polys: [tube(T, t => lerp(2.8, 1.9, t))], det: [] });
+    C = arcPts([0, 0], 10.5, 20, 330, 30); wf = () => 6; dim = [[-16.6, 0], [16.6, 0]];
+  } else if (pose === "sploot") {
+    body = crClosed([[12, -7.5], [4, -9.5], [-10, -9], [-18, -6], [-21, 0], [-18, 6], [-10, 9], [4, 9.5], [12, 7.5], [15, 0]], 8);
+    g0.polys.push(body);
+    for (const s of [-1, 1]) {
+      g0.polys.push(paw([28, 5 * s], 0), tube(crOpen([[-14, 6 * s], [-26, 8 * s], [-38, 9 * s]], 5), t => lerp(3.2, 2.3, t)), paw([-40, 9 * s], 0, 3));
+    }
+    H = head(g0, [22.5, 0], 7, turn, opt);
+    const T = crOpen([[-20, 0], [-34, -1 + turn * 4], [-50, 2 + turn * 6]], 6);
+    g0.polys.push(tube(T, t => lerp(2.4, 1.6, t)));
+    C = [[-17, 0], [12, 0]]; wf = () => 9; dim = [T[T.length - 1], pAt([22.5, 0], 7, turn)];
+  } else if (pose === "liquid") {
+    const b = (rnd() < 0.5 ? -1 : 1) * (1.5 + 2.5 * rnd());
+    C = crOpen([[-30, 0], [-15, b], [0, 0], [15, -b], [28, 0]], 6); wf = t => 8 + 1.4 * sin(PI * t);
+    body = tube(C, wf); g0.polys.push(body);
+    const m = C.length, tip = C[m - 1], fa = atan2(tip[1] - C[m - 4][1], tip[0] - C[m - 4][0]), st = C[0], ba = atan2(st[1] - C[3][1], st[0] - C[3][0]);
+    for (const s of [-1, 1]) {
+      const sh = pAt(C[floor(0.85 * (m - 1))], 4.5, fa + s * PI / 2), fe = pAt(pAt(sh, 24, fa), 1.5, fa + s * PI / 2);
+      g0.polys.push(tube([sh, lerp2(sh, fe, 0.5), fe], t => lerp(2.6, 2.1, t)), paw(fe, fa));
+      const hp = pAt(C[floor(0.12 * (m - 1))], 5, ba - s * PI / 2), he = pAt(pAt(hp, 22, ba), 3, ba - s * PI / 2);
+      g0.polys.push(tube([hp, lerp2(hp, he, 0.5), he], t => lerp(3.2, 2.2, t)), paw(he, ba, 3));
+    }
+    const hc = pAt(tip, 6, fa); H = head(g0, hc, 7, fa + turn * 0.6, opt);
+    const T = crOpen([st, pAt(st, 12, ba + 0.2), pAt(st, 22, ba + 0.5), pAt(st, 29, ba + 0.95)], 6);
+    g0.polys.push(tube(T, t => lerp(2.4, 1.6, t)));
+    dim = [T[T.length - 1], pAt(hc, 7, fa + turn * 0.6)];
+  } else {   // side: sunbathing, flopped over with all four paws out
+    body = crClosed([[16, -9], [3, -11], [-11, -10.5], [-19, -5], [-20, 3], [-13, 8.5], [0, 8], [12, 7.5], [19, 0]], 8);
+    g0.polys.push(body);
+    for (const L of [[[12, 5], [19, 13], [22, 18]], [[7, 6], [11, 14], [13, 19.5]], [[-11, 6], [-8, 13], [-7, 18.5]], [[-16, 4], [-18, 11], [-21, 16]]]) {
+      const e = L[2], a = atan2(e[1] - L[1][1], e[0] - L[1][0]);
+      g0.polys.push(tube(crOpen(L, 4), t => lerp(2.7, 2.2, t)), paw(e, a));
+    }
+    H = head(g0, [21, -3], 7, -25 * D2R + turn, opt);
+    const T = crOpen([[-19, -2], [-28, -6], [-34, -13], [-31, -20], [-26, -21]], 6);
+    g0.polys.push(tube(T, t => lerp(2.5, 1.7, t)));
+    g0.det.push([crOpen([[-12, 3], [0, 4.5], [10, 3]], 5), false]);   // the belly fold
+    C = [[-17, -2], [15, -2]]; wf = () => 8; dim = [[-34, -13], pAt([21, -3], 7, -25 * D2R + turn)];
+  }
+  // markings on the body, kept off the head
+  const keepOff = q => H ? clipPath(q, false, H, false) : [q];
+  if (opt.mark === "tabby") {
+    for (const { p, a, u } of along(C, max(4.5, 2.2 / opt.k))) {
+      if (u < 0.08 || u > 0.94) continue;
+      const w = wf(u);
+      for (const s of [-1, 1]) {
+        const n = a + s * PI / 2, p0 = pAt(p, w * 0.3, n), p1 = pAt(pAt(p, w * 0.8, n), w * 0.22, a + PI), md = pAt(lerp2(p0, p1, 0.5), w * 0.06, a);
+        for (const q of clipPath([p0, md, p1], false, body, true)) for (const r of keepOff(q)) g0.det.push([r, false]);
+      }
+    }
+  } else if (opt.mark === "patches") {
+    const st = along(C, 1);
+    for (let i = 0; i < 2; i++) {
+      const s = st[floor((0.2 + 0.6 * rnd()) * (st.length - 1))], w = wf(s.u), rr = w * (0.55 + 0.4 * rnd()), c = pAt(s.p, (rnd() - 0.5) * w, s.a + PI / 2);
+      const blob = crClosed(Array.from({ length: 7 }, (_, j) => pAt(c, rr * (0.75 + 0.5 * rnd()), j / 7 * TAU)), 6);
+      for (const q of clipPath(blob, true, body, true)) for (const r of keepOff(q)) g0.det.push([r, false]);
+      for (const [a, b] of hatchG(blob, max(0.6, 0.42 / opt.k), 45 + 30 * rnd())) for (const q of clipPath([a, b], false, body, true)) for (const r of keepOff(q)) g0.det.push([r, false]);
+    }
+  }
+  return { G, dim };
+}
+// merge a group's shapes into one outline: each shape keeps only the parts of its edge outside the others
+function unionLines(polys) {
+  const pieces = [];
+  polys.forEach((P, i) => { let segs = segsOf(P, true); polys.forEach((Q, j) => { if (i !== j) segs = clipSegs(segs, Q, false); }); pieces.push(...joinSegs(segs)); });
+  return chain(pieces, 1e-6).map(c => [c.pts, c.closed]);
+}
+function catBlock(pose, seed, opt) {
+  const rnd = mulberry(seed), { G, dim } = catPose(pose, rnd, opt), B = blk();
+  for (const g of G) {
+    if (B.sil.length) cutBehind(B.L, g.polys);
+    for (const q of unionLines(g.polys)) B.L.colour.push(q);
+    for (const d of g.det) B.L.colour.push(d);
+    B.sil.push(...g.polys);
+  }
+  B.dim = dim;
+  return B;
+}
+// a block scaled about its origin
+function scaleB(B, s) {
+  const m = P => P.map(([x, y]) => [x * s, y * s]);
+  const out = { L: {}, sil: B.sil.map(m), spots: {}, dim: B.dim && B.dim.map(p => [p[0] * s, p[1] * s]) };
+  for (const pen of PENS) out.L[pen] = B.L[pen].map(([q, cl]) => [m(q), cl]);
+  return out;
+}
+// lay cat C into block B at its spot, hiding what is under the cat
+function withCat(B, C, at = [0, 0]) {
+  const m = P => P.map(([x, y]) => [x + at[0], y + at[1]]), sil = C.sil.map(m);
+  cutBehind(B.L, sil);
+  for (const pen of PENS) for (const [q, cl] of C.L[pen]) B.L[pen].push([m(q), cl]);
+  B.sil.push(...sil);
+  return B;
+}
+const CAT_NAMES = { loaf: "CAT_LOAF", donut: "CAT_DONUT", sploot: "CAT_SPLOOT", liquid: "CAT_LIQUID", side: "CAT_SUNBATHE", box: "CAT_IF_I_FITS" };
+const SPOT_POSE = { sofa: "liquid", chaise: "loaf", rug: "sploot", sill: "loaf", sun: "side", chair: "donut", table: "loaf", box: "donut", tree: "donut", bed: "donut" };
+const RFI_WORD = { sofa: "SOFA", chaise: "CHAISE", rug: "RUG", sill: "WINDOW SEAT", sun: "SUNBEAM", chair: "ARMCHAIR", table: "COFFEE TABLE", box: "BOX", tree: "CAT TREE", bed: "CAT BED" };
+
+// ---------------- the room, laid out in centimetres ----------------
+function layoutRoom(o, rnd, k) {
+  const W = o.rw, D = o.rd, items = [], spots = [], notes = [];
+  const Tw = (x, y, th) => p => [x + p[0] * cos(th) - p[1] * sin(th), y + p[0] * sin(th) + p[1] * cos(th)];
+  const boxOf = (B, T) => B.sil.reduce((a, P) => bbUnion(a, bboxOf(P.map(T))), [INF, INF, -INF, -INF]);
+  const door = { a: 25, b: 115 }, wy = D * 0.4, ww = min(150, D * 0.38), win = { a: wy - ww / 2, b: wy + ww / 2 };
+  const reserved = [[door.a - 5, D - 100, door.b + 5, D]];
+  const place = (name, B, x, y, th, under = false) => {
+    const T = Tw(x, y, th), bb = boxOf(B, T);
+    if (bb[0] < 1 || bb[1] < 1 || bb[2] > W - 1 || bb[3] > D - 1) return null;
+    if (!under && (items.some(it => !it.under && bbHit(bbGrow(bb, 4), it.bb)) || reserved.some(r => bbHit(bb, r)))) return null;
+    const it = { name, B, x, y, th, T, bb, under }; items.push(it); return it;
+  };
+  const placeAny = (name, mk, cands) => { for (const [x, y, th] of cands) { const it = place(name, mk(), x, y, th); if (it) return it; } return null; };
+  const spotOf = (name, it, key, ang = 0) => { const s = it.B.spots[key]; if (s) spots.push({ name, c: it.T(s.c), ang: it.th + s.ang + ang, fit: s.fit, len: s.len }); };
+  // TV wall at the top, sofa facing it, the rug and table between
+  const tvW = min(180, W * 0.36), tv = place("tv", tvBlock(tvW), W / 2, 24, 0);
+  let rug = null;
+  if (o.rug !== "none") rug = place("rug", rugBlock(min(250, W * 0.52), min(180, D * 0.42), o.rug, k), W / 2, D * 0.56, 0, true);
+  let sofa = null;
+  for (const kind of [o.sofa, "2"]) {
+    const B = sofaBlock(kind, k), T = Tw(0, 0, PI), bb = boxOf(B, T);
+    sofa = place("sofa", B, W / 2 - (bb[0] + bb[2]) / 2, D - 28 - bb[3], PI);
+    if (sofa) { if (kind !== o.sofa) notes.push("the sofa would not fit, so it is a two-seater"); break; }
+  }
+  if (sofa) { spotOf("sofa", sofa, "seat"); spotOf("chaise", sofa, "chaise"); }
+  const sofaTop = sofa ? sofa.bb[1] : D * 0.75, th0 = o.table === "round" ? 45 : o.table === "oval" ? 34 : 30;
+  const table = place("table", tableBlock(o.table, o.clutter === "on", k, rnd), W / 2, sofaTop - 38 - th0, 0);
+  if (table) spotOf("table", table, "top", rnd() < 0.5 ? 0.3 : -0.3);
+  const midY = table ? table.y : D * 0.5, rx = rug ? (rug.bb[2] - rug.bb[0]) / 2 : 120;
+  if (o.chairs >= 1) { const c = placeAny("chair", () => sofaBlock("1", k), [[W / 2 - rx - 12, midY, -PI / 2 + 0.25], [W / 2 - rx + 10, midY, -PI / 2 + 0.25], [70, midY, -PI / 2]]); if (c) spotOf("chair", c, "seat"); }
+  if (o.chairs >= 2) { const c = placeAny("chair", () => sofaBlock("1", k), [[W / 2 + rx + 12, midY, PI / 2 - 0.25], [W / 2 + rx - 10, midY, PI / 2 - 0.25], [W - 120, midY, PI / 2]]); if (c) spotOf("chair", c, "seat"); }
+  if (sofa) placeAny("side", sideTable, [[sofa.bb[0] - 32, sofa.y, 0], [sofa.bb[2] + 32, sofa.y, 0]]);
+  // the window seat and the sunbeam on the right wall
+  let sunPoly = null, sunAt = null;
+  if (o.seat === "on") { const s = place("seat", seatBlock(ww - 6), W - 18, wy, PI / 2); if (s) spotOf("sill", s, "top"); }
+  if (o.sun === "on") {
+    const Ls = min(W * 0.45, 230, (D - 12 - win.b) / 0.45);
+    sunPoly = [[W, win.a], [W, win.b], [W - Ls, win.b + Ls * 0.45], [W - Ls, win.a + Ls * 0.45]];
+    sunAt = u => [W - Ls * u, wy + Ls * u * 0.45];
+  }
+  placeAny("shelf", () => shelfBlock(rnd), [[17, D * 0.3, -PI / 2], [17, D * 0.22, -PI / 2]]);
+  placeAny("lamp", floorLamp, [[26, 26, 0], [W - 26, 26, 0]]);
+  if (o.catstuff !== "none") { const t = placeAny("tree", catTree, [[W - 36, D * 0.8, 0], [W - 36, D - 40, 0], [W - 36, 40, 0], [40, D * 0.62, 0]]); if (t) spotOf("tree", t, "top"); }
+  if (o.catstuff === "all") {
+    const b = placeAny("bed", () => catBed(k), [[W - 40, 36 + 28, 0], [W / 2 + tvW / 2 + 40, 36, 0], [40, D * 0.55, 0], [W - 40, D - 36, 0]]); if (b) spotOf("bed", b, "top");
+    placeAny("bowls", () => bowlsBlock(k), [[22, D * 0.62, PI / 2], [22, D * 0.5, PI / 2], [W - 22, D - 60, PI / 2]]);
+  }
+  if (o.box === "on") { const b = placeAny("box", boxBlock, [[W / 2 + tvW / 2 + 45, 45, 0.15], [W * 0.78, D * 0.5, -0.2], [W * 0.25, D * 0.45, 0.2], [W / 2 - tvW / 2 - 45, 45, -0.15]]); if (b) spotOf("box", b, "top"); }
+  const pc = [[W / 2 - tvW / 2 - 36, 36], [W - 36, 36], [W - 36, D - 36], [36, D - 150], [W / 2 + tvW / 2 + 36, 36], [36, D * 0.45], [W / 2 - tvW / 2 - 90, 36], [W - 36, D * 0.62]];
+  let plants = 0; for (const [x, y] of pc) { if (plants >= o.plants) break; if (place("plant", plantBlock(rnd), x, y, rnd() * TAU)) plants++; }
+  if (plants < o.plants) notes.push(`${plants} of ${o.plants} plants found room`);
+  // free floor for a cat: a box of w x h about c, clear of everything standing
+  const clear = (c, w, h) => !items.some(it => !it.under && bbHit([c[0] - w / 2, c[1] - h / 2, c[0] + w / 2, c[1] + h / 2], it.bb)) && !reserved.some(r => bbHit([c[0] - w / 2, c[1] - h / 2, c[0] + w / 2, c[1] + h / 2], r));
+  // the sunbeam: somewhere along the patch of light
+  if (sunAt) for (const u of [0.6, 0.45, 0.75, 0.35, 0.85]) { const c = sunAt(u); if (clear(c, 52, 44)) { spots.push({ name: "sun", c, ang: -0.45 + (rnd() - 0.5) * 0.4 }); break; } }
+  // the rug: a sploot on the clearest patch, nearest its middle
+  if (rug) {
+    const rc = [(rug.bb[0] + rug.bb[2]) / 2, (rug.bb[1] + rug.bb[3]) / 2], cands = [];
+    for (let y = rug.bb[1] + 22; y <= rug.bb[3] - 22; y += 8) for (let x = rug.bb[0] + 22; x <= rug.bb[2] - 22; x += 8) {
+      if (clear([x, y], 40, 76)) cands.push({ c: [x, y], ang: PI / 2, d: hypot(x - rc[0], y - rc[1]) });
+      if (clear([x, y], 76, 40)) cands.push({ c: [x, y], ang: 0, d: hypot(x - rc[0], y - rc[1]) + 4 });
+    }
+    cands.sort((a, b) => a.d - b.d);
+    if (cands.length) spots.push({ name: "rug", c: cands[0].c, ang: cands[0].ang + (rnd() - 0.5) * 0.5 });
+  }
+  return { W, D, items, spots, notes, door, win, sunPoly };
+}
+
+// ---------------- the sheet ----------------
+function build(o) {
+  const t0 = performance.now(), [PW, PH] = o.page.split("x").map(Number), mg = o.margin, Ly = { shade: [], line: [], colour: [] };
+  const rnd = mulberry(o.seed * 7919 + 5), notes = [], catS = o.catsize / 100;
+  const catPen = o.cpen === "none" ? "line" : "colour", notePen = o.cpen === "catsnotes" ? "colour" : "shade";
+  const push = (pen, pts, closed = false) => Ly[pen].push([pts, closed]);
+  const text = (pen, str, x, y, cap, opt) => { for (const q of textStrokes(str, x, y, cap, opt)) push(pen, q); };
+  const bold = (pts, closed, n) => { push("line", pts, closed); if (o.weight === 2) { const c = pts.reduce((a, p) => [a[0] + p[0] / pts.length, a[1] + p[1] / pts.length], [0, 0]); push("line", pts.map(p => [p[0] + n[0] * PASS, p[1] + n[1] * PASS]), closed); } };
+  const catOpt = kk => ({ mark: o.mark, face: o.face === "on", k: kk });
+  const stampB = (B, T, penMap = p => p) => { const sil = B.sil.map(P => P.map(T)); cutBehind(Ly, sil); for (const pen of PENS) for (const [q, cl] of B.L[pen]) Ly[penMap(pen)].push([q.map(T), cl]); return sil; };
+  const toCat = p => p === "colour" ? catPen : p;
+  let cats = 0, scaleLabel = "", hero = null;
+
+  // the frame and the title strip
+  const F = [mg, mg, PW - mg, PH - mg], tbW = min(104, (F[2] - F[0]) * 0.56), tbH = 26, TB = [F[2] - tbW, F[3] - tbH, F[2], F[3]];
+  bold(rectPoly(F), true, [0, 0]);
+  if (o.weight === 2) push("line", rectPoly(bbGrow(F, -PASS)), true);
+  const content = [F[0] + 4, F[1] + 4, F[2] - 4, TB[1] - 4];
+  const avoidText = [];
+
+  if (o.sheet === "library") {
+    scaleLabel = libraryLayout(o, content, Ly, catS, catPen, notes);
+    cats = Object.keys(CAT_NAMES).length;
+  } else {
+    // with a strip of cat blocks along the bottom of the drawing
+    let planArea = content;
+    if (o.sheet === "combo") {
+      const sh = min(62, (content[3] - content[1]) * 0.3);
+      planArea = [content[0], content[1], content[2], content[3] - sh];
+      const strip = [content[0], content[3] - sh + 4, content[2], content[3]];
+      push("shade", [[strip[0], strip[1] - 2], [strip[2], strip[1] - 2]]);
+      catStrip(o, strip, Ly, catS, catPen);
+    }
+    // the plan: the largest standard scale that fits, with room for dimensions above and on the left and notes below
+    const t = 15, gL = 13, gT = 13, gR = 4, gB = 6, aw = planArea[2] - planArea[0] - gL - gR, ah = planArea[3] - planArea[1] - gT - gB;
+    const sc = SCALES.find(s => (o.rw + 2 * t) * 10 / s <= aw && (o.rd + 2 * t) * 10 / s <= ah) || 100, k = 10 / sc;
+    scaleLabel = "1:" + sc;
+    const O = [planArea[0] + gL + (aw - (o.rw + 2 * t) * k) / 2 + t * k, planArea[1] + gT + (ah - (o.rd + 2 * t) * k) / 2 + t * k];
+    const M = p => [O[0] + p[0] * k, O[1] + p[1] * k];
+    const R = layoutRoom(o, rnd, k), W = R.W, D = R.D;
+    notes.push(...R.notes);
+    // walls, with the door at the bottom left and the window on the right
+    const open = { top: [], right: [[R.win.a, R.win.b]], bottom: [[R.door.a, R.door.b]], left: [] };
+    const sideRun = (side, off) => {   // a wall face as runs between openings, in cm
+      const L = side === "top" || side === "bottom" ? [-off, W + off] : [-off, D + off], cut = open[side].slice().sort((a, b) => a[0] - b[0]), runs = []; let s = L[0];
+      for (const [a, b] of cut) { if (a > s) runs.push([s, a]); s = max(s, b); }
+      if (s < L[1]) runs.push([s, L[1]]);
+      return runs.map(([a, b]) => side === "top" ? [[a, -off], [b, -off]] : side === "bottom" ? [[a, D + off], [b, D + off]] : side === "left" ? [[-off, a], [-off, b]] : [[W + off, a], [W + off, b]]);
+    };
+    const nrm = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] };
+    for (const side of ["top", "right", "bottom", "left"]) {
+      for (const r of sideRun(side, 0)) bold(r.map(M), false, nrm[side]);
+      for (const r of sideRun(side, t)) bold(r.map(M), false, nrm[side].map(v => -v));
+    }
+    // jambs and the wall fill
+    for (const [a, b] of open.bottom) for (const x of [a, b]) push("line", [M([x, D]), M([x, D + t])]);
+    for (const [a, b] of open.right) for (const y of [a, b]) push("line", [M([W, y]), M([W + t, y])]);
+    const pieces = [[-t, -t, W + t, 0], [-t, 0, 0, D], [W, 0, W + t, R.win.a], [W, R.win.b, W + t, D], [-t, D, R.door.a, D + t], [R.door.b, D, W + t, D + t]];
+    if (o.walls !== "outline") for (const p of pieces) { const P = rectPoly([...M([p[0], p[1]]), ...M([p[2], p[3]])]); for (const s of hatchG(P, o.walls === "solid" ? 0.35 : 1.1, 45)) push(o.walls === "solid" ? "line" : "shade", s); }
+    // the window: glass and sills; the door: leaf and swing
+    for (const f of [0.42, 0.58]) push("shade", [M([W + t * f, R.win.a]), M([W + t * f, R.win.b])]);
+    for (const x of [W, W + t]) push("shade", [M([x, R.win.a]), M([x, R.win.b])]);
+    push("line", rectPoly([...M([R.door.a, D - (R.door.b - R.door.a)]), ...M([R.door.a + 4, D])]), true);
+    push("shade", arcPts(M([R.door.a, D]), (R.door.b - R.door.a) * k, -90, 0, 24));
+    // overall dimensions, interior, in millimetres
+    const dimH = (x0, x1, y, txt) => { push(notePen === "colour" ? "shade" : "shade", [[x0, y], [x1, y]]); for (const x of [x0, x1]) { push("shade", [[x, y + 6], [x, y - 1.5]]); push("shade", [[x - 0.9, y + 0.9], [x + 0.9, y - 0.9]]); } text("shade", txt, (x0 + x1) / 2, y - 1, 2.2, { h: "c", v: "b" }); };
+    const yT = O[1] - t * k - 7; dimH(O[0], O[0] + W * k, yT, String(W * 10));
+    const xL = O[0] - t * k - 7, y0 = O[1], y1 = O[1] + D * k;
+    push("shade", [[xL, y0], [xL, y1]]); for (const y of [y0, y1]) { push("shade", [[xL + 6, y], [xL - 1.5, y]]); push("shade", [[xL - 0.9, y + 0.9], [xL + 0.9, y - 0.9]]); }
+    text("shade", String(D * 10), xL - 1, (y0 + y1) / 2, 2.2, { h: "c", v: "b", ang: -PI / 2 });
+    // the rug, then the sunbeam on the floor, then everything that stands on them
+    for (const it of R.items) if (it.under) stampB(it.B, p => M(it.T(p)));
+    if (R.sunPoly) {
+      const P = R.sunPoly.map(M), la = atan2(0.45, -1) / D2R;
+      for (const q of dashPts(P.concat([P[0]]), [1.6, 1.2])) push("shade", q);
+      for (const [a, b] of hatchG(P, 2.6, la)) for (const q of dashPts([a, b], [0.8, 2.2])) push("shade", q);
+    }
+    // the cats: the star first, then the rest of the spots in a shuffled order
+    const avail = R.spots.slice(), heroName = o.hero, order = [];
+    let hi = avail.findIndex(s => s.name === heroName);
+    if (hi < 0) { hi = avail.findIndex(s => s.name === "sofa"); if (hi < 0) hi = 0; if (avail.length) notes.push(`no ${RFI_WORD[heroName] || heroName} here, so the star is ${avail[hi] ? "on the " + RFI_WORD[avail[hi].name].toLowerCase() : "nowhere"}`); }
+    if (avail.length) order.push(...avail.splice(hi, 1));
+    for (let i = avail.length - 1; i > 0; i--) { const j = floor(rnd() * (i + 1)); [avail[i], avail[j]] = [avail[j], avail[i]]; }
+    order.push(...avail);
+    const placed = order.slice(0, o.cats);
+    if (placed.length < o.cats) notes.push(`${placed.length} of ${o.cats} cats found a spot`);
+    const catBoxes = [];
+    for (let i = 0; i < placed.length; i++) {
+      const sp = placed[i], poses = ["loaf", "donut", "sploot", "liquid", "side"];
+      let pose = o.poses === "suits" ? SPOT_POSE[sp.name] : o.poses === "random" ? poses[floor(rnd() * poses.length)] : o.poses;
+      if (sp.fit && pose !== "loaf") pose = "donut";
+      if (sp.fit && pose === "loaf") pose = rnd() < 0.5 ? "loaf" : "donut";
+      let s = catS;
+      if (sp.fit) s = min(catS, sp.fit / 36);
+      const flip = rnd() < 0.5 ? PI : 0, ang = sp.ang + flip + (rnd() - 0.5) * 0.25;
+      const B = catBlock(pose, floor(rnd() * 1e6), catOpt(k * s)), Bs = scaleB(B, s);
+      const T = p => M([sp.c[0] + p[0] * cos(ang) - p[1] * sin(ang), sp.c[1] + p[0] * sin(ang) + p[1] * cos(ang)]);
+      const it = { B: Bs, T, sp, pose, s };
+      if (i === 0) hero = it;
+      catBoxes.push({ it, bb: Bs.sil.reduce((a, P) => bbUnion(a, bboxOf(P.map(T))), [INF, INF, -INF, -INF]) });
+    }
+    // paw prints from the door to the star, under the furniture
+    if (o.paws === "on" && hero) {
+      const a = [(R.door.a + R.door.b) / 2, D - 22], b = hero.sp.c, mid = lerp2(a, b, 0.5), d = hypot(b[0] - a[0], b[1] - a[1]);
+      const ctl = [mid[0] + (b[1] - a[1]) / d * d * 0.25 * (rnd() < 0.5 ? 1 : -1), mid[1] - (b[0] - a[0]) / d * d * 0.25];
+      const path = Array.from({ length: 60 }, (_, i) => { const u = i / 59; return M([(1 - u) ** 2 * a[0] + 2 * (1 - u) * u * ctl[0] + u * u * b[0], (1 - u) ** 2 * a[1] + 2 * (1 - u) * u * ctl[1] + u * u * b[1]]); });
+      const solid = R.items.filter(it => !it.under).map(it => bbGrow([...M([it.bb[0], it.bb[1]]), ...M([it.bb[2], it.bb[3]])], 1));
+      const heroBB = bbGrow(catBoxes[0].bb, 3);
+      along(path, 4.2).forEach(({ p, a: pa }, i) => {
+        const c = pAt(p, 1.3 * (i % 2 ? 1 : -1), pa + PI / 2);
+        if (solid.some(r => c[0] > r[0] && c[0] < r[2] && c[1] > r[1] && c[1] < r[3]) || (c[0] > heroBB[0] && c[0] < heroBB[2] && c[1] > heroBB[1] && c[1] < heroBB[3])) return;
+        const sz = 2.3, rot = q => [c[0] + (q[0] * cos(pa + PI / 2) - q[1] * sin(pa + PI / 2)) * sz, c[1] + (q[0] * sin(pa + PI / 2) + q[1] * cos(pa + PI / 2)) * sz];
+        push(catPen, ring(0, 0.25, 0.5, 0.38, 16).map(rot), true);
+        for (const q of [[-0.52, -0.3], [-0.2, -0.58], [0.2, -0.58], [0.52, -0.3]]) push(catPen, ring(q[0], q[1], 0.16, 0.2, 10).map(rot), true);
+      });
+    }
+    for (const it of R.items) if (!it.under) stampB(it.B, p => M(it.T(p)));
+    for (const { it } of catBoxes.slice().reverse()) stampB(it.B, it.T, toCat);
+    cats = catBoxes.length;
+    // room tag
+    const room = [O[0] + 2, O[1] + 2, O[0] + W * k - 2, O[1] + D * k - 2];
+    const solidP = R.items.map(it => bbGrow([...M([it.bb[0], it.bb[1]]), ...M([it.bb[2], it.bb[3]])], 1.5));
+    avoidText.push(...solidP, ...catBoxes.map(c => bbGrow(c.bb, 1.5)), bbGrow([...M([R.door.a, D - 95]), ...M([R.door.b, D])], 0));
+    if (R.sunPoly) avoidText.push(bboxOf(R.sunPoly.map(M)));
+    // the star's notes: a dimension along the cat, a revision cloud, a delta and an RFI
+    if (hero && o.notes !== "none") {
+      const [p, q] = hero.B.dim.map(hero.T), a = atan2(q[1] - p[1], q[0] - p[0]), len = hypot(q[0] - p[0], q[1] - p[1]), real = round(len / k * 10 / 10) * 10;
+      const bb = catBoxes[0].bb, cc = [(bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2];
+      // the side of the cat with the most room, judged by the edge of its box
+      let n = a + PI / 2; const mp = lerp2(p, q, 0.5); if ((cc[0] - mp[0]) * cos(n) + (cc[1] - mp[1]) * sin(n) > 0) n += PI;
+      const reach = max(0, ...hero.B.sil.flat().map(pp => { const w = hero.T(pp); return (w[0] - mp[0]) * cos(n) + (w[1] - mp[1]) * sin(n); }));
+      const off = reach + 3, d0 = pAt(p, off, n), d1 = pAt(q, off, n);
+      push(notePen, [d0, d1]);
+      for (const [e, d] of [[p, d0], [q, d1]]) { push(notePen, [pAt(e, reach + 1, n), pAt(d, 1.5, n)]); push(notePen, [pAt(d, 1, a + PI / 4), pAt(d, -1, a + PI / 4)]); }
+      let ta = a; if (cos(ta) < -1e-6 || (abs(cos(ta)) < 1e-6 && sin(ta) > 0)) ta += PI;
+      const txt = `${real} (??)`, tc = pAt(lerp2(d0, d1, 0.5), 1.1 + (sin(n - ta) < 0 ? 0 : 1.9), n);
+      text(notePen, txt, tc[0], tc[1], 1.9, { h: "c", v: sin(n - ta) < 0 ? "b" : "t", ang: ta });
+      const dbb = bboxOf([d0, d1, ...textStrokes(txt, tc[0], tc[1], 1.9, { h: "c", v: sin(n - ta) < 0 ? "b" : "t", ang: ta }).flat()]);
+      avoidText.push(bbGrow(dbb, 1));
+      if (o.notes === "all") {
+        const cb = bbGrow(bbUnion(bb, dbb), 2.2);
+        push(notePen, cloud(cb), true);
+        const tri = [[cb[2] + 1, cb[1] - 1], [cb[2] + 6, cb[1] - 1], [cb[2] + 3.5, cb[1] - 5.3]];
+        push(notePen, tri, true); text(notePen, "1", cb[2] + 3.5, cb[1] - 1.6, 1.8, { h: "c", v: "b" });
+        avoidText.push(bbGrow(cb, 1.5), bbGrow(bboxOf(tri), 1));
+        const word = RFI_WORD[hero.sp.name] || "SOFA", l1 = (o.rfi || "").trim() ? o.rfi.trim().toUpperCase() : `RFI 01: ${word} OCCUPIED.`, l2 = (o.rfi || "").trim() ? "" : (hero.sp.name === "box" ? "IF I FITS, I SITS." : hero.sp.name === "bed" ? "FIRST TIME EVER. PLEASE ADVISE." : "PLEASE ADVISE.");
+        const cap = 2, tw = max(textW(l1, cap), textW(l2, cap)) + 1, th = l2 ? cap * 2 + 1.6 : cap;
+        const near = [(cb[0] + cb[2]) / 2, (cb[1] + cb[3]) / 2], gut = [planArea[0], O[1] + D * k + t * k + 2, planArea[2], planArea[3]];
+        const spot = freeSpot(tw + 4, th + 2, room, avoidText, near) || freeSpot(tw + 4, th + 2, gut, avoidText, near) || [gut[0] + 2, gut[1], gut[0] + tw + 6, gut[1] + th + 2];
+        const tx = spot[0] + 3, ty = spot[1] + 1;
+        text(notePen, l1, tx, ty, cap); if (l2) text(notePen, l2, tx, ty + cap + 1.6, cap);
+        avoidText.push(spot);
+        // the leader: from the nearest point of the cloud to the near end of the note
+        const end = [tx - 1, ty + cap / 2], cpts = cloud(cb), st = cpts.reduce((b, pp) => hypot(pp[0] - end[0], pp[1] - end[1]) < hypot(b[0] - end[0], b[1] - end[1]) ? pp : b);
+        const knee = [tx - 3.5, end[1]];
+        push(notePen, [st, knee, end]); push(notePen, dot(st[0], st[1], 0.55), false);
+      }
+    }
+    // the room's tag
+    const tag = "LOUNGE", area = (W * D / 1e4).toFixed(1) + " M²", tw = max(textW(tag, 2.8), textW(area, 1.8)) + 2;
+    const tspot = freeSpot(tw, 7, room, avoidText, [(room[0] + room[2]) / 2, (room[1] + room[3]) / 2]);
+    if (tspot) { const cx = (tspot[0] + tspot[2]) / 2; text("line", tag, cx, tspot[1] + 0.5, 2.8, { h: "c" }); text("shade", area, cx, tspot[1] + 4.3, 1.8, { h: "c" }); }
+    else notes.push("no clear floor left for the room tag");
+  }
+
+  // the title block
+  titleBlock(o, TB, Ly, scaleLabel, notePen);
+  // north arrow and general notes in the strip to its left
+  const nx = TB[0] - 10, ny = (TB[1] + TB[3]) / 2;
+  if (o.sheet !== "library" && nx - 6 > F[0] + 4) {
+    push("shade", ring(nx, ny + 1.5, 5, 5, 40), true);
+    push("line", [[nx, ny - 4.5], [nx + 2.2, ny + 4], [nx, ny + 2.6], [nx - 2.2, ny + 4], [nx, ny - 4.5]], true);
+    for (let x = -1.6; x <= 1.6; x += 0.35) push("line", [[nx + x * 0, ny - 3.8], [nx + x, ny + 3.2]]);
+    text("line", "N", nx, ny - 5.6, 2.2, { h: "c", v: "b" });
+  }
+  if (o.gnotes === "on") {
+    const x0 = F[0] + 3, x1 = (o.sheet !== "library" ? nx - 8 : TB[0] - 3), lines = ["GENERAL NOTES", "1. ALL CATS TO BE VERIFIED ON SITE.", "2. DO NOT SCALE CATS. CATS DO NOT SCALE.", "3. CAT POSITIONS ARE INDICATIVE ONLY", "   AND SUBJECT TO CHANGE WITHOUT NOTICE.", "4. FURNITURE BY OWNER. LOUNGING BY CAT.", "5. ALL SURFACES ARE CAT SURFACES."];
+    let cap = 1.75; const wid = max(...lines.map(l => textW(l, 1)));
+    cap = min(cap, (x1 - x0) / wid);
+    if (cap >= 1.2) {
+      let y = TB[1] + 2.2;
+      lines.forEach((l, i) => { if (y + cap > TB[3] - 1.5) return; text(i ? "shade" : "line", l, x0, y, i ? cap : cap * 1.1); y += cap * (i ? 1.75 : 2.1); });
+    } else notes.push("no room for the general notes beside the title block");
+  }
+  if (o.cpen === "none") { Ly.line.push(...Ly.colour); Ly.colour = []; }
+  // gates
+  let bb = [INF, INF, -INF, -INF], finite = true;
+  for (const pen of PENS) for (const [q] of Ly[pen]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) finite = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+  const metres = Object.fromEntries(PENS.map(pen => [pen, Ly[pen].reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000]));
+  const total = metres.line + metres.shade + metres.colour, ms = performance.now() - t0;
+  const gates = [
+    ["fits inside the margins", bb[0] >= mg - PASS - 0.01 && bb[1] >= mg - PASS - 0.01 && bb[2] <= PW - mg + PASS + 0.01 && bb[3] <= PH - mg + PASS + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    ["at least one cat", cats > 0, cats + " drawn"],
+    ["under 150 m of pen", total < 150, total.toFixed(1) + " m"],
+    ["builds in under 4 s", ms < 4000, (ms / 1000).toFixed(2) + " s"],
+  ];
+  return { o, W: PW, H: PH, layers: Ly, gates, notes, metres, count: cats, scale: scaleLabel, ms };
+}
+// a revision cloud round a box: scallops bulging outwards, about 3 mm each
+function cloud(b) {
+  const P = rectPoly(b), out = [];
+  for (let i = 0; i < 4; i++) {
+    const a = P[i], c = P[(i + 1) % 4], L = hypot(c[0] - a[0], c[1] - a[1]), n = max(2, round(L / 3.2)), dx = (c[0] - a[0]) / L, dy = (c[1] - a[1]) / L, nx = dy, ny = -dx;
+    for (let j = 0; j < n; j++) {
+      const s = lerp2(a, c, j / n), e = lerp2(a, c, (j + 1) / n), m = lerp2(s, e, 0.5), r = L / n / 2;
+      for (let q = 0; q < 8; q++) { const th = PI * q / 8; out.push([m[0] - dx * cos(th) * r - nx * sin(th) * r * 0.85, m[1] - dy * cos(th) * r - ny * sin(th) * r * 0.85]); }
+    }
+  }
+  return out;
+}
+// the clear box of size w x h inside region nearest to `near`, or null
+function freeSpot(w, h, region, avoid, near) {
+  let best = null, bd = INF;
+  for (let y = region[1]; y + h <= region[3]; y += 1.5) for (let x = region[0]; x + w <= region[2]; x += 1.5) {
+    const r = [x, y, x + w, y + h]; if (avoid.some(a => bbHit(r, a))) continue;
+    const d = hypot(x + w / 2 - near[0], y + h / 2 - near[1]); if (d < bd) { bd = d; best = r; }
+  }
+  return best;
+}
+// the title block: sheet title, Inktober day, drawn, checked, scale, date, drawing number, and the paw of approval
+function titleBlock(o, TB, Ly, scaleLabel, notePen) {
+  const push = (pen, pts, cl = false) => Ly[pen].push([pts, cl]), [x0, y0, x1, y1] = TB, w = x1 - x0, h = y1 - y0, cx = x0 + w * 0.58;
+  push("line", rectPoly(TB), true);
+  push("line", [[cx, y0], [cx, y1]]);
+  const ly = [y0 + h * 0.5, y0 + h * 0.75], ry = [0.25, 0.5, 0.75].map(f => y0 + h * f);
+  for (const y of ly) push("shade", [[x0, y], [cx, y]]);
+  for (const y of ry) push("shade", [[cx, y], [x1, y]]);
+  const fit = (str, cap, room) => min(cap, room / max(1e-6, textW(str, 1)));
+  const put = (pen, str, x, y, cap, room, opt) => { for (const q of textStrokes(str, x, y, fit(str, cap, room), opt)) push(pen, q); };
+  const title = (o.title || "LOUNGE").toUpperCase();
+  put("line", title, x0 + 2.5, y0 + 2.2, 5, cx - x0 - 5);
+  put("shade", "INKTOBER 2026 - DAY 20 - LOUNGE", x0 + 2.5, y0 + h * 0.5 - 3.6, 1.6, cx - x0 - 5);
+  put("shade", "DRAWN: " + (o.drawn || "PLG").toUpperCase(), x0 + 2, ly[0] + 1.9, 1.7, cx - x0 - 4);
+  put("shade", "CHECKED: THE CAT", x0 + 2, ly[1] + 1.9, 1.7, cx - x0 - 4);
+  const rw = x1 - cx - 4;
+  put("shade", "SCALE " + scaleLabel, cx + 2, y0 + 1.9, 1.7, rw);
+  put("shade", "DATE 2026-10-20", cx + 2, ry[0] + 1.9, 1.7, rw);
+  put("shade", "DWG L-020   REV B", cx + 2, ry[1] + 1.9, 1.7, rw);
+  put("shade", "APPROVED:", cx + 2, ry[2] + 1.9, 1.7, rw * 0.62);
+  // the paw of approval
+  const pc = [x1 - 4.2, ry[2] + h * 0.125], s = 1.75;
+  push(notePen, ring(pc[0], pc[1] + 0.35 * s, 0.62 * s, 0.48 * s, 18), true);
+  for (const q of [[-0.62, -0.32], [-0.22, -0.68], [0.22, -0.68], [0.62, -0.32]]) push(notePen, ring(pc[0] + q[0] * s, pc[1] + q[1] * s, 0.19 * s, 0.24 * s, 10), true);
+}
+// the cat blocks in one row or two, each named underneath, at the largest standard scale that fits
+function catStrip(o, S, Ly, catS, catPen) {
+  const push = (pen, pts, cl = false) => Ly[pen].push([pts, cl]);
+  const cap = 1.7, top = S[1] + cap + 3, lab = 3.4, gap = 6, avW = S[2] - S[0], avH = S[3] - top;
+  const mk = kk => { const rnd = mulberry(o.seed * 31 + 9); return Object.keys(CAT_NAMES).map(pose => {
+    const seed = floor(rnd() * 1e6), co = s => ({ mark: o.mark, face: o.face === "on", k: kk * s });
+    if (pose === "box") { const s = min(catS, 1.05); return { name: CAT_NAMES[pose], B: withCat(boxBlock(), scaleB(catBlock("donut", seed, co(s)), s)) }; }
+    return { name: CAT_NAMES[pose], B: scaleB(catBlock(pose, seed, co(catS)), catS) };
+  }); };
+  const sizes = mk(0.5).map(c => c.B.sil.reduce((a, P) => bbUnion(a, bboxOf(P)), [INF, INF, -INF, -INF]));
+  const wOf = (i, k) => max((sizes[i][2] - sizes[i][0]) * k, textW(CAT_NAMES[Object.keys(CAT_NAMES)[i]], 1.4));
+  const hOf = (row, k) => max(...row.map(i => (sizes[i][3] - sizes[i][1]) * k));
+  const fits = (rows, k) => rows.every(r => r.reduce((a, i) => a + wOf(i, k), 0) + gap * (r.length - 1) <= avW) && rows.reduce((a, r) => a + hOf(r, k) + lab + 2, 0) <= avH;
+  const layouts = [[[0, 1, 2, 3, 4, 5]], [[0, 1, 2], [3, 4, 5]]];
+  let best = null;
+  for (const s of SCALES) { for (const rows of layouts) if (fits(rows, 10 / s)) { best = { s, rows }; break; } if (best) break; }
+  if (!best) best = { s: 100, rows: layouts[0] };
+  const sc = best.s, k = 10 / sc, items = mk(k);
+  for (const q of textStrokes(`CAT BLOCKS   SCALE 1:${sc}`, S[0], S[1], cap)) push("line", q);
+  const used = best.rows.reduce((a, r) => a + hOf(r, k) + lab + 2, 0);
+  let y = top + (avH - used) / 2;
+  for (const row of best.rows) {
+    const rh = hOf(row, k), total = row.reduce((a, i) => a + wOf(i, k), 0) + gap * (row.length - 1);
+    let x = S[0] + (avW - total) / 2;
+    for (const i of row) {
+      const b = sizes[i], w = wOf(i, k), bw = (b[2] - b[0]) * k, cy = y + rh / 2, ox = x + (w - bw) / 2;
+      const T = p => [ox + (p[0] - b[0]) * k, cy + (p[1] - (b[1] + b[3]) / 2) * k];
+      for (const pen of PENS) for (const [q, cl] of items[i].B.L[pen]) Ly[pen === "colour" ? catPen : pen].push([q.map(T), cl]);
+      for (const q of textStrokes(items[i].name, x + w / 2, y + rh + 1.6, 1.4, { h: "c" })) push("shade", q);
+      x += w + gap;
+    }
+    y += rh + lab + 2;
+  }
+  return sc;
+}
+// the block library: the furniture packed in rows, each block over its name with its insertion point; the cats in their own section below
+function libraryLayout(o, A, Ly, catS, catPen, notes) {
+  const push = (pen, pts, cl = false) => Ly[pen].push([pts, cl]), rnd0 = o.seed * 101;
+  const cap = 2.6, catMin = (A[3] - A[1]) * 0.3;
+  for (const q of textStrokes("BLOCK LIBRARY: " + (o.title || "LOUNGE").toUpperCase(), A[0], A[1], cap)) push("line", q);
+  const area = [A[0], A[1] + cap + 5, A[2], A[3] - catMin];
+  const mk = k => {
+    const rnd = mulberry(rnd0);
+    const list = [
+      ["SOFA_3S", sofaBlock("3", k)], ["SOFA_L", sofaBlock("L", k)], ["SOFA_CURVE", sofaBlock("curved", k)], ["SOFA_2S", sofaBlock("2", k)], ["CHAIR_ARM", sofaBlock("1", k)],
+      ["TABLE_COFFEE", tableBlock("rect", true, k, rnd)], ["TABLE_OVAL", tableBlock("oval", false, k, rnd)], ["TABLE_ROUND", tableBlock("round", false, k, rnd)], ["TABLE_SIDE", sideTable()], ["LAMP_FLOOR", floorLamp()],
+      ["TV_UNIT", tvBlock(180)], ["SHELF_BOOK", shelfBlock(rnd)], ["RUG_01", rugBlock(170, 120, "diamond", k)], ["OTTOMAN", ottoman()], ["WINDOW_SEAT", seatBlock(140)],
+      ["PLANT_01", plantBlock(rnd)], ["PLANT_02", plantBlock(rnd, 30)], ["CAT_TREE", catTree()], ["CAT_BED", catBed(k)], ["CAT_BOWLS", bowlsBlock(k)],
+    ];
+    return list.map(([name, B]) => ({ name, B, bb: B.sil.reduce((a, P) => bbUnion(a, bboxOf(P)), [INF, INF, -INF, -INF]) }));
+  };
+  // shelf packing at a scale: rows left to right
+  const lab = 4.2, gap = 5;
+  const pack = (list, k) => {
+    const rows = []; let row = [], x = 0, y = 0, rh = 0;
+    for (const it of list) {
+      const w = max((it.bb[2] - it.bb[0]) * k, textW(it.name, 1.5)), h = (it.bb[3] - it.bb[1]) * k + lab;
+      if (row.length && x + w > area[2] - area[0]) { rows.push({ row, y, rh }); y += rh + gap; row = []; x = 0; rh = 0; }
+      row.push({ it, x, w }); x += w + gap; rh = max(rh, h);
+    }
+    if (row.length) rows.push({ row, y, rh });
+    return { rows, H: y + rh };
+  };
+  let sc = 0, plan = null;
+  for (const s of SCALES) { const k = 10 / s, p = pack(mk(k), k); if (p.H <= area[3] - area[1] && p.rows.every(r => r.row.every(c => c.x + c.w <= area[2] - area[0] + 0.01))) { sc = s; plan = p; break; } }
+  if (!plan) { sc = 100; plan = pack(mk(0.1), 0.1); notes.push("the library does not fit even at 1:100"); }
+  const k = 10 / sc;
+  for (const { row, y, rh } of plan.rows) {
+    const used = row[row.length - 1].x + row[row.length - 1].w, x0 = area[0] + (area[2] - area[0] - used) / 2;
+    for (const { it, x, w } of row) {
+      const bw = (it.bb[2] - it.bb[0]) * k, bh = (it.bb[3] - it.bb[1]) * k, ox = x0 + x + (w - bw) / 2 - it.bb[0] * k, oy = area[1] + y + (rh - lab - bh) - it.bb[1] * k;
+      const T = p => [ox + p[0] * k, oy + p[1] * k];
+      for (const pen of PENS) for (const [q, cl] of it.B.L[pen]) Ly[pen].push([q.map(T), cl]);
+      const ip = T([0, 0]); push("shade", [[ip[0] - 0.9, ip[1]], [ip[0] + 0.9, ip[1]]]); push("shade", [[ip[0], ip[1] - 0.9], [ip[0], ip[1] + 0.9]]);
+      for (const q of textStrokes(it.name, x0 + x + w / 2, area[1] + y + rh - 2.4, 1.5, { h: "c" })) push("shade", q);
+    }
+  }
+  // the cats get whatever is left, at their own scale
+  const cy = area[1] + plan.H + 5;
+  push("shade", [[A[0], cy - 2.5], [A[2], cy - 2.5]]);
+  const cs = catStrip(o, [A[0], cy, A[2], A[3]], Ly, catS, catPen);
+  return `1:${sc}, cats 1:${cs}`;
+}
+
+// ---------------- preview, export ----------------
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = { line: "#141414", shade: "#4a4a4a", colour: "#" + r.o.ccol };
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of PENS) {
+    c.strokeStyle = col[key]; c.lineWidth = PEN[key];
+    for (const [q, cl] of r.layers[key]) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); }
+  }
+  $("stats").innerHTML = `<b>${r.o.sheet}</b> · ${r.count} cats · scale ${r.scale} · ${r.ms.toFixed(0)} ms<br>`
+    + `thin 0.3: <b>${r.metres.shade.toFixed(1)} m</b> · line 0.4: <b>${r.metres.line.toFixed(1)} m</b> · colour: <b>${r.metres.colour.toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line }, { name: "colour", colour: r.o.ccol, w: PEN.colour, paths: r.layers.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG lounge studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["sheet", "title", "drawn", "notes", "rfi", "gnotes", "paws", "rw", "rd", "sofa", "chairs", "table", "clutter", "rug", "plants", "catstuff", "seat", "sun", "box", "walls", "cats", "hero", "poses", "mark", "face", "catsize", "seed", "cpen", "ccol", "weight", "page", "margin", "ticks"];
+const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); const v = e.type === "range" ? +e.value : e.value; return [k, k === "weight" ? +v : v]; }));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function run(k) { sync(); if (last && k === "ccol") { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 30); }
+
+const BASE = { sheet: "combo", title: "LOUNGE", drawn: "PLG", notes: "all", rfi: "", gnotes: "on", paws: "on", rw: 520, rd: 430, sofa: "3", chairs: 1, table: "rect", clutter: "on", rug: "grid", plants: 2,
+  catstuff: "all", seat: "on", sun: "on", box: "on", walls: "hatch", cats: 3, hero: "sofa", poses: "suits", mark: "tabby", face: "on", catsize: 130, seed: 7, cpen: "cats", ccol: "1f9e4a", weight: 2, page: "190x250", margin: 10, ticks: "split" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  sofa: P({}),
+  sunny: P({ sheet: "plan", hero: "sun", cats: 4, sofa: "L", rug: "diamond", ccol: "b8288f", seed: 12, page: "250x190" }),
+  library: P({ sheet: "library", ccol: "1f9e4a", seed: 3 }),
+  takeover: P({ sheet: "plan", cats: 7, catsize: 150, hero: "rug", poses: "random", chairs: 2, mark: "patches", ccol: "d07a10", seed: 21 }),
+  curved: P({ sofa: "curved", table: "round", rug: "stripes", hero: "sofa", cats: 3, ccol: "1592a8", seed: 5, mark: "plain" }),
+  mono: P({ sheet: "plan", cpen: "none", walls: "solid", cats: 4, rug: "grid", seed: 9 }),
+  square: P({ page: "280x280", rw: 620, rd: 500, chairs: 2, plants: 3, cats: 5, sofa: "L", ccol: "c0302a", seed: 15 }),
+  fits: P({ sheet: "plan", hero: "box", cats: 2, catsize: 120, rug: "plain", ccol: "2a4f9a", seed: 4 }),
+};
+const setAll = p => { for (const [k, v] of Object.entries(p)) if ($(k)) $(k).value = v; };
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setAll(PRESETS[b.dataset.preset]); run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `lounge-${r.o.sheet}-${r.o.hero}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+setAll(PRESETS.sofa);
+run();
+</script>
+</body>
+</html>

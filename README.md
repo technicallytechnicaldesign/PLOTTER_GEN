@@ -15,6 +15,7 @@ Pen-plotter generators for the Cricut Explore 5. [Open the live gallery](https:/
 - **Machines:** Contraption studio: a parts kit and chain solver drawn as a perpetual motion patent plate, a dimsa-doosa engineering drawing or an exploded view.
 - **Birds:** Kiwi studio: shaggy kiwi alone under the ferns, stacked into a tower, tiled into wallpaper or packed in, with the odd kiwifruit.
 - **Drawing office:** Confused deck: title-block trading cards with lift flaps (no detail C, a blank sheet 2, "I dunno"), crosser and crosser red faces, and a tolerance spinner.
+- **Interiors:** Lounge studio: a living room drawn as a CAD plan with furniture blocks, cats on their own colour layer lounging wherever they please, and a revision cloud on the occupied sofa.
 
 Each studio is self-contained HTML and exports millimetre SVGs, including separate pen layers for Design Space. The gallery carries saved controls and source fingerprints for its example drawings.
 
