@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<!-- identity: FIELD_NOTES -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beacon studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<!-- studio-dock:start -->
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+    // The drawing's frame is main's first child (.paper, .case or .mount, depending on the studio).
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  // data-when: show a control only while the base it belongs to is selected (syntax in the header).
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+    // Presets and "load settings" write .value directly, which fires no event, so the deciding controls report their own writes.
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+<!-- studio-dock:end -->
+<body>
+<header>
+  <h1>Beacon studio</h1>
+  <p class="sub">Two ways to shout into the dark. A message to the stars: an Arecibo-style bitmap whose width and height are both prime, sent from a dish as rings that carry its bits, with a Dyson swarm far off that may open a window and answer. Or a LORAN chart: radio beacons on a generated coast, their time differences drawn as lanes of hyperbolas, a ship fixing itself where two lanes cross. Day 22 of Inktober, "beacon".</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="arecibo">Arecibo, 1974</button><button data-preset="plate">The plate</button><button data-preset="contact">They answer</button></div>
+    <div class="row"><button data-preset="listening">Listening array</button><button data-preset="noise">Unknown signal</button><button data-preset="zenith">Straight up</button></div>
+    <div class="row"><button data-preset="chain">LORAN chain</button><button data-preset="far">Far stations</button><button data-preset="waves">Where lanes come from</button><button data-preset="isles">Archipelago</button></div>
+  </fieldset>
+  <fieldset><legend>The beacon</legend>
+    <label>Scene <select id="scene"><option value="seti">a message to the stars</option><option value="loran">a LORAN chart</option></select></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="99" step="1" value="7"></label>
+  </fieldset>
+  <fieldset data-when="scene=seti"><legend>The message</legend>
+    <label>Says <select id="content"><option value="full">everything: numbers, elements, a helix, us, home, the dish</option><option value="hello">hello: numbers, us, home</option><option value="short">short: numbers, elements, us</option><option value="noise">nothing we can read (noise)</option></select></label>
+    <label data-when="content!=noise">Your words, A to Z <input type="text" id="words" maxlength="48" value=""></label>
+    <label>Bits across (prime) <select id="cols"><option>17</option><option>19</option><option>23</option><option>29</option><option>31</option><option>37</option></select></label>
+    <label>Biggest pixel (mm) <output id="o-cell"></output><input type="range" id="cell" min="1" max="6" step="0.1" value="2.6"></label>
+    <label>Pixel <select id="pix"><option value="square">square</option><option value="round">round</option><option value="diamond">diamond</option><option value="cross">cross</option><option value="plus">plus</option></select></label>
+    <label data-when="pix=square|round|diamond">Fill <select id="fill"><option value="hatch">hatched</option><option value="spiral">nested outlines</option><option value="outline">outline only</option></select></label>
+    <label data-when="pix=square|round|diamond;fill!=outline">Fill pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.4" max="1.6" step="0.05" value="0.6"></label>
+    <label>Gap between pixels (%) <output id="o-gapp"></output><input type="range" id="gapp" min="0" max="60" step="1" value="18"></label>
+    <label>Unlit bits <select id="unlit"><option value="none">blank</option><option value="dot">a dot</option></select></label>
+    <label>Colours <select id="colours"><option value="sections">by section, like the coloured Arecibo chart</option><option value="one">one pen</option></select></label>
+  </fieldset>
+  <fieldset data-when="scene=seti"><legend>The sending</legend>
+    <label>Layout <select id="layout"><option value="dish">a dish under the sky</option><option value="plate">the message alone, broadcasting</option></select></label>
+    <label data-when="layout=plate">Message size (% of page) <output id="o-psize"></output><input type="range" id="psize" min="30" max="100" step="1" value="62"></label>
+    <label data-when="layout=dish">Dish <select id="dish"><option value="bowl">a bowl in the hills (Arecibo)</option><option value="steer">a steerable dish</option><option value="array">an array of dishes</option></select></label>
+    <label data-when="layout=dish">Dish stands <select id="dishpos"><option value="left">left</option><option value="centre">centre</option><option value="right">right</option></select></label>
+    <label data-when="layout=dish">Dish size (%) <output id="o-dsize"></output><input type="range" id="dsize" min="50" max="140" step="1" value="100"></label>
+    <label data-when="layout=dish;answer=none">Beam elevation (deg) <output id="o-elev"></output><input type="range" id="elev" min="20" max="90" step="1" value="62"></label>
+    <label data-when="layout=dish">Message <select id="place"><option value="beside">beside the beam</option><option value="beam">in the beam</option><option value="off">not drawn</option></select></label>
+    <label data-when="layout=dish">Stars <output id="o-stars"></output><input type="range" id="stars" min="0" max="80" step="1" value="30"></label>
+  </fieldset>
+  <fieldset data-when="scene=seti"><legend>Rings</legend>
+    <label>Rings <output id="o-rings"></output><input type="range" id="rings" min="0" max="60" step="1" value="18"></label>
+    <label>Spacing (mm) <output id="o-ringgap"></output><input type="range" id="ringgap" min="2" max="20" step="0.5" value="7"></label>
+    <label>Spacing grows (%) <output id="o-ramp"></output><input type="range" id="ramp" min="0" max="100" step="1" value="30"></label>
+    <label data-when="layout=dish">Beam half-width (deg) <output id="o-spread"></output><input type="range" id="spread" min="5" max="80" step="1" value="28"></label>
+    <label>Ring line <select id="rstyle"><option value="bits">carries the bits (long 1, short 0)</option><option value="dashed">dashed</option><option value="solid">solid</option></select></label>
+    <label data-when="rstyle=bits">Bit length (mm) <output id="o-bitlen"></output><input type="range" id="bitlen" min="0.6" max="3" step="0.1" value="1.2"></label>
+    <label data-when="rstyle!=solid">Fading with distance (%) <output id="o-fade"></output><input type="range" id="fade" min="0" max="90" step="1" value="40"></label>
+    <label>Ring pen <select id="rpen"><option value="line">black</option><option value="shade">thin</option><option value="colour">colour 1</option><option value="colour2">colour 2</option></select></label>
+  </fieldset>
+  <fieldset data-when="scene=seti;layout=dish"><legend>The answer</legend>
+    <label>Out there <select id="answer"><option value="none">nobody</option><option value="listens">a swarm, listening</option><option value="answers">a swarm opens a window and answers</option><option value="bitmap">a swarm answers with a bitmap of its own</option></select></label>
+    <label data-when="answer!=none">Swarm size (%) <output id="o-swarm"></output><input type="range" id="swarm" min="7" max="22" step="1" value="13"></label>
+    <label data-when="answer!=none">Collectors <output id="o-plates"></output><input type="range" id="plates" min="30" max="320" step="1" value="140"></label>
+    <label data-when="answer=answers|bitmap">Window (deg) <output id="o-win"></output><input type="range" id="win" min="15" max="50" step="1" value="30"></label>
+  </fieldset>
+  <fieldset data-when="scene=loran"><legend>The chain</legend>
+    <label>Stations <output id="o-stations"></output><input type="range" id="stations" min="2" max="5" step="1" value="4"></label>
+    <label>Stations stand <select id="where"><option value="coast">on the coast</option><option value="far">far off the chart</option></select></label>
+    <label>Lane width on the baseline (mm) <output id="o-lanes"></output><input type="range" id="lanes" min="0.6" max="6" step="0.1" value="2.2"></label>
+    <label>Label every nth lane <output id="o-every"></output><input type="range" id="every" min="0" max="12" step="1" value="5"></label>
+    <label>Lane pens <select id="lanepen"><option value="colours">a colour per secondary, like a real chart</option><option value="one">one pen, told apart by dashes</option></select></label>
+    <label>Waves <select id="waves"><option value="off">hidden</option><option value="pair">rings round the master and one secondary</option><option value="all">rings round every station</option></select></label>
+  </fieldset>
+  <fieldset data-when="scene=loran"><legend>The chart</legend>
+    <label>Title <input type="text" id="title" maxlength="28" value="BEACON BIGHT"></label>
+    <label>Land (%) <output id="o-land"></output><input type="range" id="land" min="0" max="65" step="1" value="35"></label>
+    <label>Land lies <select id="lside"><option value="left">to the west</option><option value="right">to the east</option><option value="top">to the north</option><option value="bottom">to the south</option><option value="islands">in islands</option></select></label>
+    <label>Coast roughness <output id="o-rough"></output><input type="range" id="rough" min="0" max="100" step="1" value="50"></label>
+    <label>Land drawn <select id="landfill"><option value="hatch">hatched</option><option value="stipple">stippled</option><option value="none">blank</option></select></label>
+    <label>Shallows <select id="shallows"><option value="on">hatched</option><option value="off">blank</option></select></label>
+    <label>Depth contours <output id="o-contours"></output><input type="range" id="contours" min="0" max="3" step="1" value="2"></label>
+    <label>Soundings <output id="o-soundings"></output><input type="range" id="soundings" min="0" max="100" step="1" value="40"></label>
+    <label>Compass rose <select id="rose"><option value="on">yes</option><option value="off">no</option></select></label>
+  </fieldset>
+  <fieldset data-when="scene=loran"><legend>The ship</legend>
+    <label>Track <select id="track"><option value="on">a ship's track with fixes</option><option value="off">none</option></select></label>
+    <label data-when="track=on">Fixes <output id="o-fixes"></output><input type="range" id="fixes" min="1" max="6" step="1" value="3"></label>
+  </fieldset>
+  <fieldset><legend>Pens</legend>
+    <label>Colour 1 preview <select id="ccol"><option value="b03030">red</option><option value="c0307a">magenta</option><option value="7a3fa0">purple</option><option value="2f6b2f">green</option><option value="d07a10">orange</option><option value="2a4f9a">blue</option></select></label>
+    <label>Colour 2 preview <select id="ccol2"><option value="2a4f9a">blue</option><option value="2f6b2f">green</option><option value="7a3fa0">purple</option><option value="c0307a">magenta</option><option value="d07a10">orange</option><option value="b03030">red</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen in plotting order: the thin pen, colour 1, colour 2, then the black line last so it sits on top. Each file carries four corner ticks so they all land in the same place.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made. The message is built section by section on a grid whose width and height are both prime, so whoever receives 1,679 bits (or however many) can only lay them out one way: in 1974 Arecibo sent 23 x 73. It counts 1 to 10 in binary, gives the atomic numbers of hydrogen, carbon, nitrogen, oxygen and phosphorus, a helix, a figure with its height and a population beside it, the sun and planets with home raised a row, and the dish itself; the shapes here are generated from the seed, not copied. The rings are arcs round the dish's feed, and in "carries the bits" each ring is the message itself, read row by row as long and short dashes. The swarm is collectors on tilted rings round a star; when it answers, the collectors facing us part into a round window and its reply comes back as rings of its own. The LORAN lanes are exact: every point on one line has the same difference in distance to the master and to one secondary, which is a hyperbola with the two stations as its foci, and on the baseline between them the lanes sit half a step apart. Two lanes crossing give a fix. With the waves showing, the rings of two stations cross on exactly those lines.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI, cosh, sinh, asinh } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const dist = (a, b) => hypot(a[0] - b[0], a[1] - b[1]);
+const nrm2 = v => { const l = hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+const nrm3 = v => { const l = hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const PEN = { shade: 0.3, colour: 0.4, colour2: 0.4, line: 0.4 };   // ASSUMED widths, same pens as the other studios
+const PENS = ["shade", "colour", "colour2", "line"];
+
+// ---------------- geometry helpers (mm, y down) ----------------
+const ring = (x, y, rx, ry, n = 40, rot = 0) => Array.from({ length: n }, (_, i) => { const a = i / n * TAU, px = rx * cos(a), py = ry * sin(a); return [x + px * cos(rot) - py * sin(rot), y + px * sin(rot) + py * cos(rot)]; });
+const polyInside = (p, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+function splitSeg(a, b, P) {
+  const ts = [0, 1], dx = b[0] - a[0], dy = b[1] - a[1];
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const c = P[j], d = P[i], ex = d[0] - c[0], ey = d[1] - c[1], den = dx * ey - dy * ex; if (abs(den) < 1e-12) continue;
+    const t = ((c[0] - a[0]) * ey - (c[1] - a[1]) * ex) / den, u = ((c[0] - a[0]) * dy - (c[1] - a[1]) * dx) / den;
+    if (t > 0 && t < 1 && u >= 0 && u < 1) ts.push(t);
+  }
+  ts.sort((x, y) => x - y);
+  const out = [];
+  for (let k = 0; k < ts.length - 1; k++) { if (ts[k + 1] - ts[k] < 1e-9) continue; const m = (ts[k] + ts[k + 1]) / 2; out.push([ts[k], ts[k + 1], polyInside([a[0] + dx * m, a[1] + dy * m], P)]); }
+  return out;
+}
+function clipSegs(segs, P, keepIn) { const out = []; for (const [a, b] of segs) for (const [t0, t1, ins] of splitSeg(a, b, P)) if (ins === keepIn) out.push([lerp2(a, b, t0), lerp2(a, b, t1)]); return out; }
+const bboxOf = pts => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of pts) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+const rectPoly = b => [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+const grow = (b, d) => [b[0] - d, b[1] - d, b[2] + d, b[3] + d];
+const astroid = (x, y, s) => Array.from({ length: 33 }, (_, i) => { const t = i / 32 * TAU; return [x + s * cos(t) ** 3, y + s * sin(t) ** 3]; });
+function hatch(P, sp, ang) {
+  const b = bboxOf(P), cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2, Lh = hypot(b[2] - b[0], b[3] - b[1]) / 2 + 1, a = ang * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, out = [];
+  for (let c = -Lh; c <= Lh; c += sp) { const px = cx + nx * c, py = cy + ny * c; out.push([[px - dx * Lh, py - dy * Lh], [px + dx * Lh, py + dy * Lh]]); }
+  return clipSegs(out, P, true);
+}
+function hull(P) {
+  const p = [...P].sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of p.reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+const arcPts = (c, r, a0, a1, step = 0.6) => { const n = max(6, ceil(abs(a1 - a0) * r / step)), out = []; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; out.push([c[0] + r * cos(a), c[1] + r * sin(a)]); } return out; };
+const plen = q => { let t = 0; for (let i = 1; i < q.length; i++) t += dist(q[i], q[i - 1]); return t; };
+const cumLen = q => { const c = [0]; for (let i = 1; i < q.length; i++) c.push(c[i - 1] + dist(q[i], q[i - 1])); return c; };
+function subPath(pts, cum, s0, s1) {
+  const find = s => { let lo = 1, hi = cum.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (cum[m] < s) lo = m + 1; else hi = m; } return lo; };
+  const at = (s, i) => lerp2(pts[i - 1], pts[i], clamp((s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1), 0, 1));
+  const i0 = find(s0), i1 = find(s1), out = [at(s0, i0)];
+  for (let i = i0; i < i1; i++) out.push(pts[i]);
+  out.push(at(s1, i1));
+  return out;
+}
+// the pieces of a polyline where ok(p) holds, each cut at the boundary to a few microns
+function keepWhere(pts, ok, step = 0.5, minLen = 0.3) {
+  const out = []; if (pts.length < 2) return out;
+  let prev = pts[0], pOk = ok(prev), cur = pOk ? [prev] : null;
+  const edge = (a, b) => { for (let i = 0; i < 10; i++) { const m = lerp2(a, b, 0.5); if (ok(m)) a = m; else b = m; } return a; };
+  const close = () => { if (cur && cur.length > 1 && plen(cur) >= minLen) out.push(cur); cur = null; };
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], n = max(1, ceil(dist(a, b) / step));
+    for (let k = 1; k <= n; k++) {
+      const p = k === n ? b : lerp2(a, b, k / n), o = ok(p);
+      if (o !== pOk) { if (pOk) { cur.push(edge(prev, p)); close(); } else cur = [edge(p, prev)]; pOk = o; }
+      if (o && k === n) cur.push(p);
+      prev = p;
+    }
+  }
+  close();
+  return out;
+}
+function dashPath(pts, pat) {
+  const cum = cumLen(pts), L = cum[cum.length - 1], out = []; let s = 0, i = 0;
+  while (s < L) { const on = pat[i % pat.length], off = pat[(i + 1) % pat.length], b = min(L, s + on); if (b - s > 0.05) out.push(subPath(pts, cum, s, b)); s += on + off; i += 2; }
+  return out;
+}
+// a ring that carries the message: a long dash for 1, a short one for 0, read on from where the last ring stopped
+function bitDash(pts, bits, start, u, drop, rnd) {
+  const cum = cumLen(pts), L = cum[cum.length - 1], out = []; let s = 0, i = start;
+  while (s < L) { const b = bits[i % bits.length]; i++; const e = min(L, s + (b ? u * 2.2 : u * 0.6)); if (e - s > 0.25 && !(rnd() < drop)) out.push(subPath(pts, cum, s, e)); s = e + u * 0.9; }
+  return { out, next: i };
+}
+// things in front: lines behind them are cut where they pass
+function mkOcc() {
+  const L = [];
+  return {
+    L,
+    rect(b) { L.push({ bb: b, t: null }); },
+    poly(P) { L.push({ bb: bboxOf(P), t: p => polyInside(p, P) }); },
+    circ(c, r) { L.push({ bb: [c[0] - r, c[1] - r, c[0] + r, c[1] + r], t: p => dist(p, c) < r }); },
+    hit(p) { for (const q of L) if (p[0] >= q.bb[0] && p[0] <= q.bb[2] && p[1] >= q.bb[1] && p[1] <= q.bb[3] && (!q.t || q.t(p))) return true; return false; },
+  };
+}
+const overlap = (a, b) => max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(0, min(a[3], b[3]) - max(a[1], b[1]));
+
+// ---------------- noise and contours (the LORAN coast) ----------------
+const hash2 = (x, y, s) => { const h = sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - floor(h); };
+function vnoise(x, y, s) { const xi = floor(x), yi = floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); return lerp(lerp(hash2(xi, yi, s), hash2(xi + 1, yi, s), u), lerp(hash2(xi, yi + 1, s), hash2(xi + 1, yi + 1, s), u), v) * 2 - 1; }
+const fbm = (x, y, s, oct = 5) => { let t = 0, a = 0.5, f = 1; for (let i = 0; i < oct; i++) { t += a * vnoise(x * f, y * f, s + i * 17); f *= 2.03; a *= 0.5; } return t; };
+// marching squares on a grid G (nx by ny, spacing cs, origin x0,y0): the lines where G = lev, chained, closed where they close
+function isolines(G, nx, ny, x0, y0, cs, lev) {
+  const adj = new Map(), pt = new Map();
+  const hp = (i, j) => { const id = (j * nx + i) * 2; if (!pt.has(id)) { const g0 = G[j * nx + i], g1 = G[j * nx + i + 1]; pt.set(id, [x0 + (i + (lev - g0) / (g1 - g0)) * cs, y0 + j * cs]); } return id; };
+  const vp = (i, j) => { const id = (j * nx + i) * 2 + 1; if (!pt.has(id)) { const g0 = G[j * nx + i], g1 = G[(j + 1) * nx + i]; pt.set(id, [x0 + i * cs, y0 + (j + (lev - g0) / (g1 - g0)) * cs]); } return id; };
+  const link = (a, b) => { if (!adj.has(a)) adj.set(a, []); if (!adj.has(b)) adj.set(b, []); adj.get(a).push(b); adj.get(b).push(a); };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const a = G[j * nx + i], b = G[j * nx + i + 1], c = G[(j + 1) * nx + i + 1], d = G[(j + 1) * nx + i];
+    const idx = (a > lev ? 8 : 0) | (b > lev ? 4 : 0) | (c > lev ? 2 : 0) | (d > lev ? 1 : 0);
+    if (idx === 0 || idx === 15) continue;
+    const T = () => hp(i, j), B = () => hp(i, j + 1), Lf = () => vp(i, j), R = () => vp(i + 1, j), cen = (a + b + c + d) / 4 > lev;
+    switch (idx) {
+      case 1: case 14: link(Lf(), B()); break;
+      case 2: case 13: link(B(), R()); break;
+      case 3: case 12: link(Lf(), R()); break;
+      case 4: case 11: link(T(), R()); break;
+      case 6: case 9: link(T(), B()); break;
+      case 7: case 8: link(Lf(), T()); break;
+      case 5: if (cen) { link(Lf(), T()); link(B(), R()); } else { link(T(), R()); link(Lf(), B()); } break;
+      case 10: if (cen) { link(T(), R()); link(Lf(), B()); } else { link(Lf(), T()); link(B(), R()); } break;
+    }
+  }
+  const used = new Set(), lines = [];
+  const walk = s => { const q = [s]; used.add(s); let cur = s; for (;;) { const nb = adj.get(cur).find(n => !used.has(n)); if (nb === undefined) break; used.add(nb); q.push(nb); cur = nb; } return q; };
+  for (const [id, nb] of adj) if (nb.length === 1 && !used.has(id)) lines.push([walk(id), false]);
+  for (const id of adj.keys()) if (!used.has(id)) lines.push([walk(id), true]);
+  return lines.map(([q, cl]) => [q.map(id => pt.get(id)), cl]);
+}
+
+// ---------------- lettering: a single-stroke font, cap height 6 (y down) ----------------
+const GSRC = {
+  A: [4, "M0,6 L2,0 L4,6 M0.9,3.9 L3.1,3.9"], B: [4, "M0,6 L0,0 L2.3,0 A2.3,1.5,1.6,1.5,-90,90 L0,3 M0,3 L2.5,3 A2.5,4.5,1.6,1.5,-90,90 L0,6"],
+  C: [4, "A2.4,3,2.1,3,-45,-315"], D: [4, "M0,0 L0,6 L1.8,6 A1.8,3,2.2,3,90,-90 L0,0"], E: [3.6, "M3.6,0 L0,0 L0,6 L3.6,6 M0,3 L2.8,3"],
+  F: [3.4, "M3.4,0 L0,0 L0,6 M0,3 L2.7,3"], G: [4.4, "A2.2,3,2.2,3,-40,-320 L4.4,3.4 L2.4,3.4"], H: [4, "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3"],
+  I: [1.2, "M0.6,0 L0.6,6"], J: [3, "M3,0 L3,4.4 A1.5,4.4,1.5,1.6,0,170"], K: [4, "M0,0 L0,6 M3.8,0 L0,3.6 M1.3,2.5 L4,6"],
+  L: [3.4, "M0,0 L0,6 L3.4,6"], M: [5, "M0,6 L0,0 L2.5,4 L5,0 L5,6"], N: [4, "M0,6 L0,0 L4,6 L4,0"], O: [4.4, "A2.2,3,2.2,3,0,360"],
+  P: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2"], Q: [4.4, "A2.2,3,2.2,3,0,360 M2.8,4.4 L4.4,6.4"],
+  R: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2 M2,3.2 L4,6"], S: [4, "A2,1.5,1.9,1.5,-20,-270 A2,4.5,2.0,1.5,-90,160"],
+  T: [4, "M0,0 L4,0 M2,0 L2,6"], U: [4, "M0,0 L0,3.8 A2,3.8,2,2.2,180,0 L4,0"], V: [4.4, "M0,0 L2.2,6 L4.4,0"],
+  W: [6, "M0,0 L1.5,6 L3,1.6 L4.5,6 L6,0"], X: [4, "M0,0 L4,6 M4,0 L0,6"], Y: [4.4, "M0,0 L2.2,3 L4.4,0 M2.2,3 L2.2,6"], Z: [4, "M0,0 L4,0 L0,6 L4,6"],
+  0: [3.8, "A1.9,3,1.9,3,0,360"], 1: [2.6, "M0.4,1.4 L1.8,0 L1.8,6"], 2: [3.8, "A1.9,1.9,1.9,1.9,-170,20 L0,6 L3.8,6"],
+  3: [3.8, "A1.8,1.5,1.7,1.5,-150,90 A1.9,4.4,1.9,1.6,-90,150"], 4: [4, "M3,6 L3,0 L0,4.2 L4,4.2"], 5: [3.8, "M3.6,0 L0.4,0 L0,2.8 A1.8,4.1,2,1.9,-130,150"],
+  6: [3.8, "M3.4,0 L0.2,4.2 A1.9,4.2,1.7,1.8,180,540"], 7: [3.8, "M0,0 L3.8,0 L1.4,6"], 8: [3.8, "A1.8,1.5,1.5,1.5,0,360 M3.7,4.4 A1.9,4.4,1.8,1.6,0,360"],
+  9: [3.8, "A1.9,1.8,1.7,1.8,0,360 M3.6,1.8 L0.4,6"],
+  "!": [1, "M0.5,0 L0.5,4.1 M0.5,5.4 A0.5,5.6,0.35,0.35,0,360"], "?": [3.4, "A1.7,1.7,1.7,1.7,-170,70 L1.7,4.1 M1.7,5.2 A1.7,5.6,0.35,0.35,0,360"],
+  ".": [1, "A0.5,5.5,0.4,0.4,0,360"], ",": [1, "M0.7,5.3 L0.2,6.8"], "'": [1, "M0.5,0 L0.3,1.7"], "-": [2.6, "M0.2,3 L2.4,3"], "+": [3.2, "M0.1,3 L3.1,3 M1.6,1.5 L1.6,4.5"],
+  ":": [1, "A0.5,1.8,0.4,0.4,0,360 M0.9,5.5 A0.5,5.5,0.4,0.4,0,360"], "&": [4.2, "M4,6 L0.9,1.4 A1.6,1.1,0.9,1.1,-170,100 L3.4,4.1 A2,4.4,1.7,1.6,-10,160 L0.1,4.6"],
+  "*": [3.2, "M1.6,0.6 L1.6,5.4 M0.2,1.6 L3,4.4 M3,1.6 L0.2,4.4"], "(": [1.8, "A1.9,3,1.5,3.3,235,125"], ")": [1.8, "A-0.1,3,1.5,3.3,-55,55"],
+  "/": [2.6, "M0.2,6.4 L2.4,-0.4"], "=": [3.2, "M0.2,2.2 L3,2.2 M0.2,3.8 L3,3.8"], "_": [3, "M0,6.4 L3,6.4"], "#": [4, "M1.4,0.4 L0.8,5.6 M3.2,0.4 L2.6,5.6 M0.2,2 L3.8,2 M0.1,4 L3.7,4"],
+};
+function parseGlyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else { const [cx, cy, rx, ry, a0, a1] = n, st = max(8, ceil(abs(a1 - a0) / 9)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GL = Object.fromEntries(Object.entries(GSRC).map(([k, [w, s]]) => [k, { w, strokes: parseGlyph(s) }]));
+const glyphOf = ch => GL[ch.toUpperCase()] || GL[ch] || GL["?"];
+function layoutT(str) { const gl = []; let x = 0; for (const ch of String(str)) { if (ch === " ") { x += 2.4; continue; } const g = glyphOf(ch); gl.push({ x, g }); x += g.w + 1.2; } return { gl, w: max(0, x - 1.2) }; }
+const textW = (str, cap) => layoutT(str).w * cap / 6;
+// strokes of a line of text anchored at (ax, ay): h is l|c|r, v is t|m|b of the cap box, turned by ang
+function textStrokes(str, ax, ay, cap, { h = "l", v = "t", ang = 0 } = {}) {
+  const L = layoutT(str), s = cap / 6, w = L.w * s, ox = h === "c" ? -w / 2 : h === "r" ? -w : 0, oy = v === "m" ? -cap / 2 : v === "b" ? -cap : 0, c = cos(ang), sn = sin(ang), out = [];
+  for (const { x, g } of L.gl) for (const st of g.strokes) out.push(st.map(([a, b]) => { const lx = ox + (x + a) * s, ly = oy + b * s; return [ax + lx * c - ly * sn, ay + lx * sn + ly * c]; }));
+  return out;
+}
+
+// ---------------- the message: an Arecibo-style bitmap, its width and height both prime ----------------
+const isPrime = n => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+const nextPrime = n => { while (!isPrime(n)) n++; return n; };
+const PC = { line: 1, colour: 2, colour2: 3, shade: 4 }, PCN = [null, "line", "colour", "colour2", "shade"];
+const finish = (C, R, cells) => { const bits = cells.map(v => v ? 1 : 0); let lit = 0; for (const b of bits) lit += b; return { C, R, cells, bits, lit }; };
+
+// a small figure, a person or one of them, drawn bit by bit about column cx
+function figureBits(P, cx, fw, fh, rnd, alien) {
+  const hw = floor(fw / 2);
+  if (!alien) {
+    for (let y = 0; y < 2; y++) for (let x = -1; x <= 1; x++) P(cx + x, y);
+    P(cx, 2);
+    const tl = 4 + floor(rnd() * 2), hip = 3 + tl, wide = rnd() < 0.5, aw = hw - (wide ? 1 : 0);
+    for (let y = 3; y < hip; y++) { P(cx, y); if (wide) { P(cx - 1, y); P(cx + 1, y); } }
+    const arms = ["out", "down", "up", "wave"][floor(rnd() * 4)];
+    for (const side of [-1, 1]) {
+      const kind = arms === "wave" ? (side < 0 ? "up" : "down") : arms;
+      for (let k = 1; k <= aw; k++) { const x = cx + side * (k + (wide ? 1 : 0)), y = kind === "out" ? 3 : kind === "down" ? 3 + min(k, 3) : max(0, 3 - k); P(x, y); }
+    }
+    const ll = fh - hip;
+    let dx = 1;
+    for (let k = 0; k < ll; k++) { dx = min(hw - 1, 1 + floor(k * 0.5)); P(cx - dx, hip + k); P(cx + dx, hip + k); }
+    P(cx - dx - 1, fh - 1); P(cx + dx + 1, fh - 1);
+  } else {
+    P(cx - 2, 0); P(cx + 2, 0);
+    for (let y = 1; y <= 3; y++) for (let x = -2; x <= 2; x++) if (!(y === 2 && abs(x) === 1)) P(cx + x, y);
+    const tl = 3 + floor(rnd() * 3), hip = 4 + tl;
+    for (let y = 4; y < hip; y++) P(cx, y);
+    for (const [ay, up] of [[5, 1], [7, -1]]) for (let k = 1; k <= min(hw, 4); k++) { P(cx - k, ay - up * floor(k / 2)); P(cx + k, ay - up * floor(k / 2)); }
+    const nl = 3 + floor(rnd() * 2);
+    for (let l = 0; l < nl; l++) { const bx = cx + round((l - (nl - 1) / 2) * 2); for (let y = hip; y < fh; y++) P(bx + round(sin((y - hip) * 1.1 + l) * 0.8), y); }
+  }
+}
+
+function message(o, rnd, alien = false, cols = null) {
+  const C = cols || +o.cols, secs = [], one = o.colours === "one" || alien;
+  const sec = (name, pen, h) => {
+    const rows = Array.from({ length: h }, () => new Uint8Array(C)), p = PC[one ? "line" : pen];
+    const s = { name, h, rows, put: (x, y, pp = p) => { x = round(x); y = round(y); if (x >= 0 && x < C && y >= 0 && y < h) rows[y][x] = pp; } };
+    secs.push(s); return s;
+  };
+  const mk = PC[one ? "line" : "shade"];
+  const content = alien ? "hello" : o.content;
+  if (content === "noise") {
+    const R = nextPrime(round(C * 3.2)), cells = new Uint8Array(C * R);
+    for (let i = 0; i < cells.length; i++) if (rnd() < 0.36) cells[i] = PC.line;
+    return finish(C, R, cells);
+  }
+  const want = { full: ["count", "elements", "words", "helix", "figure", "system", "dish"], hello: ["count", "words", "figure", "system"], short: ["count", "elements", "words", "figure"] }[content] || ["count"];
+  for (const w of want) {
+    if (w === "count") {
+      // 1 to 10 in binary, one number to a column, with a marker under each
+      const n = clamp(floor((C + 1) / 2), 1, 10), x0 = floor((C - (2 * n - 1)) / 2), s = sec("count", "line", 5);
+      for (let i = 1; i <= n; i++) { const x = x0 + 2 * (i - 1); for (let b = 0; b < 4; b++) if ((i >> (3 - b)) & 1) s.put(x, b); s.put(x, 4, mk); }
+    } else if (w === "elements") {
+      // atomic numbers: ours are hydrogen, carbon, nitrogen, oxygen, phosphorus, as Arecibo sent
+      const Z = alien ? [1, 2, 6, 8, 14] : [1, 6, 7, 8, 15], sp = C >= 17 ? 4 : 3, x0 = floor((C - (4 * sp + 1)) / 2), s = sec("elements", "colour2", 5);
+      Z.forEach((z, k) => { const x = x0 + k * sp; for (let b = 0; b < 4; b++) if ((z >> (3 - b)) & 1) s.put(x, b); s.put(x, 4, mk); });
+    } else if (w === "words") {
+      // letters as numbers, A = 1 to Z = 26, five bits down each column
+      const t = String(o.words || "").toUpperCase().replace(/[^A-Z ]/g, "").trim().slice(0, 48);
+      if (alien || !t) continue;
+      const per = max(1, floor((C + 1) / 2)), lines = [];
+      for (let i = 0; i < t.length; i += per) lines.push(t.slice(i, i + per));
+      const s = sec("words", "colour", lines.length * 6 - 1);
+      lines.forEach((ln, li) => { const x0 = floor((C - (2 * ln.length - 1)) / 2); [...ln].forEach((ch, k) => { const v = ch === " " ? 0 : ch.charCodeAt(0) - 64; for (let b = 0; b < 5; b++) if ((v >> (4 - b)) & 1) s.put(x0 + 2 * k, li * 6 + b); }); });
+    } else if (w === "helix") {
+      const h = 12 + floor(rnd() * 7), cx = floor(C / 2), A = clamp(floor(C / 2) - 3, 2, 6), ph = rnd() * TAU, s = sec("helix", "colour", h);
+      for (let y = 0; y < h; y++) { const dx = round(A * sin(y * 0.52 + ph)); s.put(cx + dx, y); s.put(cx - dx, y); if (abs(dx) > 1 && rnd() < 0.55) s.put(cx, y, PC.line); }
+    } else if (w === "figure") {
+      let fw = min(C - 8, 13); if (fw % 2 === 0) fw--;
+      const fh = 13 + floor(rnd() * 3), x0 = floor((C - fw) / 2), cx = x0 + floor(fw / 2), s = sec("figure", alien ? "colour" : "colour", fh);
+      figureBits((x, y) => s.put(x, y), cx, fw, fh, rnd, alien);
+      // a height bar on the left with the height in binary, a population on the right
+      const xm = x0 - 2;
+      for (let y = 0; y < fh; y++) s.put(xm, y, mk);
+      s.put(xm - 1, 0, mk); s.put(xm - 1, fh - 1, mk);
+      for (let b = 0; b < 4; b++) if ((fh >> (3 - b)) & 1) s.put(xm - 3, floor(fh / 2) - 2 + b, mk);
+      const xp = x0 + fw + 1;
+      for (let y = 2; y < fh - 2; y++) for (let x = xp; x < min(C, xp + 2); x++) if (rnd() < 0.5) s.put(x, y, mk);
+    } else if (w === "system") {
+      // the sun and its planets in a row, home raised one bit; theirs wears a swarm
+      const s = sec("system", "colour2", 6), home = 1 + floor(rnd() * 3);
+      let x;
+      if (alien) { for (let y = 2; y <= 4; y++) for (let xx = 1; xx <= 3; xx++) s.put(xx, y); for (let k = 0; k <= 4; k++) { s.put(k, 1, mk); s.put(k, 5, mk); s.put(0, k + 1, mk); s.put(4, k + 1, mk); } x = 6; }
+      else { for (let y = 3; y <= 5; y++) for (let xx = 0; xx <= 2; xx++) s.put(xx, y); x = 4; }
+      for (let i = 0; i < 9; i++) {
+        const sz = rnd() < 0.3 ? 2 : 1, up = i === home ? 1 : 0;
+        if (x + sz > C) break;
+        for (let yy = 0; yy < sz; yy++) for (let xx = 0; xx < sz; xx++) s.put(x + xx, 5 - yy - up);
+        x += sz + 1;
+      }
+    } else if (w === "dish") {
+      // the dish that sent it: a bowl, the beam drawn in to its focus, and a bar for its width
+      const s = sec("dish", "colour2", 9), cx = floor(C / 2), k = clamp(floor(C / 2) - 2, 3, 7);
+      for (let dx = -k; dx <= k; dx++) s.put(cx + dx, 6 - round(3 * dx * dx / (k * k)));
+      for (let t = 0; t < k; t++) { const y = 3 - round(3 * t / k); s.put(cx - k + t, y); s.put(cx + k - t, y); }
+      s.put(cx, 0);
+      for (let dx = -k; dx <= k; dx++) s.put(cx + dx, 8, mk);
+      s.put(cx - k, 7, mk); s.put(cx + k, 7, mk);
+    }
+  }
+  const needed = secs.reduce((a, s) => a + s.h, 0) + max(0, secs.length - 1);
+  const R = nextPrime(max(needed, C + 2)), cells = new Uint8Array(C * R);
+  let y = floor((R - needed) / 2);
+  for (const s of secs) { for (let r = 0; r < s.h; r++) for (let c = 0; c < C; c++) if (s.rows[r][c]) cells[(y + r) * C + c] = s.rows[r][c]; y += s.h + 1; }
+  return finish(C, R, cells);
+}
+
+// one bit drawn as a pixel
+function pixel(pen, cx, cy, ps, o, push) {
+  const h = ps / 2;
+  if (ps < 0.5) { push(pen, ring(cx, cy, 0.15, 0.15, 6), true); return; }
+  if (o.pix === "cross") { push(pen, [[cx - h, cy - h], [cx + h, cy + h]]); push(pen, [[cx + h, cy - h], [cx - h, cy + h]]); return; }
+  if (o.pix === "plus") { push(pen, [[cx - h, cy], [cx + h, cy]]); push(pen, [[cx, cy - h], [cx, cy + h]]); return; }
+  const shape = s => o.pix === "round" ? ring(cx, cy, h * s, h * s, max(10, ceil(ps * s * 6))) : o.pix === "diamond" ? [[cx, cy - h * s], [cx + h * s, cy], [cx, cy + h * s], [cx - h * s, cy]] : rectPoly([cx - h * s, cy - h * s, cx + h * s, cy + h * s]);
+  const P = shape(1);
+  push(pen, P, true);
+  if (o.fill === "hatch") for (const q of hatch(P, o.pitch, 45)) push(pen, q);
+  else if (o.fill === "spiral") for (let s = 1 - o.pitch / h; s > 0.12; s -= o.pitch / h) push(pen, shape(s), true);
+}
+const cellFit = (M, r, cmax) => min((r[2] - r[0] - 2.4) / (M.C + 1.2), (r[3] - r[1] - 6) / (M.R + 1.2), cmax);
+// the message in a frame, as big as fits in rect, with its dimensions underneath
+function drawPanel(M, rect, o, push, recolour = null) {
+  const cell = cellFit(M, rect, o.cell);
+  if (!(cell > 0.4)) return null;
+  const pad = max(1.2, cell * 0.6), gw = cell * M.C, gh = cell * M.R, tot = gh + 2 * pad + 3.2;
+  const x0 = (rect[0] + rect[2]) / 2 - gw / 2, y0 = (rect[1] + rect[3]) / 2 - tot / 2 + pad;
+  const box = [x0 - pad, y0 - pad, x0 + gw + pad, y0 + gh + pad];
+  push("line", rectPoly(box), true);
+  const ps = cell * (1 - o.gapp / 100);
+  for (let r = 0; r < M.R; r++) for (let c = 0; c < M.C; c++) {
+    const v = M.cells[r * M.C + c], cx = x0 + (c + 0.5) * cell, cy = y0 + (r + 0.5) * cell;
+    if (!v) { if (o.unlit === "dot") push("shade", ring(cx, cy, 0.12, 0.12, 6), true); continue; }
+    pixel(recolour || PCN[v], cx, cy, ps, o, push);
+  }
+  for (const q of textStrokes(`${M.C} X ${M.R} = ${M.C * M.R}`, (box[0] + box[2]) / 2, box[3] + 1.2, 2, { h: "c" })) push("shade", q);
+  return { cell, box: [box[0], box[1], box[2], box[3] + 3.2] };
+}
+
+// ---------------- scene 1: a message to the stars ----------------
+function buildSeti(o, rnd, U, push, notes) {
+  const uw = U[2] - U[0], uh = U[3] - U[1], occ = mkOcc();
+  const inU = p => p[0] >= U[0] && p[0] <= U[2] && p[1] >= U[1] && p[1] <= U[3];
+  const free = p => inU(p) && !occ.hit(p);
+  const put = (pen, q, cl = false, ok = inU) => { for (const k of keepWhere(cl ? [...q, q[0]] : q, ok)) push(pen, k); };
+  const M = message(o, rnd);
+  let groundAt = () => INF;
+  const sky = p => free(p) && p[1] < groundAt(p[0]) - 0.4;
+  let panel = null, S, theta = -PI / 2, spread = o.spread * D2R, r0 = 3, rmax = 0, reachR = 0, sw = null, reply = null, Rs = 0, swarmC = null;
+  const far = p => max(...rectPoly(U).map(c => dist(c, p)));
+
+  if (o.layout === "plate") {
+    const f = o.psize / 100, cx = (U[0] + U[2]) / 2, cy = (U[1] + U[3]) / 2;
+    panel = drawPanel(M, [cx - uw * f / 2, cy - uh * f / 2, cx + uw * f / 2, cy + uh * f / 2], o, push);
+    if (panel) { occ.rect(grow(panel.box, 2.5)); S = [(panel.box[0] + panel.box[2]) / 2, (panel.box[1] + panel.box[3]) / 2]; }
+    else S = [cx, cy];
+    spread = PI; theta = 0; r0 = 3; rmax = far(S);
+  } else {
+    const land = uw > uh, gy = U[3] - uh * (land ? 0.24 : 0.2), side = o.dishpos === "right" ? -1 : 1, ds = o.dsize / 100;
+    let bx = U[0] + uw * (o.dishpos === "left" ? 0.27 : o.dishpos === "right" ? 0.73 : 0.5);
+    if (o.answer !== "none") {
+      Rs = min(uw, uh) * o.swarm / 100;
+      swarmC = [o.dishpos === "left" ? U[2] - Rs * 1.3 : o.dishpos === "right" ? U[0] + Rs * 1.3 : U[0] + uw * 0.5 + (rnd() - 0.5) * uw * 0.2, U[1] + Rs * 1.3];
+    }
+    const elev = o.elev * D2R, aim = from => swarmC ? nrm2([swarmC[0] - from[0], swarmC[1] - from[1]]) : [side * cos(elev), -sin(elev)];
+    // the ground: karst hills round a bowl, or a gentle rise under steerable dishes
+    const bumps = [];
+    let Rb = 0;
+    if (o.dish === "bowl") {
+      Rb = min(uw * 0.26, (gy - U[1]) * 0.5) * ds;
+      bx = clamp(bx, U[0] + Rb * 1.22, U[2] - Rb * 1.22);
+      for (let x = U[0] - 10; x < U[2] + 10;) { const w = 6 + rnd() * 12; if (abs(x - bx) > Rb * 1.3 + w * 0.6) bumps.push([x, w, uh * (0.025 + 0.06 * rnd())]); x += w * (0.9 + rnd() * 0.6); }
+      groundAt = x => { let h = 0; for (const [bx0, w, hh] of bumps) { const u = (x - bx0) / w; if (abs(u) < 1) h = max(h, hh * (1 - u * u) ** 0.6); } return gy - h; };
+    } else {
+      const ph = rnd() * 100;
+      groundAt = x => gy - uh * 0.012 * (1.2 + fbm(x / 45, 0.5, ph, 3));
+    }
+    if (o.dish === "bowl") {
+      // platform, azimuth arm and dome first: they are in front of everything
+      const ry = Rb * 0.2, Ht = min(Rb * 0.95, gy - U[1] - 8), py = gy - Ht * 0.78, pw = Rb * 0.32, ph = max(1.4, Rb * 0.045);
+      const plat = rectPoly([bx - pw, py - ph, bx + pw, py]);
+      put("line", plat, true);
+      const nt = max(3, round(pw * 2 / (ph * 1.4)));
+      for (let i = 0; i < nt; i++) { const xa = bx - pw + 2 * pw * i / nt, xb = bx - pw + 2 * pw * (i + 1) / nt; put("shade", [[xa, py], [(xa + xb) / 2, py - ph], [xb, py]]); }
+      const armR = pw * 0.85, armD = Rb * 0.13, arm = Array.from({ length: 41 }, (_, i) => { const t = i / 40 * PI; return [bx + armR * cos(t), py + armD * sin(t)]; });
+      put("line", arm);
+      const td = PI * (0.5 + (rnd() - 0.5) * 0.6), dp = [bx + armR * cos(td), py + armD * sin(td)], dw = Rb * 0.045, dh = Rb * 0.08;
+      const dome = [[dp[0] - dw, dp[1]], [dp[0] + dw, dp[1]], ...Array.from({ length: 13 }, (_, i) => { const t = i / 12 * PI; return [dp[0] + dw * cos(t), dp[1] + dh * 0.45 + dh * 0.55 * sin(t)]; })];
+      put("line", dome, true);
+      for (const q of hatch(dome, 0.8, 60)) put("shade", q);
+      occ.rect([bx - pw - 1, py - ph - 1, bx + pw + 1, max(py + armD, dp[1] + dh) + 1]);
+      // the two side towers, then the cables, then the far tower behind
+      const tops = [];
+      const tower = (x, yb, H, w, pen) => {
+        const yt = yb - H, P = [[x - w, yb], [x - w * 0.35, yt], [x + w * 0.35, yt], [x + w, yb]], ok = p => free(p);
+        put(pen, P, true, ok);
+        for (let i = 0; i < 6; i++) {
+          const y0 = lerp(yb, yt, i / 6), y1 = lerp(yb, yt, (i + 1) / 6), w0 = lerp(w, w * 0.35, i / 6), w1 = lerp(w, w * 0.35, (i + 1) / 6);
+          put("shade", [[x - w0, y0], [x + w1, y1]], false, ok); put("shade", [[x + w0, y0], [x - w1, y1]], false, ok); put("shade", [[x - w1, y1], [x + w1, y1]], false, ok);
+        }
+        occ.poly(P);
+        return [x, yt];
+      };
+      for (const sd of [-1, 1]) { const x = bx + sd * Rb * 1.08; tops.push([sd, tower(x, groundAt(x), Ht, Rb * 0.07, "line")]); }
+      for (const [sd, T] of tops) {
+        for (const f of [0.55, 0.8, 1]) put("shade", [T, [bx + sd * pw * f, py - ph * 0.5]], false, free);
+        put("shade", [T, [T[0] + sd * Rb * 0.3, groundAt(T[0] + sd * Rb * 0.3)]], false, free);
+      }
+      const bt = tower(bx + Rb * 0.12, gy - ry * 0.85, Ht * 0.92, Rb * 0.06, "shade");
+      put("shade", [bt, [bx, py - ph]], false, free);
+      // the bowl: rim seen from above at a slant, its mesh of panels inside
+      const rim = ring(bx, gy, Rb, ry, 120);
+      put("line", rim, true, free);
+      const c0 = [bx, gy + ry * 0.35];
+      for (const k of [0.25, 0.5, 0.75]) put("shade", ring(bx, gy + ry * 0.35 * (1 - k), Rb * k, ry * k, 80), true, free);
+      for (let i = 0; i < 20; i++) { const t = i / 20 * TAU; put("shade", [c0, [bx + Rb * 0.97 * cos(t), gy + ry * 0.97 * sin(t)]], false, free); }
+      occ.poly(rim);
+      S = [bx, py - ph];
+      r0 = ph + 3;
+    } else {
+      const R = min(uw * 0.14, (gy - U[1]) * 0.24) * ds * (o.dish === "array" ? 0.8 : 1);
+      bx = clamp(bx, U[0] + R * 1.4, U[2] - R * 1.4);
+      const d = aim([bx, groundAt(bx) - R * 1.9]);
+      // front dish first, the rest of the array behind it
+      const nd = o.dish === "array" ? 4 : 1;
+      let F0 = null;
+      for (let i = 0; i < nd; i++) {
+        const s = 0.8 ** i, x = bx - side * i * R * 1.45 * (0.92 ** i);
+        if (x < U[0] + R * s * 1.3 || x > U[2] - R * s * 1.3) break;
+        const F = steerDish([x, groundAt(x) - i * 1.2], R * s, d, put, occ, free);
+        if (!F0) F0 = F;
+      }
+      S = F0;
+      r0 = R * 0.35;
+    }
+    // the ground, behind everything standing on it
+    const terr = []; for (let x = U[0]; x <= U[2] + 0.01; x += 0.8) terr.push([x, groundAt(x)]);
+    put("line", terr, false, free);
+    // each karst hill gets a lower hill nested inside it, like a contour
+    for (const [bx0, w, hh] of bumps) for (const f of [0.62, 0.3]) {
+      const q = []; for (let i = 0; i <= 30; i++) { const u = -1 + 2 * i / 30; q.push([bx0 + u * w, gy - hh * f * (1 - u * u) ** 0.6]); }
+      put("shade", q, false, p => free(p) && p[1] > groundAt(p[0]) + 0.6);
+    }
+    // the ground: broken lines, thinning out towards the foot of the page
+    for (let y = gy + 4, row = 0; y < U[3] - 1; y += 5.5, row++) { let x = U[0] + rnd() * 8; while (x < U[2] - 2) { const l = 3 + rnd() * 10; if (rnd() > row * 0.08) put("shade", [[x, y], [min(U[2] - 1, x + l), y]], false, p => free(p) && p[1] > groundAt(p[0]) + 1.5); x += l + 4 + rnd() * 14; } }
+    const dd = aim(S);
+    theta = atan2(dd[1], dd[0]);
+    // where the message can go: a column either side, or a band across the top, above whatever stands there
+    const colB = (x0, x1) => { let b = gy - 6; for (const q of occ.L) if (q.bb[2] > x0 && q.bb[0] < x1) b = min(b, q.bb[1] - 4); return b; };
+    const cw0 = uw * 0.38, cands = [[U[0], U[1], U[0] + cw0, colB(U[0], U[0] + cw0)], [U[2] - cw0, U[1], U[2], colB(U[2] - cw0, U[2])], [U[0], U[1], U[2], min(U[1] + (gy - U[1]) * 0.42, colB(U[0], U[2]))]];
+    // the swarm, far off up the beam
+    if (swarmC) {
+      const toward = nrm2([S[0] - swarmC[0], S[1] - swarmC[1]]), open = o.answer === "answers" || o.answer === "bitmap";
+      sw = swarm(swarmC, Rs, open, toward, o, rnd, put, occ, inU);
+      if (sw.rim) for (let i = 0; i < sw.rim.length; i += 3) { const p = sw.rim[i], u = nrm2([p[0] - swarmC[0], p[1] - swarmC[1]]); for (const q of dashPath([p, [p[0] + u[0] * Rs * 0.75, p[1] + u[1] * Rs * 0.75]], [1.6, 1])) put("colour", q, false, free); }
+      reachR = dist(S, swarmC);
+      rmax = reachR - Rs * 1.05;
+    } else { reachR = far(S); rmax = reachR; }
+    const beamHit = r => { let n = 0, h = 0; for (const a of [-0.6, 0, 0.6]) for (let t = 0.08; t <= 1; t += 0.04) { const ang = theta + a * spread, p = [S[0] + cos(ang) * reachR * t, S[1] + sin(ang) * reachR * t]; n++; if (p[0] > r[0] && p[0] < r[2] && p[1] > r[1] && p[1] < r[3]) h++; } return h / n; };
+    const swarmBox = swarmC ? [swarmC[0] - Rs * 1.1, swarmC[1] - Rs * 1.1, swarmC[0] + Rs * 1.1, swarmC[1] + Rs * 1.1] : null;
+    const score = (M2, r, avoid = []) => { if (r[3] - r[1] < 20 || r[2] - r[0] < 20) return 0; const a = (r[2] - r[0]) * (r[3] - r[1]); let s = cellFit(M2, r, o.cell) * (1 - min(0.95, beamHit(r) * 1.5)); for (const b of [swarmBox, ...avoid]) if (b) s *= max(0, 1 - 2.5 * overlap(r, b) / a); return s; };
+    if (o.place === "beside") {
+      let best = null, bs = 0;
+      for (const r of cands) { const s = score(M, r); if (s > bs) { bs = s; best = r; } }
+      if (best && bs > 0.4) panel = drawPanel(M, best, o, push); else notes.push("no room beside the beam for the message");
+    } else if (o.place === "beam") {
+      const t = swarmC ? 0.42 : 0.5, Q = [S[0] + cos(theta) * reachR * t, S[1] + sin(theta) * reachR * t], hw = uw * 0.22, hh = (gy - U[1]) * 0.3;
+      let cx = clamp(Q[0], U[0] + hw, U[2] - hw), cy = clamp(Q[1], U[1] + hh, colB(cx - hw, cx + hw) - hh);
+      // slide back down the beam until it clears the swarm
+      for (let tt = t; swarmBox && tt > 0.1 && overlap([cx - hw, cy - hh, cx + hw, cy + hh], swarmBox) > 0; tt -= 0.04) { cx = clamp(S[0] + cos(theta) * reachR * tt, U[0] + hw, U[2] - hw); cy = clamp(S[1] + sin(theta) * reachR * tt, U[1] + hh, colB(cx - hw, cx + hw) - hh); }
+      panel = drawPanel(M, [cx - hw, cy - hh, cx + hw, cy + hh], o, push);
+    }
+    if (panel) occ.rect(grow(panel.box, 2));
+    // their reply as a bitmap of its own, beside the swarm
+    if (o.answer === "bitmap") {
+      const M2 = message(o, rnd, true, 17), w = uw * 0.34, h = (gy - U[1]) * 0.4, [cx, cy] = swarmC, g = Rs * 1.12;
+      const fit = r => [clamp(r[0], U[0], U[2] - w), clamp(r[1], U[1], gy - 6 - h)].concat([0, 0]).map((v, i, a) => i < 2 ? v : a[i - 2] + (i === 2 ? w : h));
+      const rc = [[cx - w / 2, cy + g, 0, 0], [cx - g - w, cy - h / 2, 0, 0], [cx + g, cy - h / 2, 0, 0], [cx - w / 2, cy + g + h * 0.2, 0, 0]].map(fit);
+      let best = null, bs = 0;
+      for (const r of rc) { const s = score(M2, r, panel ? [panel.box] : []); if (s > bs) { bs = s; best = r; } }
+      if (best && bs > 0.4) { reply = drawPanel(M2, best, o, push, "colour"); if (reply) { occ.rect(grow(reply.box, 2)); reply.M = M2; } }
+      else notes.push("no room for their bitmap");
+    }
+    // stars, which the rings break round
+    const stars = [];
+    for (let i = 0; i < o.stars; i++) for (let tries = 0; tries < 40; tries++) {
+      const p = [lerp(U[0] + 3, U[2] - 3, rnd()), lerp(U[1] + 3, gy - 12, rnd())], s = 0.8 + rnd() * 1.6;
+      if (!sky(p) || occ.hit([p[0] - s - 1, p[1]]) || occ.hit([p[0] + s + 1, p[1]]) || stars.some(q => dist(q, p) < 5)) continue;
+      if (s > 1.6) put("shade", astroid(p[0], p[1], s), true); else { put("shade", [[p[0] - s * 0.6, p[1]], [p[0] + s * 0.6, p[1]]]); put("shade", [[p[0], p[1] - s * 0.6], [p[0], p[1] + s * 0.6]]); }
+      stars.push(p); occ.circ(p, s + 0.8); break;
+    }
+  }
+  if (o.place !== "off" || o.layout === "plate") if (!panel) notes.push("the message did not fit");
+
+  // the rings: arcs round the source, read as the message when they carry bits
+  const ringsFrom = (C0, th, spr, ra, rb, n, bits, pen) => {
+    let r = ra, k = 0, bi = 0;
+    while (k < n && r < rb) {
+      const pts = spr >= PI ? arcPts(C0, r, -PI, PI) : arcPts(C0, r, th - spr, th + spr), drop = o.fade / 100 * (k / max(1, n - 1)) ** 1.5;
+      for (const piece of keepWhere(pts, sky)) {
+        if (o.rstyle === "solid") push(pen, piece);
+        else if (o.rstyle === "dashed") { for (const q of dashPath(piece, [2.5, 1.5])) if (!(rnd() < drop)) push(pen, q); }
+        else { const res = bitDash(piece, bits, bi, o.bitlen, drop, rnd); bi = res.next; for (const q of res.out) push(pen, q); }
+      }
+      r += o.ringgap * (1 + o.ramp / 100 * 2.5 * k / max(1, n - 1));
+      k++;
+    }
+    return k;
+  };
+  const nr = S ? ringsFrom(S, theta, spread, r0, rmax, o.rings, M.bits, o.rpen) : 0;
+  if (sw && sw.Wc) {
+    const back = atan2(S[1] - sw.Wc[1], S[0] - sw.Wc[0]), bits = reply ? reply.M.bits : M.bits.slice().reverse();
+    ringsFrom(sw.Wc, back, spread * 0.7, Rs * 0.45, dist(S, sw.Wc) * 0.8, max(3, round(o.rings * 0.6)), bits, "colour");
+  }
+  if (panel && panel.cell < 1) notes.push(`pixels of ${panel.cell.toFixed(2)} mm read as texture more than as bits`);
+  return { count: M.lit, summary: `${M.C} x ${M.R} message, ${M.lit} bits lit, ${nr} rings${panel ? `, ${panel.cell.toFixed(2)} mm pixels` : ""}`, gates: [["the grid is prime by prime", isPrime(M.C) && isPrime(M.R), `${M.C} x ${M.R} = ${M.C * M.R} bits`]] };
+}
+
+// a steerable dish on a pedestal, pointing along d; draws itself front to back and returns its feed
+function steerDish(base, R, d, put, occ, ok0) {
+  const n = [-d[1], d[0]], tv = 0.32, dep = R * 0.42, top = [base[0], base[1] - R * 1.05];
+  const C = [top[0] + d[0] * dep * 0.95, top[1] + d[1] * dep * 0.95];
+  const P = (a, b) => [C[0] + n[0] * a + d[0] * b, C[1] + n[1] * a + d[1] * b];
+  const ok = p => ok0(p);
+  const rim = Array.from({ length: 72 }, (_, i) => { const t = i / 72 * TAU; return P(R * cos(t), R * tv * sin(t)); });
+  const shell = Array.from({ length: 37 }, (_, i) => { const t = i / 36 * PI; return P(R * cos(t), -dep * sin(t)); });
+  const back = shell.concat(Array.from({ length: 37 }, (_, i) => { const t = PI + i / 36 * PI; return P(R * cos(t), R * tv * sin(t)); }));
+  const F = P(0, R * 0.8);
+  for (const a of [P(R * 0.95, 0), P(-R * 0.95, 0), P(0, R * tv * 0.95)]) put("line", [a, F], false, ok);
+  put("line", ring(F[0], F[1], R * 0.09, R * 0.035, 20, atan2(n[1], n[0])), true, ok);
+  put("line", rim, true, ok);
+  for (const k of [0.36, 0.7]) put("shade", ring(C[0], C[1], R * k, R * tv * k, 48, atan2(n[1], n[0])), true, ok);
+  for (let i = 0; i < 12; i++) { const t = i / 12 * TAU; put("shade", [C, P(R * 0.98 * cos(t), R * tv * 0.98 * sin(t))], false, ok); }
+  put("line", shell, false, ok);
+  for (const q of hatch(back, 1.1, atan2(n[1], n[0]) / D2R + 25)) put("shade", q, false, ok);
+  occ.poly(hull([...rim, ...shell, F]));
+  // the pedestal, behind the dish
+  const ped = [[base[0] - R * 0.3, base[1]], [base[0] + R * 0.3, base[1]], [top[0] + R * 0.12, top[1]], [top[0] - R * 0.12, top[1]]];
+  put("line", ped, true, ok);
+  for (const q of hatch([[base[0], base[1]], [base[0] + R * 0.3, base[1]], [top[0] + R * 0.12, top[1]], [top[0], top[1]]], 1, 90)) put("shade", q, false, ok);
+  put("line", [top, P(0, -dep * 0.95)], false, ok);
+  occ.poly(ped);
+  return F;
+}
+
+// a Dyson swarm: collectors on tilted rings round a star, each a small plate turned to it; open parts a round window toward the dish
+function swarm(c, Rs, open, toward, o, rnd, put, occ, inU) {
+  const R = Rs / 1.2, nr = 4 + floor(rnd() * 3), loc = mkOcc(), orbits = [];
+  let items = [];
+  for (let k = 0; k < nr; k++) {
+    const nv = nrm3([rnd() - 0.5, rnd() - 0.5, (rnd() - 0.5) * 1.4]), e1 = nrm3(cross3(nv, abs(nv[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0])), e2 = cross3(nv, e1), Rk = R * (0.8 + 0.4 * k / max(1, nr - 1));
+    orbits.push(Array.from({ length: 121 }, (_, i) => { const t = i / 120 * TAU; return [c[0] + (e1[0] * cos(t) + e2[0] * sin(t)) * Rk, c[1] + (e1[1] * cos(t) + e2[1] * sin(t)) * Rk]; }));
+    const m = max(3, round(o.plates / nr * (0.6 + 0.8 * rnd())));
+    for (let i = 0; i < m; i++) {
+      const t = rnd() * TAU, v = [e1[0] * cos(t) + e2[0] * sin(t), e1[1] * cos(t) + e2[1] * sin(t), e1[2] * cos(t) + e2[2] * sin(t)], a1 = nrm3(cross3(v, nv)), s = R * (0.06 + 0.035 * rnd());
+      const quad = [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(([p, q]) => [c[0] + v[0] * Rk + a1[0] * p * s + nv[0] * q * s * 0.6, c[1] + v[1] * Rk + a1[1] * p * s + nv[1] * q * s * 0.6]);
+      items.push({ z: v[2], v, quad });
+    }
+  }
+  const cosA = cos(o.win * D2R), w3 = nrm3([toward[0] * 0.75, toward[1] * 0.75, 0.66]);
+  if (open) items = items.filter(it => dot3(it.v, w3) < cosA);
+  items.sort((a, b) => b.z - a.z);
+  const ok = p => inU(p) && !loc.hit(p), starR = R * 0.26;
+  // front plates show us their dark backs, hatched; the star; then the plates behind it
+  const plate = it => { put("line", it.quad, true, ok); if (it.z > 0) for (const q of hatch(it.quad, 0.7, 30)) put("shade", q, false, ok); loc.poly(it.quad); };
+  for (const it of items) if (it.z > 0) plate(it);
+  put("line", ring(c[0], c[1], starR, starR, 64), true, ok);
+  for (let i = 0; i < 24; i++) { const a = i / 24 * TAU, r1 = starR * 1.15, r2 = starR * (1.35 + 0.25 * (i % 2)); put("shade", [[c[0] + r1 * cos(a), c[1] + r1 * sin(a)], [c[0] + r2 * cos(a), c[1] + r2 * sin(a)]], false, ok); }
+  loc.circ(c, starR);
+  for (const it of items) if (it.z <= 0) plate(it);
+  for (const q of orbits) put("shade", q, false, ok);
+  let Wc = null, rim = null;
+  if (open) {
+    const f1 = nrm3(cross3(w3, [0, 0, 1])), f2 = cross3(w3, f1), sA = sin(o.win * D2R);
+    rim = Array.from({ length: 48 }, (_, i) => { const t = i / 48 * TAU, q = [0, 1, 2].map(j => w3[j] * cosA + (f1[j] * cos(t) + f2[j] * sin(t)) * sA); return [c[0] + q[0] * R, c[1] + q[1] * R]; });
+    put("colour", rim, true, inU);
+    Wc = [c[0] + w3[0] * R * cosA, c[1] + w3[1] * R * cosA];
+  }
+  occ.circ(c, Rs * 1.08);
+  return { Wc, rim };
+}
+
+// ---------------- scene 2: a LORAN chart ----------------
+function hyperbola(M, S, lev, Rf) {
+  // every point whose distance to S less its distance to M is lev: a hyperbola with M and S as its foci
+  const D = dist(M, S), c = D / 2, u = [(S[0] - M[0]) / D, (S[1] - M[1]) / D], v = [-u[1], u[0]], m = [(M[0] + S[0]) / 2, (M[1] + S[1]) / 2];
+  const a = abs(lev) / 2, b = sqrt(max(1e-9, c * c - a * a)), sg = lev > 0 ? -1 : lev < 0 ? 1 : 0, T = asinh(Rf / b) + 0.05, n = 500, pts = [];
+  for (let i = 0; i <= n; i++) { const t = -T + 2 * T * i / n, x = sg * a * cosh(t), y = b * sinh(t); pts.push([m[0] + u[0] * x + v[0] * y, m[1] + u[1] * x + v[1] * y]); }
+  return pts;
+}
+const LET = ["M", "W", "X", "Y", "Z"];
+function buildLoran(o, rnd, U, push, notes) {
+  const bw = 4, CH = [U[0] + bw, U[1] + bw, U[2] - bw, U[3] - bw], cw = CH[2] - CH[0], ch = CH[3] - CH[1], cc = [(CH[0] + CH[2]) / 2, (CH[1] + CH[3]) / 2];
+  const occ = mkOcc(), inC = p => p[0] >= CH[0] && p[0] <= CH[2] && p[1] >= CH[1] && p[1] <= CH[3], free = p => inC(p) && !occ.hit(p);
+  const put = (pen, q, cl = false, ok = inC) => { const out = keepWhere(cl ? [...q, q[0]] : q, ok); for (const k of out) push(pen, k); return out; };
+  const text = (pen, str, x, y, cap, opt) => { for (const q of textStrokes(str, x, y, cap, opt)) push(pen, q); };
+  // the neat line and a border of alternating minute bars
+  push("line", rectPoly(U), true); push("line", rectPoly(CH), true);
+  for (const [a, b, horiz, o0] of [[CH[0], CH[2], true, U[1]], [CH[0], CH[2], true, CH[3]], [CH[1], CH[3], false, U[0]], [CH[1], CH[3], false, CH[2]]]) {
+    let i = 0;
+    for (let s = a; s < b - 0.1; s += 5, i++) { if (i % 2) continue; const e = min(b, s + 5); for (const f of [1.33, 2.67]) push("line", horiz ? [[s, o0 + f], [e, o0 + f]] : [[o0 + f, s], [o0 + f, e]]); }
+  }
+  // the sea floor and the land as one field; the land is the share of it above the threshold
+  const cs = 1, nx = ceil(cw / cs) + 1, ny = ceil(ch / cs) + 1, G = new Float32Array(nx * ny), sc = lerp(90, 22, o.rough / 100), sd = o.seed * 13.1;
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const x = CH[0] + i * cs, y = CH[1] + j * cs, u = (x - CH[0]) / cw, v = (y - CH[1]) / ch;
+    const g = { left: 0.5 - u, right: u - 0.5, top: 0.5 - v, bottom: v - 0.5, islands: 0 }[o.lside] * 1.6;
+    G[j * nx + i] = fbm(x / sc, y / sc, sd) + g;
+  }
+  const sorted = Float32Array.from(G).sort(), frac = o.land / 100;
+  const thr = frac <= 0 ? sorted[sorted.length - 1] + 0.01 : sorted[clamp(floor((1 - frac) * sorted.length), 0, sorted.length - 1)];
+  let dmax = 1e-6;
+  for (let i = 0; i < G.length; i++) { G[i] -= thr; dmax = max(dmax, -G[i]); }
+  const F = (x, y) => { const fx = clamp((x - CH[0]) / cs, 0, nx - 1.001), fy = clamp((y - CH[1]) / cs, 0, ny - 1.001), i = floor(fx), j = floor(fy), tx = fx - i, ty = fy - j, k = j * nx + i; return lerp(lerp(G[k], G[k + 1], tx), lerp(G[k + nx], G[k + nx + 1], tx), ty); };
+  const sea = p => F(p[0], p[1]) < 0;
+
+  // the stations: on the coast, master nearest the middle and the secondaries as far from each other as they can get
+  const n = o.stations, st = [];
+  if (o.where === "coast" && frac > 0) {
+    const cand = [];
+    for (let y = CH[1] + 12; y < CH[3] - 12; y += 2.5) for (let x = CH[0] + 12; x < CH[2] - 12; x += 2.5) if (F(x, y) > 0 && [[4, 0], [-4, 0], [0, 4], [0, -4]].some(([a, b]) => F(x + a, y + b) < 0)) cand.push([x, y]);
+    if (cand.length >= n) {
+      cand.sort((a, b) => dist(a, cc) - dist(b, cc));
+      st.push(cand[floor(rnd() * min(8, cand.length))]);
+      while (st.length < n) { let best = null, bd = -1; for (const c of cand) { const d = min(...st.map(s => dist(c, s))); if (d > bd) { bd = d; best = c; } } if (bd < 25) break; st.push(best); }
+    }
+    if (st.length < n) { st.length = 0; notes.push("not enough coast for the stations, so they stand off the chart"); }
+  }
+  if (st.length < n) {
+    const Rf = hypot(cw, ch) * (0.62 + 0.15 * rnd()), a0 = rnd() * TAU;
+    for (let k = 0; k < n; k++) { const a = a0 + k * TAU / n + (rnd() - 0.5) * 0.5, r = Rf * (0.85 + 0.3 * rnd()); st.push([cc[0] + r * cos(a), cc[1] + r * sin(a)]); }
+  }
+  const onChart = p => p[0] > CH[0] + 6 && p[0] < CH[2] - 6 && p[1] > CH[1] + 8 && p[1] < CH[3] - 4;
+  st.forEach((p, k) => {
+    if (onChart(p)) {
+      // a radio mast: the position circle, the mast and the letter
+      push("line", ring(p[0], p[1], 0.9, 0.9, 16), true); push("line", ring(p[0], p[1], 0.15, 0.15, 6), true);
+      push("line", [[p[0], p[1] - 0.9], [p[0], p[1] - 5]]);
+      for (const s of [-1, 1]) push("line", [[p[0], p[1] - 5], [p[0] + s * 1.1, p[1] - 3.6], [p[0] + s * 0.4, p[1] - 3.2], [p[0] + s * 1.6, p[1] - 1.8]]);
+      text("line", LET[k], p[0] + 2.4, p[1] - 6.6, 2.6);
+      occ.rect([p[0] - 3, p[1] - 7.4, p[0] + 3.4 + textW(LET[k], 2.6), p[1] + 1.8]);
+    } else {
+      // off the chart: an arrow at the edge pointing to it
+      const u = nrm2([p[0] - cc[0], p[1] - cc[1]]), tx = u[0] ? ((u[0] > 0 ? CH[2] : CH[0]) - cc[0]) / u[0] : INF, ty = u[1] ? ((u[1] > 0 ? CH[3] : CH[1]) - cc[1]) / u[1] : INF, t = min(tx, ty) - 3;
+      const E = [cc[0] + u[0] * t, cc[1] + u[1] * t], B = [E[0] - u[0] * 8, E[1] - u[1] * 8], nn = [-u[1], u[0]];
+      push("line", [B, E]); push("line", [[E[0] - u[0] * 2 + nn[0] * 1.1, E[1] - u[1] * 2 + nn[1] * 1.1], E, [E[0] - u[0] * 2 - nn[0] * 1.1, E[1] - u[1] * 2 - nn[1] * 1.1]]);
+      const L = "TO " + LET[k], lp = [B[0] - u[0] * 1.5, B[1] - u[1] * 1.5];
+      text("line", L, lp[0], lp[1], 2, { h: u[0] > 0.3 ? "r" : u[0] < -0.3 ? "l" : "c", v: u[1] > 0.3 ? "b" : u[1] < -0.3 ? "t" : "m" });
+      occ.rect(grow(bboxOf([B, E, lp, [lp[0] + (u[0] > 0 ? -1 : 1) * textW(L, 2), lp[1] + (u[1] > 0 ? -2.4 : 2.4)]]), 1.2));
+    }
+  });
+
+  // compass rose in the openest water, the title block on the most land
+  const rr = min(cw, ch) * 0.11;
+  if (o.rose === "on") {
+    let best = null, bs = 0.5;
+    for (let gy = 0; gy < 5; gy++) for (let gx = 0; gx < 5; gx++) {
+      const c = [CH[0] + rr + 4 + (cw - 2 * rr - 8) * gx / 4, CH[1] + rr + 4 + (ch - 2 * rr - 8) * gy / 4];
+      if (st.some(s => dist(s, c) < rr + 8) || occ.hit(c)) continue;
+      let k = 0, m = 0; for (let i = 0; i < 24; i++) { const a = i / 24 * TAU, r = rr * (i % 2 ? 0.5 : 1); m++; if (sea([c[0] + r * cos(a), c[1] + r * sin(a)]) && !occ.hit([c[0] + r * cos(a), c[1] + r * sin(a)])) k++; }
+      const s = k / m + rnd() * 0.05; if (s > bs) { bs = s; best = c; }
+    }
+    if (best) {
+      const [x, y] = best, vr = (rnd() - 0.5) * 30 * D2R;
+      push("line", ring(x, y, rr, rr, 120), true); push("line", ring(x, y, rr * 0.86, rr * 0.86, 120), true);
+      for (let i = 0; i < 72; i++) { const a = i * 5 * D2R - PI / 2, l = i % 6 === 0 ? 0.6 : i % 2 === 0 ? 0.45 : 0.3; push("line", [[x + rr * 0.86 * cos(a), y + rr * 0.86 * sin(a)], [x + rr * (0.86 + l * 0.14 / 0.6) * cos(a), y + rr * (0.86 + l * 0.14 / 0.6) * sin(a)]]); }
+      push("shade", ring(x, y, rr * 0.62, rr * 0.62, 90), true);
+      for (let i = 0; i < 36; i++) { const a = i * 10 * D2R - PI / 2 + vr; push("shade", [[x + rr * 0.62 * cos(a), y + rr * 0.62 * sin(a)], [x + rr * (i % 3 ? 0.57 : 0.53) * cos(a), y + rr * (i % 3 ? 0.57 : 0.53) * sin(a)]]); }
+      for (let i = 0; i < 8; i++) {
+        const a = i * PI / 4 - PI / 2, L = rr * (i % 2 ? 0.42 : 0.8), w = rr * (i % 2 ? 0.07 : 0.1), tip = [x + L * cos(a), y + L * sin(a)];
+        const lft = [x + w * cos(a - PI / 2), y + w * sin(a - PI / 2)], rgt = [x + w * cos(a + PI / 2), y + w * sin(a + PI / 2)];
+        push("line", [[x, y], lft, tip, rgt], true);
+        for (const q of hatch([[x, y], lft, tip], 0.5, a / D2R + 90)) push("line", q);
+      }
+      text("line", "N", x, y - rr * 0.82 - 0.4, 2.2, { h: "c", v: "b" });
+      text("shade", "VAR " + abs(round(vr / D2R)) + (vr > 0 ? " E" : " W"), x, y + rr * 0.3, 1.4, { h: "c" });
+      occ.circ(best, rr + 1.5);
+    } else notes.push("no open water for the compass rose");
+  }
+  const GRI = [9960, 7980, 8970, 5930, 4990, 9940, 7270, 6731, 8290][floor(rnd() * 9)];
+  const fam = max(0, st.length - 1), lp = o.lanepen === "one";
+  const PENF = lp ? ["line", "line", "line", "line"] : ["colour", "colour2", "line", "colour"], DASHF = lp ? [null, [3, 1.6], [4, 1.2, 0.6, 1.2], [0.6, 1.1]] : [null, null, [3, 1.6], [3, 1.6]];
+  {
+    const title = String(o.title || "").toUpperCase().slice(0, 28) || "BEACON BIGHT", bwid = min(cw * 0.5, 74), bh = 3 + 3.4 + 2 + 2.2 + 1.8 + 1.5 + 2 + fam * 2.8 + 2.4;
+    const cands = [[CH[0] + 3, CH[1] + 3], [CH[2] - 3 - bwid, CH[1] + 3], [CH[0] + 3, CH[3] - 3 - bh], [CH[2] - 3 - bwid, CH[3] - 3 - bh]].map(([x, y]) => [x, y, x + bwid, y + bh]);
+    let best = null, bs = -INF;
+    for (const b of cands) { let s = occ.L.some(q => overlap(q.bb, grow(b, 1)) > 0) ? -1000 : 0; for (let j = 0; j <= 4; j++) for (let i = 0; i <= 4; i++) { const p = [lerp(b[0], b[2], i / 4), lerp(b[1], b[3], j / 4)]; s += occ.hit(p) ? -3 : sea(p) ? 0 : 1; } s += rnd() * 0.5; if (s > bs) { bs = s; best = b; } }
+    push("line", rectPoly(best), true); push("line", rectPoly(grow(best, -0.8)), true);
+    const mx = (best[0] + best[2]) / 2, tcap = min(3.4, (bwid - 8) / max(1, textW(title, 1)));
+    let y = best[1] + 3;
+    text("line", title, mx, y, tcap, { h: "c" }); y += tcap + 2;
+    text("line", `LORAN-C CHAIN ${GRI}`, mx, y, 2.2, { h: "c" }); y += 2.2 + 1.8;
+    text("shade", "SOUNDINGS IN FATHOMS   SCALE 1:500000", mx, y, 1.5, { h: "c" }); y += 1.5 + 2;
+    for (let s = 1; s <= fam; s++) {
+      const x0 = best[0] + 6, pen = PENF[(s - 1) % 4], dash = DASHF[(s - 1) % 4], seg = [[x0, y + 0.8], [x0 + 12, y + 0.8]];
+      for (const q of dash ? dashPath(seg, dash) : [seg]) push(pen, q);
+      text(pen, `${GRI}-${LET[s]}  LINES OF POSITION`, x0 + 15, y, 1.6); y += 2.8;
+    }
+    occ.rect(grow(best, 1));
+  }
+
+  // a ship's track across open water, fixed where two lanes cross
+  const lev = (p, s) => dist(p, st[s]) - dist(p, st[0]);
+  const Rfar = p => max(...rectPoly(CH).map(c => dist(c, p)));
+  let fixes = 0;
+  if (o.track === "on") {
+    const perim = t => { t = ((t % 1) + 1) % 1; const L = 2 * (cw + ch) - 4, s = t * L, w = cw - 2, h = ch - 2; return s < w ? [CH[0] + 1 + s, CH[1] + 1] : s < w + h ? [CH[2] - 1, CH[1] + 1 + s - w] : s < 2 * w + h ? [CH[2] - 1 - (s - w - h), CH[3] - 1] : [CH[0] + 1, CH[3] - 1 - (s - 2 * w - h)]; };
+    let path = null;
+    for (let tries = 0; tries < 400 && !path; tries++) {
+      const a = rnd(), P0 = perim(a), P3 = perim(a + 0.3 + rnd() * 0.4), c1 = [lerp(CH[0], CH[2], rnd()), lerp(CH[1], CH[3], rnd())], c2 = [lerp(CH[0], CH[2], rnd()), lerp(CH[1], CH[3], rnd())];
+      const pts = Array.from({ length: 161 }, (_, i) => { const t = i / 160, u = 1 - t; return [u * u * u * P0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * P3[0], u * u * u * P0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * P3[1]]; });
+      if (plen(pts) < min(cw, ch) * 0.6) continue;
+      if (pts.every(p => inC(p) && F(p[0], p[1]) < -dmax * 0.02 && !occ.hit(p))) path = pts;
+    }
+    if (path) {
+      for (const q of dashPath(path, [2.6, 1.4])) push("line", q);
+      const e = path[path.length - 1], u = nrm2([e[0] - path[path.length - 4][0], e[1] - path[path.length - 4][1]]);
+      for (const s of [-1, 1]) { const a = atan2(u[1], u[0]) + PI + s * 0.45; push("line", [e, [e[0] + 2.6 * cos(a), e[1] + 2.6 * sin(a)]]); }
+      const cum = cumLen(path), L = cum[cum.length - 1], nf = o.fixes, hr0 = 2 + floor(rnd() * 16);
+      for (let i = 0; i < nf; i++) {
+        const s = L * (nf === 1 ? 0.5 : 0.18 + 0.66 * i / (nf - 1)), q = subPath(path, cum, max(0, s - 0.5), min(L, s + 0.5)), p = lerp2(q[0], q[q.length - 1], 0.5), t = nrm2([q[q.length - 1][0] - q[0][0], q[q.length - 1][1] - q[0][1]]), nn = [-t[1], t[0]];
+        push("line", ring(p[0], p[1], 1.3, 1.3, 20), true); push("line", ring(p[0], p[1], 0.18, 0.18, 6), true);
+        // the two lines of position through the fix, short and bold
+        for (let s2 = 1; s2 <= min(2, fam); s2++) for (const k of keepWhere(hyperbola(st[0], st[s2], lev(p, s2), Rfar(p)), z => dist(z, p) < 8 && dist(z, p) > 1.7 && inC(z), 0.3)) push("line", k);
+        const tl = String((hr0 + i) % 24).padStart(2, "0") + "00", side = nn[1] > 0 ? 1 : -1, lp2 = [p[0] + nn[0] * side * 3.6, p[1] + nn[1] * side * 3.6];
+        text("shade", tl, lp2[0], lp2[1], 1.6, { h: nn[0] * side > 0.3 ? "l" : nn[0] * side < -0.3 ? "r" : "c", v: "m" });
+        occ.circ(p, 2.2); occ.rect(grow(bboxOf([lp2, [lp2[0] + (nn[0] * side >= 0 ? 1 : -1) * textW(tl, 1.6), lp2[1]]]), 1.6));
+        fixes++;
+      }
+    } else notes.push("no clear passage for a ship's track");
+  }
+
+  // coast, depth contours, shallows and the land
+  for (const [q, cl] of isolines(G, nx, ny, CH[0], CH[1], cs, 0)) put("line", q, cl, free);
+  const DC = [[0.1, [0.4, 1.2]], [0.25, [2.4, 1.4]], [0.45, [3, 1, 0.5, 1]]];
+  for (const [f, pat] of DC.slice(0, o.contours)) for (const [q, cl] of isolines(G, nx, ny, CH[0], CH[1], cs, -dmax * f)) for (const k of keepWhere(cl ? [...q, q[0]] : q, free)) for (const d of dashPath(k, pat)) push("shade", d);
+  const hatchWhere = (sp, ang, ok) => { for (const [a, b] of hatch(rectPoly(CH), sp, ang)) for (const k of keepWhere([a, b], ok)) push("shade", k); };
+  if (o.shallows === "on") hatchWhere(1.8, 0, p => free(p) && F(p[0], p[1]) < 0 && F(p[0], p[1]) > -dmax * 0.06);
+  if (o.landfill === "hatch") hatchWhere(1.8, 45, p => free(p) && F(p[0], p[1]) > 0);
+  else if (o.landfill === "stipple") { const N = round(cw * ch * frac / 5); for (let i = 0; i < N; i++) { const p = [lerp(CH[0], CH[2], rnd()), lerp(CH[1], CH[3], rnd())]; if (F(p[0], p[1]) > dmax * 0.02 && free(p)) push("shade", ring(p[0], p[1], 0.15, 0.15, 6), true); } }
+  if (o.soundings > 0) {
+    const sp = lerp(34, 9, o.soundings / 100);
+    for (let y = CH[1] + sp / 2; y < CH[3]; y += sp) for (let x = CH[0] + sp / 2; x < CH[2]; x += sp) {
+      const p = [x + (rnd() - 0.5) * sp * 0.7, y + (rnd() - 0.5) * sp * 0.7], f = F(p[0], p[1]);
+      if (f > -dmax * 0.06) continue;
+      const str = String(round(2 + (-f / dmax) * 46)), w = textW(str, 1.5), b = [p[0] - w / 2 - 0.6, p[1] - 1.4, p[0] + w / 2 + 0.6, p[1] + 1.4];
+      if (!rectPoly(b).every(q => free(q) && sea(q))) continue;
+      text("shade", str, p[0], p[1], 1.5, { h: "c", v: "m" });
+    }
+  }
+
+  // the lanes: for each secondary, hyperbolas a lane apart, labelled at the edge with the time difference
+  const step = 2 * o.lanes, kmPerMm = 0.5, kmPerUs = 0.29979, CD = [11000, 25000, 39000, 54000], labels = [];
+  const laneOk = p => free(p) && F(p[0], p[1]) < 0;
+  const onEdge = p => min(p[0] - CH[0], CH[2] - p[0], p[1] - CH[1], CH[3] - p[1]) < 0.8;
+  const labelPiece = (piece, str, pen) => {
+    const cap = 1.7, Lw = textW(str, cap), L = plen(piece);
+    if (L < Lw + 8) return null;
+    for (const rev of [false, true]) {
+      const q = rev ? piece.slice().reverse() : piece;
+      if (!onEdge(q[0])) continue;
+      const cum = cumLen(q), e = q[0], f = subPath(q, cum, Lw + 3, Lw + 3.1)[0], u = nrm2([f[0] - e[0], f[1] - e[1]]);
+      let ang = atan2(u[1], u[0]); if (cos(ang) < -1e-6) ang += PI;
+      const mid = [e[0] + u[0] * (1.4 + Lw / 2), e[1] + u[1] * (1.4 + Lw / 2)], hl = Lw / 2 + 0.5, hc = cap / 2 + 0.5;
+      const box = [[-hl, -hc], [hl, -hc], [hl, hc], [-hl, hc]].map(([a, b]) => [mid[0] + a * cos(ang) - b * sin(ang), mid[1] + a * sin(ang) + b * cos(ang)]), bb = bboxOf(box);
+      if (labels.some(l => overlap(l, bb) > 0) || box.some(p => occ.hit(p) || !inC(p))) continue;
+      text(pen, str, mid[0], mid[1], cap, { h: "c", v: "m", ang });
+      labels.push(bb);
+      return subPath(q, cum, Lw + 2.6, L);
+    }
+    return null;
+  };
+  let lanes = 0;
+  for (let s = 1; s <= fam; s++) {
+    const M0 = st[0], S0 = st[s], D = dist(M0, S0); if (D < 5) continue;
+    const pen = PENF[(s - 1) % 4], dash = DASHF[(s - 1) % 4], mid = lerp2(M0, S0, 0.5), Rf = Rfar(mid);
+    let fmin = INF, fmax = -INF;
+    for (let j = 0; j <= 24; j++) for (let i = 0; i <= 24; i++) { const f = lev([CH[0] + cw * i / 24, CH[1] + ch * j / 24], s); fmin = min(fmin, f); fmax = max(fmax, f); }
+    for (let k = ceil(fmin / step); k <= floor(fmax / step); k++) {
+      const lv = k * step; if (abs(lv) >= D - 0.05) continue;
+      const pieces = keepWhere(hyperbola(M0, S0, lv, Rf), laneOk);
+      if (!pieces.length) continue;
+      lanes++;
+      const td = round((CD[s - 1] + (D + lv) * kmPerMm / kmPerUs) / 10) * 10;
+      let todo = o.every > 0 && ((k % o.every) + o.every) % o.every === 0;
+      for (let piece of pieces) {
+        if (todo) { const cut = labelPiece(piece, `${LET[s]}${td}`, pen); if (cut) { piece = cut; todo = false; } }
+        for (const q of dash ? dashPath(piece, dash) : [piece]) push(pen, q);
+      }
+    }
+    // the baseline between the pair, and its extensions past each station where the lanes fold back on themselves
+    const u = nrm2([S0[0] - M0[0], S0[1] - M0[1]]);
+    for (const q of keepWhere([M0, S0], free)) for (const d of dashPath(q, [1.6, 1.2])) push("shade", d);
+    for (const [P0, sg] of [[S0, 1], [M0, -1]]) for (const q of keepWhere([P0, [P0[0] + u[0] * sg * Rfar(P0) * 2, P0[1] + u[1] * sg * Rfar(P0) * 2]], free)) for (const d of dashPath(q, [4, 1, 0.6, 1])) push("shade", d);
+  }
+  // the waves: rings a lane apart round the stations, which cross exactly on the lanes
+  if (o.waves !== "off") {
+    const ws = o.waves === "pair" ? st.slice(0, 2) : st, est = ws.length * cw * ch * (1 - frac) / step / 1000;
+    let g = step;
+    if (est > 45) { const m = ceil(est / 45); g *= m; notes.push(`wave rings drawn every ${m} lanes to keep inside the pen budget`); }
+    for (const p of ws) { const ra = max(g, dist(p, cc) - hypot(cw, ch) / 2); for (let r = ceil(ra / g) * g; r < Rfar(p); r += g) put("shade", ring(p[0], p[1], r, r, max(24, ceil(TAU * r / 1.2))), true, laneOk); }
+  }
+  if (o.lanes < 1.2) notes.push("lanes under 1.2 mm on the baseline may run together with a 0.4 pen");
+  return { count: lanes, summary: `${st.length} stations, ${lanes} lanes, GRI ${GRI}, ${fixes} fixes`, gates: [["lanes no closer than 0.8 mm", o.lanes >= 0.8, o.lanes.toFixed(1) + " mm on the baseline"], ["at least one lane on the chart", lanes > 0, lanes + " lanes"]] };
+}
+
+// ---------------- build, gates ----------------
+function build(o) {
+  const t0 = performance.now(), [PW, PH] = o.page.split("x").map(Number), mg = o.margin, rnd = mulberry(o.seed * 7919 + (o.scene === "loran" ? 3 : 1));
+  const U = [mg, mg, PW - mg, PH - mg], Ly = { shade: [], colour: [], colour2: [], line: [] }, notes = [];
+  const push = (pen, q, cl = false) => { if (q && q.length > 1) Ly[pen].push([q, cl]); };
+  const res = o.scene === "loran" ? buildLoran(o, rnd, U, push, notes) : buildSeti(o, rnd, U, push, notes);
+  let bb = [INF, INF, -INF, -INF], finite = true;
+  for (const pen of PENS) for (const [q] of Ly[pen]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) finite = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+  const metres = Object.fromEntries(PENS.map(pen => [pen, Ly[pen].reduce((a, [q, cl]) => a + plen(q) + (cl ? dist(q[0], q[q.length - 1]) : 0), 0) / 1000]));
+  const total = PENS.reduce((a, p) => a + metres[p], 0), ms = performance.now() - t0;
+  const gates = [
+    ["fits inside the margins", bb[0] >= mg - 0.01 && bb[1] >= mg - 0.01 && bb[2] <= PW - mg + 0.01 && bb[3] <= PH - mg + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    ...res.gates,
+    ["under 150 m of pen", total < 150, total.toFixed(1) + " m"],
+    ["builds in under 4 s", ms < 4000, (ms / 1000).toFixed(2) + " s"],
+  ];
+  return { o, W: PW, H: PH, layers: Ly, gates, notes, metres, count: res.count, summary: res.summary, ms };
+}
+
+// ---------------- preview, export ----------------
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = { line: "#141414", shade: "#3a3a3a", colour: "#" + r.o.ccol, colour2: "#" + r.o.ccol2 };
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of PENS) {
+    c.strokeStyle = col[key]; c.lineWidth = PEN[key];
+    for (const [q, cl] of r.layers[key]) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); }
+  }
+  $("stats").innerHTML = `<b>${r.summary}</b> · ${r.ms.toFixed(0)} ms<br>`
+    + `thin 0.3: <b>${r.metres.shade.toFixed(1)} m</b> · colour 1: <b>${r.metres.colour.toFixed(1)} m</b> · colour 2: <b>${r.metres.colour2.toFixed(1)} m</b> · line 0.4: <b>${r.metres.line.toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "colour", colour: r.o.ccol, w: PEN.colour, paths: r.layers.colour }, { name: "colour2", colour: r.o.ccol2, w: PEN.colour2, paths: r.layers.colour2 }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG beacon studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["scene", "seed", "content", "words", "cols", "cell", "pix", "fill", "pitch", "gapp", "unlit", "colours", "layout", "psize", "dish", "dishpos", "dsize", "elev", "place", "stars", "rings", "ringgap", "ramp", "spread", "rstyle", "bitlen", "fade", "rpen", "answer", "swarm", "plates", "win",
+  "stations", "where", "lanes", "every", "lanepen", "waves", "title", "land", "lside", "rough", "landfill", "shallows", "contours", "soundings", "rose", "track", "fixes", "ccol", "ccol2", "page", "margin", "ticks"];
+const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); return [k, e.type === "range" ? +e.value : e.value]; }));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function run(k) { sync(); if (last && (k === "ccol" || k === "ccol2")) { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 30); }
+
+const BASE = { scene: "seti", seed: 7, content: "full", words: "", cols: "23", cell: 2.6, pix: "square", fill: "hatch", pitch: 0.6, gapp: 18, unlit: "none", colours: "sections", layout: "dish", psize: 62, dish: "bowl", dishpos: "left", dsize: 100, elev: 62, place: "beside", stars: 30,
+  rings: 18, ringgap: 7, ramp: 30, spread: 28, rstyle: "bits", bitlen: 1.2, fade: 40, rpen: "line", answer: "none", swarm: 13, plates: 140, win: 30,
+  stations: 4, where: "coast", lanes: 3.2, every: 4, lanepen: "colours", waves: "off", title: "BEACON BIGHT", land: 35, lside: "left", rough: 50, landfill: "hatch", shallows: "on", contours: 2, soundings: 40, rose: "on", track: "on", fixes: 3,
+  ccol: "b03030", ccol2: "2a4f9a", page: "190x250", margin: 10, ticks: "split" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  arecibo: P({}),
+  plate: P({ layout: "plate", psize: 58, rings: 16, ringgap: 6, ramp: 20, fade: 30, seed: 3 }),
+  contact: P({ dish: "steer", answer: "bitmap", content: "hello", words: "HELLO", cols: "19", rings: 16, stars: 40, seed: 5, spread: 22 }),
+  listening: P({ dish: "array", dishpos: "right", answer: "listens", place: "beam", content: "short", pix: "round", fill: "spiral", pitch: 0.5, rings: 22, ringgap: 6, rpen: "shade", stars: 45, seed: 12 }),
+  noise: P({ layout: "plate", content: "noise", cols: "31", pix: "round", fill: "spiral", unlit: "dot", colours: "one", psize: 70, rings: 12, rstyle: "dashed", seed: 9 }),
+  zenith: P({ dishpos: "centre", place: "beam", elev: 90, pix: "diamond", rings: 26, ringgap: 5, ramp: 70, spread: 35, page: "250x190", stars: 40, seed: 21 }),
+  chain: P({ scene: "loran" }),
+  far: P({ scene: "loran", where: "far", stations: 3, land: 22, lside: "right", lanes: 4.5, every: 3, seed: 11 }),
+  waves: P({ scene: "loran", stations: 2, waves: "pair", track: "off", lanes: 4, every: 3, land: 25, lside: "bottom", soundings: 15, contours: 1, seed: 4 }),
+  isles: P({ scene: "loran", lside: "islands", land: 18, stations: 5, lanes: 4.2, landfill: "stipple", soundings: 60, rough: 70, title: "THE BEACON ISLES", fixes: 4, seed: 17 }),
+};
+const setAll = p => { for (const [k, v] of Object.entries(p)) if ($(k)) $(k).value = v; };
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setAll(PRESETS[b.dataset.preset]); run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => r.o.scene === "loran" ? `beacon-loran-${r.o.stations}st-seed${r.o.seed}` : `beacon-seti-${r.o.layout}-${r.o.content}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+setAll(PRESETS.arecibo);
+run();
+</script>
+</body>
+</html>
