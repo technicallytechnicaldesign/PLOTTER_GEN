@@ -16,6 +16,7 @@ Pen-plotter generators for the Cricut Explore 5. [Open the live gallery](https:/
 - **Birds:** Kiwi studio: shaggy kiwi alone under the ferns, stacked into a tower, tiled into wallpaper or packed in, with the odd kiwifruit.
 - **Drawing office:** Confused deck: title-block trading cards with lift flaps (no detail C, a blank sheet 2, "I dunno"), crosser and crosser red faces, and a tolerance spinner.
 - **Interiors:** Lounge studio: a living room drawn as a CAD plan with furniture blocks, cats on their own colour layer lounging wherever they please, and a revision cloud on the occupied sofa.
+- **Codebreakers:** Bletchley studio: a Bombe wall of 36 Enigmas with Wrens' hands at the drums, a Wren drawn in Enigma letters, and the people of Station X, a different person and job for every number, all hiding the Official Secrets Act 1911 in their letters.
 
 Each studio is self-contained HTML and exports millimetre SVGs, including separate pen layers for Design Space. The gallery carries saved controls and source fingerprints for its example drawings.
 
