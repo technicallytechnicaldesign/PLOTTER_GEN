@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lightmap Studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+</head>
+<body>
+<header>
+  <h1>Lightmap studio</h1>
+  <p class="sub">Baking, the rendering kind: a pile of boxes on a floor, their ambient occlusion and sun shadows ray-traced into a lightmap texel by texel, then drawn in hatching twice, on the boxes in the view and flat in the UV atlas the bake was written to, each box unwrapped as a cross with its seams in colour. Export a millimetre SVG with three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="crates">Crates</button><button data-preset="city">City at noon</button><button data-preset="cube">One cube</button></div>
+  </fieldset>
+  <fieldset><legend>Seed</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="24"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+  </fieldset>
+  <fieldset><legend>The scene</legend>
+    <label>Objects <select id="objects"><option value="crates">crates, some stacked</option><option value="city">a block of towers</option><option value="steps">a flight of steps</option><option value="cube">one cube</option></select></label>
+    <label>Boxes <output id="o-boxes"></output><input type="range" id="boxes" min="1" max="16" step="1" value="7"></label>
+    <label>Stacking <output id="o-stack"></output><input type="range" id="stack" min="0" max="1" step="0.05" value="0.35"></label>
+    <label>Floor size (units) <output id="o-floor"></output><input type="range" id="floor" min="6" max="14" step="0.5" value="10"></label>
+    <label>Camera turn (degrees) <output id="o-az"></output><input type="range" id="az" min="0" max="359" step="1" value="35"></label>
+    <label>Camera height (degrees) <output id="o-el"></output><input type="range" id="el" min="15" max="75" step="1" value="32"></label>
+  </fieldset>
+  <fieldset><legend>The bake (second pen)</legend>
+    <label>Light <select id="light"><option value="ao">ambient occlusion only</option><option value="sun">sun with shadows, plus occlusion</option></select></label>
+    <label>Sun turn (degrees) <output id="o-sunaz"></output><input type="range" id="sunaz" min="0" max="359" step="1" value="300"></label>
+    <label>Sun height (degrees) <output id="o-sunel"></output><input type="range" id="sunel" min="10" max="80" step="1" value="40"></label>
+    <label>Occlusion reach (units) <output id="o-reach"></output><input type="range" id="reach" min="0.5" max="4" step="0.1" value="1.6"></label>
+    <label>Rays per texel <output id="o-rays"></output><input type="range" id="rays" min="4" max="64" step="4" value="24"></label>
+    <label>Texels per unit <output id="o-res"></output><input type="range" id="res" min="2" max="16" step="1" value="8"></label>
+    <label>Lookup <select id="filter"><option value="bilinear">bilinear, smooth</option><option value="nearest">nearest, blocky texels</option></select></label>
+    <label>Tone <output id="o-tone"></output><input type="range" id="tone" min="0.5" max="1.8" step="0.05" value="1.1"></label>
+  </fieldset>
+  <fieldset><legend>The atlas</legend>
+    <label>Show <select id="layout"><option value="both">view and atlas</option><option value="view">view only</option><option value="atlas">atlas only</option></select></label>
+    <label>Texel grid <select id="grid"><option value="ticks">ticks on island edges</option><option value="full">full grid</option><option value="none">none</option></select></label>
+    <label>UV seams <select id="seams"><option value="colour">in the colour pen</option><option value="key">as plain edges</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+    <label>Colour pen <select id="pen"><option value="e8590c">orange</option><option value="c92a2a">red</option><option value="1f6f78">teal</option><option value="3a4f9a">navy</option></select></label>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (black outline, grey for the baked light, colour for the UV seams), numbered in plotting order. All carry the same four corner ticks so Design Space sizes them identically.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">This is a real bake: every texel of every box face and of the floor casts its rays against the boxes (cosine-weighted and stratified, then lightly denoised), and the light it finds becomes up to three crossing hatch layers. Boxes are drawn back to front so nearer ones hide the lines behind them. In the atlas each box is a cross-shaped net, shelf-packed with the floor at a single texel density, so the hatching there is the same lightmap, laid flat. In Design Space: three layers to Pen, black 0.4 for the edges, black 0.3 (or grey) for the hatching, a colour pen for the seams, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = 2 * Math.PI;
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function pip(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+const bboxOf = pts => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of pts) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+function spline(P, per) {
+  const n = P.length, out = [], g = i => P[(i + n) % n];
+  for (let i = 0; i < n; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let k = 0; k < per; k++) {
+      const t = k / per, t2 = t * t, t3 = t2 * t, f = a => 0.5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3);
+      out.push([f(0), f(1)]);
+    }
+  }
+  return out;
+}
+const ell = (cx, cy, rx, ry, n = 40, a0 = 0, a1 = TAU) => { const p = []; for (let k = 0; k <= n; k++) { const a = a0 + (a1 - a0) * k / n; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return Math.abs(a1 - a0) >= TAU - 1e-9 ? p.slice(0, -1) : p; };
+const rect = (xa, ya, xb, yb) => [[xa, ya], [xb, ya], [xb, yb], [xa, yb]];
+
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+function hull(pts) {
+  const P = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const p of P) { while (lo.length > 1 && cr(lo.at(-2), lo.at(-1), p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of P.reverse()) { while (up.length > 1 && cr(up.at(-2), up.at(-1), p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+
+function hatch(poly, ang, P) {
+  const bb = bboxOf(poly), cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2, R = Math.hypot(bb[2] - bb[0], bb[3] - bb[1]) / 2, dx = Math.cos(ang), dy = Math.sin(ang), L = [];
+  for (let t = -R + P / 2; t < R; t += P) L.push([[cx - dy * t - dx * R, cy + dx * t - dy * R], [cx - dy * t + dx * R, cy + dx * t + dy * R]]);
+  return L;
+}
+const insideBy = (poly, x, y, ins) => pip(poly, x, y) && (ins <= 0 || (pip(poly, x + ins, y) && pip(poly, x - ins, y) && pip(poly, x, y + ins) && pip(poly, x, y - ins)));
+function clipLines(lines, poly, ins, step, pred) {
+  const out = [];
+  for (const l of lines) {
+    const d = densify(l, false, step); let cur = [];
+    for (const [x, y] of d) {
+      if (insideBy(poly, x, y, ins) && (!pred || pred(x, y))) cur.push([x, y]);
+      else { if (cur.length > 1) out.push(cur); cur = []; }
+    }
+    if (cur.length > 1) out.push(cur);
+  }
+  return out;
+}
+const TONE_ANG = [0, Math.PI / 2, Math.PI / 4], TONE_AT = [0.15, 0.4, 0.66];
+function tonal(poly, dark, P, ang, pred) {
+  const out = [];
+  TONE_AT.forEach((t, i) => { for (const r of clipLines(hatch(poly, ang + TONE_ANG[i], P * (i === 2 ? 1.25 : 1)), poly, 0.35, 0.3, (x, y) => dark(x, y) > t && (!pred || pred(x, y)))) out.push(r); });
+  return out;
+}
+
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "objects", "boxes", "stack", "floor", "az", "el", "light", "sunaz", "sunel", "reach", "rays", "res", "filter", "tone", "layout", "grid", "seams",
+  "pitch", "pen", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function buildLightmap(o, E) {
+  const { x0, y0, x1, y1, item } = E, P = o.pitch, rp = mulberry32(o.seed * 7919 + 211), rb = mulberry32(o.seed * 104729 + 5);
+  const Fh = o.floor / 2, boxes = [];
+  const clash = (b, g) => b[0] < -Fh + 0.2 || b[1] < -Fh + 0.2 || b[3] > Fh - 0.2 || b[4] > Fh - 0.2 || boxes.some(q => b[0] < q[3] + g && q[0] < b[3] + g && b[1] < q[4] + g && q[1] < b[4] + g && b[2] < q[5] - 1e-6 && q[2] < b[5] - 1e-6);
+  if (o.objects === "cube") { const s = Math.min(2.6, o.floor * 0.3); boxes.push([-s / 2, -s / 2, 0, s / 2, s / 2, s]); }
+  else if (o.objects === "steps") {
+    const n = Math.max(2, o.boxes), run = Math.min(1.1, o.floor * 0.8 / n), depth = 1.6 + rp() * 1.6, rise = 0.3 + rp() * 0.3, alongX = rp() < 0.5;
+    for (let i = 0; i < n; i++) { const a = -n * run / 2 + i * run, h = rise * (i + 1) * (0.92 + 0.16 * rp()); boxes.push(alongX ? [a, -depth / 2, 0, a + run, depth / 2, h] : [-depth / 2, a, 0, depth / 2, a + run, h]); }
+  } else {
+    const city = o.objects === "city";
+    for (let k = 0; k < o.boxes * 60 && boxes.length < o.boxes; k++) {
+      const r = [rp(), rp(), rp(), rp(), rp(), rp()];
+      let w = city ? 0.8 + 0.9 * r[0] : 1 + 1.4 * r[0], dd = city ? 0.8 + 0.9 * r[1] : 1 + 1.4 * r[1], h = city ? 1.2 + 4 * r[2] * r[2] : 0.8 + 1.4 * r[2];
+      if (!city && boxes.length && r[3] < o.stack) {
+        const base = boxes[Math.floor(r[4] * boxes.length)], bw = base[3] - base[0], bd = base[4] - base[1];
+        w = Math.min(w, bw * 0.85); dd = Math.min(dd, bd * 0.85); h = Math.min(h, 1.3);
+        const x = base[0] + (bw - w) * r[5], y = base[1] + (bd - dd) * (1 - r[5]), b = [x, y, base[5], x + w, y + dd, base[5] + h];
+        if (!clash(b, 0.12)) boxes.push(b);
+        continue;
+      }
+      const x = -Fh + 0.4 + (2 * Fh - 0.8 - w) * r[4], y = -Fh + 0.4 + (2 * Fh - 0.8 - dd) * r[5], b = [x, y, 0, x + w, y + dd, h];
+      if (!clash(b, city ? 0.25 : 0.35)) boxes.push(b);
+    }
+  }
+
+  const faces = [], islands = [], add = (v, s) => v.map(a => a * s);
+  const mk = (O, U, V, su, sv, n, seams, isl, offU, offV, box) => { const f = { O, U, V, su, sv, n, seams, isl, offU, offV, box }; faces.push(f); isl.faces.push(f); return f; };
+  const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1], neg = v => v.map(a => -a);
+  {
+    const I = { w: o.floor, h: o.floor, minU: 0, maxV: o.floor, faces: [] }; islands.push(I);
+    mk([-Fh, -Fh, 0], X, Y, o.floor, o.floor, Z, [0, 1, 2, 3], I, 0, 0, -1);
+  }
+  boxes.forEach((b, bi) => {
+    const [a0, b0, c0, a1, b1, c1] = b, w = a1 - a0, dd = b1 - b0, h = c1 - c0;
+    const I = { w: 2 * w + 2 * dd, h: h + 2 * dd, minU: 0, maxV: h + dd, faces: [] }; islands.push(I);
+    mk([a0, b0, c1], X, Y, w, dd, Z, [1, 2, 3], I, 0, h, bi);
+    mk([a0, b1, c0], X, neg(Y), w, dd, neg(Z), [0, 1, 3], I, 0, -dd, bi);
+    mk([a0, b0, c0], X, Z, w, h, neg(Y), [3], I, 0, 0, bi);
+    mk([a1, b0, c0], Y, Z, dd, h, X, [0, 2], I, w, 0, bi);
+    mk([a1, b1, c0], neg(X), Z, w, h, Y, [0, 2], I, w + dd, 0, bi);
+    mk([a0, b1, c0], neg(Y), Z, dd, h, neg(X), [0, 1, 2], I, 2 * w + dd, 0, bi);
+  });
+
+  const tb = performance.now(), sun = o.light === "sun", sa = o.sunaz * Math.PI / 180, se = o.sunel * Math.PI / 180, S = [Math.cos(se) * Math.cos(sa), Math.cos(se) * Math.sin(sa), Math.sin(se)];
+  const hit = (ox, oy, oz, dx, dy, dz, tmax, cand) => {
+    if (dz < 0 && oz / -dz < tmax) return true;
+    const ix = 1 / (dx || 1e-12), iy = 1 / (dy || 1e-12), iz = 1 / (dz || 1e-12);
+    for (const b of cand) {
+      let t0 = 1e-5, t1 = tmax, a = (b[0] - ox) * ix, c = (b[3] - ox) * ix;
+      if (a > c) [a, c] = [c, a]; if (a > t0) t0 = a; if (c < t1) t1 = c; if (t0 > t1) continue;
+      a = (b[1] - oy) * iy; c = (b[4] - oy) * iy; if (a > c) [a, c] = [c, a]; if (a > t0) t0 = a; if (c < t1) t1 = c; if (t0 > t1) continue;
+      a = (b[2] - oz) * iz; c = (b[5] - oz) * iz; if (a > c) [a, c] = [c, a]; if (a > t0) t0 = a; if (c < t1) t1 = c; if (t0 > t1) continue;
+      return true;
+    }
+    return false;
+  };
+  const g = Math.max(2, Math.round(Math.sqrt(o.rays))), nr = g * g;
+  const lamMax = Math.max(1e-3, ...[X, neg(X), Y, neg(Y), Z].map(v => v[0] * S[0] + v[1] * S[1] + v[2] * S[2]));
+  let texels = 0, rays = 0, badTex = 0;
+  for (const f of faces) {
+    f.nu = Math.max(1, Math.round(f.su * o.res)); f.nv = Math.max(1, Math.round(f.sv * o.res)); f.L = new Float32Array(f.nu * f.nv);
+    const lam = Math.max(0, f.n[0] * S[0] + f.n[1] * S[1] + f.n[2] * S[2]) / lamMax;
+    for (let j = 0; j < f.nv; j++) for (let i = 0; i < f.nu; i++) {
+      const u = (i + 0.5) * f.su / f.nu, v = (j + 0.5) * f.sv / f.nv, p = [0, 1, 2].map(k => f.O[k] + f.U[k] * u + f.V[k] * v + f.n[k] * 1e-4);
+      const cand = boxes.filter(b => { const ex = Math.max(b[0] - p[0], 0, p[0] - b[3]), ey = Math.max(b[1] - p[1], 0, p[1] - b[4]), ez = Math.max(b[2] - p[2], 0, p[2] - b[5]); return ex * ex + ey * ey + ez * ez < o.reach * o.reach; });
+      let occ = 0;
+      if (cand.length || f.box >= 0) for (let a = 0; a < g; a++) for (let c = 0; c < g; c++) {
+        const r1 = (a + rb()) / g, r2 = (c + rb()) / g, ph = TAU * r1, rr = Math.sqrt(r2), lx = rr * Math.cos(ph), ly = rr * Math.sin(ph), lz = Math.sqrt(Math.max(0, 1 - r2));
+        const dx = f.U[0] * lx + f.V[0] * ly + f.n[0] * lz, dy = f.U[1] * lx + f.V[1] * ly + f.n[1] * lz, dz = f.U[2] * lx + f.V[2] * ly + f.n[2] * lz;
+        rays++; if (hit(p[0], p[1], p[2], dx, dy, dz, o.reach, cand)) occ++;
+      }
+      const ao = 1 - occ / nr;
+      let L = ao;
+      if (sun) { const vis = lam > 0 && !hit(p[0], p[1], p[2], S[0], S[1], S[2], 100, boxes) ? 1 : 0; rays++; L = Math.min(1, ao * (0.35 + 0.65 * lam * vis)); }
+      if (!Number.isFinite(L)) badTex++;
+      f.L[j * f.nu + i] = L; texels++;
+    }
+    const B = new Float32Array(f.L.length);
+    for (let j = 0; j < f.nv; j++) for (let i = 0; i < f.nu; i++) {
+      let s = 0, w = 0;
+      for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) { const ii = i + a, jj = j + b; if (ii < 0 || jj < 0 || ii >= f.nu || jj >= f.nv) continue; const k = a || b ? 1 : 2; s += f.L[jj * f.nu + ii] * k; w += k; }
+      B[j * f.nu + i] = s / w;
+    }
+    if (o.filter !== "nearest") f.L = B;
+  }
+  const bakeMs = performance.now() - tb;
+  const sample = (f, u, v) => {
+    if (o.filter === "nearest") { const i = Math.min(f.nu - 1, Math.max(0, Math.floor(u / f.su * f.nu))), j = Math.min(f.nv - 1, Math.max(0, Math.floor(v / f.sv * f.nv))); return f.L[j * f.nu + i]; }
+    const tu = Math.min(f.nu - 1, Math.max(0, u / f.su * f.nu - 0.5)), tv = Math.min(f.nv - 1, Math.max(0, v / f.sv * f.nv - 0.5)), i0 = Math.floor(tu), j0 = Math.floor(tv), i1 = Math.min(f.nu - 1, i0 + 1), j1 = Math.min(f.nv - 1, j0 + 1), a = tu - i0, b = tv - j0;
+    return (f.L[j0 * f.nu + i0] * (1 - a) + f.L[j0 * f.nu + i1] * a) * (1 - b) + (f.L[j1 * f.nu + i0] * (1 - a) + f.L[j1 * f.nu + i1] * a) * b;
+  };
+  const darkAt = (f, u, v) => Math.min(1.5, Math.max(0, (1 - sample(f, u, v)) * o.tone));
+  const angOf = f => f.n[2] ? 0.3 : f.n[0] ? 1.1 : 2.0;
+  const seamLayer = o.seams === "colour" ? "colour" : "key";
+  const corners = f => [[0, 0], [f.su, 0], [f.su, f.sv], [0, f.sv]];
+
+  const uw = x1 - x0, uh = y1 - y0, land = E.W > E.H;
+  let view = null, atlas = null;
+  if (o.layout === "view") view = [x0, y0, x1, y1];
+  else if (o.layout === "atlas") { const s = Math.min(uw, uh); atlas = [x0 + (uw - s) / 2, y0 + (uh - s) / 2, s]; }
+  else if (land) { const s = Math.min(uh, uw * 0.45); atlas = [x1 - s, y0 + (uh - s) / 2, s]; view = [x0, y0, x1 - s - 8, y1]; }
+  else { const s = Math.min(uw, uh * 0.45); atlas = [x0 + (uw - s) / 2, y1 - s, s]; view = [x0, y0, x1, y1 - s - 8]; }
+
+  let order = [];
+  if (view) {
+    const az = o.az * Math.PI / 180, el = o.el * Math.PI / 180, C = [Math.cos(el) * Math.cos(az), Math.cos(el) * Math.sin(az), Math.sin(el)];
+    const R = [-Math.sin(az), Math.cos(az), 0], Up = [C[1] * R[2] - C[2] * R[1], C[2] * R[0] - C[0] * R[2], C[0] * R[1] - C[1] * R[0]];
+    const raw = p => [p[0] * R[0] + p[1] * R[1] + p[2] * R[2], -(p[0] * Up[0] + p[1] * Up[1] + p[2] * Up[2])];
+    const all = [[-Fh, -Fh, 0], [Fh, -Fh, 0], [Fh, Fh, 0], [-Fh, Fh, 0]];
+    for (const b of boxes) for (const x of [b[0], b[3]]) for (const y of [b[1], b[4]]) for (const z of [b[2], b[5]]) all.push([x, y, z]);
+    const bb = bboxOf(all.map(raw)), k = Math.min((view[2] - view[0]) / (bb[2] - bb[0]), (view[3] - view[1]) / (bb[3] - bb[1]));
+    const ox = (view[0] + view[2]) / 2 - k * (bb[0] + bb[2]) / 2, oy = (view[1] + view[3]) / 2 - k * (bb[1] + bb[3]) / 2;
+    const proj = p => { const [a, b] = raw(p); return [ox + a * k, oy + b * k]; };
+    const at = (f, u, v) => [0, 1, 2].map(i => f.O[i] + f.U[i] * u + f.V[i] * v);
+    const faceDraw = (it, f, edges) => {
+      const s0 = proj(f.O), su = proj(at(f, 1, 0)), sv = proj(at(f, 0, 1)), A = su[0] - s0[0], Cc = su[1] - s0[1], B = sv[0] - s0[0], D = sv[1] - s0[1], det = A * D - B * Cc;
+      const poly = corners(f).map(([u, v]) => proj(at(f, u, v)));
+      it.runs(tonal(poly, (x, y) => { const ddx = x - s0[0], ddy = y - s0[1]; return darkAt(f, (D * ddx - B * ddy) / det, (-Cc * ddx + A * ddy) / det); }, P, angOf(f)), "shade");
+      corners(f).forEach((c, e) => { const c2 = corners(f)[(e + 1) % 4], p = at(f, ...c), q = at(f, ...c2), key = [p, q].map(v => v.map(a => a.toFixed(4)).join(",")).sort().join("|"); if (!edges.has(key)) edges.set(key, [proj(p), proj(q), f.seams.includes(e)]); });
+    };
+    const floor = item().occ(all.slice(0, 4).map(proj)), fe = new Map();
+    faceDraw(floor, faces[0], fe);
+    for (const [p, q, seam] of fe.values()) floor.line([p, q], seam ? seamLayer : "key");
+    const n = boxes.length, depth = b => ((b[0] + b[3]) * C[0] + (b[1] + b[4]) * C[1] + (b[2] + b[5]) * C[2]) / 2;
+    const before = (A, B) => { for (let a = 0; a < 3; a++) { if (A[a + 3] <= B[a] + 1e-9) return C[a] > 1e-9; if (B[a + 3] <= A[a] + 1e-9) return C[a] < -1e-9; } return false; };
+    const indeg = new Array(n).fill(0), adj = Array.from({ length: n }, () => []);
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && before(boxes[i], boxes[j])) { adj[i].push(j); indeg[j]++; }
+    const done = new Array(n).fill(false);
+    for (let s = 0; s < n; s++) {
+      let pick = -1;
+      for (let i = 0; i < n; i++) if (!done[i] && indeg[i] === 0 && (pick < 0 || depth(boxes[i]) < depth(boxes[pick]))) pick = i;
+      if (pick < 0) for (let i = 0; i < n; i++) if (!done[i] && (pick < 0 || depth(boxes[i]) < depth(boxes[pick]))) pick = i;
+      done[pick] = true; order.push(pick); for (const j of adj[pick]) indeg[j]--;
+    }
+    for (const bi of order) {
+      const b = boxes[bi], cs = [];
+      for (const x of [b[0], b[3]]) for (const y of [b[1], b[4]]) for (const z of [b[2], b[5]]) cs.push(proj([x, y, z]));
+      const it = item().occ(hull(cs)), edges = new Map();
+      for (const f of faces) if (f.box === bi && f.n[0] * C[0] + f.n[1] * C[1] + f.n[2] * C[2] > 1e-6) faceDraw(it, f, edges);
+      for (const [p, q, seam] of edges.values()) it.line([p, q], seam ? seamLayer : "key");
+    }
+  }
+
+  let packOk = true, tex = 0;
+  if (atlas) {
+    const pad = 1.5 / o.res, isl = islands.slice().sort((a, b) => b.h - a.h);
+    let S2 = Math.max(Math.sqrt(isl.reduce((s, I) => s + (I.w + 2 * pad) * (I.h + 2 * pad), 0)) * 1.05, ...isl.map(I => Math.max(I.w, I.h) + 2 * pad));
+    for (let tries = 0; tries < 300; tries++) {
+      let x = 0, y = 0, rowH = 0;
+      for (const I of isl) { const w = I.w + 2 * pad, h = I.h + 2 * pad; if (x + w > S2 + 1e-9) { y += rowH; x = 0; rowH = 0; } I.px = x + pad; I.py = y + pad; x += w; rowH = Math.max(rowH, h); }
+      if (y + rowH <= S2 + 1e-9) break;
+      S2 *= 1.03;
+    }
+    for (let i = 0; i < isl.length; i++) {
+      const A = isl[i]; if (A.px < 0 || A.py < 0 || A.px + A.w > S2 + 1e-6 || A.py + A.h > S2 + 1e-6) packOk = false;
+      for (let j = i + 1; j < isl.length; j++) { const B = isl[j]; if (A.px < B.px + B.w && B.px < A.px + A.w && A.py < B.py + B.h && B.py < A.py + A.h) packOk = false; }
+    }
+    const [ax, ay, side] = atlas, k = side / S2;
+    tex = k / o.res;
+    const frame = item();
+    frame.line(rect(ax, ay, ax + side, ay + side), "key", true);
+    const folds = new Map();
+    for (const I of isl) for (const f of I.faces) {
+      const map = (u, v) => [ax + (I.px + f.offU - I.minU + u) * k, ay + (I.py + I.maxV - f.offV - v) * k];
+      const poly = corners(f).map(([u, v]) => map(u, v)), it = item();
+      it.runs(tonal(poly, (x, y) => darkAt(f, (x - ax) / k - I.px - f.offU + I.minU, I.py + I.maxV - f.offV - (y - ay) / k), P, angOf(f)), "shade");
+      corners(f).forEach((c, e) => {
+        const p = map(...c), q = map(...corners(f)[(e + 1) % 4]);
+        if (f.seams.includes(e)) it.line([p, q], seamLayer);
+        else { const key = [p, q].map(v => v.map(a => a.toFixed(3)).join(",")).sort().join("|"); if (!folds.has(key)) { folds.set(key, 1); it.line([p, q], "key"); } }
+      });
+      if (o.grid !== "none" && tex >= 0.6) {
+        const tl = Math.min(0.9, tex * 0.6);
+        for (let i = 1; i < f.nu; i++) { const u = i * f.su / f.nu, a = map(u, 0), b = map(u, f.sv); if (o.grid === "full") it.line([a, b], "shade"); else { it.line([a, [a[0], a[1] - tl]], "shade"); it.line([b, [b[0], b[1] + tl]], "shade"); } }
+        for (let j = 1; j < f.nv; j++) { const v = j * f.sv / f.nv, a = map(0, v), b = map(f.su, v); if (o.grid === "full") it.line([a, b], "shade"); else { it.line([a, [a[0] + tl, a[1]]], "shade"); it.line([b, [b[0] - tl, b[1]]], "shade"); } }
+      }
+    }
+  }
+  return {
+    gates: [
+      ["every texel baked to a number", badTex === 0, `${texels - badTex} of ${texels}`],
+      ["atlas islands inside the square, none overlapping", packOk, `${islands.length} islands`],
+      ...(view ? [["every box placed in the drawing order", order.length === boxes.length, `${order.length} of ${boxes.length}`]] : []),
+    ],
+    info: `<b>${boxes.length}</b> boxes · <b>${texels}</b> texels, <b>${(rays / 1e6).toFixed(2)} M</b> rays, baked in ${bakeMs.toFixed(0)} ms${atlas ? ` · texel ${tex.toFixed(2)} mm in the atlas${o.grid !== "none" && tex < 0.6 ? " (too small for a grid)" : ""}` : ""}`,
+  };
+}
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), EDGE = 4, m = o.margin;
+  const items = [];
+  const item = () => {
+    const it = { poly: null, paths: [], bb: null };
+    it.solid = pts => { it.poly = pts; it.paths.push({ p: pts, closed: true, layer: "key" }); return it; };
+    it.occ = pts => { it.poly = pts; return it; };
+    it.line = (pts, layer = "key", closed = false) => { it.paths.push({ p: pts, closed, layer }); return it; };
+    it.runs = (rs, layer) => { for (const r of rs) it.paths.push({ p: r, closed: false, layer }); return it; };
+    items.push(it);
+    return it;
+  };
+  const E = { W, H, x0: m, y0: m, x1: W - m, y1: H - m, item };
+  const res = buildLightmap(o, E);
+
+  const out = { key: [], shade: [], colour: [] }, onPage = (x, y) => x >= EDGE && x <= W - EDGE && y >= EDGE && y <= H - EDGE;
+  for (const it of items) { const pts = it.paths.flatMap(p => p.p); it.bb = it.poly ? bboxOf(it.poly) : (pts.length ? bboxOf(pts) : [0, 0, 0, 0]); }
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i], cand = [];
+    for (let j = i + 1; j < items.length; j++) { const q = items[j]; if (q.poly && q.bb[0] <= it.bb[2] && q.bb[2] >= it.bb[0] && q.bb[1] <= it.bb[3] && q.bb[3] >= it.bb[1]) cand.push(q); }
+    for (const pa of it.paths) {
+      const d = densify(pa.p, pa.closed, 0.3);
+      const ok = d.map(([x, y]) => { if (!onPage(x, y)) return false; for (const q of cand) if (x >= q.bb[0] && x <= q.bb[2] && y >= q.bb[1] && y <= q.bb[3] && pip(q.poly, x, y)) return false; return true; });
+      runs(d, pa.closed, ok, pa.layer === "key" ? 0.4 : 0.8, out[pa.layer]);
+    }
+  }
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const pts = out.key.concat(out.shade, out.colour).reduce((a, [p]) => a + p.length, 0), ms = performance.now() - t0, total = len(out.key) + len(out.shade) + len(out.colour);
+  const gates = [
+    ["built in under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`],
+    ["total pen length under 150 m", total < 150, `${total.toFixed(1)} m`],
+    ["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB (estimate)`],
+    ...res.gates,
+  ];
+  return { W, H, o, ms, key: out.key, shade: out.shade, colour: out.colour, items: items.length, info: res.info, gates };
+}
+
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.colour, "#" + r.o.pen, 0.4); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `${r.info} · ${r.items} parts · ${r.ms.toFixed(0)} ms<br>`
+    + `0.4 black (outline): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 (hatching): <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour: <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${n}: ${v}</span>`).join(" · ");
+}
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: r.o.pen, w: 0.4, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG lightmap studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() {
+  for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
+}
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const PRESETS = {
+  crates: { objects: "crates", boxes: 7, stack: 0.35, floor: 10, az: 35, el: 32, light: "ao", reach: 1.6, rays: 24, res: 8, filter: "bilinear", tone: 1.1, layout: "both", grid: "ticks", seams: "colour", pitch: 0.8, pen: "1f6f78" },
+  city: { objects: "city", boxes: 12, stack: 0, floor: 10, az: 225, el: 35, light: "sun", sunaz: 300, sunel: 35, reach: 1.4, rays: 16, res: 6, filter: "bilinear", tone: 1, layout: "both", grid: "none", seams: "colour", pitch: 0.8, pen: "3a4f9a" },
+  cube: { objects: "cube", boxes: 1, floor: 7, az: 30, el: 30, light: "sun", sunaz: 120, sunel: 40, reach: 2, rays: 32, res: 5, filter: "nearest", tone: 1.2, layout: "both", grid: "full", seams: "colour", pitch: 0.8, pen: "e8590c" },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `lightmap-${r.o.objects}-s${r.o.seed}-${r.o.light}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
