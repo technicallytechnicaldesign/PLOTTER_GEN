@@ -1,0 +1,31 @@
+{
+  "studio": "gear-weave-studio.html",
+  "id": "weave-sunflower",
+  "title": "Sunflower gears",
+  "preset": "sunflower",
+  "content": {},
+  "settings": {
+    "seed": "11",
+    "n": "140",
+    "ov": "1.3",
+    "vari": "0.45",
+    "grow": "0.4",
+    "mod": "0.9",
+    "band": "3.5",
+    "spokes": "5",
+    "gap": "0.7",
+    "share": "0.6",
+    "pitch": "0.8",
+    "margin": "10",
+    "layout": "sunflower",
+    "kind": "spoked",
+    "fill": "mix",
+    "page": "190x250",
+    "ticks": "split"
+  },
+  "sourceHash": "e120d016299d31aee68600391196ac9a15e3a053c4cd662bb861cb820a5ebc0d",
+  "svg": "site/art/weave-sunflower.svg",
+  "image": "site/art/weave-sunflower.webp",
+  "page": "190x250",
+  "seed": 11
+}

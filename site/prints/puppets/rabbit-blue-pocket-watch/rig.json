@@ -1,0 +1,77 @@
+{
+ "id": "rabbit-blue-pocket-watch",
+ "title": "Blue rabbit with pocket watch",
+ "size": [
+  603,
+  640
+ ],
+ "turn": 0,
+ "peg": [
+  198.0,
+  243.4
+ ],
+ "animal": true,
+ "moves": [
+  "head",
+  "tail"
+ ],
+ "speed": 0.5,
+ "amp": {
+  "tail": 0.35
+ },
+ "joints": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "parts": [
+  {
+   "name": "tail",
+   "key": "tail",
+   "pivot": [
+    68.5,
+    329.3
+   ],
+   "under": true,
+   "static": false,
+   "src": "tail.png"
+  },
+  {
+   "name": "back-leg",
+   "key": "bn",
+   "pivot": [
+    157.5,
+    400.9
+   ],
+   "under": false,
+   "static": false,
+   "src": "back-leg.png"
+  },
+  {
+   "name": "front-leg",
+   "key": "fn",
+   "pivot": [
+    389.1,
+    402.8
+   ],
+   "under": false,
+   "static": false,
+   "src": "front-leg.png"
+  },
+  {
+   "name": "head",
+   "key": "head",
+   "pivot": [
+    383.5,
+    287.0
+   ],
+   "under": false,
+   "static": false,
+   "src": "head.png"
+  }
+ ],
+ "body": "body.png",
+ "reach": 0.39
+}

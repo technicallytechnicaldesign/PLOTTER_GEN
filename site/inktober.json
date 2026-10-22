@@ -1,0 +1,571 @@
+{
+  "version": 1,
+  "year": 2026,
+  "note": "One entry per day. Add the prompt and a photo URL as each day is inked; frame is the sheet size in mm.",
+  "prints": [
+    {
+      "id": "ink-01",
+      "room": "hall",
+      "day": 1,
+      "date": "2026-10-01",
+      "prompt": "apple",
+      "photo": "prints/inktober-01-apple.jpg",
+      "frame": {
+        "width": 210,
+        "height": 204
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-02",
+      "room": "hall",
+      "day": 2,
+      "date": "2026-10-02",
+      "prompt": "relic",
+      "photo": "prints/inktober-02-relic.jpg",
+      "frame": {
+        "width": 210,
+        "height": 300
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-03",
+      "room": "hall",
+      "day": 3,
+      "date": "2026-10-03",
+      "prompt": "miniature",
+      "photo": "prints/inktober-03-miniature.jpg",
+      "frame": {
+        "width": 210,
+        "height": 287
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-04",
+      "room": "hall",
+      "day": 4,
+      "date": "2026-10-04",
+      "prompt": "cactus",
+      "photo": "prints/inktober-04-cactus.jpg",
+      "frame": {
+        "width": 210,
+        "height": 299
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-05",
+      "room": "hall",
+      "day": 5,
+      "date": "2026-10-05",
+      "prompt": "smack",
+      "photo": "prints/inktober-05-smack.png",
+      "render": true,
+      "hang": "plinth",
+      "box": {
+        "width": 55,
+        "height": 55,
+        "depth": 55
+      },
+      "faces": {
+        "front": "prints/smack-cube/front.png",
+        "right": "prints/smack-cube/right.png",
+        "back": "prints/smack-cube/back.png",
+        "left": "prints/smack-cube/left.png",
+        "top": "prints/smack-cube/top.png"
+      },
+      "studio": "../smack-studio.html",
+      "description": "Monday 5 October 2026, prompt \"smack\". Not folded yet: the Smack studio's own render of the smacked cube, each face drawn from the studio in the same light, turning on its plinth. Photographs of the real one go in when it is folded.",
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-06",
+      "room": "hall",
+      "day": 6,
+      "date": "2026-10-06",
+      "prompt": "ogre",
+      "photo": "prints/inktober-06-ogre.webp",
+      "render": true,
+      "hang": "peg",
+      "puppet": "prints/puppets/inktober-06-ogre/rig.json",
+      "reach": 0.225,
+      "studio": "../ogre-jack-studio.html",
+      "description": "Tuesday 6 October 2026, prompt \"ogre\". Not plotted yet: the Ogre jack studio's own render, hung on a peg from the ceiling and pulling its string on a loop. At rest it just stands there; pull, and the bent arms come up into claws while a RARRR! bubble swings out from behind it.",
+      "frame": {
+        "width": 280,
+        "height": 251
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-07",
+      "room": "hall",
+      "day": 7,
+      "date": "2026-10-07",
+      "prompt": "panic",
+      "photo": "prints/inktober-07-panic.png",
+      "render": true,
+      "studio": "../pan-lino-studio.html",
+      "description": "Wednesday 7 October 2026, prompt \"panic\". Not cut yet: the Pan lino studio's own render of Eyes in the woods, as it will come off the blade in black vinyl. Pan, who gave panic its name, holding on to the trees.",
+      "frame": {
+        "width": 210,
+        "height": 260
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-08",
+      "room": "hall",
+      "day": 8,
+      "date": "2026-10-08",
+      "prompt": "stinky",
+      "photo": "prints/inktober-08-stinky.jpg",
+      "studio": "../stink-plume-studio.html",
+      "description": "Thursday 8 October 2026, prompt \"stinky\". Black ink on pink paper: the corpse flower in four stages, the plant that smells of rotting meat, its smell rising in streamlines that go to swirls and dashes, flies looping through it. Drawn by the Stink plume studio.",
+      "frame": {
+        "width": 190,
+        "height": 243
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-09",
+      "room": "hall",
+      "day": 9,
+      "date": "2026-10-09",
+      "prompt": "ram",
+      "photo": "prints/inktober-09-ram.jpg",
+      "studio": "../ram-skull-studio.html",
+      "description": "Friday 9 October 2026, prompt \"ram\". Black ink on pink paper, cut out to the skull: the ram's horns grown along a log spiral with a ring for each year, circuit lines running through bone. Drawn by the Ram skull studio. On the plinth in front, the Battering ram studio's siege ram as it folds up.",
+      "model": "prints/models/inktober-09-battering-ram.json",
+      "box": {
+        "width": 156,
+        "height": 72,
+        "depth": 62
+      },
+      "frame": {
+        "width": 190,
+        "height": 250
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-10",
+      "room": "hall",
+      "day": 10,
+      "date": "2026-10-10",
+      "prompt": "mystical",
+      "photo": "prints/inktober-10-mystical.jpg",
+      "studio": "../mystical-studio.html",
+      "description": "Saturday 10 October 2026, prompt \"mystical\". Black ink on lilac paper: two hands with eyes in their palms fan out a deck over five laid cards, Ace of Cups, The Key, Ace of Swords, The Seer and Fortune, under an arch of moons and stars. Drawn by the Mystical studio.",
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-11",
+      "room": "hall",
+      "day": 11,
+      "date": "2026-10-11",
+      "prompt": "rescue",
+      "photo": "prints/inktober-11-rescue.jpg",
+      "studio": "../bottle-studio.html",
+      "description": "Sunday 11 October 2026, prompt \"rescue\". Black ink on mint paper: a corked bottle of Rescue Remedy, for a rough day, half full and hatched, on a shelf among the stars. Drawn by the Bottle studio.",
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-12",
+      "room": "hall",
+      "day": 12,
+      "date": "2026-10-12",
+      "prompt": "toss",
+      "photo": "prints/inktober-12-toss.jpg",
+      "studio": "../toss-studio.html",
+      "description": "Monday 12 October 2026, prompt \"toss\". Black ink on yellow paper: one coin caught at eleven moments of a throw, star and moon faces turning over as it falls and rises, with the spin read off along the bottom. Drawn by the Toss studio.",
+      "frame": {
+        "width": 297,
+        "height": 210
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-13",
+      "room": "hall",
+      "day": 13,
+      "date": "2026-10-13",
+      "prompt": "flimsy",
+      "photo": "prints/inktober-13-flimsy.jpg",
+      "studio": "../flimsy-bridge-studio.html",
+      "description": "Tuesday 13 October 2026, prompt \"flimsy\". Black ink on white card: the Tacoma Narrows bridge on 7 November 1940 at 1 to 350, its deck twisting at 10.00, 10.15, 10.30 and 10.45 and in the water by 11.02. Drawn by the Flimsy bridge studio, alongside its fold-up card truss bridges. On the plinth in front, the Howe truss from the same studio, folded up from its net.",
+      "model": "prints/models/inktober-13-howe-truss.json",
+      "box": {
+        "width": 150,
+        "height": 40,
+        "depth": 18
+      },
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-14",
+      "room": "hall",
+      "day": 14,
+      "date": "2026-10-14",
+      "prompt": "lady",
+      "photo": "prints/inktober-14-lady.png",
+      "frame": {
+        "width": 180,
+        "height": 272
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      },
+      "render": true,
+      "studio": "../victorian-lady-studio.html",
+      "standee": "prints/standees/inktober-14-lady.json",
+      "standeeBack": "prints/standees/inktober-14-lady-suit.json",
+      "box": {
+        "width": 100,
+        "height": 126,
+        "depth": 50
+      },
+      "description": "Wednesday 14 October 2026, prompt \"lady\". Not plotted yet: the Victorian lady studio's own pieces, built up as the card figure she will be: the lady in her chemise and corset, a petticoat, the 1885 evening gown (off the shoulder, bertha lace, corsage), a cameo choker and a fan, each cut to its own outline and stacked on her, standing in her cross base on the plinth and turning slowly, with a second lady in the 1885 walking suit (skirt, blouse, jacket, toque, parasol) back to back with her on the same stand. The frame holds a second plate of her: the 1860 crinoline ball gown with a crown of hair, so the wall and the plinth show two outfits.",
+      "modelScale": 0.55
+    },
+    {
+      "id": "ink-15",
+      "room": "hall",
+      "day": 15,
+      "date": "2026-10-15",
+      "prompt": "hooray",
+      "photo": "prints/inktober-15-hooray.jpg",
+      "frame": {
+        "width": 127,
+        "height": 157
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      },
+      "studio": "../hooray-card-studio.html",
+      "description": "Thursday 15 October 2026, prompt \"hooray\". Black ink on an A6 lilac card over a pink back layer: HOORAY cut right through under a HIP HIP, the letters drop-shadowed with hatching, sunburst rays and a scalloped frame, and hearts cut out above and below, with the CONFETTI pocket holding 57 pieces of the card itself. Drawn by the Hooray card studio."
+    },
+    {
+      "id": "ink-16",
+      "room": "hall",
+      "day": 16,
+      "date": "2026-10-16",
+      "prompt": "gangly",
+      "photo": "prints/puppets/inktober-16-gangly/still.png",
+      "frame": {
+        "width": 176,
+        "height": 336
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      },
+      "render": true,
+      "hang": "peg",
+      "puppet": "prints/puppets/inktober-16-gangly/rig.json",
+      "reach": 0,
+      "studio": "../doll-wardrobe-studio.html",
+      "description": "Friday 16 October 2026, prompt \"gangly\". Not plotted yet: the Paper Dolls studio's gangly doll, concertina arms and legs folded from one long strip each, hung by the top of her head from the ceiling. She springs on her cord: the arms fling up and out as the folds pull right out, then close up like a fan while the legs kick the other way."
+    },
+    {
+      "id": "ink-17",
+      "room": "hall",
+      "day": 17,
+      "date": "2026-10-17",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-18",
+      "room": "hall",
+      "day": 18,
+      "date": "2026-10-18",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-19",
+      "room": "hall",
+      "day": 19,
+      "date": "2026-10-19",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-20",
+      "room": "hall",
+      "day": 20,
+      "date": "2026-10-20",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-21",
+      "room": "hall",
+      "day": 21,
+      "date": "2026-10-21",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-22",
+      "room": "hall",
+      "day": 22,
+      "date": "2026-10-22",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-23",
+      "room": "hall",
+      "day": 23,
+      "date": "2026-10-23",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-24",
+      "room": "hall",
+      "day": 24,
+      "date": "2026-10-24",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-25",
+      "room": "hall",
+      "day": 25,
+      "date": "2026-10-25",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-26",
+      "room": "hall",
+      "day": 26,
+      "date": "2026-10-26",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-27",
+      "room": "hall",
+      "day": 27,
+      "date": "2026-10-27",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-28",
+      "room": "hall",
+      "day": 28,
+      "date": "2026-10-28",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-29",
+      "room": "hall",
+      "day": 29,
+      "date": "2026-10-29",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-30",
+      "room": "hall",
+      "day": 30,
+      "date": "2026-10-30",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    },
+    {
+      "id": "ink-31",
+      "room": "hall",
+      "day": 31,
+      "date": "2026-10-31",
+      "prompt": null,
+      "photo": null,
+      "frame": {
+        "width": 210,
+        "height": 297
+      },
+      "content": {
+        "nsfw": false,
+        "swearing": false
+      }
+    }
+  ]
+}

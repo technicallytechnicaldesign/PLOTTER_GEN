@@ -1,0 +1,32 @@
+{
+  "studio": "confused-deck-studio.html",
+  "id": "confused-grumpy",
+  "title": "Grumpy trio",
+  "preset": "grumpy",
+  "content": {},
+  "settings": {
+    "weight": "0.16",
+    "confusion": "40",
+    "seed": "19",
+    "entries": "10",
+    "sanity": "50",
+    "turn": "0",
+    "margin": "8",
+    "size": "trade",
+    "headline": "ink",
+    "backers": "flaps",
+    "wheel": "pool",
+    "sheet": "fronts",
+    "view": "closed",
+    "paperA": "fbf9f4",
+    "paperB": "f2b705",
+    "paperW": "cfe3f2",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "43ad4be3d6d00c67eb83cb926632c03aaaace0e4c65153f86c3676657a64316a",
+  "svg": "site/art/confused-grumpy.svg",
+  "image": "site/art/confused-grumpy.webp",
+  "page": "280x280",
+  "seed": 19
+}

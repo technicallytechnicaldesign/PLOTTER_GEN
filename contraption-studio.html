@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contraption studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+
+</head>
+<body>
+<header>
+  <h1>Contraption studio</h1>
+  <p class="sub">A parts kit and a chain solver: gears that really mesh, belts that really sit on their pulleys, pistons, cams, ratchets and a balance plate on three struts that adds no function at all, drawn as a patent plate, an engineering drawing of a dimsa-doosa, or an exploded view. Day 17 of Inktober, "contraption".</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="perpetual">Perpetual motion</button><button data-preset="patent">Patent gearing</button><button data-preset="dimsa">Dimsa-doosa</button></div>
+    <div class="row"><button data-preset="honest">Honest engineering</button><button data-preset="nightmare">Decision stack</button><button data-preset="exploded">Exploded</button><button data-preset="tower">Exploded tower</button></div>
+  </fieldset>
+  <fieldset><legend>The sheet</legend>
+    <label>Drawn as <select id="sheet"><option value="plate">perpetual motion patent plate</option><option value="dimsa">dimsa-doosa engineering drawing</option><option value="exploded">exploded view</option></select></label>
+    <label>Name on it <input type="text" id="name" value="J. DOE" maxlength="20"></label>
+    <label>Thing it is <input type="text" id="part" value="DIMSA-DOOSA" maxlength="22"></label>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="17"></label>
+  </fieldset>
+  <fieldset data-when="sheet!=exploded"><legend>The machine</legend>
+    <label>Driven by <select id="driver"><option value="auto">whatever suits the sheet</option><option value="wheel">an overbalanced wheel</option><option value="crank">a hand crank</option><option value="motor">a motor of unknown origin</option></select></label>
+    <label>Links in the chain <output id="o-parts"></output><input type="range" id="parts" min="2" max="14" step="1" value="6"></label>
+    <label>Things it drives <output id="o-outputs"></output><input type="range" id="outputs" min="0" max="4" step="1" value="2"></label>
+    <label>Part size % <output id="o-size"></output><input type="range" id="size" min="60" max="140" step="1" value="100"></label>
+  </fieldset>
+  <fieldset data-when="sheet=exploded"><legend>The explosion</legend>
+    <label>Gap between parts <output id="o-explode"></output><input type="range" id="explode" min="3" max="30" step="1" value="12"></label>
+    <label>Seen from above <output id="o-pitch"></output><input type="range" id="pitch" min="12" max="45" step="1" value="26"></label>
+    <label>Lean <output id="o-lean"></output><input type="range" id="lean" min="-40" max="40" step="1" value="18"></label>
+  </fieldset>
+  <fieldset><legend>The dials</legend>
+    <label>Plausibility <output id="o-plaus"></output><input type="range" id="plaus" min="0" max="100" step="1" value="60"></label>
+    <div class="scale"><span>square teeth, knotted belts</span><span>it would run</span></div>
+    <label>Bureaucracy <output id="o-bureau"></output><input type="range" id="bureau" min="0" max="100" step="1" value="50"></label>
+    <div class="scale"><span>a sketch</span><span>rev K, see note 7</span></div>
+  </fieldset>
+  <fieldset><legend>Pens and paper</legend>
+    <label>Colour pen <select id="accent"><option value="red">red</option><option value="blue">blue</option><option value="green">green</option><option value="orange">orange</option></select></label>
+    <label>Page <select id="page"><option value="280x210">280 x 210 landscape</option><option value="250x190">250 x 190 landscape</option><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="280x280">280 x 280 (12 x 12 mat)</option><option value="560x280">560 x 280 (12 x 24 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="24" step="1" value="8"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Three pens, plotted in this order: the thin pen (hatching, centre lines, dimensions, lettering), the black line pen (the parts), then the colour pen (turning arrows, revision clouds, stamps and the markups nobody asked for). Each split file carries the same four corner ticks.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="560"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: the chain solver starts from the driver and grows one link at a time. A gear mesh puts the new shaft at exactly the sum of the two pitch radii, with the new gear turned so a tooth faces a gap. A belt takes the outer tangents of its two pulleys. Each link is kept only if it clears everything already placed. Every shaft carries its real turning speed, so the arrows and the ratio in the notes are true. Plausibility breaks things on purpose (mismatched teeth, square teeth, knotted or twisted belts, a shaft held up by optimism). Bureaucracy adds dimensions, balloons, revisions, stamps and notes.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, tan, acos, atan2, hypot, round, abs, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const PEN = { thin: 0.3, line: 0.4, accent: 0.4 };
+
+const SHOW_DIMS = false;
+const ACCENT = { red: "c0302a", blue: "2a55b0", green: "2f7a3a", orange: "d0701a" };
+
+const FONT = {
+  A: "M0,6 L2,0 L4,6 M0.8,3.8 L3.2,3.8", B: "M0,0 L2.4,0 A2.4,1.5,1.3,1.5,-90,90 L0,3 M0,3 L2.6,3 A2.6,4.5,1.4,1.5,-90,90 L0,6 L0,0",
+  C: "A2,3,2,3,-45,-315", D: "M0,0 L1.5,0 A1.5,3,2.5,3,-90,90 L0,6 L0,0", E: "M4,0 L0,0 L0,6 L4,6 M0,3 L3,3", F: "M4,0 L0,0 L0,6 M0,3 L3,3",
+  G: "A2,3,2,3,-45,-315 L4,3.4 L2.2,3.4", H: "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3", I: "M1,0 L3,0 M2,0 L2,6 M1,6 L3,6", J: "M4,0 L4,4.3 A2.3,4.3,1.7,1.7,0,180",
+  K: "M0,0 L0,6 M4,0 L0,4 M1.4,2.6 L4,6", L: "M0,0 L0,6 L4,6", M: "M0,6 L0,0 L2,3.5 L4,0 L4,6", N: "M0,6 L0,0 L4,6 L4,0", O: "A2,3,2,3,0,360",
+  P: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2", Q: "A2,3,2,3,0,360 M2.6,4.4 L4,6.3", R: "M0,6 L0,0 L2.4,0 A2.4,1.6,1.6,1.6,-90,90 L0,3.2 M2,3.2 L4,6",
+  S: "A2,1.5,1.8,1.5,-20,-270 A2,4.5,2,1.5,-90,160", T: "M0,0 L4,0 M2,0 L2,6", U: "M0,0 L0,4 A2,4,2,2,180,0 L4,0", V: "M0,0 L2,6 L4,0",
+  W: "M0,0 L1,6 L2,2.5 L3,6 L4,0", X: "M0,0 L4,6 M4,0 L0,6", Y: "M0,0 L2,3 L4,0 M2,3 L2,6", Z: "M0,0 L4,0 L0,6 L4,6",
+  0: "A2,3,2,3,0,360 M3.2,1 L0.8,5", 1: "M0.8,1.2 L2,0 L2,6 M0.8,6 L3.2,6", 2: "A2,1.8,1.8,1.8,-160,20 L0,6 L4,6", 3: "A2,1.5,1.7,1.5,-160,90 A2,4.5,1.9,1.5,-90,160",
+  4: "M3,6 L3,0 L0,4.2 L4,4.2", 5: "M4,0 L0.4,0 L0,2.8 A2,4.1,2,1.9,-125,155", 6: "M3.2,0 L0.1,4 M4,4.3 A2,4.3,2,1.7,0,360", 7: "M0,0 L4,0 L1.5,6",
+  8: "M3.6,1.5 A2,1.5,1.6,1.5,0,360 M4,4.5 A2,4.5,2,1.5,0,360", 9: "M3.6,1.7 A2,1.7,1.6,1.7,0,360 M3.6,1.9 L1,6",
+  "!": "M2,0 L2,4.2 M2,5.6 L2,6", "?": "A2,1.6,1.8,1.6,-160,60 L2,3.8 L2,4.4 M2,5.6 L2,6", "-": "M0.8,3 L3.2,3", ".": "M2,5.6 L2,6", "'": "M2,0 L2,1.6",
+  ":": "M2,1.6 L2,2.2 M2,4.8 L2,5.4", "/": "M3.6,0 L0.4,6", ",": "M2.2,5.2 L1.4,7", "+": "M2,1.6 L2,4.4 M0.6,3 L3.4,3", "=": "M0.6,2.2 L3.4,2.2 M0.6,3.8 L3.4,3.8",
+  "(": "A4.4,3,2.6,3.4,-118,-242", ")": "A-0.4,3,2.6,3.4,-62,62", "Ø": "A2,3,2,2.8,0,360 M3.9,0.3 L0.1,5.7", "#": "M1.3,0.5 L1,5.5 M3,0.5 L2.7,5.5 M0.2,2 L3.9,2 M0,4 L3.7,4",
+  "%": "M0.2,6 L3.8,0 M1.7,1 A0.9,1,0.8,0.9,0,360 M3.9,5 A3.1,5,0.8,0.9,0,360", "°": "M2.7,0.9 A2,0.9,0.7,0.7,0,360", '"': "M1.4,0 L1.4,1.6 M2.6,0 L2.6,1.6",
+  "*": "M2,0.6 L2,3.4 M0.8,1.3 L3.2,2.7 M3.2,1.3 L0.8,2.7", "<": "M3.4,1 L0.6,3 L3.4,5", ">": "M0.6,1 L3.4,3 L0.6,5",
+};
+function glyph(src) {
+  const S = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; S.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else if (c === "A") { const [cx, cy, rx, ry, a0, a1] = n, st = max(6, ceil(abs(a1 - a0) / 10)); if (!cur) { cur = []; S.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return S;
+}
+const GLYPHS = Object.fromEntries(Object.entries(FONT).map(([k, v]) => [k, glyph(v)]));
+const ADV = 5.4, SPACE = 3.6;
+const cleanText = s => [...String(s || "").toUpperCase()].map(ch => GLYPHS[ch] || ch === " " ? ch : " ").join("").replace(/\s+/g, " ").trim();
+const textUnits = s => [...s].reduce((a, ch) => a + (GLYPHS[ch] ? ADV : SPACE), 0) - (s.length ? ADV - 4 : 0);
+const textW = (s, h) => textUnits(cleanText(s)) * h / 6;
+const TX = { min: INF };
+
+function text(s, x, y, h, opt = {}) {
+  s = cleanText(s); if (!s) return [];
+  const k = h / 6, w = textUnits(s) * k, ox = opt.align === "c" ? -w / 2 : opt.align === "r" ? -w : 0, oy = opt.mid ? -h / 2 : 0, a = opt.ang || 0, ca = cos(a), sa = sin(a), out = [];
+  TX.min = min(TX.min, h);
+  let cx = ox;
+  for (const ch of s) {
+    const G = GLYPHS[ch]; if (!G) { cx += SPACE * k; continue; }
+    for (const pass of opt.bold ? [0, 0.26] : [0]) for (const S of G) out.push([S.map(([gx, gy]) => { const lx = cx + gx * k + pass, ly = oy + gy * k; return [x + lx * ca - ly * sa, y + lx * sa + ly * ca]; }), false, "text"]);
+    cx += ADV * k;
+  }
+  return out;
+}
+
+function fitText(s, w, h, hmin = 2) {
+  s = cleanText(s);
+  if (textW(s, h) <= w) return [s, h];
+  const h2 = h * w / textW(s, h); if (h2 >= hmin) return [s, h2];
+  while (s.length > 1 && textW(s + "..", hmin) > w) s = s.slice(0, -1);
+  return [s.trim() + "..", hmin];
+}
+function wrap(s, w, h) {
+  const words = cleanText(s).split(" "), lines = []; let cur = "";
+  for (const wd of words) { const t = cur ? cur + " " + wd : wd; if (textW(t, h) <= w || !cur) cur = t; else { lines.push(cur); cur = wd; } }
+  if (cur) lines.push(cur);
+  return lines.map(l => fitText(l, w, h)[0]);
+}
+
+const ring = (x, y, rx, ry = rx, n = 40) => Array.from({ length: n + 1 }, (_, i) => [x + rx * cos(i / n * TAU), y + ry * sin(i / n * TAU)]);
+const pol = (c, r, a) => [c[0] + r * cos(a), c[1] + r * sin(a)];
+const polyInside = (p, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+
+const insideRings = (p, R) => { let c = false; for (const P of R) if (polyInside(p, P)) c = !c; return c; };
+function splitSeg(a, b, R) {
+  const ts = [0, 1], dx = b[0] - a[0], dy = b[1] - a[1];
+  for (const P of R) for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const c = P[j], d = P[i], ex = d[0] - c[0], ey = d[1] - c[1], den = dx * ey - dy * ex; if (abs(den) < 1e-12) continue;
+    const t = ((c[0] - a[0]) * ey - (c[1] - a[1]) * ex) / den, u = ((c[0] - a[0]) * dy - (c[1] - a[1]) * dx) / den;
+    if (t > 0 && t < 1 && u >= 0 && u < 1) ts.push(t);
+  }
+  ts.sort((x, y) => x - y);
+  const out = [];
+  for (let k = 0; k < ts.length - 1; k++) { if (ts[k + 1] - ts[k] < 1e-9) continue; const m = (ts[k] + ts[k + 1]) / 2; out.push([ts[k], ts[k + 1], insideRings([a[0] + dx * m, a[1] + dy * m], R)]); }
+  return out;
+}
+function clipSegs(segs, R, keepIn) { const out = []; for (const [a, b] of segs) for (const [t0, t1, ins] of splitSeg(a, b, R)) if (ins === keepIn) out.push([lerp2(a, b, t0), lerp2(a, b, t1)]); return out; }
+function joinSegs(segs) { const out = []; let cur = null; for (const [a, b] of segs) { if (cur && hypot(cur[cur.length - 1][0] - a[0], cur[cur.length - 1][1] - a[1]) < 1e-6) cur.push(b); else { cur = [a, b]; out.push(cur); } } return out; }
+const segsOf = (pl, closed = false) => { const s = pl.slice(1).map((p, i) => [pl[i], p]); if (closed && pl.length > 2) s.push([pl[pl.length - 1], pl[0]]); return s; };
+const bboxOf = pts => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of pts) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+const rectPoly = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+const plen = q => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return t; };
+function hatch(R, sp, ang) {
+  const [x0, y0, x1, y1] = bboxOf(R[0]), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, Lh = hypot(x1 - x0, y1 - y0) / 2 + 1, a = ang * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, out = [];
+  for (let c = -Lh + sp / 2; c <= Lh; c += sp) { const px = cx + nx * c, py = cy + ny * c; out.push([[px - dx * Lh, py - dy * Lh], [px + dx * Lh, py + dy * Lh]]); }
+  return clipSegs(out, R, true).map(s => [s, false, "fill"]);
+}
+function hull(pts) {
+  const P = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const p of P) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (const p of P.slice().reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+
+function dashed(pl, pat) {
+  const out = []; let k = 0, left = pat[0], on = true, cur = [pl[0]];
+  for (let i = 1; i < pl.length; i++) {
+    let a = pl[i - 1]; const b = pl[i]; let seg = hypot(b[0] - a[0], b[1] - a[1]);
+    while (seg > left) { const m = lerp2(a, b, left / seg); if (on) { cur.push(m); out.push(cur); cur = null; } else cur = [m]; on = !on; k = (k + 1) % pat.length; seg -= left; a = m; left = pat[k]; }
+    left -= seg; if (on) cur.push(b);
+  }
+  if (on && cur && cur.length > 1) out.push(cur);
+  return out.filter(c => plen(c) > 0.05);
+}
+const CL = [7, 1.4, 1.2, 1.4];
+
+function stadium(a, b, w, n = 8) {
+  const ang = atan2(b[1] - a[1], b[0] - a[0]), out = [];
+  for (let i = 0; i <= n; i++) out.push(pol(b, w, ang - PI / 2 + PI * i / n));
+  for (let i = 0; i <= n; i++) out.push(pol(a, w, ang + PI / 2 + PI * i / n));
+  return out;
+}
+
+const frame = (o, ang) => { const u = [cos(ang), sin(ang)], n = [-u[1], u[0]]; return (s, t) => [o[0] + u[0] * s + n[0] * t, o[1] + u[1] * s + n[1] * t]; };
+function zigzag(a, b, amp, coils) {
+  const ang = atan2(b[1] - a[1], b[0] - a[0]), L = hypot(b[0] - a[0], b[1] - a[1]), f = frame(a, ang), pts = [f(0, 0)];
+  for (let i = 0; i < coils * 2; i++) pts.push(f(L * (i + 0.5) / (coils * 2), (i % 2 ? -1 : 1) * amp));
+  pts.push(f(L, 0)); return pts;
+}
+function arrowHead(tip, ang, L = 2.2, spread = 0.42) { return [[pol(tip, L, ang + PI - spread), tip, pol(tip, L, ang + PI + spread)], false, "path"]; }
+
+function cloud(b, L = 5) {
+  const per = [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]], [b[0], b[1]]], pts = [];
+  for (let e = 0; e < 4; e++) {
+    const a = per[e], c = per[e + 1], len = hypot(c[0] - a[0], c[1] - a[1]), n = max(1, round(len / L)), dir = [(c[0] - a[0]) / len, (c[1] - a[1]) / len], out = [dir[1], -dir[0]];
+    for (let i = 0; i < n; i++) {
+      const p = lerp2(a, c, i / n), q = lerp2(a, c, (i + 1) / n), m = lerp2(p, q, 0.5), r = len / n / 2;
+      for (let j = 0; j <= 8; j++) { const t = PI - PI * j / 8; pts.push([m[0] + r * cos(t) * dir[0] + r * 0.8 * sin(t) * out[0], m[1] + r * cos(t) * dir[1] + r * 0.8 * sin(t) * out[1]]); }
+    }
+  }
+  return pts;
+}
+function revTriangle(x, y, s, letter) { const h = s * 0.866; return [[[[x, y - h * 0.66], [x + s / 2, y + h * 0.34], [x - s / 2, y + h * 0.34]], true, "path"], ...text(letter, x, y + h * 0.06, s * 0.36, { align: "c", mid: true })]; }
+
+function squiggle(x, y, w, h, rnd) {
+  const loops = 4 + floor(rnd() * 4), n = loops * 14, pts = [], hs = Array.from({ length: loops + 1 }, () => 0.5 + rnd() * 0.7);
+  for (let i = 0; i <= n; i++) { const u = i / n, ph = u * loops * TAU, lh = hs[floor(u * loops)]; pts.push([x + u * w + h * 0.32 * cos(ph + PI) + h * 0.32, y - h * lh * 0.5 * (1 - cos(ph)) + h * 0.15 * sin(u * 5)]); }
+  const end = pts[pts.length - 1], tail = []; for (let i = 0; i <= 14; i++) { const t = i / 14; tail.push([lerp(end[0], x + w * 0.1, t), end[1] + h * 0.35 + sin(t * PI) * h * 0.25]); }
+  return [[pts, false, "path"], [tail, false, "path"]];
+}
+
+const mulV = (M, v) => [M[0][0] * v[0] + M[0][1] * v[1] + M[0][2] * v[2], M[1][0] * v[0] + M[1][1] * v[1] + M[1][2] * v[2], M[2][0] * v[0] + M[2][1] * v[1] + M[2][2] * v[2]];
+const mulM = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+const rotX = a => [[1, 0, 0], [0, cos(a), -sin(a)], [0, sin(a), cos(a)]];
+const rotY = a => [[cos(a), 0, sin(a)], [0, 1, 0], [-sin(a), 0, cos(a)]];
+const rotZ = a => [[cos(a), -sin(a), 0], [sin(a), cos(a), 0], [0, 0, 1]];
+
+const inv = a => tan(a) - a;
+
+function gearPts(N, m, phase, square = false) {
+  const rp = m * N / 2, ra = rp + m, rf = max(rp - 1.25 * m, rp * 0.45), rb = rp * cos(20 * D2R), half = PI / (2 * N), ap = 20 * D2R, pts = [], K = 5;
+  const th = r => square ? half * 0.9 : max(half * 0.14, r <= rb ? half + inv(ap) : half + inv(ap) - inv(acos(rb / r)));
+  for (let k = 0; k < N; k++) {
+    const c = phase + k * TAU / N;
+    for (let i = 0; i <= K; i++) { const r = lerp(rf, ra, i / K), a = c - th(r); pts.push([r * cos(a), r * sin(a)]); }
+    const tA = th(ra); for (let i = 1; i < 3; i++) { const a = c - tA + 2 * tA * i / 3; pts.push([ra * cos(a), ra * sin(a)]); }
+    for (let i = K; i >= 0; i--) { const r = lerp(rf, ra, i / K), a = c + th(r); pts.push([r * cos(a), r * sin(a)]); }
+    const a0 = c + th(rf), a1 = c + TAU / N - th(rf); for (let i = 1; i < 3; i++) { const a = lerp(a0, a1, i / 3); pts.push([rf * cos(a), rf * sin(a)]); }
+  }
+  return pts;
+}
+const rootR = (rp, m) => max(rp - 1.25 * m, rp * 0.45);
+
+function meshPhase(A, beta, NB) { const p = TAU / A.N, k = round((beta - A.phase) / p), s = A.phase + k * p - beta; return beta + PI + PI / NB - s * A.N / NB; }
+function ratchetPts(N, rr, dd, phase, dir) {
+  const st = TAU / N, pts = [];
+  for (let k = 0; k < N; k++) { const a = phase + k * st; pts.push([rr * cos(a), rr * sin(a)]); pts.push([(rr - dd) * cos(a + st * 0.07), (rr - dd) * sin(a + st * 0.07)]); }
+  return dir > 0 ? pts : pts.map(([x, y]) => [x, -y]).reverse();
+}
+const camR = (e, a) => e.rb + e.lift * ((1 - cos(a - e.phase)) / 2) ** 1.5;
+const camPts = e => Array.from({ length: 73 }, (_, i) => { const a = i / 72 * TAU; return [camR(e, a) * cos(a), camR(e, a) * sin(a)]; });
+const hexPts = (r, a0 = 0) => Array.from({ length: 6 }, (_, i) => [r * cos(a0 + i * PI / 3), r * sin(a0 + i * PI / 3)]);
+function roundTri(R, rr) { const out = []; for (let i = 0; i < 3; i++) { const th = -PI / 2 + i * TAU / 3, V = [(R - rr) * cos(th), (R - rr) * sin(th)]; for (let j = 0; j <= 8; j++) { const a = th - PI / 3 + 2 * PI / 3 * j / 8; out.push([V[0] + rr * cos(a), V[1] + rr * sin(a)]); } } return out; }
+const circ = (r, n = 40) => ring(0, 0, r, r, n).slice(0, -1);
+const area = P => { let s = 0; for (let i = 0, j = P.length - 1; i < P.length; j = i++) s += (P[j][0] + P[i][0]) * (P[j][1] - P[i][1]); return -s / 2; };
+
+function keyBore(c, r) { const kw = 0.36, d = r * 0.42, out = []; for (let i = 0; i <= 24; i++) out.push(pol(c, r, -PI / 2 + kw + (TAU - 2 * kw) * i / 24)); const p0 = pol(c, r, -PI / 2 - kw), p1 = pol(c, r, -PI / 2 + kw); out.push([p0[0], p0[1] - d], [p1[0], p1[1] - d]); return out; }
+
+function layout(o, rnd, Bfull, mode) {
+  const plateW = clamp(min(Bfull.x1 - Bfull.x0, Bfull.y1 - Bfull.y0) * 0.2, 22, 40), wantPlate = mode !== "plate";
+  const B = wantPlate ? { ...Bfull, x1: Bfull.x1 - plateW - 6 } : Bfull;
+  const pl = o.plaus / 100, bad = () => rnd() > pl, randi = (a, b) => a + floor(rnd() * (b - a + 1)), pick = a => a[floor(rnd() * a.length)];
+  const Bw = B.x1 - B.x0, Bh = B.y1 - B.y0, S = min(Bw, Bh), m0 = clamp(S / 78, 1.3, 3) * o.size / 100;
+  const L = { shafts: [], els: [], ports: [], blobs: [], links: [], flags: new Set(), S, m0, B };
+  const addShaft = (x, y, w) => { L.shafts.push({ x, y, w, i: L.shafts.length, conn: 0, float: false, out: false, hub: 2.5 }); return L.shafts.length - 1; };
+  const addEl = e => { e.id = L.els.length; L.els.push(e); return e; };
+  const blob = (x, y, r, sh, solid = false) => L.blobs.push({ x, y, r, sh, solid });
+  const free = (x, y, r, A = null) => {
+    if (x - r < B.x0 || x + r > B.x1 || y - r < B.y0 || y + r > B.y1) return false;
+    for (const b of L.blobs) { if (A && b.sh === A.sh && !b.solid) continue; if (hypot(b.x - x, b.y - y) < b.r + r + 1.5) return false; }
+    return true;
+  };
+  const maxR = sh => L.blobs.filter(b => b.sh === sh).reduce((a, b) => max(a, b.r), 0);
+  const hubOf = rp => clamp(rp * 0.2, 2.2, 7), mod = m => clamp(m, m0 * 0.72, m0 * 1.5);
+  const gearEl = (sh, N, m, phase, z, square = false) => {
+    const rp = m * N / 2, s = L.shafts[sh], e = addEl({ kind: "gear", sh, N, m, rp, ra: rp + m, phase, z, square, style: rp > 13 ? pick(["holes", "spokes", "spokes", "web"]) : "plain", nh: randi(4, 6) });
+    s.hub = max(s.hub, hubOf(rp)); blob(s.x, s.y, e.ra, sh); return e;
+  };
+  const port = (el, kind) => L.ports.push({ el, kind, used: 0 });
+
+  const drv = o.driver === "auto" ? (mode === "plate" ? pick(["wheel", "wheel", "crank"]) : pick(["crank", "motor", "wheel"])) : o.driver;
+  L.driver = drv;
+  if (drv === "wheel") {
+    const R = S * 0.29, La = R * 0.4, rB = R + La * 0.85;
+    const x = clamp(B.x0 + Bw * (mode === "plate" ? 0.42 : 0.3), B.x0 + rB, B.x1 - rB), y = clamp(B.y0 + Bh * 0.45, B.y0 + rB, B.y1 - rB);
+    const sh = addShaft(x, y, 1), s = L.shafts[sh];
+    addEl({ kind: "owheel", sh, R, La, K: randi(8, 12), phase: rnd() * TAU, z: 0 }); blob(x, y, rB, sh, true);
+    const hp = addEl({ kind: "pulley", sh, r: R * 0.3, z: 3, square: false }); s.hub = max(s.hub, R * 0.12); port(hp, "belt");
+  } else if (drv === "crank") {
+    const N = randi(32, 42), ra = m0 * N / 2 + m0, x = clamp(B.x0 + Bw * 0.3, B.x0 + ra, B.x1 - ra), y = clamp(B.y0 + Bh * 0.48, B.y0 + ra, B.y1 - ra);
+    const sh = addShaft(x, y, 1), g = gearEl(sh, N, m0, rnd() * TAU, 2);
+    addEl({ kind: "crank", sh, rk: g.rp * 0.72, ang: -PI * 0.75 + rnd() * 0.8, z: 4 }); port(g, "mesh");
+  } else {
+    const R = S * 0.16, x = clamp(B.x0 + Bw * 0.28, B.x0 + R, B.x1 - R), y = clamp(B.y0 + Bh * 0.5, B.y0 + R, B.y1 - R);
+    const sh = addShaft(x, y, 1);
+    addEl({ kind: "motor", sh, R, z: 0 }); blob(x, y, R, sh);
+    const g = gearEl(sh, randi(11, 14), m0 * 1.1, rnd() * TAU, 2); port(g, "mesh");
+  }
+
+  function tryMesh(p) {
+    const A = p.el, sA = L.shafts[A.sh];
+    for (let t = 0; t < 26; t++) {
+      const NB = randi(10, 40), clash = bad() && rnd() < 0.35, mB = clash ? (A.m * 1.5 > m0 * 1.5 ? A.m * 0.62 : A.m * 1.55) : A.m, rpB = mB * NB / 2, raB = rpB + mB;
+      const dist = A.rp + rpB - (clash ? 0.25 * A.m : 0), beta = rnd() * TAU, x = sA.x + dist * cos(beta), y = sA.y + dist * sin(beta);
+      if (!free(x, y, raB + 0.6, A)) continue;
+      const sh = addShaft(x, y, -sA.w * A.N / NB), square = bad() && rnd() < 0.22;
+      const g = gearEl(sh, NB, mB, clash ? rnd() * TAU : meshPhase(A, beta, NB), A.z >= 3 ? 3 : 2, square);
+      if (clash) L.flags.add("clash"); if (square) L.flags.add("square");
+      L.links.push({ kind: "mesh", a: A.sh, b: sh, A, B: g }); sA.conn++; L.shafts[sh].conn++;
+      port(g, "mesh");
+      if (rnd() < 0.35) {
+        const NC = randi(10, 16), mC = mod(mB * pick([1, 0.8, 1.25]));
+        if (mC * NC / 2 + mC < rootR(rpB, mB) * 0.85) { const c = addEl({ kind: "gear", sh, N: NC, m: mC, rp: mC * NC / 2, ra: mC * NC / 2 + mC, phase: rnd() * TAU, z: 3, square: false, style: "plain", nh: 4 }); port(c, "mesh"); }
+      } else if (rnd() < 0.2) {
+        const pu = addEl({ kind: "pulley", sh, r: rpB * (0.55 + rnd() * 0.35), z: 0, square: false }); port(pu, "belt");
+      }
+      return true;
+    }
+    return false;
+  }
+  function beltRuns(c1, r1, c2, r2, crossed) {
+    const d = hypot(c2[0] - c1[0], c2[1] - c1[1]), th = atan2(c2[1] - c1[1], c2[0] - c1[0]);
+    if (!crossed) { const al = acos(clamp((r1 - r2) / d, -1, 1)); return { al, th, d, runs: [[pol(c1, r1, th + al), pol(c2, r2, th + al)], [pol(c1, r1, th - al), pol(c2, r2, th - al)]] }; }
+    const be = acos(clamp((r1 + r2) / d, -1, 1)); return { be, th, d, runs: [[pol(c1, r1, th + be), pol(c2, r2, th + be + PI)], [pol(c1, r1, th - be), pol(c2, r2, th - be + PI)]] };
+  }
+  function tryBelt(p) {
+    const A = p.el, sA = L.shafts[A.sh], rA = A.r, own = maxR(A.sh);
+    for (let t = 0; t < 26; t++) {
+      const r2 = clamp(rA * (0.5 + rnd() * 0.9), max(3.5, S * 0.025), S * 0.11), span = S * (0.06 + rnd() * 0.3), d = max(own, rA) + r2 + 3 + span;
+      const beta = rnd() * TAU, x = sA.x + d * cos(beta), y = sA.y + d * sin(beta);
+      if (!free(x, y, r2 + 2)) continue;
+      const crossed = bad() && rnd() < 0.4, knot = !crossed && bad() && rnd() < 0.5, square = bad() && rnd() < 0.25;
+      const g = beltRuns([sA.x, sA.y], rA + 1.4, [x, y], r2 + 1.4, crossed);
+      let clear = true, along = [];
+      for (const [a, b] of g.runs) for (let i = 1; i < 10; i++) { const q = lerp2(a, b, i / 10); along.push(q); for (const bl of L.blobs) if (bl.sh !== A.sh && hypot(bl.x - q[0], bl.y - q[1]) < bl.r + 1.5) clear = false; }
+      if (!clear) continue;
+      const sh = addShaft(x, y, sA.w * rA / r2 * (crossed ? -1 : 1)), s = L.shafts[sh];
+      const pu = addEl({ kind: "pulley", sh, r: r2, z: 0, square }); blob(x, y, r2 + 1.6, sh); s.hub = max(s.hub, clamp(r2 * 0.25, 1.8, 5));
+      addEl({ kind: "belt", sh: A.sh, a: A, b: pu, crossed, knot, z: 1 });
+      for (const q of along) if (hypot(q[0] - sA.x, q[1] - sA.y) > rA + 4 && hypot(q[0] - x, q[1] - y) > r2 + 4) blob(q[0], q[1], 2.2, -1);
+      if (crossed) L.flags.add("twist"); if (knot) L.flags.add("knot"); if (square) L.flags.add("squarepulley");
+      L.links.push({ kind: "belt", a: A.sh, b: sh, A, B: pu }); sA.conn++; s.conn++;
+      const N = randi(12, 30), m = m0 * pick([1, 1, 0.85]), ra = m * N / 2 + m;
+      if (rnd() < 0.7 && free(x, y, ra + 0.6, { sh })) { const gg = gearEl(sh, N, m, rnd() * TAU, 2, bad() && rnd() < 0.15); port(gg, "mesh"); }
+      else port(pu, "belt");
+      return true;
+    }
+    return false;
+  }
+  let made = 0, guard = 0;
+  while (made < o.parts && guard++ < 160) {
+    const open = L.ports.filter(p => p.used < (p.kind === "mesh" ? 3 : 1));
+    if (!open.length) break;
+    const p = rnd() < 0.6 ? open[open.length - 1 - floor(rnd() * min(3, open.length))] : pick(open);
+    const ok = p.kind === "belt" ? tryBelt(p) : rnd() < 0.82 || !L.shafts[p.el.sh] ? tryMesh(p) : (() => {
+
+      const pu = addEl({ kind: "pulley", sh: p.el.sh, r: p.el.rp * (0.55 + rnd() * 0.3), z: 0, square: false }), q = { el: pu, kind: "belt", used: 0 };
+      if (tryBelt(q)) { L.ports.push(q); q.used = 1; return true; } L.els.pop(); return false; })();
+    if (ok) { p.used++; made++; } else p.used += 0.5;
+  }
+  if (made < o.parts) L.short = o.parts - made;
+
+  const kinds = ["piston", "cam", "ratchet", "fan", "flywheel", "piston", "cam"];
+  const outs = []; for (let i = 0; i < o.outputs; i++) outs.push(kinds[floor(rnd() * kinds.length)]);
+  function place(kind, sh) {
+    const s = L.shafts[sh], mR = max(maxR(sh), 6), at = s;
+    const A = { sh };
+    if (kind === "piston") {
+      const rc = clamp(mR * 0.42, 3.5, 10), Lr = rc * 3.4, pw = clamp(rc * 1.25, 5, 12), pln = pw * 1.1, x0 = Lr - rc - pln / 2 - 1.5, x1 = Lr + rc + pln / 2 + 2.5, head = 3;
+      const a0 = rnd() * TAU;
+      for (let t = 0; t < 14; t++) {
+        const ang = a0 + t * TAU / 14, f = frame([s.x, s.y], ang); let ok = true;
+        for (let q = x0; q <= x1 + head + 0.01 && ok; q += 3) { const p = f(q, 0); if (!free(p[0], p[1], pw / 2 + 2.5, A)) ok = false; }
+        if (!ok) continue;
+        let gauge = null;
+        for (const side of [1, -1]) { const gc = f(x1 + head + 5, side * 9); if (free(gc[0], gc[1], 7.5, A)) { gauge = side; break; } }
+        const P = { sh, rc, Lr, pw, pln, x0, x1, head, ang, pinA: rnd() * TAU, gauge };
+        addEl({ kind: "crankdisc", sh, P, z: 4 }); addEl({ kind: "cyl", sh, P, z: 1.5 }); addEl({ kind: "pistonhead", sh, P, z: 4.9 }); addEl({ kind: "rod", sh, P, z: 5 });
+        for (let q = x0; q <= x1 + head + 0.01; q += 3) { const p = f(q, 0); blob(p[0], p[1], pw / 2 + 2, -1); }
+        if (gauge) { const gc = f(x1 + head + 5, gauge * 9); blob(gc[0], gc[1], 6.5, -1); }
+        return true;
+      }
+    } else if (kind === "cam") {
+      const rb = clamp(mR * 0.38, 3.5, 9), lift = rb * 0.7, rr = max(1.6, rb * 0.28), Lf = rb * 4, reach = rb + lift + rr + Lf + 12;
+      for (const da of [0, 0.5, -0.5, 1, -1, 1.6, -1.6, PI]) {
+        const ang = -PI / 2 + da, f = frame([s.x, s.y], ang); let ok = true;
+        for (let q = mR + 2; q <= reach && ok; q += 3) { const p = f(q, 0); if (!free(p[0], p[1], 4.5, A)) ok = false; }
+        if (!ok) continue;
+        const P = { sh, rb, lift, rr, Lf, ang, phase: rnd() * TAU, pay: pick(["flag", "bell", "sign"]), word: pick(["HI", "NO", "OK", "?", "YES", "WHY"]) };
+        addEl({ kind: "cam", sh, P, z: 4 }); addEl({ kind: "follower", sh, P, z: 5 });
+        for (let q = mR + 2; q <= reach; q += 3) { const p = f(q, 0); blob(p[0], p[1], 4, -1); }
+        return true;
+      }
+    } else if (kind === "ratchet") {
+      const rr = clamp(mR * 0.5, 5, 13), a0 = rnd() * TAU;
+      for (let t = 0; t < 10; t++) {
+        const ang = a0 + t * TAU / 10, pv = pol([s.x, s.y], rr + 7, ang), an = pol(pv, 9, ang + 1.1);
+        if (!free(pv[0], pv[1], 4, A) || !free(an[0], an[1], 3, A)) continue;
+        addEl({ kind: "ratchet", sh, P: { rr, N: randi(14, 24), ang, dir: s.w >= 0 ? 1 : -1 }, z: 4 }); blob(pv[0], pv[1], 3.5, -1); blob(an[0], an[1], 2.5, -1);
+        return true;
+      }
+    } else if (kind === "fan") {
+      const R = clamp(mR * 0.85, 7, 18);
+      if (R <= mR || free(at.x, at.y, R, A)) { addEl({ kind: "fan", sh, P: { R, nb: randi(3, 5), ph: rnd() * TAU }, z: 6 }); if (R > mR) blob(at.x, at.y, R, sh); return true; }
+    } else if (kind === "flywheel") {
+      const R = mR * 1.25 + 4;
+      if (free(at.x, at.y, R, A)) { addEl({ kind: "flywheel", sh, P: { R, ph: rnd() * TAU }, z: -1 }); blob(at.x, at.y, R, sh); return true; }
+    }
+    return false;
+  }
+  L.outputs = 0;
+  for (const kind of outs) {
+    const cand = L.shafts.filter(s => s.i > 0 && !s.out).sort((a, b) => a.conn - b.conn || b.i - a.i);
+    for (const s of cand) if (place(kind, s.i)) { s.out = kind; L.outputs++; break; }
+  }
+
+  const baseH = 5;
+  let bx0 = INF, by0 = INF, bx1 = -INF, by1 = -INF;
+  for (const b of L.blobs) { bx0 = min(bx0, b.x - b.r); by0 = min(by0, b.y - b.r); bx1 = max(bx1, b.x + b.r); by1 = max(by1, b.y + b.r); }
+  const total = by1 + 4 + baseH - by0, dx = (B.x0 + B.x1) / 2 - (bx0 + bx1) / 2, dy = clamp((B.y0 + B.yb) / 2 - (by0 + total / 2), B.y0 - by0, B.yb - (by0 + total));
+  for (const s of L.shafts) { s.x += dx; s.y += dy; }
+  for (const b of L.blobs) { b.x += dx; b.y += dy; }
+  bx0 += dx; bx1 += dx; by0 += dy; by1 += dy;
+  L.baseY = by1 + 4; L.baseX = [bx0 - 4, bx1 + 4]; L.baseH = baseH;
+  if (L.shafts.length > 2 && bad() && rnd() < 0.4) { const s = L.shafts[1 + floor(rnd() * (L.shafts.length - 1))]; s.float = true; L.flags.add("float"); }
+
+  if (wantPlate || bad()) {
+    const w = plateW, hp = clamp(S * 0.11, 10, 20), y0 = L.baseY - hp - 3;
+    const struts = L.shafts.filter(s => !s.float).map(s => s.x);
+    const clearAt = x => !struts.some(sx => sx > x - 6 && sx < x + w + 6) && !L.blobs.some(b => b.x + b.r > x - 1.5 && b.x - b.r < x + w + 1.5 && b.y + b.r > y0 - 1.5);
+    let px = null;
+    for (let t = 0; t < 40 && px === null; t++) { const x = lerp(L.baseX[0] + 2, L.baseX[1] - w - 2, (t * 0.618034 + rnd() * 0.1) % 1); if (clearAt(x)) px = x; }
+    if (px === null) for (const x of rnd() < 0.5 ? [L.baseX[1] + 2, L.baseX[0] - w - 2] : [L.baseX[0] - w - 2, L.baseX[1] + 2]) if (px === null && x >= Bfull.x0 - 6 && x + w <= Bfull.x1 + 6 && clearAt(x)) px = x;
+    if (px !== null) { L.baseX = [min(L.baseX[0], px - 4), max(L.baseX[1], px + w + 4)]; addEl({ kind: "plate3", sh: -1, P: { x: px, w, y0, hp }, z: -0.5 }); L.flags.add("plate"); }
+  }
+  for (const e of L.els) if (e.sh >= 0 && e.P) e.P.s = L.shafts[e.sh];
+  L.drv = drv;
+  return L;
+}
+
+function renderEl(e, L, st) {
+  const out = { sils: [], line: [], thin: [] }, s = e.sh >= 0 ? L.shafts[e.sh] : null, C = s ? [s.x, s.y] : null, plate = st === "plate";
+  const ln = (pts, cl = false) => out.line.push([pts, cl, "path"]), th = (pts, cl = false) => out.thin.push([pts, cl, "path"]);
+  const shade = (pts, c, off = 0.38) => {
+    let cur = null; const runs = [];
+    for (const [x, y] of pts) { const a = atan2(y - c[1], x - c[0]), d = hypot(x - c[0], y - c[1]) || 1; if (cos(a - PI / 4) > 0.42) (cur ||= []).push([x + (x - c[0]) / d * off, y + (y - c[1]) / d * off]); else if (cur) { runs.push(cur); cur = null; } }
+    if (cur) runs.push(cur); for (const r of runs) if (r.length > 1) ln(r);
+  };
+  const hub = (r, keyed = true) => { const hb = ring(C[0], C[1], r, r, 28); ln(hb, true); const br = max(0.9, r * 0.45); ln(keyed && br > 1.2 ? keyBore(C, br) : ring(C[0], C[1], br, br, 16), true); if (plate) out.thin.push(...hatch([hb, ring(C[0], C[1], br, br, 16)], 0.7, 45)); };
+  switch (e.kind) {
+    case "gear": {
+      const pts = gearPts(e.N, e.m, e.phase, e.square).map(([x, y]) => [C[0] + x, C[1] + y]), rf = rootR(e.rp, e.m), hb = clamp(e.rp * 0.2, 2.2, 7), holes = [];
+      ln(pts, true);
+      if (e.style === "holes") { const rr = (rf + hb) / 2, rh = min((rf - hb) * 0.3, rr * sin(PI / e.nh) * 0.7); if (rh > 1.5) for (let k = 0; k < e.nh; k++) holes.push(ring(...pol(C, rr, e.phase + k * TAU / e.nh), rh, rh, 24)); }
+      else if (e.style === "spokes") {
+        const rimW = max(1.8, e.m * 1.5), rin = hb + max(1.5, hb * 0.4), rout = rf - rimW, sw = max(1.6, e.rp * 0.11);
+        if (rout - rin > 3) for (let k = 0; k < e.nh; k++) {
+          const a0 = e.phase + k * TAU / e.nh, a1 = a0 + TAU / e.nh, dO = sw / 2 / rout, dI = sw / 2 / rin; if (a1 - dI - (a0 + dI) < 0.25) continue;
+          const w = []; for (let i = 0; i <= 10; i++) w.push(pol(C, rout, lerp(a0 + dO, a1 - dO, i / 10))); for (let i = 0; i <= 6; i++) w.push(pol(C, rin, lerp(a1 - dI, a0 + dI, i / 6))); holes.push(w);
+        }
+      } else if (e.style === "web") { const rw = rf - max(1.8, e.m * 1.5); if (rw > hb + 3) { th(ring(C[0], C[1], rw, rw, 48), true); th(ring(C[0], C[1], hb + 1.4, hb + 1.4, 28), true); } }
+      for (const h of holes) ln(h, true);
+      hub(hb);
+      if (st === "dimsa") for (const d of dashed(ring(C[0], C[1], e.rp, e.rp, 72), CL)) th(d);
+      if (plate) shade(pts, C);
+      out.sils.push([pts, ...holes]); break;
+    }
+    case "pulley": {
+      if (e.square) { const P = rectPoly(C[0] - e.r, C[1] - e.r, C[0] + e.r, C[1] + e.r); ln(P, true); th(rectPoly(C[0] - e.r * 0.72, C[1] - e.r * 0.72, C[0] + e.r * 0.72, C[1] + e.r * 0.72), true); hub(clamp(e.r * 0.25, 1.8, 5)); out.sils.push([P]); break; }
+      const rim = ring(C[0], C[1], e.r, e.r, 48); ln(rim, true); th(ring(C[0], C[1], e.r - 1.2, e.r - 1.2, 48), true);
+      if (e.r > 7) th(ring(C[0], C[1], e.r * 0.62, e.r * 0.62, 40), true);
+      hub(clamp(e.r * 0.25, 1.8, 5)); if (plate) shade(rim, C); out.sils.push([rim]); break;
+    }
+    case "belt": {
+      const A = L.shafts[e.a.sh], Bs = L.shafts[e.b.sh], c1 = [A.x, A.y], c2 = [Bs.x, Bs.y], bt = 1.4, r1 = e.a.r, r2 = e.b.r;
+      const d = hypot(c2[0] - c1[0], c2[1] - c1[1]), t0 = atan2(c2[1] - c1[1], c2[0] - c1[0]), arcs = [];
+      if (!e.crossed) {
+        const al = acos(clamp((r1 - r2) / d, -1, 1));
+        for (const sg of [1, -1]) { const ph = t0 + sg * al; ln([pol(c1, r1, ph), pol(c2, r2, ph)]); ln([pol(c1, r1 + bt, ph), pol(c2, r2 + bt, ph)]); out.sils.push([[pol(c1, r1, ph), pol(c2, r2, ph), pol(c2, r2 + bt, ph), pol(c1, r1 + bt, ph)]]); }
+        arcs.push([c1, r1 + bt, t0 + al, t0 + TAU - al], [c2, r2 + bt, t0 - al, t0 + al]);
+      } else {
+        const be = acos(clamp((r1 + r2 + bt) / d, -1, 1));
+        for (const sg of [1, -1]) { const p1 = pol(c1, r1 + bt / 2, t0 + sg * be), p2 = pol(c2, r2 + bt / 2, t0 + sg * be + PI), f = frame(p1, atan2(p2[1] - p1[1], p2[0] - p1[0])), Lr = hypot(p2[0] - p1[0], p2[1] - p1[1]); ln([f(0, -bt / 2), f(Lr, -bt / 2)]); ln([f(0, bt / 2), f(Lr, bt / 2)]); out.sils.push([[f(0, -bt / 2), f(Lr, -bt / 2), f(Lr, bt / 2), f(0, bt / 2)]]); }
+        arcs.push([c1, r1 + bt, t0 + be, t0 + TAU - be], [c2, r2 + bt, t0 + PI + be, t0 + PI + TAU - be]);
+      }
+      for (const [c, r, a0, a1] of arcs) { const n = max(6, ceil(abs(a1 - a0) * r / 1.5)); ln(Array.from({ length: n + 1 }, (_, i) => pol(c, r, lerp(a0, a1, i / n)))); }
+      if (e.knot) { const ph = t0 + acos(clamp((r1 - r2) / d, -1, 1)), m = lerp2(pol(c1, r1 + bt / 2, ph), pol(c2, r2 + bt / 2, ph), 0.5); ln(ring(m[0], m[1], 2.2, 2.2, 20), true); ln([[m[0] - 2.6, m[1] - 2.6], [m[0] + 2.6, m[1] + 2.6]]); out.sils.push([ring(m[0], m[1], 2.2, 2.2, 20)]); }
+      break;
+    }
+    case "owheel": {
+      const R = e.R, rimT = max(2.5, R * 0.06), outer = ring(C[0], C[1], R, R, 96);
+      ln(outer, true); ln(ring(C[0], C[1], R - rimT, R - rimT, 96), true); if (plate) shade(outer, C);
+      const hb = R * 0.12;
+      for (let k = 0; k < 8; k++) { const a = e.phase + k * TAU / 8, f = frame(C, a); ln([f(hb, -0.9), f(R - rimT, -0.9)]); ln([f(hb, 0.9), f(R - rimT, 0.9)]); }
+      ln(ring(C[0], C[1], hb, hb, 32), true); ln(ring(C[0], C[1], hb * 0.4, hb * 0.4, 16), true); if (plate) out.thin.push(...hatch([ring(C[0], C[1], hb, hb, 32), ring(C[0], C[1], hb * 0.4, hb * 0.4, 16)], 0.7, 45));
+      out.sils.push([outer]);
+      for (let k = 0; k < e.K; k++) {
+        const a = e.phase + PI / e.K + k * TAU / e.K, pv = pol(C, R, a), right = cos(a) > 0.1;
+        const dir = right ? (() => { const v = [cos(a) + 1.2, sin(a) * 0.6 + 0.25], l = hypot(...v); return [v[0] / l, v[1] / l]; })() : [0, 1];
+        const rb = R * 0.075, bc = [pv[0] + dir[0] * e.La, pv[1] + dir[1] * e.La], arm = [pv, [bc[0] - dir[0] * rb, bc[1] - dir[1] * rb]];
+        ln(arm); ln(arm.map(([x, y]) => [x + dir[1] * 0.28, y - dir[0] * 0.28])); const ball = ring(bc[0], bc[1], rb, rb, 24); ln(ball, true);
+        out.thin.push(...hatch([ball], 0.6, 45), ...hatch([ball], 0.6, -45)); ln(ring(pv[0], pv[1], 1, 1, 10), true);
+        out.sils.push([ball]);
+      }
+      break;
+    }
+    case "crank": {
+      const kn = pol(C, e.rk, e.ang), aw = clamp(e.rk * 0.09, 1.6, 3.2), bar = stadium(C, kn, aw);
+      ln(bar, true); const k1 = ring(kn[0], kn[1], aw * 1.6, aw * 1.6, 24); ln(k1, true); ln(ring(kn[0], kn[1], aw * 0.9, aw * 0.9, 16), true);
+      out.thin.push(...hatch([ring(kn[0], kn[1], aw * 0.9, aw * 0.9, 16)], 0.6, 45)); out.sils.push([bar], [k1]); break;
+    }
+    case "motor": {
+      const R = e.R, hs = ring(C[0], C[1], R, R, 72); ln(hs, true); th(ring(C[0], C[1], R * 0.9, R * 0.9, 72), true);
+      for (let a = 0; a < TAU - 1e-6; a += 15 * D2R) th([pol(C, R * 0.58, a), pol(C, R * 0.86, a)]);
+      for (let k = 0; k < 4; k++) ln(ring(...pol(C, R * 0.72, PI / 4 + k * PI / 2), 1.3, 1.3, 12), true);
+      const tb = rectPoly(C[0] - R * 0.28, C[1] - R - 5, C[0] + R * 0.28, C[1] - R + 0.5); ln(tb, true); ln(ring(C[0] - R * 0.12, C[1] - R - 2.4, 0.9, 0.9, 10), true); ln(ring(C[0] + R * 0.12, C[1] - R - 2.4, 0.9, 0.9, 10), true);
+      if (plate) shade(hs, C); out.sils.push([hs], [tb]); break;
+    }
+    case "flywheel": {
+      const { R, ph } = e.P, rimT = max(3, R * 0.12), o1 = ring(C[0], C[1], R, R, 96), i1 = ring(C[0], C[1], R - rimT, R - rimT, 96), hb = max(3, R * 0.14);
+      ln(o1, true); ln(i1, true); ln(ring(C[0], C[1], hb, hb, 28), true); th(ring(C[0], C[1], R - rimT * 0.5, R - rimT * 0.5, 96), true);
+      for (let k = 0; k < 6; k++) { const a = ph + k * TAU / 6; for (const off of [-1, 1]) { const p0 = pol(C, hb, a + off * 0.18), p2 = pol(C, R - rimT, a + 0.45 + off * 0.05), p1 = pol(C, (R - rimT + hb) / 2, a + 0.05 + off * 0.12); const q = []; for (let i = 0; i <= 10; i++) { const t = i / 10, u = 1 - t; q.push([u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]]); } ln(q); } }
+      if (plate) shade(o1, C); out.sils.push([o1, i1], [ring(C[0], C[1], hb, hb, 28)]); break;
+    }
+    case "crankdisc": {
+      const P = e.P, rd = P.rc + max(2.5, P.rc * 0.35), disc = ring(C[0], C[1], rd, rd, 48), pin = pol(C, P.rc, P.pinA);
+      ln(disc, true); const cw = []; for (let i = 0; i <= 12; i++) cw.push(pol(C, rd * 0.9, P.pinA + PI - 1 + 2 * i / 12)); for (let i = 0; i <= 8; i++) cw.push(pol(C, rd * 0.42, P.pinA + PI + 0.8 - 1.6 * i / 8));
+      th(cw, true); out.thin.push(...hatch([cw], 0.8, 30)); ln(ring(pin[0], pin[1], max(1.2, P.rc * 0.22), max(1.2, P.rc * 0.22), 14), true); ln(ring(C[0], C[1], 1.3, 1.3, 12), true);
+      if (plate) shade(disc, C); out.sils.push([disc]); break;
+    }
+    case "cyl": {
+      const P = e.P, f = frame(C, P.ang), hw = P.pw / 2, wt = 2, x2 = P.x1 + P.head;
+      const outerU = [f(P.x0, -hw), f(P.x0, -hw - wt), f(x2, -hw - wt), f(x2, hw + wt), f(P.x0, hw + wt), f(P.x0, hw)];
+      ln(outerU); ln([f(P.x0, -hw), f(P.x1, -hw), f(P.x1, hw), f(P.x0, hw)]);
+      for (const R of [[f(P.x0, -hw), f(x2, -hw), f(x2, -hw - wt), f(P.x0, -hw - wt)], [f(P.x0, hw), f(x2, hw), f(x2, hw + wt), f(P.x0, hw + wt)], [f(P.x1, -hw), f(x2, -hw), f(x2, hw), f(P.x1, hw)]]) out.thin.push(...hatch([R], 0.8, (P.ang / D2R) + 45));
+      out.sils.push([[f(P.x0, -hw - wt), f(x2, -hw - wt), f(x2, hw + wt), f(P.x0, hw + wt)]]);
+      if (P.gauge) {
+        const sg = P.gauge, g = f(x2 + 5, sg * 9), gR = 5.5;
+        for (const t of [-0.8, 0.8]) { const xc = x2 + 5 - t * sg; ln([f(x2, t), f(xc, t), f(xc, sg * (9 - gR))]); }
+        const gc = ring(g[0], g[1], gR, gR, 36); ln(gc, true); th(ring(g[0], g[1], gR - 1, gR - 1, 36), true);
+        for (let i = 0; i <= 8; i++) { const a = PI * 0.75 + i / 8 * PI * 1.5; th([pol(g, gR - 1, a), pol(g, gR - 2.2, a)]); }
+        const na = PI * 0.75 + PI * 1.5 * (L.plaus < 0.4 ? 1.12 : 0.3 + 0.5 * L.plaus); ln([pol(g, 0.8, na + PI), pol(g, gR - 1.6, na)]); ln(ring(g[0], g[1], 0.7, 0.7, 10), true);
+        out.sils.push([gc]);
+      }
+      break;
+    }
+    case "pistonhead": case "rod": {
+      const P = e.P, f = frame(C, P.ang), ps = P.pinA - P.ang, xp = P.rc * cos(ps) + sqrt(max(0, P.Lr * P.Lr - (P.rc * sin(ps)) ** 2)), hw = P.pw / 2 - 0.4;
+      if (e.kind === "pistonhead") {
+        const pr = [f(xp - P.pln / 2, -hw), f(xp + P.pln / 2, -hw), f(xp + P.pln / 2, hw), f(xp - P.pln / 2, hw)]; ln(pr, true);
+        for (const g of [1.2, 2.4]) th([f(xp + P.pln / 2 - g, -hw), f(xp + P.pln / 2 - g, hw)]);
+        out.sils.push([pr]); break;
+      }
+      const pin = pol(C, P.rc, P.pinA), wr = f(xp, 0), rw = max(1.3, P.pw * 0.17), bar = stadium(pin, wr, rw);
+      ln(bar, true); ln(ring(pin[0], pin[1], rw * 0.55, rw * 0.55, 12), true); ln(ring(wr[0], wr[1], rw * 0.55, rw * 0.55, 12), true); out.sils.push([bar]); break;
+    }
+    case "cam": {
+      const P = e.P, pts = camPts(P).map(([x, y]) => [C[0] + x, C[1] + y]); ln(pts, true); hub(max(1.8, P.rb * 0.3)); if (plate) shade(pts, C); out.sils.push([pts]); break;
+    }
+    case "follower": {
+      const P = e.P, f = frame(C, P.ang), d0 = camR(P, P.ang) + P.rr, rw = 0.9, end = d0 + P.Lf, rc = f(d0, 0);
+      const roller = ring(rc[0], rc[1], P.rr, P.rr, 24); ln(roller, true); ln(ring(rc[0], rc[1], P.rr * 0.35, P.rr * 0.35, 10), true);
+      const rod = [f(d0 + P.rr * 0.7, -rw), f(end, -rw), f(end, rw), f(d0 + P.rr * 0.7, rw)]; ln([rod[0], rod[1]]); ln([rod[3], rod[2]]);
+      const col = d0 + P.rr + 1.5, cr = [f(col, -rw * 2.2), f(col + 1.4, -rw * 2.2), f(col + 1.4, rw * 2.2), f(col, rw * 2.2)]; ln(cr, true);
+      const g1 = d0 + P.Lf * 0.5, g2 = d0 + P.Lf * 0.82, sils = [[roller], [rod], [cr]];
+      for (const g of [g1, g2]) { const b = [f(g - 1.5, -rw * 3.4), f(g + 1.5, -rw * 3.4), f(g + 1.5, rw * 3.4), f(g - 1.5, rw * 3.4)]; ln(b, true); out.thin.push(...hatch([b], 0.7, 45)); sils.push([b]); }
+      th(zigzag(f(col + 1.4, 0), f(g1 - 1.5, 0), rw * 2.6, 5));
+      const E = f(end, 0);
+      if (P.pay === "flag") { const fl = [f(end, rw), f(end - 6.5, rw), f(end - 3.2, rw + 9)]; ln(fl, true); for (const t of [0.33, 0.66]) th([lerp2(fl[0], fl[2], t), lerp2(fl[1], fl[2], t)]); ln(ring(E[0], E[1], rw * 1.4, rw * 1.4, 10), true); sils.push([fl]); }
+      else if (P.pay === "bell") {
+        const hm = [f(end - 1, -3), f(end + 1.6, -3), f(end + 1.6, 3), f(end - 1, 3)]; ln(hm, true); sils.push([hm]);
+        const b0 = end + 2.6, bell = []; for (let i = 0; i <= 12; i++) { const t = i / 12; bell.push(f(b0 + 10 * t, -(6.5 - 3.5 * t ** 0.6))); } for (let i = 0; i <= 10; i++) { const a = -PI / 2 + PI * i / 10; bell.push(f(b0 + 10 + 2.6 * cos(a), 3 * sin(a))); } for (let i = 12; i >= 0; i--) { const t = i / 12; bell.push(f(b0 + 10 * t, 6.5 - 3.5 * t ** 0.6)); }
+        ln(bell, true); th([f(b0 + 1.4, -5.3), f(b0 + 1.4, 5.3)]); sils.push([bell]);
+      } else {
+        const bw = 16, bh = 9, c = f(end + bh / 2, 0), brd = [f(end, -bw / 2), f(end + bh, -bw / 2), f(end + bh, bw / 2), f(end, bw / 2)]; ln(brd, true); sils.push([brd]);
+        out.line.push(...text(P.word, c[0], c[1], 4, { align: "c", mid: true, ang: P.ang + PI / 2, bold: true }));
+      }
+      out.sils.push(...sils); break;
+    }
+    case "ratchet": {
+      const P = e.P, dd = P.rr * 0.14, pts = ratchetPts(P.N, P.rr, dd, P.ang, P.dir).map(([x, y]) => [C[0] + x, C[1] + y]); ln(pts, true); hub(max(1.8, P.rr * 0.28));
+      const pv = pol(C, P.rr + 7, P.ang), tip = pol(C, P.rr - dd * 0.55, P.ang + P.dir * 0.16), a = atan2(tip[1] - pv[1], tip[0] - pv[0]), fw = frame(pv, a), Lp = hypot(tip[0] - pv[0], tip[1] - pv[1]);
+      const paw = [fw(0, -1.7), fw(Lp, -0.5), fw(Lp, 0.5), fw(0, 1.7)]; ln(paw, true); const pc = ring(pv[0], pv[1], 2, 2, 16); ln(pc, true); ln(ring(pv[0], pv[1], 0.7, 0.7, 8), true);
+      const an = pol(pv, 9, P.ang + 1.1); ln(ring(an[0], an[1], 1.2, 1.2, 10), true); th(zigzag(fw(Lp * 0.45, 0), an, 0.9, 4));
+      if (plate) shade(pts, C); out.sils.push([pts], [paw], [pc]); break;
+    }
+    case "fan": {
+      const P = e.P; for (let k = 0; k < P.nb; k++) {
+        const a = P.ph + k * TAU / P.nb, c = pol(C, P.R * 0.55, a), Lb = P.R * 0.9, wb = P.R * 0.42, ca = cos(a + 0.25), sa = sin(a + 0.25), top = [], bot = [];
+        for (let i = 0; i <= 10; i++) { const u = (i / 10 - 0.5) * Lb, w = wb / 2 * sin(PI * i / 10) * (0.6 + 0.4 * i / 10); top.push([c[0] + u * ca + w * sa, c[1] + u * sa - w * ca]); bot.push([c[0] + u * ca - w * sa, c[1] + u * sa + w * ca]); }
+        const bl = top.concat(bot.reverse()); ln(bl, true); th([[c[0] - Lb / 2 * ca, c[1] - Lb / 2 * sa], [c[0] + Lb / 2 * ca, c[1] + Lb / 2 * sa]]); out.sils.push([bl]);
+      }
+      const hb = ring(C[0], C[1], 2.6, 2.6, 18); ln(hb, true); out.sils.push([hb]); break;
+    }
+    case "strut": {
+      const { x, y, wt, base, frameA, R } = e.P;
+      if (frameA) {
+        for (const sg of [-1, 1]) { const ft = [x + sg * R * 0.62, base], a = atan2(ft[1] - y, ft[0] - x), f = frame([x, y], a), Ll = hypot(ft[0] - x, ft[1] - y), q = [f(0, -wt), f(Ll, -wt * 1.5), f(Ll, wt * 1.5), f(0, wt)]; ln(q, true); out.sils.push([q]); }
+        const cy = lerp(y, base, 0.62), hw = R * 0.62 * 0.62; ln([[x - hw, cy - 1], [x + hw, cy - 1]]); ln([[x - hw, cy + 1], [x + hw, cy + 1]]);
+      } else { const q = [[x - wt, y], [x + wt, y], [x + wt * 1.7, base], [x - wt * 1.7, base]]; ln(q, true); out.sils.push([q]); const ft = rectPoly(x - wt * 2.6, base - 1.6, x + wt * 2.6, base); ln(ft, true); }
+      const boss = ring(x, y, wt * 1.4, wt * 1.4, 20); ln(boss, true); out.sils.push([boss]); break;
+    }
+    case "base": {
+      const { x0, x1, y, h } = e.P, R = rectPoly(x0, y, x1, y + h); ln(R, true); out.sils.push([R]);
+      if (st === "plate") { ln([[x0 + 0.4, y + h + 0.38], [x1 + 0.4, y + h + 0.38]]); for (let x = x0 - 4; x < x1 + 4; x += 2.4) th([[x, y + h + 2.2], [x - 1.8, y + h + 4]]); th([[x0 - 6, y + h + 1.6], [x1 + 6, y + h + 1.6]]); }
+      else out.thin.push(...hatch([R], 1.4, 45));
+      break;
+    }
+    case "plate3": {
+      const { x, w, y0, hp } = e.P, by = L.baseY, pt = rectPoly(x, y0, x + w, y0 + 2.6); ln(pt, true); out.thin.push(...hatch([pt], 0.7, -45)); out.sils.push([pt]);
+      for (const px of [x + 3, x + w / 2, x + w - 3]) { const q = rectPoly(px - 0.9, y0 + 2.6, px + 0.9, by); ln(q, true); out.sils.push([q]); const nut = rectPoly(px - 1.8, y0 - 1.6, px + 1.8, y0); ln(nut, true); out.sils.push([nut]); }
+      break;
+    }
+  }
+  return out;
+}
+const PENS = ["thin", "line", "accent"];
+
+function cutBehind(Ly, sils) {
+  for (const pen of ["line", "thin"]) {
+    let arr = Ly[pen];
+    for (const R of sils) {
+      const bb = bboxOf(R[0]), next = [];
+      for (const it of arr) {
+        const b2 = it.bb || (it.bb = bboxOf(it[0]));
+        if (b2[2] < bb[0] || b2[0] > bb[2] || b2[3] < bb[1] || b2[1] > bb[3]) { next.push(it); continue; }
+        for (const q of joinSegs(clipSegs(segsOf(it[0], it[1]), R, false))) next.push([q, false, it[2]]);
+      }
+      arr = next;
+    }
+    Ly[pen] = arr;
+  }
+}
+function drawMachine(L, Ly, st) {
+  const extra = [];
+  extra.push({ kind: "base", sh: -1, z: -11, P: { x0: L.baseX[0], x1: L.baseX[1], y: L.baseY, h: L.baseH } });
+  for (const s of L.shafts) if (!s.float) extra.push({ kind: "strut", sh: -1, z: -10, P: { x: s.x, y: s.y, wt: clamp(L.S * 0.012, 1.6, 3.2), base: L.baseY, frameA: s.i === 0 && L.drv === "wheel", R: L.els[0].R } });
+  const all = extra.concat(L.els).map((e, i) => [e, i]).sort((a, b) => a[0].z - b[0].z || a[1] - b[1]).map(a => a[0]);
+  for (const e of all) {
+    const r = renderEl(e, L, st);
+    if (r.sils.length) cutBehind(Ly, r.sils);
+    Ly.line.push(...r.line); Ly.thin.push(...r.thin);
+  }
+}
+
+const NOTE_POOL = [
+  "BREAK ALL SHARP EDGES. AND SPIRITS.",
+  "ENGINEER DID NOT CLARIFY DESIGN INTENT. WHEN ASKED IF IT COULD BE MADE ANOTHER WAY, DEVOLVED INTO MATH-BABBLE.",
+  "TOLERANCES +/- VIBES UNLESS STATED.",
+  "DO NOT SCALE DRAWING. DRAWING WILL NOT SCALE YOU.",
+  "FINISH: WHATEVER WAS IN THE SHED.",
+  "IF IT STOPS, IT WAS NOT PERPETUAL. REISSUE AT NEXT REV.",
+  "ROTATES. PROBABLY.",
+  "APPROVED VERBALLY, IN A CORRIDOR, IN 2019.",
+  "DESIGN INTENT: SEE ENGINEER. ENGINEER: SEE DESIGN INTENT.",
+  "ALL GEARS TO MESH. ANY THAT DO NOT ARE DECORATIVE.",
+  "DIMENSIONS ARE A STARTING POINT FOR DISCUSSION.",
+  "DEBURR. DEGREASE. DO NOT DEBATE.",
+  "THIS PART WAS IN THE LAST ASSEMBLY TOO. NOBODY KNOWS WHY. KEEP IT.",
+];
+const PLATE_NOTE = "PLATE ON THREE STRUTS IS REQUIRED. IT ADDS NO FUNCTION. IT EXISTS BECAUSE OF A DECISION STACK NOBODY WILL REOPEN. QTY 3 STRUTS. NOT 2. NOT 4.";
+const FLAG_NOTE = { clash: "INTERFERENCE AT MESH IS A FEATURE.", square: "SQUARE TEETH APPROVED BY ENG. DO NOT ROUND.", twist: "BELT TWIST IS INTENTIONAL. DO NOT UNTWIST.", knot: "KNOT IN BELT IS STRUCTURAL.", float: "SHAFT SHOWN WITHOUT STRUT IS HELD UP BY OPTIMISM.", squarepulley: "SQUARE PULLEY PER CUSTOMER REQUEST (SEE NOTE 7)." };
+const REVS = ["INITIAL RELEASE", "ADDED PLATE (REASON UNCLEAR)", "REMOVED PLATE", "RE-ADDED PLATE PER ENG.", "MOVED HOLE 0.3. MOVED IT BACK.", "UPDATED PURPOSE TO TBD", "ADDED NOTE 7. REMOVED NOTE 7.", "CHANGED NOTHING. NEEDED A REV.", "SEE PREVIOUS REV", "RENAMED TO WHAT IT WAS"];
+const PURPOSE = ["PER ENG.", "UNCLEAR. DO NOT ASK.", "SEE NOTE 7", "HISTORICAL", "TBD (SINCE 2019)", "BALANCE, ALLEGEDLY", "REQUIRED"];
+const STAMPS = ["PRELIMINARY", "DO NOT SCALE", "NOT FOR CONSTRUCTION", "APPROVED (?)", "AS BUILT (ALLEGEDLY)", "VOID WHERE REASONABLE"];
+const MARKUPS = ["WHY?", "ASK ENG.", "SEE NOTE 7", "IS THIS NEEDED?", "???", "PER ENG."];
+function describe(e, L) {
+  switch (e.kind) {
+    case "gear": return `GEAR, SPUR, ${e.N}T, M${e.m.toFixed(1)}` + (e.square ? ", SQUARE TEETH" : "");
+    case "pulley": return `PULLEY, ${e.square ? "SQUARE" : "V"}, Ø${round(e.r * 2)}`;
+    case "belt": return "BELT, ROUND" + (e.crossed ? ", TWISTED ON PURPOSE" : e.knot ? ", KNOTTED" : "");
+    case "owheel": return "WHEEL, OVERBALANCED, PERPETUAL (PENDING)";
+    case "motor": return "MOTOR, PROVENANCE UNKNOWN";
+    case "crank": return "HANDLE, CRANK, FOR SOMEONE";
+    case "crankdisc": return "PISTON ASSY, PUMPS NOTHING" + (e.P.gauge ? ", GAUGE READS ?" : "");
+    case "cam": return `CAM + FOLLOWER, RAISES ${e.P.pay === "flag" ? "A FLAG" : e.P.pay === "bell" ? "A BELL HAMMER" : "A SIGN"}`;
+    case "ratchet": return "RATCHET + PAWL, ONE WAY ONLY";
+    case "fan": return "FAN, COOLS NOTHING";
+    case "flywheel": return "FLYWHEEL, STORES FEELINGS";
+    case "plate3": return "PLATE, BALANCE, TOP. DO NOT REMOVE.";
+    default: return e.kind.toUpperCase();
+  }
+}
+
+function anchorOf(e, L) {
+  const s = e.sh >= 0 ? L.shafts[e.sh] : null;
+  switch (e.kind) {
+    case "gear": return [s.x, s.y, e.ra]; case "pulley": return [s.x, s.y, e.r]; case "owheel": return [s.x, s.y, e.R]; case "motor": return [s.x, s.y, e.R];
+    case "crank": { const k = pol([s.x, s.y], e.rk, e.ang); return [k[0], k[1], 3]; }
+    case "crankdisc": { const c = frame([s.x, s.y], e.P.ang)((e.P.x0 + e.P.x1) / 2, 0); return [c[0], c[1], e.P.pw / 2 + 2]; }
+    case "cam": { const c = frame([s.x, s.y], e.P.ang)(camR(e.P, e.P.ang) + e.P.rr + e.P.Lf, 0); return [c[0], c[1], 5]; }
+    case "ratchet": { const c = pol([s.x, s.y], e.P.rr + 7, e.P.ang); return [c[0], c[1], 2.5]; }
+    case "fan": return [s.x, s.y, e.P.R]; case "flywheel": return [s.x, s.y, e.P.R];
+    case "plate3": return [e.P.x + e.P.w / 2, e.P.y0 + 1.3, e.P.w / 2];
+    case "belt": { const A = L.shafts[e.a.sh], B = L.shafts[e.b.sh]; return [(A.x + B.x) / 2, (A.y + B.y) / 2, 1]; }
+  }
+  return null;
+}
+
+function relax(items, minD, box) {
+  for (let it = 0; it < 40; it++) for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+    const a = items[i], b = items[j], dx = b.x - a.x, dy = b.y - a.y, d = hypot(dx, dy) || 0.01; if (d >= minD) continue;
+    const p = (minD - d) / 2 + 0.01, ux = dx / d, uy = dy / d; a.x -= ux * p; a.y -= uy * p; b.x += ux * p; b.y += uy * p;
+  }
+  for (const a of items) { a.x = clamp(a.x, box[0], box[2]); a.y = clamp(a.y, box[1], box[3]); }
+}
+
+function drawingFrame(push, PW, PH, mg) {
+  const o = [mg, mg, PW - mg, PH - mg], band = 6, I = [mg + band, mg + band, PW - mg - band, PH - mg - band];
+  push("line", rectPoly(...o), true); push("line", rectPoly(...I), true);
+  const nx = max(2, round((I[2] - I[0]) / 50)), ny = max(2, round((I[3] - I[1]) / 50));
+  for (let i = 0; i <= nx; i++) { const x = lerp(I[0], I[2], i / nx); if (i > 0 && i < nx) { push("thin", [[x, o[1]], [x, I[1]]]); push("thin", [[x, I[3]], [x, o[3]]]); } if (i < nx) { const xm = lerp(I[0], I[2], (i + 0.5) / nx), lab = String(nx - i); for (const y of [o[1] + band / 2, o[3] - band / 2]) for (const t of text(lab, xm, y, 2.4, { align: "c", mid: true })) push("thin", t[0]); } }
+  for (let j = 0; j <= ny; j++) { const y = lerp(I[1], I[3], j / ny); if (j > 0 && j < ny) { push("thin", [[o[0], y], [I[0], y]]); push("thin", [[I[2], y], [o[2], y]]); } if (j < ny) { const ym = lerp(I[1], I[3], (j + 0.5) / ny), lab = "ABCDEFGHJKLM"[j]; for (const x of [o[0] + band / 2, o[2] - band / 2]) for (const t of text(lab, x, ym, 2.4, { align: "c", mid: true })) push("thin", t[0]); } }
+  return { x0: I[0], y0: I[1], x1: I[2], y1: I[3] };
+}
+function addText(Ly, pen, arr) { for (const t of arr) Ly[pen].push(t); }
+function cell(Ly, x, y, w, h, label, value, vh, bold = false) {
+  addText(Ly, "thin", text(label, x + 1.2, y + 1.2, 2));
+  const [s, hh] = fitText(value, w - 2.4, vh); addText(Ly, "line", text(s, x + 1.2, y + h - 1.4 - hh, hh, { bold }));
+}
+function titleBlock(Ly, x0, y1, w, f) {
+  const h1 = 17, h2 = 10, h3 = 10, H = h1 + h2 + h3, y0 = y1 - H;
+  Ly.line.push([rectPoly(x0, y0, x0 + w, y1), true, "path"]);
+  Ly.thin.push([[[x0, y0 + h1], [x0 + w, y0 + h1]], false, "path"], [[[x0, y0 + h1 + h2], [x0 + w, y0 + h1 + h2]], false, "path"]);
+  addText(Ly, "thin", text("TITLE", x0 + 1.2, y0 + 1.2, 2));
+  { const [s, hh] = fitText(f.title, w - 3, 4.4); addText(Ly, "line", text(s, x0 + 1.5, y0 + 4.2, hh, { bold: true })); }
+  { const [s, hh] = fitText("PURPOSE: " + f.purpose, w - 3, 2.3); addText(Ly, "thin", text(s, x0 + 1.5, y0 + 11.6, hh)); }
+  const c2 = [0.36, 0.14, 0.28, 0.22]; let x = x0;
+  const r2 = [["DWG NO.", f.dwg], ["REV", f.rev], ["SCALE", f.scale], ["SHEET", f.sheet]];
+  r2.forEach(([lb, v], i) => { const cw = w * c2[i]; if (i) Ly.thin.push([[[x, y0 + h1], [x, y0 + h1 + h2]], false, "path"]); cell(Ly, x, y0 + h1, cw, h2, lb, v, 3, i === 1); x += cw; });
+  x = x0; const r3 = [["DRAWN", f.drawn], ["CHECKED", f.checked], ["APPROVED", f.approved]];
+  r3.forEach(([lb, v], i) => { const cw = w / 3; if (i) Ly.thin.push([[[x, y0 + h1 + h2], [x, y1]], false, "path"]); cell(Ly, x, y0 + h1 + h2, cw, h3, lb, v, 2.6); x += cw; });
+  return H;
+}
+
+function bomBlock(Ly, x0, y1, w, rows) {
+  const rh = 5, hh = 5.5, H = hh + rows.length * rh, y0 = y1 - H, c1 = 10, c2 = 9;
+  Ly.line.push([rectPoly(x0, y0, x0 + w, y1), true, "path"]);
+  Ly.thin.push([[[x0 + c1, y0], [x0 + c1, y1]], false, "path"], [[[x0 + c1 + c2, y0], [x0 + c1 + c2, y1]], false, "path"]);
+  addText(Ly, "thin", text("ITEM", x0 + c1 / 2, y1 - hh / 2, 2, { align: "c", mid: true })); addText(Ly, "thin", text("QTY", x0 + c1 + c2 / 2, y1 - hh / 2, 2, { align: "c", mid: true })); addText(Ly, "thin", text("DESCRIPTION", x0 + c1 + c2 + 1.5, y1 - hh / 2, 2, { mid: true }));
+  rows.forEach((r, i) => {
+    const yb = y1 - hh - i * rh; Ly.thin.push([[[x0, yb], [x0 + w, yb]], false, "path"]);
+    addText(Ly, "thin", text(String(r.n), x0 + c1 / 2, yb - rh / 2, 2.2, { align: "c", mid: true })); addText(Ly, "thin", text(String(r.qty), x0 + c1 + c2 / 2, yb - rh / 2, 2.2, { align: "c", mid: true }));
+    const [s, h] = fitText(r.desc, w - c1 - c2 - 3, 2.2); addText(Ly, "thin", text(s, x0 + c1 + c2 + 1.5, yb - rh / 2, h, { mid: true }));
+  });
+  return H;
+}
+function revBlock(Ly, x0, y0, w, revs) {
+  const rh = 5, H = rh * (revs.length + 1), c1 = 9, c3 = 10;
+  Ly.line.push([rectPoly(x0, y0, x0 + w, y0 + H), true, "path"]);
+  Ly.thin.push([[[x0 + c1, y0], [x0 + c1, y0 + H]], false, "path"], [[[x0 + w - c3, y0], [x0 + w - c3, y0 + H]], false, "path"]);
+  const row = (i, a, b, c) => { const y = y0 + rh * i + rh / 2; if (i) Ly.thin.push([[[x0, y0 + rh * i], [x0 + w, y0 + rh * i]], false, "path"]); addText(Ly, "thin", text(a, x0 + c1 / 2, y, 2.2, { align: "c", mid: true })); const [s, h] = fitText(b, w - c1 - c3 - 2.4, 2.2); addText(Ly, "thin", text(s, x0 + c1 + 1.2, y, h, { mid: true })); addText(Ly, "thin", text(c, x0 + w - c3 / 2, y, 2.2, { align: "c", mid: true })); };
+  row(0, "REV", "DESCRIPTION", "BY"); revs.forEach((r, i) => row(i + 1, r.l, r.d, r.by));
+  return H;
+}
+function notesBlock(Ly, x0, y0, w, hAvail, notes) {
+  const h = 2.2, lh = 3.5; let y = y0 + 3.4, used = 0;
+  const blocks = notes.map(n => ({ n, lines: wrap(n.t, w - 6.5, h) }));
+  const need = bl => 6 + bl.reduce((a, b) => a + b.lines.length * lh + 0.8, 0);
+  while (blocks.length && need(blocks) > hAvail) blocks.pop();
+  if (!blocks.length) return { h: 0, shown: 0 };
+  addText(Ly, "line", text("NOTES:", x0, y0, 2.6, { bold: true }));
+  for (const b of blocks) { addText(Ly, "thin", text(b.n.k + ".", x0 + 1, y, h)); for (const l of b.lines) { addText(Ly, "thin", text(l, x0 + 6.5, y, h)); y += lh; } y += 0.8; }
+  return { h: y - y0, shown: blocks.length, shownNums: blocks.map(b => b.n.k) };
+}
+function stamp(Ly, c, word, ang) {
+  const h = 3.4, w = textW(word, h) + 7, f = frame(c, ang), R = [f(-w / 2, -h - 1.6), f(w / 2, -h - 1.6), f(w / 2, h + 1.6), f(-w / 2, h + 1.6)], R2 = [f(-w / 2 + 1, -h - 0.6), f(w / 2 - 1, -h - 0.6), f(w / 2 - 1, h + 0.6), f(-w / 2 + 1, h + 0.6)];
+  Ly.accent.push([R, true, "path"], [R2, true, "path"]); addText(Ly, "accent", text(word, c[0], c[1], h, { align: "c", mid: true, ang, bold: true }));
+  return bboxOf(R);
+}
+function freeBox(boxes, b) { return !boxes.some(q => !(b[2] < q[0] || b[0] > q[2] || b[3] < q[1] || b[1] > q[3])); }
+
+function sheetMachine(C) {
+  const { o, rnd, Ly, PW, PH, mg, push } = C, st = o.sheet, pl = o.plaus / 100, bu = o.bureau / 100, pick = a => a[floor(rnd() * a.length)];
+  let D, col = null, band = null, detailBox = null, frameIn;
+  if (st === "plate") {
+    push("line", rectPoly(mg, mg, PW - mg, PH - mg), true); push("thin", rectPoly(mg + 1.6, mg + 1.6, PW - mg - 1.6, PH - mg - 1.6), true);
+    D = { x0: mg + 8, y0: mg + 24, x1: PW - mg - 8, y1: PH - mg - 26 };
+  } else {
+    frameIn = drawingFrame(push, PW, PH, mg);
+    const I = frameIn, Iw = I.x1 - I.x0, Ih = I.y1 - I.y0;
+    if (Iw >= Ih * 1.2) { const cw = clamp(Iw * 0.34, 78, 118); col = { x0: I.x1 - cw, y0: I.y0, x1: I.x1, y1: I.y1 }; D = { x0: I.x0 + 3, y0: I.y0 + 3, x1: col.x0 - 3, y1: I.y1 - 3 }; push("thin", [[col.x0, I.y0], [col.x0, I.y1]]); }
+    else { const bh = clamp(Ih * 0.36, 62, 104); band = { x0: I.x0, y0: I.y1 - bh, x1: I.x1, y1: I.y1 }; D = { x0: I.x0 + 3, y0: I.y0 + 3, x1: I.x1 - 3, y1: band.y0 - 3 }; push("thin", [[I.x0, band.y0], [I.x1, band.y0]]); }
+    if (bu >= 0.35) {
+      const Dw = D.x1 - D.x0, Dh = D.y1 - D.y0;
+      if (Dw >= Dh) { const w = clamp(Dw * 0.24, 36, 64); detailBox = { x0: D.x1 - w, y0: D.y0, x1: D.x1, y1: D.y1 }; D = { ...D, x1: D.x1 - w - 2 }; }
+      else { const h = clamp(Dh * 0.26, 38, 62); detailBox = { x0: D.x0, y0: D.y1 - h, x1: D.x1, y1: D.y1 }; D = { ...D, y1: D.y1 - h - 2 }; }
+    }
+  }
+  const pad = st === "plate" ? 11 : 13, B = { x0: D.x0 + pad, y0: D.y0 + pad, x1: D.x1 - pad, y1: D.y1 - pad - 10, yb: D.y1 - pad + 2 };
+  const L = layout(o, rnd, B, st); L.plaus = pl;
+  drawMachine(L, Ly, st);
+  const shafts = L.shafts, cen = shafts.reduce((a, s) => [a[0] + s.x / shafts.length, a[1] + s.y / shafts.length], [0, 0]);
+  const occ = L.blobs.map(b => [b.x - b.r, b.y - b.r, b.x + b.r, b.y + b.r]).concat([[L.baseX[0], L.baseY - 2, L.baseX[1], L.baseY + L.baseH + 5]]);
+
+  if (st === "dimsa") for (const s of shafts) { const hl = max(...L.blobs.filter(b => b.sh === s.i).map(b => b.r), 6) + 3; for (const seg of [[[s.x - hl, s.y], [s.x + hl, s.y]], [[s.x, s.y - hl], [s.x, s.y + hl]]]) for (const d of dashed(seg, CL)) push("thin", d); }
+
+  const mesh = L.links.find(k => k.kind === "mesh" && k.A.rp > 4 && k.A.z === k.B.z) || L.links.find(k => k.kind === "mesh" && k.A.rp > 4);
+  if (detailBox && mesh) {
+    const A = shafts[mesh.a], Bs = shafts[mesh.b], u = [(Bs.x - A.x), (Bs.y - A.y)], d = hypot(...u), P = [A.x + u[0] / d * mesh.A.rp, A.y + u[1] / d * mesh.A.rp];
+    const rs = clamp(mesh.A.m * 4.6, 7, 16), rd = min((detailBox.x1 - detailBox.x0) / 2 - 3, (detailBox.y1 - detailBox.y0) / 2 - 8), k = rd / rs, Dc = [(detailBox.x0 + detailBox.x1) / 2, (detailBox.y0 + detailBox.y1) / 2 - 3], dc = ring(Dc[0], Dc[1], rd, rd, 96);
+    if (rd > 10) {
+      for (const pen of ["line", "thin"]) { const add = []; for (const it of Ly[pen]) { const b = it.bb || bboxOf(it[0]); if (b[2] < P[0] - rs || b[0] > P[0] + rs || b[3] < P[1] - rs || b[1] > P[1] + rs) continue; const q = it[0].map(([x, y]) => [Dc[0] + (x - P[0]) * k, Dc[1] + (y - P[1]) * k]); for (const j of joinSegs(clipSegs(segsOf(q, it[1]), [dc], true))) add.push([j, false, it[2]]); } Ly[pen].push(...add); }
+      push("line", dc, true); push("thin", ring(P[0], P[1], rs, rs, 48), true);
+      const lp = pol(P, rs, -PI / 4); addText(Ly, "line", text("B", lp[0] + 1.2, lp[1] - 4.4, 3.2, { bold: true }));
+      addText(Ly, "line", text("DETAIL B", Dc[0], Dc[1] + rd + 3, 3, { align: "c", bold: true })); addText(Ly, "thin", text(pl < 0.4 ? "SCALE 2:1 (ROUGHLY)" : `SCALE ${k.toFixed(1)}:1`, Dc[0], Dc[1] + rd + 7.4, 2.2, { align: "c" }));
+      occ.push([P[0] - rs, P[1] - rs, P[0] + rs, P[1] + rs]);
+    }
+  }
+
+  for (const s of shafts) { if (!s.w || s.float && pl < 0.3) continue; const r = s.hub + 3.2, a0 = -PI * 0.42 + (s.i * 1.3) % 1, sg = s.w > 0 ? 1 : -1, n = 16, pts = []; for (let i = 0; i <= n; i++) pts.push(pol([s.x, s.y], r, a0 + sg * 1.3 * i / n)); push("accent", pts); const ae = a0 + sg * 1.3; Ly.accent.push(arrowHead(pts[n], ae + sg * PI / 2, 2)); }
+  const flags = [...L.flags];
+  const pk = ["gear", "pulley", "owheel", "motor", "crank", "crankdisc", "cam", "ratchet", "fan", "flywheel", "belt"], pbase = L.els.filter(e => pk.includes(e.kind)), parts = pbase.slice(0, 1).concat(L.els.filter(e => e.kind === "plate3"), pbase.slice(1));
+  const outShaft = shafts.filter(s => s.out).sort((a, b) => abs(b.w) - abs(a.w))[0] || shafts[shafts.length - 1];
+  const ratio = abs(outShaft.w), fast = ratio >= 1;
+  const info = { driver: L.drv, shafts: shafts.length, links: L.links.length, outputs: L.outputs, short: L.short || 0, flags, ratio };
+  if (st === "plate") {
+
+    const name = cleanText(o.name) || "J. DOE", ttl = L.drv === "wheel" ? "PERPETUAL MOTION." : L.drv === "crank" ? "MECHANICAL MOVEMENT." : "CONTRAPTION.";
+    addText(Ly, "thin", text("(NO MODEL.)", mg + 6, mg + 5, 2.4)); addText(Ly, "line", text(name + ".", PW - mg - 6, mg + 5, 3, { align: "r" }));
+    addText(Ly, "line", text(ttl, PW / 2, mg + 9.5, 4.4, { align: "c", bold: true }));
+    addText(Ly, "thin", text(`NO. ${17 + (o.seed % 83)}${String(o.seed).padStart(3, "0")}.        PATENTED OCT. 17, 18${70 + (o.seed % 29)}.`, PW / 2, mg + 16.5, 2.6, { align: "c" }));
+    const fy = min(L.baseY + L.baseH + 10, D.y1 + 4), figX = L.baseX[0] + 4;
+    addText(Ly, "line", text("FIG. 1.", clamp(figX, mg + 6, PW - mg - 30), fy, 3.6, { bold: true }));
+    const seen = new Set(), uniq = parts.filter(e => { const k = e.kind === "belt" ? "b" + e.id : e.sh; if (seen.has(k)) return false; seen.add(k); return true; }), nl = min(uniq.length, 3 + round(bu * 9)), lettered = uniq.sort(() => rnd() - 0.5).slice(0, nl), labs = [];
+    lettered.forEach((e, i) => { const a = anchorOf(e, L); if (!a) return; let dx = a[0] - cen[0], dy = a[1] - cen[1], dl = hypot(dx, dy); if (dl < 1) { dx = 1; dy = -1; dl = 1.41; } const ux = dx / dl, uy = dy / dl, p = [a[0] + ux * a[2] * 0.7, a[1] + uy * a[2] * 0.7]; labs.push({ p, x: a[0] + ux * (a[2] + 7), y: a[1] + uy * (a[2] + 7), l: "ABCDEFGHKLMNPRST"[i] }); });
+    relax(labs, 7, [D.x0 + 3, D.y0 + 3, D.x1 - 3, D.y1 + 6]);
+    for (const b of labs) { const v = [b.x - b.p[0], b.y - b.p[1]], d = hypot(...v) || 1; if (d > 4.5) push("thin", [b.p, [b.x - v[0] / d * 3, b.y - v[1] / d * 3]]); addText(Ly, "line", text(b.l, b.x, b.y, 3.4, { align: "c", mid: true })); }
+    const yb = PH - mg - 7;
+    addText(Ly, "thin", text("WITNESSES:", mg + 6, yb - 17, 2.6)); Ly.thin.push(...squiggle(mg + 8, yb - 8, 34, 4, rnd), ...squiggle(mg + 8, yb, 28, 4, rnd));
+    addText(Ly, "thin", text("INVENTOR:", PW - mg - 62, yb - 17, 2.6)); Ly.line.push(...squiggle(PW - mg - 60, yb - 8, 44, 5, rnd));
+    addText(Ly, "thin", text("BY HIS ATTORNEYS", PW - mg - 62, yb - 1.5, 2.2)); Ly.thin.push(...squiggle(PW - mg - 22, yb, 14, 3, rnd));
+    if (L.drv === "wheel" && pl < 0.7) {
+      const s0 = shafts[0], R = L.els[0].R, last = outShaft, top = min(...L.blobs.map(b => b.y - b.r)) - 6, a = [last.x, last.y - 4], b = [s0.x + R * 0.3, s0.y - R - 2], c1 = [a[0], max(D.y0 + 2, top)], c2 = [b[0], max(D.y0 + 2, top)];
+      const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40, u = 1 - t; pts.push([u ** 3 * a[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * b[0], u ** 3 * a[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * b[1]]); }
+      for (const d of dashed(pts, [3, 2])) push("accent", d); const e2 = pts[39]; Ly.accent.push(arrowHead(b, atan2(b[1] - e2[1], b[0] - e2[0]), 2.6));
+      const mp = pts[20]; addText(Ly, "accent", text(pl < 0.35 ? "ENERGY???" : "ENERGY (RETURNED)", mp[0], mp[1] - 3.5, 2.8, { align: "c" }));
+      info.returned = true;
+    }
+  } else {
+
+    const fs = pick([2, 4, 5, 10]), revN = 1 + round(bu * 7), revs = REVS.slice(0, revN).map((d, i) => ({ l: "ABCDEFGHJK"[i], d, by: pick(["JD", "ENG", "??", "KM", "AB"]) })), rev = revs[revs.length - 1].l;
+
+    const capRows = col ? floor(((col.y1 - col.y0) * 0.3 - 5.5) / 5) : floor((band.y1 - band.y0 - 37 - 6 - 5.5) / 5);
+    const nb = min(parts.length, 3 + round(bu * 9), capRows - (bu > 0.2 ? 1 : 0)), groups = [];
+    for (const e of parts) { if (groups.length >= nb) break; groups.push({ e, desc: describe(e, L), qty: 1 }); }
+    if (!shafts.every(s => s.float) && bu > 0.2) groups.push({ e: null, strut: true, desc: `STRUT, PLAIN`, qty: shafts.filter(s => !s.float).length });
+    const balls = [];
+    groups.forEach((g, i) => {
+      let a;
+      if (g.strut) { const s = shafts.find(s => !s.float); a = [s.x, lerp(s.y, L.baseY, 0.7), 2]; }
+      else a = anchorOf(g.e, L);
+      let dx = a[0] - cen[0], dy = a[1] - cen[1], dl = hypot(dx, dy); if (dl < 1) { dx = -1; dy = -1; dl = 1.41; }
+      const ux = dx / dl, uy = dy / dl, p = [a[0] + ux * a[2] * 0.75, a[1] + uy * a[2] * 0.75];
+      balls.push({ p, x: a[0] + ux * (a[2] + 10), y: a[1] + uy * (a[2] + 10), n: i + 1 });
+    });
+    relax(balls, 9, [D.x0 + 5, D.y0 + 5, D.x1 - 5, D.y1 - 5]);
+    for (const b of balls) {
+      const v = [b.x - b.p[0], b.y - b.p[1]], d = hypot(...v) || 1, r = 3.8;
+      if (d > r + 1) { push("thin", [b.p, [b.x - v[0] / d * r, b.y - v[1] / d * r]]); push("thin", ring(b.p[0], b.p[1], 0.45, 0.45, 8), true); }
+      push("thin", ring(b.x, b.y, r, r, 32), true); addText(Ly, "thin", text(String(b.n), b.x, b.y, 2.6, { align: "c", mid: true }));
+      occ.push([b.x - r, b.y - r, b.x + r, b.y + r]);
+    }
+
+    const nd = SHOW_DIMS ? min(L.links.length, 1 + round(bu * 3)) : 0, dimOcc = [], mx = (B.x0 + B.x1) / 2, my = (B.y0 + B.y1) / 2;
+    L.links.slice(0, nd).forEach((k, i) => {
+      const a = shafts[k.a], b = shafts[k.b], ang = atan2(b.y - a.y, b.x - a.x), d = hypot(b.x - a.x, b.y - a.y), mid = [(a.x + b.x) / 2, (a.y + b.y) / 2];
+      let nx = -sin(ang), ny = cos(ang); if ((mid[0] - mx) * nx + (mid[1] - my) * ny < 0) { nx = -nx; ny = -ny; }
+      const off = max(k.A.ra || k.A.r || 6, k.B.ra || k.B.r || 6) + 5 + i * 2, A2 = [a.x + nx * off, a.y + ny * off], B2 = [b.x + nx * off, b.y + ny * off];
+      const tol = pl < 0.35 ? pick([" +/- VIBES", " TBD", " ?"]) : rnd() < 0.4 ? " +/-0.01" : "", val = (k.kind === "mesh" ? (d * fs).toFixed(2) : (d * fs).toFixed(1)) + tol;
+      let ta = ang; if (ta > PI / 2 || ta < -PI / 2) ta += PI;
+      const tp = [(A2[0] + B2[0]) / 2 + nx * 2.4, (A2[1] + B2[1]) / 2 + ny * 2.4], tw = textW(val, 2.4) / 2 + 1, tb = [tp[0] - tw, tp[1] - tw, tp[0] + tw, tp[1] + tw];
+      const inD = q => q[0] >= D.x0 && q[0] <= D.x1 && q[1] >= D.y0 && q[1] <= D.y1, e1 = [a.x + nx * (off + 2), a.y + ny * (off + 2)], e2 = [b.x + nx * (off + 2), b.y + ny * (off + 2)];
+      if (!freeBox(dimOcc, tb) || ![e1, e2, tb.slice(0, 2), tb.slice(2)].every(inD)) return; dimOcc.push(tb);
+      push("thin", [[a.x + nx * 1.5, a.y + ny * 1.5], [a.x + nx * (off + 2), a.y + ny * (off + 2)]]); push("thin", [[b.x + nx * 1.5, b.y + ny * 1.5], [b.x + nx * (off + 2), b.y + ny * (off + 2)]]);
+      push("thin", [A2, B2]); Ly.thin.push(arrowHead(A2, ang + PI, 2), arrowHead(B2, ang, 2));
+      addText(Ly, "thin", text(val, tp[0], tp[1], 2.4, { align: "c", mid: true, ang: ta }));
+      occ.push(bboxOf([A2, B2, tp]));
+    });
+
+    const gears = SHOW_DIMS ? L.els.filter(e => e.kind === "gear").slice(0, 1 + round(bu * 3)) : [];
+    for (const g of gears) {
+      const s = shafts[g.sh], right = s.x < D.x1 - 40, a = right ? -PI / 4 : -PI * 3 / 4, p0 = pol([s.x, s.y], g.ra, a), p1 = pol(p0, 7, a), p2 = [p1[0] + (right ? 4 : -4), p1[1]];
+      const lab = `Ø${(g.rp * 2 * fs).toFixed(0)} ${g.N}T`, tx = p2[0] + (right ? 1 + textW(lab, 2.4) : -1 - textW(lab, 2.4));
+      if (p1[1] - 2 < D.y0 || tx < D.x0 || tx > D.x1) continue;
+      push("thin", [p0, p1, p2]); Ly.thin.push(arrowHead(p0, a + PI, 1.8)); addText(Ly, "thin", text(lab, p2[0] + (right ? 1 : -1), p2[1], 2.4, { align: right ? "l" : "r", mid: true }));
+    }
+
+    const plateN = L.flags.has("plate"), notes = [{ t: "ALL DIMENSIONS IN MM UNLESS OTHERWISE FELT." }];
+    if (plateN) notes.push({ t: PLATE_NOTE });
+    for (const f of flags) if (FLAG_NOTE[f]) notes.push({ t: FLAG_NOTE[f] });
+    notes.push({ t: `OUTPUT TURNS ${ratio.toFixed(2)}X ${fast ? "FASTER" : "SLOWER"} THAN INPUT.${L.drv === "wheel" ? " INPUT IS OUTPUT. SEE NOTE 7." : ""}` });
+    if (pl > 0.85) notes.push({ t: "ALL GEAR TRAINS CHECKED TO MESH. THEY DO." });
+    const pool = NOTE_POOL.slice().sort(() => rnd() - 0.5), want = 2 + round(bu * 9);
+    while (notes.length < want && pool.length) notes.push({ t: pool.pop() });
+    notes.splice(2, 0, notes.splice(1 + floor(rnd() * (notes.length - 1)), 1)[0]);
+    let k = 1; for (const n of notes) { if (k === 7) k++; n.k = k++; }
+    const tf = { title: cleanText(o.part) || "DIMSA-DOOSA", purpose: pl < 0.5 || bu > 0.6 ? pick(PURPOSE) : "TRANSMITS ROTATION", dwg: `DD-17-${String(o.seed).padStart(3, "0")}`, rev, scale: pl < 0.35 ? "1:1 (ISH)" : `1:${fs}`, sheet: bu > 0.8 ? "1 OF 1?" : "1 OF 1", drawn: cleanText(o.name) || "J. DOE", checked: bu > 0.5 ? pick(["NOBODY", "PENDING", "LATER"]) : "AB", approved: bu > 0.4 ? pick(["SOMEONE (LEFT)", "ENG. (VERBAL)", "IN PRINCIPLE"]) : "KM" };
+    const rows = groups.map((g, i) => ({ n: i + 1, qty: g.qty, desc: g.desc }));
+    let notesShown = 0;
+    if (col) {
+      const cw = col.x1 - col.x0 - 4, x0 = col.x0 + 2, TBH = titleBlock(Ly, x0, col.y1 - 2, cw, tf);
+      let bomRows = rows; while (bomRows.length && 5.5 + 5 * bomRows.length > (col.y1 - col.y0) * 0.3) bomRows = bomRows.slice(0, -1);
+      const BH = bomRows.length ? bomBlock(Ly, x0, col.y1 - 2 - TBH, cw, bomRows) : 0;
+      const RH = bu > 0.15 ? revBlock(Ly, x0, col.y0 + 2, cw, revs.slice(-4)) : 0;
+      notesShown = notesBlock(Ly, x0 + 1, col.y0 + 2 + RH + (RH ? 5 : 2), cw - 2, col.y1 - 2 - TBH - BH - 5 - (col.y0 + 2 + RH + (RH ? 5 : 2)), notes).shown;
+      info.bomShown = bomRows.length;
+    } else {
+      const wr = min((band.x1 - band.x0) * 0.56, 120), x0 = band.x1 - wr - 2, TBH = titleBlock(Ly, x0, band.y1 - 2, wr, tf);
+      let bomRows = rows; while (bomRows.length && 5.5 + 5 * bomRows.length > band.y1 - band.y0 - TBH - 6) bomRows = bomRows.slice(0, -1);
+      if (bomRows.length) bomBlock(Ly, x0, band.y1 - 2 - TBH, wr, bomRows);
+      const lw = x0 - band.x0 - 6, RH = bu > 0.15 ? revBlock(Ly, band.x0 + 2, band.y0 + 3, lw, revs.slice(-3)) : 0;
+      notesShown = notesBlock(Ly, band.x0 + 3, band.y0 + 3 + RH + (RH ? 4 : 0), lw - 2, band.y1 - band.y0 - 6 - RH - (RH ? 4 : 0), notes).shown;
+      info.bomShown = bomRows.length;
+    }
+    info.notes = notesShown; info.notesWanted = notes.length;
+
+    const cands = parts.filter(e => e.kind !== "belt").sort(() => rnd() - 0.5), nc = min(cands.length, round(bu * 2.4));
+    for (let i = 0; i < nc; i++) { const a = anchorOf(cands[i], L), b = [a[0] - a[2] - 3, a[1] - a[2] - 3, a[0] + a[2] + 3, a[1] + a[2] + 3]; push("accent", cloud(b), true); const rl = revs[max(0, revs.length - 1 - i)].l; Ly.accent.push(...revTriangle(b[2] + 1, b[1] - 1, 6.5, rl)); }
+    const ns = (bu > 0.5 ? 1 : 0) + (bu > 0.85 ? 1 : 0);
+    for (let i = 0; i < ns; i++) for (let t = 0; t < 60; t++) {
+      const word = pick(STAMPS), ang = (rnd() - 0.5) * 0.3, w = textW(word, 3.4) + 9, c = [lerp(D.x0 + w / 2 + 2, D.x1 - w / 2 - 2, rnd()), lerp(D.y0 + 8, D.y1 - 8, rnd())], bx = [c[0] - w / 2 - 1, c[1] - 7, c[0] + w / 2 + 1, c[1] + 7];
+      if (bx[0] < D.x0 || bx[2] > D.x1 || !freeBox(occ, bx)) continue; stamp(Ly, c, word, ang); occ.push(bx); break;
+    }
+    if (pl < 0.6) {
+      const nm = pl < 0.25 ? 2 : 1, cm = parts.filter(e => e.kind !== "belt").sort(() => rnd() - 0.5);
+      for (let i = 0; i < min(nm, cm.length); i++) {
+        const a = anchorOf(cm[i], L), r0 = a[2] + 4, pts = []; for (let j = 0; j <= 52; j++) { const t = j / 48 * TAU + 0.6; pts.push([a[0] + r0 * (1 + 0.06 * sin(t * 3 + i)) * cos(t), a[1] + r0 * 0.85 * (1 + 0.05 * cos(t * 2)) * sin(t)]); }
+        push("accent", pts); const word = pick(MARKUPS), lp = pol([a[0], a[1]], r0 + 2, -PI / 4 - i * 1.5);
+        for (let t = 0; t < 30; t++) { const c = [clamp(lp[0] + (rnd() - 0.3) * 30, D.x0 + 2, D.x1 - textW(word, 3) - 2), clamp(lp[1] + (rnd() - 0.6) * 24, D.y0 + 4, D.y1 - 4)], bx = [c[0] - 1, c[1] - 1, c[0] + textW(word, 3) + 1, c[1] + 4]; if (!freeBox(occ, bx) || bx[2] > D.x1) continue; push("accent", [lp, [c[0] - 0.6, c[1] + 1.5]]); addText(Ly, "accent", text(word, c[0], c[1], 3)); occ.push(bx); break; }
+      }
+    }
+    info.revs = revs.length;
+  }
+  return info;
+}
+
+function sheetExploded(C) {
+  const { o, rnd, Ly, PW, PH, mg, push } = C, pl = o.plaus / 100, bu = o.bureau / 100, randi = (a, b) => a + floor(rnd() * (b - a + 1)), pick = a => a[floor(rnd() * a.length)];
+  const I = drawingFrame(push, PW, PH, mg), Iw = I.x1 - I.x0, Ih = I.y1 - I.y0; let D, col = null, band = null;
+  if (Iw >= Ih * 1.2) { const cw = clamp(Iw * 0.34, 78, 118); col = { x0: I.x1 - cw, y0: I.y0, x1: I.x1, y1: I.y1 }; D = { x0: I.x0 + 3, y0: I.y0 + 3, x1: col.x0 - 3, y1: I.y1 - 3 }; push("thin", [[col.x0, I.y0], [col.x0, I.y1]]); }
+  else { const bh = clamp(Ih * 0.34, 60, 100); band = { x0: I.x0, y0: I.y1 - bh, x1: I.x1, y1: I.y1 }; D = { x0: I.x0 + 3, y0: I.y0 + 3, x1: I.x1 - 3, y1: band.y0 - 3 }; push("thin", [[I.x0, band.y0], [I.x1, band.y0]]); }
+
+  const N = randi(18, 30), m = 2, rp = m * N / 2, g = o.explode, comps = []; let y = 0;
+  const add = (key, outline, h, opt = {}) => { comps.push({ key, outline, y0: y, h, off: opt.off || [0, 0], holes: opt.holes || [], desc: opt.desc, qty: opt.qty || 1, group: opt.group || key }); if (!opt.stay) y += h + (opt.gap ?? g); };
+  const sp = [0, 1, 2].map(i => { const a = -PI / 2 + i * TAU / 3; return [22 * cos(a), 22 * sin(a)]; });
+  sp.forEach((p, i) => add("strut", circ(2.2, 20), 26, { off: p, stay: i < 2, desc: "STRUT, QTY 3. NOT 2. NOT 4.", qty: 3 }));
+  add("plate", roundTri(31, 7), 3, { holes: sp.map(p => [p[0], p[1], 2.4]).concat([[0, 0, 5]]), desc: "PLATE, BALANCE, TOP. ADDS NO FUNCTION." });
+  add("flange", circ(15, 48), 2.5, { gap: 0.8 * g, holes: [0, 1, 2, 3].map(i => [11 * cos(PI / 4 + i * PI / 2), 11 * sin(PI / 4 + i * PI / 2), 1.4]).concat([[0, 0, 5]]), desc: "HOUSING, BEARING, FLANGED" });
+  add("housing", circ(10, 40), 8, { holes: [[0, 0, 5]], desc: "HOUSING, BEARING", group: "flange" });
+  add("washer", circ(9, 40), 1.2, { holes: [[0, 0, 4.6]], desc: "WASHER, PLAIN, M8" });
+  const gh = rp > 16 ? Array.from({ length: 5 }, (_, i) => [(rp * 0.55) * cos(i * TAU / 5), (rp * 0.55) * sin(i * TAU / 5), min(rp * 0.16, 4.5)]) : [];
+  add("gear", gearPts(N, m, 0, pl < 0.3 && rnd() < 0.5), 7, { holes: [[0, 0, 4.6]].concat(gh), desc: `GEAR, SPUR, ${N}T, M2` });
+  add("boss", circ(7.5, 32), 5, { holes: [[0, 0, 4.6]], desc: "BOSS, HUB, SET SCREW (LOST)" });
+  add("spacer", circ(6.2, 28), 9, { holes: [[0, 0, 4.6]], desc: "SPACER, LENGTH PER ENG." });
+  const second = pick(["cam", "pinion", "pulley"]);
+  if (second === "cam") add("cam", camPts({ rb: 10, lift: 7, phase: rnd() * TAU }), 6, { holes: [[0, 0, 4.6]], desc: "CAM, EGG-SHAPED" });
+  else if (second === "pinion") add("pinion", gearPts(randi(11, 15), m, 0.2), 9, { holes: [[0, 0, 4.6]], desc: "PINION, DRIVES SOMETHING ELSEWHERE" });
+  else { add("pulley", circ(13, 48), 3, { gap: 0, holes: [[0, 0, 4.6]], desc: "PULLEY, V (TWO HALVES)" }); add("pulley2", circ(10.5, 44), 4, { gap: 0, holes: [[0, 0, 4.6]], desc: "PULLEY, V (TWO HALVES)", group: "pulley" }); add("pulley3", circ(13, 48), 3, { holes: [[0, 0, 4.6]], desc: "PULLEY, V (TWO HALVES)", group: "pulley" }); }
+  const p1 = rnd() * TAU, p2 = rnd() * TAU, p3 = rnd() * TAU, R0 = 15;
+  const blobOut = Array.from({ length: 64 }, (_, i) => { const a = i / 64 * TAU, r = R0 * (1 + 0.24 * sin(2 * a + p1) + 0.13 * sin(3 * a + p2) + 0.06 * sin(5 * a + p3)); return [r * cos(a) + 4, r * sin(a)]; });
+  add("dimsa", blobOut, 4, { holes: [[0, 0, 4.6], [R0 * 0.62 + 4, 0, 1.8], [-R0 * 0.3, R0 * 0.55, 1.4]], desc: (cleanText(o.part) || "DIMSA-DOOSA") + ". PURPOSE: PER ENG." });
+  add("lock", circ(7, 32), 1.2, { holes: [[0, 0, 4.4]], desc: "WASHER, LOCK, SPLIT" });
+  add("nut", hexPts(7.6, PI / 6), 5, { holes: [[0, 0, 4.2]], desc: "NUT, HEX, M8", gap: g * 1.6 });
+  add("shaft", circ(4.2, 28), 64, { desc: "SHAFT, Ø8, PULLED OUT FOR CLARITY" });
+  const top = y;
+
+  const V = mulM(rotZ(o.lean * D2R), mulM(rotX(o.pitch * D2R), rotY((25 + o.seed % 40) * D2R)));
+  const proj1 = v => { const q = mulV(V, v); return [q[0], -q[1]]; };
+  let pts = []; for (const c of comps) for (const [u, v] of c.outline) for (const yy of [c.y0, c.y0 + c.h]) pts.push(proj1([c.off[0] + u, yy, c.off[1] + v]));
+  pts.push(proj1([0, -8, 0]), proj1([0, top + 8, 0]));
+  const bb = bboxOf(pts), Dw = D.x1 - D.x0, Dh = D.y1 - D.y0, sc = min(Dw * 0.68 / (bb[2] - bb[0]), Dh * 0.94 / (bb[3] - bb[1]));
+  const ox = D.x0 + Dw * 0.38 - (bb[0] + bb[2]) / 2 * sc, oy = (D.y0 + D.y1) / 2 - (bb[1] + bb[3]) / 2 * sc;
+  const P = v => { const q = mulV(V, v); return [ox + q[0] * sc, oy - q[1] * sc]; }, depth = v => mulV(V, v)[2];
+  for (const d of dashed([P([0, -8, 0]), P([0, top + 8, 0])], CL)) push("thin", d);
+  for (const p of sp) for (const d of dashed([P([p[0], -4, p[1]]), P([p[0], comps.find(c => c.key === "plate").y0 + 6, p[1]])], [2.5, 1.6])) push("thin", d);
+  const topVis = mulV(V, [0, 1, 0])[2] > 0, anchors = {};
+  const order = comps.map(c => [c, depth([c.off[0], c.y0 + c.h / 2, c.off[1]])]).sort((a, b) => a[1] - b[1]).map(a => a[0]);
+  for (const c of order) {
+    const pts2 = c.outline, n = pts2.length, ccw = area(pts2) > 0;
+    const T = pts2.map(([u, v]) => P([c.off[0] + u, c.y0 + c.h, c.off[1] + v])), Bt = pts2.map(([u, v]) => P([c.off[0] + u, c.y0, c.off[1] + v]));
+    const front = pts2.map((p, i) => { const q = pts2[(i + 1) % n], du = q[0] - p[0], dv = q[1] - p[1], nrm = ccw ? [dv, 0, -du] : [-dv, 0, du]; return mulV(V, nrm)[2] > 1e-9; });
+    const sil = hull(T.concat(Bt)), cap = topVis ? T : Bt, other = topVis ? Bt : T, segs = [];
+    cutBehind(Ly, [[sil]]);
+    Ly.line.push([cap, true, "path"]);
+    for (let i = 0; i < n; i++) { const j = (i + 1) % n; if (front[i]) segs.push([other[i], other[j]]); }
+    for (let i = 0; i < n; i++) {
+      const pv = (i - 1 + n) % n, a0 = atan2(pts2[i][1] - pts2[pv][1], pts2[i][0] - pts2[pv][0]), a1 = atan2(pts2[(i + 1) % n][1] - pts2[i][1], pts2[(i + 1) % n][0] - pts2[i][0]);
+      let turn = abs(a1 - a0); if (turn > PI) turn = TAU - turn;
+      if (front[pv] !== front[i] || (turn > 22 * D2R && (front[pv] || front[i]))) segs.push([cap[i], other[i]]);
+    }
+    for (const q of joinSegs(clipSegs(segs, [cap], false))) Ly.line.push([q, false, "path"]);
+    for (const [u, v, r] of c.holes) Ly.line.push([ring(0, 0, r, r, 24).map(([a, b]) => P([c.off[0] + u + a, topVis ? c.y0 + c.h : c.y0, c.off[1] + v + b])), true, "path"]);
+    if (c.key === "nut" || c.key === "dimsa") for (const s of hatch([cap], 1.2, 30)) Ly.thin.push(s);
+    const ri = cap.reduce((b, p, i) => p[0] > cap[b][0] ? i : b, 0);
+    if (!anchors[c.group]) anchors[c.group] = { p: cap[ri], c };
+  }
+
+  const groups = Object.values(anchors).sort((a, b) => a.p[1] - b.p[1]), r = 3.8;
+  const sbb = bboxOf(comps.flatMap(c => c.outline.map(([u, v]) => P([c.off[0] + u, c.y0 + c.h, c.off[1] + v])).concat(c.outline.map(([u, v]) => P([c.off[0] + u, c.y0, c.off[1] + v])))));
+  const right = min(D.x1 - r - 2, sbb[2] + 12), top0 = D.y0 + r + 2, bot0 = D.y1 - r - 2;
+  const capRows = col ? floor(((col.y1 - col.y0) * 0.45 - 5.5) / 5) : floor((band.y1 - band.y0 - 37 - 6 - 5.5) / 5);
+  const shown = groups.slice(0, min(capRows, max(5, round(groups.length * (0.5 + 0.5 * bu)))));
+  const balls = shown.map(g2 => ({ g: g2, x: right, y: g2.p[1] }));
+  const sp2 = min(10, (bot0 - top0) / max(1, balls.length - 1));
+  for (let i = 0; i < balls.length; i++) balls[i].y = max(balls[i].y, i ? balls[i - 1].y + sp2 : top0);
+  const over = balls.length ? balls[balls.length - 1].y - bot0 : 0; if (over > 0) for (const b of balls) b.y -= over;
+  if (balls.length && balls[0].y < top0) balls.forEach((b, i) => { b.y = top0 + i * sp2; });
+  const rows = [];
+  balls.forEach((b, i) => {
+    const n = i + 1, p = b.g.p; push("thin", ring(b.x, b.y, r, r, 32), true); addText(Ly, "thin", text(String(n), b.x, b.y, 2.6, { align: "c", mid: true }));
+    push("thin", [p, [b.x - r, b.y]]); push("thin", ring(p[0], p[1], 0.45, 0.45, 8), true);
+    const c = b.g.c; rows.push({ n, qty: c.qty, desc: c.desc });
+  });
+
+  const revN = 1 + round(bu * 6), revs = REVS.slice(0, revN).map((d, i) => ({ l: "ABCDEFGHJK"[i], d, by: pick(["JD", "ENG", "??", "KM"]) }));
+  const notes = [{ t: "EXPLODED FOR CLARITY. CLARITY NOT GUARANTEED." }, { t: PLATE_NOTE }, { t: "ASSEMBLE IN REVERSE ORDER OF DISASSEMBLY. DISASSEMBLY NOT DOCUMENTED." }];
+  const pool = NOTE_POOL.slice().sort(() => rnd() - 0.5), want = 2 + round(bu * 8);
+  while (notes.length < want && pool.length) notes.push({ t: pool.pop() });
+  let k = 1; for (const n of notes) { if (k === 7) k++; n.k = k++; }
+  const tf = { title: (cleanText(o.part) || "DIMSA-DOOSA") + " ASSY", purpose: pick(PURPOSE), dwg: `DD-17-${String(o.seed).padStart(3, "0")}-X`, rev: revs[revs.length - 1].l, scale: "NTS", sheet: "1 OF 1", drawn: cleanText(o.name) || "J. DOE", checked: bu > 0.5 ? "NOBODY" : "AB", approved: bu > 0.4 ? "IN PRINCIPLE" : "KM" };
+  let shownNotes = 0;
+  if (col) {
+    const cw = col.x1 - col.x0 - 4, x0 = col.x0 + 2, TBH = titleBlock(Ly, x0, col.y1 - 2, cw, tf); let bom = rows; while (bom.length && 5.5 + 5 * bom.length > (col.y1 - col.y0) * 0.45) bom = bom.slice(0, -1);
+    const BH = bom.length ? bomBlock(Ly, x0, col.y1 - 2 - TBH, cw, bom) : 0, RH = bu > 0.15 ? revBlock(Ly, x0, col.y0 + 2, cw, revs.slice(-4)) : 0, ny = col.y0 + 2 + RH + (RH ? 5 : 2);
+    shownNotes = notesBlock(Ly, x0 + 1, ny, cw - 2, col.y1 - 2 - TBH - BH - 5 - ny, notes).shown;
+  } else {
+    const wr = min((band.x1 - band.x0) * 0.56, 120), x0 = band.x1 - wr - 2, TBH = titleBlock(Ly, x0, band.y1 - 2, wr, tf); let bom = rows; while (bom.length && 5.5 + 5 * bom.length > band.y1 - band.y0 - TBH - 6) bom = bom.slice(0, -1);
+    if (bom.length) bomBlock(Ly, x0, band.y1 - 2 - TBH, wr, bom);
+    shownNotes = notesBlock(Ly, band.x0 + 3, band.y0 + 3, x0 - band.x0 - 8, band.y1 - band.y0 - 6, notes).shown;
+  }
+  if (bu > 0.5) { const word = pick(STAMPS), w = textW(word, 3.4) + 9; for (const c of [[D.x0 + w / 2 + 4, D.y0 + 10], [D.x0 + w / 2 + 4, D.y1 - 10], [right - w / 2 - 8, D.y1 - 10], [right - w / 2 - 8, D.y0 + 10]]) { const bx = [c[0] - w / 2, c[1] - 7, c[0] + w / 2, c[1] + 7]; if (bx[0] >= D.x0 && freeBox([sbb], bx) && freeBox(balls.map(b => [b.x - r, b.y - r, b.x + r, b.y + r]), bx)) { stamp(Ly, c, word, -0.08); break; } } }
+  if (pl < 0.6) { const c = comps.find(c2 => c2.key === "dimsa"), a = P([c.off[0] + 4, c.y0 + c.h, c.off[1]]), r0 = 24 * sc; const pts2 = []; for (let j = 0; j <= 52; j++) { const t = j / 48 * TAU + 0.6; pts2.push([a[0] + r0 * 1.15 * (1 + 0.05 * sin(t * 3)) * cos(t), a[1] + r0 * 0.6 * sin(t)]); } push("accent", pts2); const word = pick(MARKUPS), lp = [a[0] - r0 * 1.2, a[1] - r0 * 0.7]; push("accent", [lp, [lp[0] - 6, lp[1] - 6]]); addText(Ly, "accent", text(word, clamp(lp[0] - 7 - textW(word, 3), D.x0 + 2, D.x1 - 30), lp[1] - 9.5, 3)); }
+  return { comps: comps.length, balloons: balls.length, notes: shownNotes, notesWanted: notes.length, revs: revs.length };
+}
+
+function build(o) {
+  const t0 = performance.now(), [PW, PH] = o.page.split("x").map(Number), mg = o.margin;
+  const Ly = { thin: [], line: [], accent: [] }, rnd = mulberry(o.seed * 7919 + 17), push = (pen, pts, cl = false) => Ly[pen].push([pts, cl, "path"]);
+  TX.min = INF;
+  const C = { o, rnd, Ly, PW, PH, mg, push };
+  const info = o.sheet === "exploded" ? sheetExploded(C) : sheetMachine(C);
+  for (const pen of PENS) Ly[pen] = Ly[pen].filter(it => it[0].length > 1 && plen(it[0]) > 0.05).map(it => [it[0], it[1], it[2]]);
+  let bb = [INF, INF, -INF, -INF], finite = true;
+  for (const pen of PENS) for (const [q] of Ly[pen]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) finite = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+  const metres = Object.fromEntries(PENS.map(p => [p, Ly[p].reduce((a, [q]) => a + plen(q), 0) / 1000])), tot = PENS.reduce((a, p) => a + metres[p], 0);
+  const notes = [];
+  if (info.short) notes.push(`${info.short} link${info.short > 1 ? "s" : ""} found no room: fewer links, a bigger page or smaller parts`);
+  if (info.outputs !== undefined && info.outputs < o.outputs) notes.push(`${o.outputs - info.outputs} driven thing${o.outputs - info.outputs > 1 ? "s" : ""} found no room`);
+  if (info.notesWanted && info.notes < info.notesWanted) notes.push(`${info.notesWanted - info.notes} note${info.notesWanted - info.notes > 1 ? "s" : ""} left off for room`);
+  const gates = [
+    ["fits inside the margins", finite && bb[0] >= mg - 0.01 && bb[1] >= mg - 0.01 && bb[2] <= PW - mg + 0.01 && bb[3] <= PH - mg + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    ["letters at least 2 mm tall", TX.min >= 1.99, isFinite(TX.min) ? `${TX.min.toFixed(1)} mm` : "no letters"],
+    ["pen under 150 m in all", tot < 150, `${tot.toFixed(1)} m`],
+  ];
+  return { o, W: PW, H: PH, layers: Ly, gates, notes, info, metres, ms: performance.now() - t0 };
+}
+
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = { thin: "#454545", line: "#141414", accent: "#" + ACCENT[r.o.accent] };
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of PENS) { c.strokeStyle = col[key]; c.lineWidth = PEN[key]; for (const [q, cl] of r.layers[key]) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); } }
+  const i = r.info, what = r.o.sheet === "exploded" ? `${i.comps} parts exploded, ${i.balloons} balloons` : `${i.shafts} shafts, ${i.links} links, ${i.outputs} driven, driver ${i.driver}; output ${i.ratio.toFixed(2)}x input${i.flags.length ? "; broken on purpose: " + i.flags.filter(f => f !== "plate").join(", ") : ""}`;
+  $("stats").innerHTML = `<b>${r.o.sheet}</b> · ${what} · ${r.ms.toFixed(0)} ms<br>`
+    + PENS.map(p => `${p === "thin" ? "thin 0.3" : p === "line" ? "line 0.4" : r.o.accent}: <b>${r.metres[p].toFixed(1)} m</b>`).join(" · ") + "<br>"
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "thin", colour: "333333", w: PEN.thin, paths: r.layers.thin }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line }, { name: "accent", colour: ACCENT[r.o.accent], w: PEN.accent, paths: r.layers.accent }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG contraption studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["sheet", "name", "part", "seed", "driver", "parts", "outputs", "size", "explode", "pitch", "lean", "plaus", "bureau", "accent", "page", "margin", "ticks"];
+const read = () => Object.fromEntries(IDS.map(k => { const e = $(k); return [k, e.type === "range" ? +e.value : e.value]; }));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function run(k) { sync(); if (last && k === "accent") { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 30); }
+
+const BASE = { sheet: "plate", name: "J. DOE", part: "DIMSA-DOOSA", seed: 17, driver: "auto", parts: 6, outputs: 2, size: 100, explode: 12, pitch: 26, lean: 18, plaus: 60, bureau: 50, accent: "red", page: "280x210", margin: 8, ticks: "split" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  perpetual: P({ sheet: "plate", driver: "wheel", parts: 6, outputs: 2, plaus: 45, bureau: 40, seed: 17, page: "250x190" }),
+  patent: P({ sheet: "plate", driver: "crank", parts: 8, outputs: 2, plaus: 95, bureau: 55, seed: 5, page: "250x190", accent: "blue" }),
+  dimsa: P({ sheet: "dimsa", driver: "auto", parts: 7, outputs: 2, plaus: 55, bureau: 60, seed: 17 }),
+  honest: P({ sheet: "dimsa", driver: "crank", parts: 6, outputs: 1, plaus: 100, bureau: 20, seed: 8, accent: "blue" }),
+  nightmare: P({ sheet: "dimsa", driver: "motor", parts: 10, outputs: 3, plaus: 10, bureau: 100, seed: 29 }),
+  exploded: P({ sheet: "exploded", plaus: 55, bureau: 60, explode: 12, pitch: 26, lean: 18, seed: 17 }),
+  tower: P({ sheet: "exploded", plaus: 80, bureau: 45, explode: 9, pitch: 22, lean: 0, seed: 23, page: "190x250", accent: "green" }),
+};
+const setAll = p => { for (const [k, v] of Object.entries(p)) if ($(k)) $(k).value = v; };
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setAll(PRESETS[b.dataset.preset]); run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `contraption-${r.o.sheet}-seed${r.o.seed}-p${r.o.plaus}-b${r.o.bureau}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+setAll(PRESETS.perpetual);
+run();
+</script>
+</body>
+</html>

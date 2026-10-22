@@ -1,0 +1,284 @@
+{
+ "id": "inktober-16-gangly",
+ "title": "Gangly doll (concertina arms and legs)",
+ "size": [
+  703,
+  1346
+ ],
+ "turn": 0,
+ "parts": [
+  {
+   "name": "head",
+   "key": "head",
+   "pivot": [
+    369.1,
+    207.4
+   ],
+   "z": 0.5,
+   "src": "head.png"
+  },
+  {
+   "name": "arm-left-cap",
+   "key": "arm-left",
+   "pivot": [
+    301.9,
+    219.2
+   ],
+   "z": 1,
+   "src": "arm-left-cap.png"
+  },
+  {
+   "name": "arm-left-mid",
+   "key": "arm-left",
+   "pivot": [
+    301.9,
+    219.2
+   ],
+   "z": 1,
+   "src": "arm-left-mid.png",
+   "slide": {
+    "role": "mid",
+    "axis": [
+     -0.30902,
+     0.95106
+    ],
+    "a": 71.5,
+    "len": 514.7,
+    "pull": "pull-arm"
+   }
+  },
+  {
+   "name": "arm-left-end",
+   "key": "arm-left",
+   "pivot": [
+    301.9,
+    219.2
+   ],
+   "z": 1,
+   "src": "arm-left-end.png",
+   "slide": {
+    "role": "end",
+    "axis": [
+     -0.30902,
+     0.95106
+    ],
+    "a": 71.5,
+    "len": 514.7,
+    "pull": "pull-arm"
+   }
+  },
+  {
+   "name": "leg-left-cap",
+   "key": "leg-left",
+   "pivot": [
+    327.6,
+    426.6
+   ],
+   "z": 1.5,
+   "src": "leg-left-cap.png"
+  },
+  {
+   "name": "leg-left-mid",
+   "key": "leg-left",
+   "pivot": [
+    327.6,
+    426.6
+   ],
+   "z": 1.5,
+   "src": "leg-left-mid.png",
+   "slide": {
+    "role": "mid",
+    "axis": [
+     -0.05234,
+     0.99863
+    ],
+    "a": 81.6,
+    "len": 677.5,
+    "pull": "pull-leg"
+   }
+  },
+  {
+   "name": "leg-left-end",
+   "key": "leg-left",
+   "pivot": [
+    327.6,
+    426.6
+   ],
+   "z": 1.5,
+   "src": "leg-left-end.png",
+   "slide": {
+    "role": "end",
+    "axis": [
+     -0.05234,
+     0.99863
+    ],
+    "a": 81.6,
+    "len": 677.5,
+    "pull": "pull-leg"
+   }
+  },
+  {
+   "name": "arm-right-cap",
+   "key": "arm-right",
+   "pivot": [
+    436.3,
+    219.2
+   ],
+   "z": 2,
+   "src": "arm-right-cap.png"
+  },
+  {
+   "name": "arm-right-mid",
+   "key": "arm-right",
+   "pivot": [
+    436.3,
+    219.2
+   ],
+   "z": 2,
+   "src": "arm-right-mid.png",
+   "slide": {
+    "role": "mid",
+    "axis": [
+     0.30902,
+     0.95106
+    ],
+    "a": 71.5,
+    "len": 514.7,
+    "pull": "pull-arm"
+   }
+  },
+  {
+   "name": "arm-right-end",
+   "key": "arm-right",
+   "pivot": [
+    436.3,
+    219.2
+   ],
+   "z": 2,
+   "src": "arm-right-end.png",
+   "slide": {
+    "role": "end",
+    "axis": [
+     0.30902,
+     0.95106
+    ],
+    "a": 71.5,
+    "len": 514.7,
+    "pull": "pull-arm"
+   }
+  },
+  {
+   "name": "leg-right-cap",
+   "key": "leg-right",
+   "pivot": [
+    410.6,
+    426.6
+   ],
+   "z": 2.5,
+   "src": "leg-right-cap.png"
+  },
+  {
+   "name": "leg-right-mid",
+   "key": "leg-right",
+   "pivot": [
+    410.6,
+    426.6
+   ],
+   "z": 2.5,
+   "src": "leg-right-mid.png",
+   "slide": {
+    "role": "mid",
+    "axis": [
+     0.05234,
+     0.99863
+    ],
+    "a": 81.6,
+    "len": 677.5,
+    "pull": "pull-leg"
+   }
+  },
+  {
+   "name": "leg-right-end",
+   "key": "leg-right",
+   "pivot": [
+    410.6,
+    426.6
+   ],
+   "z": 2.5,
+   "src": "leg-right-end.png",
+   "slide": {
+    "role": "end",
+    "axis": [
+     0.05234,
+     0.99863
+    ],
+    "a": 81.6,
+    "len": 677.5,
+    "pull": "pull-leg"
+   }
+  }
+ ],
+ "body": "body.png",
+ "peg": [
+  369.1,
+  32
+ ],
+ "spring": {
+  "period": 2.8,
+  "swing": {
+   "arm-left": [
+    0,
+    118,
+    0
+   ],
+   "arm-right": [
+    0,
+    -118,
+    0
+   ],
+   "leg-left": [
+    0,
+    24,
+    0.5
+   ],
+   "leg-right": [
+    0,
+    -24,
+    0.5
+   ],
+   "head": [
+    -6,
+    12,
+    0.12
+   ]
+  },
+  "pulls": {
+   "arm": [
+    0.3,
+    1,
+    0.04
+   ],
+   "leg": [
+    0.34,
+    1,
+    0.54
+   ]
+  }
+ },
+ "drop": 1.869,
+ "reach": 0,
+ "mm": [
+  175.8,
+  336.5
+ ],
+ "settings": {
+  "studio": "doll-wardrobe-studio.html",
+  "preset": "gangly",
+  "rest": {
+   "upper arm L": 10,
+   "upper arm R": 10,
+   "thigh L": 3,
+   "thigh R": 3
+  }
+ }
+}

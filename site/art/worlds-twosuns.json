@@ -1,0 +1,28 @@
+{
+  "studio": "worlds-studio.html",
+  "id": "worlds-twosuns",
+  "title": "Two suns",
+  "preset": "twosuns",
+  "content": {},
+  "settings": {
+    "seed": "512",
+    "weird": "0.3",
+    "agef": "1",
+    "stars": "1",
+    "detail": "1",
+    "pitch": "0.9",
+    "arch": "binary",
+    "count": "0",
+    "view": "atlas",
+    "world": "0",
+    "colour": "both",
+    "warmpen": "d9822b",
+    "coolpen": "2f6db5",
+    "paper": "210x297"
+  },
+  "sourceHash": "4b5da2b8d5597cb704d135853a493f474bbdce6b80ca2d5a16288c93ac047457",
+  "svg": "site/art/worlds-twosuns.svg",
+  "image": "site/art/worlds-twosuns.webp",
+  "page": "210x297",
+  "seed": 512
+}

@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bletchley studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+input[type=text] { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 6px; max-width:170px; text-transform:uppercase; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; max-width:170px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+.scale { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:0.7rem; color:var(--muted); margin-top:-2px; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+html:not([data-dock-all]) aside .dock-off { display:none !important; }
+html[data-dock-all] aside .dock-off { opacity:0.45; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    relevance(aside, sets, bar, st, save);
+
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+
+  const relevance = (aside, sets, bar, st, save) => {
+    const rules = [...aside.querySelectorAll("[data-when]")].map(el => ({ el, cl: el.dataset.when.split(";").map(c => c.split(" or ").map(t => t.trim().match(/^(!?)([\w-]+)\s*(?:(!=|=|>|<)\s*(.*))?$/)).filter(Boolean)).filter(c => c.length) }));
+    if (!rules.length) return;
+    const val = id => { const e = document.getElementById(id); return !e ? null : e.type === "checkbox" ? e.checked : e.value; };
+    const test = ([, neg, id, op, rhs]) => {
+      const v = val(id);
+      if (v === null) return true;
+      if (!op) { const on = typeof v === "boolean" ? v : !["", "0", "none", "off"].includes(v); return neg ? !on : on; }
+      if (op === ">") return +v > +rhs;
+      if (op === "<") return +v < +rhs;
+      const hit = rhs.split("|").includes(String(v));
+      return op === "=" ? hit : !hit;
+    };
+    const holds = c => c.some(test);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.title = "Controls the current choices do not use are hidden; show them dimmed";
+    bar.insertBefore(btn, bar.querySelector("button"));
+    const refresh = () => {
+      for (const r of rules) if (r.el.tagName !== "FIELDSET") r.el.classList.toggle("dock-off", !r.cl.every(holds));
+      for (const f of sets) {
+        const own = f.dataset.when ? !rules.find(r => r.el === f).cl.every(holds) : false;
+        const kids = [...f.children].filter(k => k.tagName !== "LEGEND" && !k.hidden);
+        f.classList.toggle("dock-off", own || (kids.length > 0 && kids.every(k => k.classList.contains("dock-off"))));
+      }
+      const n = aside.querySelectorAll(".dock-off :is(input:not([type=file]), select)").length;
+      document.documentElement.toggleAttribute("data-dock-all", !!st.all);
+      btn.textContent = st.all ? "Hide unused" : `Show unused (${n})`;
+      btn.disabled = !n && !st.all;
+    };
+    btn.addEventListener("click", () => { st.all = !st.all; save(st); refresh(); });
+
+    let queued = false;
+    const later = () => { if (!queued) { queued = true; queueMicrotask(() => { queued = false; refresh(); }); } };
+    for (const id of new Set(rules.flatMap(r => r.cl.flat().map(t => t[2])))) {
+      const e = document.getElementById(id);
+      if (!e) continue;
+      for (const key of ["value", "checked", "selectedIndex"]) {
+        const d = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(e), key);
+        if (d && d.set) Object.defineProperty(e, key, { configurable: true, get() { return d.get.call(this); }, set(v) { d.set.call(this, v); later(); } });
+      }
+    }
+    aside.addEventListener("input", later);
+    aside.addEventListener("change", later);
+    refresh();
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+
+<body>
+<header>
+  <h1>Bletchley studio</h1>
+  <p class="sub">Two plates for the many people behind the code, with Turing as one name among them. A Bombe wall: drums in three rows of twelve, all stopped at the same answer, Wrens' hands at the drums and the menu ghosted behind. A Wren in cipher: a portrait made only of Enigma letters, which decode to a dedication with the key printed underneath. Inktober 2026, "hero".</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="wall">Bombe wall</button><button data-preset="hands">Wrens at the drums</button><button data-preset="close">Close on four drums</button><button data-preset="crowd">Hands all round</button></div>
+    <div class="row"><button data-preset="wren">Wren, name redacted</button><button data-preset="wrenbold">Bold letters</button><button data-preset="wrensq">12 x 12 portrait</button></div>
+    <div class="row"><button data-preset="person">One of the people</button><button data-preset="cast">Cast of four</button><button data-preset="cast6">Cast of six (fine)</button></div>
+    <div class="row"><button data-preset="menu">The menu on its own</button></div>
+  </fieldset>
+  <fieldset><legend>The plate</legend>
+    <label>Piece <select id="piece"><option value="bombe">Bombe wall</option><option value="wren">Wren, name redacted</option><option value="person">one of the people of Station X</option><option value="cast">a cast sheet of them</option><option value="menu">the menu on its own</option></select></label>
+    <label>Title (blank: it decides) <input type="text" id="title" maxlength="24"></label>
+    <label data-when="piece=wren or piece=person or piece=cast">Names <select id="redact"><option value="words">"name redacted", in words</option><option value="bar">blacked out with a bar</option></select></label>
+    <label data-when="piece=wren">Cap band <select id="tally"><option value="off">plain, all letters</option><option value="on">the wartime H.M.S. tally</option></select></label>
+  </fieldset>
+  <fieldset><legend>The key</legend>
+    <label>Seed (wheel order, rings, plugs) <output id="o-seed"></output><input type="range" id="seed" min="1" max="99" step="1" value="7"></label>
+    <label>Start position <input type="text" id="start" maxlength="3"></label>
+    <label data-when="piece!=wren">Crib <input type="text" id="crib" maxlength="24"></label>
+    <label data-when="piece=wren or piece=person or piece=cast">The letters hide <select id="msgsrc"><option value="both">the Act they signed, then the dedication</option><option value="osa">the Official Secrets Act 1911, s.2</option><option value="dedication">the dedication only</option></select></label>
+    <label data-when="piece=wren or piece=person or piece=cast;msgsrc!=osa">Dedication <input type="text" id="message" maxlength="90" style="max-width:100%"></label>
+  </fieldset>
+  <fieldset data-when="piece=bombe"><legend>The Bombe</legend>
+    <label>Enigmas across <select id="across"><option value="12">12 (the real front)</option><option value="6">6</option><option value="4">4</option></select></label>
+    <label>Rows of Enigmas <select id="banks"><option value="3">3 (the real front)</option><option value="2">2</option><option value="1">1</option></select></label>
+    <label>Drum faces <select id="face"><option value="auto">letters when they are big enough</option><option value="ticks">ticks and a window</option><option value="letters">all 26 letters</option></select></label>
+    <label>Enigmas the menu does not use <select id="unused"><option value="drums">run a second copy</option><option value="empty">empty spindles</option></select></label>
+    <label>Hands at the drums <output id="o-hands"></output><input type="range" id="hands" min="0" max="12" step="1" value="2"></label>
+    <label data-when="hands>0">Hands come from <select id="around"><option value="below">below</option><option value="all">all round the frame</option></select></label>
+    <label data-when="hands>0">Arms <select id="arm"><option value="cuff">hand and cuff</option><option value="hand">hands alone</option><option value="sleeve">the whole sleeve, off the sheet</option></select></label>
+    <label data-when="hands>0">Skin (hatching) <select id="skin"><option value="mix">a mix</option><option value="light">light</option><option value="medium">medium</option><option value="dark">dark</option></select></label>
+    <label data-when="hands>0">Nails <select id="nails"><option value="mix">a mix</option><option value="short">short</option><option value="long">long</option><option value="painted">painted (colour pen)</option></select></label>
+    <label data-when="hands>0">Rings and watches <select id="rings"><option value="mix">some</option><option value="rings">a ring on every hand</option><option value="none">none</option></select></label>
+    <label>Menu behind the drums <select id="ghost"><option value="on">ghosted in</option><option value="off">no</option></select></label>
+    <label>Machine's name plate <input type="text" id="plate" maxlength="12"></label>
+  </fieldset>
+  <fieldset data-when="piece=person or piece=cast"><legend>The people</legend>
+    <label>Person no. (first on a cast sheet) <output id="o-person"></output><input type="range" id="person" min="1" max="2000" step="1" value="1"></label>
+    <label data-when="piece=cast">Cast <select id="grid"><option value="4x3">twelve (4 across, 3 down)</option><option value="3x4">twelve (3 across, 4 down)</option><option value="3x2">six (3 across, 2 down)</option><option value="2x3">six (2 across, 3 down)</option><option value="2x2">four (2 x 2)</option></select></label>
+    <label>Height <select id="height"><option value="seed">as the number says</option><option value="short">everyone short</option><option value="average">everyone average</option><option value="tall">everyone tall</option></select></label>
+    <label>Build <select id="build"><option value="seed">as the number says</option><option value="slight">slight</option><option value="average">average</option><option value="stocky">stocky</option><option value="heavy">heavy</option></select></label>
+    <p class="hint">Every number is a different person, job and face, drawn from the research on who worked at Bletchley and what they wore.</p>
+  </fieldset>
+  <fieldset data-when="piece=wren or piece=person or piece=cast"><legend>The letters</legend>
+    <label>Letters across <output id="o-cols"></output><input type="range" id="cols" min="40" max="160" step="2" value="80"></label>
+    <label>Contrast (%) <output id="o-contrast"></output><input type="range" id="contrast" min="60" max="160" step="5" value="110"></label>
+    <label>Smallest letter (tenths of a mm) <output id="o-minlet"></output><input type="range" id="minlet" min="7" max="16" step="1" value="10"></label>
+    <label data-when="piece!=cast">Frame <select id="frame"><option value="oval">a cameo oval</option><option value="rect">the whole panel</option></select></label>
+  </fieldset>
+  <fieldset><legend>Pens</legend>
+    <label>Colour pen draws <select id="cpen"><option value="accent">the accent (loops and stop, or tally and lips)</option><option value="none">nothing (two pens)</option></select></label>
+    <label>Colour pen preview <select id="ccol"><option value="c0302a">red</option><option value="2a4f9a">blue</option><option value="1f9e4a">green</option><option value="b8288f">magenta</option><option value="d07a10">orange</option></select></label>
+  </fieldset>
+  <fieldset><legend>Paper</legend>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Plot the thin pen first, then the black line, then the colour pen. Each split file carries four corner ticks so the runs land in register.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">How it is made: a real Enigma (rotors I to V, reflector B, plugboard, double stepping) is built in the page. For the Bombe, the crib is enciphered with the key, the pairs of letters become the menu, and every drum is turned to the letter it shows when the machine stops on the right answer, offset by its place on the menu. For the Wren, the message is enciphered letter by letter and laid across the panel row by row, and each letter's size and pen come from how dark the portrait is under it. The key is printed underneath, and the studio checks every build by decoding the letters on the sheet back to the message.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const { sqrt, min, max, floor, ceil, cos, sin, atan2, hypot, round, abs, PI } = Math, INF = Infinity;
+const $ = id => document.getElementById(id);
+const TAU = PI * 2, D2R = PI / 180;
+const clamp = (v, a, b) => max(a, min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const lerp2 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const mulberry = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const { pow } = Math;
+const PEN = { shade: 0.3, line: 0.4, colour: 0.4 };
+const PENS = ["shade", "line", "colour"];
+const PASS = 0.28;
+
+const ring = (x, y, rx, ry, n = 40, rot = 0) => Array.from({ length: n }, (_, i) => { const a = i / n * TAU, px = rx * cos(a), py = ry * sin(a); return [x + px * cos(rot) - py * sin(rot), y + px * sin(rot) + py * cos(rot)]; });
+const pAt = (c, r, a) => [c[0] + r * cos(a), c[1] + r * sin(a)];
+const polyInside = (p, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+function splitSeg(a, b, P) {
+  const ts = [0, 1], dx = b[0] - a[0], dy = b[1] - a[1];
+  for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+    const c = P[j], d = P[i], ex = d[0] - c[0], ey = d[1] - c[1], den = dx * ey - dy * ex; if (abs(den) < 1e-12) continue;
+    const t = ((c[0] - a[0]) * ey - (c[1] - a[1]) * ex) / den, u = ((c[0] - a[0]) * dy - (c[1] - a[1]) * dx) / den;
+    if (t > 0 && t < 1 && u >= 0 && u < 1) ts.push(t);
+  }
+  ts.sort((x, y) => x - y);
+  const out = [];
+  for (let k = 0; k < ts.length - 1; k++) { if (ts[k + 1] - ts[k] < 1e-9) continue; const m = (ts[k] + ts[k + 1]) / 2; out.push([ts[k], ts[k + 1], polyInside([a[0] + dx * m, a[1] + dy * m], P)]); }
+  return out;
+}
+function clipSegs(segs, P, keepIn) { const out = []; for (const [a, b] of segs) for (const [t0, t1, ins] of splitSeg(a, b, P)) if (ins === keepIn) out.push([lerp2(a, b, t0), lerp2(a, b, t1)]); return out; }
+function joinSegs(segs) { const out = []; let cur = null; for (const [a, b] of segs) { if (cur && hypot(cur[cur.length - 1][0] - a[0], cur[cur.length - 1][1] - a[1]) < 1e-6) cur.push(b); else { cur = [a, b]; out.push(cur); } } return out; }
+const segsOf = (pl, closed = false) => pl.slice(1).map((p, i) => [pl[i], p]).concat(closed ? [[pl[pl.length - 1], pl[0]]] : []);
+const clipPath = (pts, closed, P, keepIn) => joinSegs(clipSegs(segsOf(pts, closed), P, keepIn));
+const bboxOf = pts => { let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF; for (const [x, y] of pts) { x0 = min(x0, x); y0 = min(y0, y); x1 = max(x1, x); y1 = max(y1, y); } return [x0, y0, x1, y1]; };
+const bbUnion = (a, b) => [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])];
+const bbGrow = (b, g) => [b[0] - g, b[1] - g, b[2] + g, b[3] + g];
+const bbHit = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+const rectPoly = b => [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+const polyArea = P => { let a = 0; for (let i = 0, j = P.length - 1; i < P.length; j = i++) a += (P[j][0] - P[i][0]) * (P[j][1] + P[i][1]); return a / 2; };
+const rotPts = (P, c, a) => P.map(([x, y]) => [c[0] + (x - c[0]) * cos(a) - (y - c[1]) * sin(a), c[1] + (x - c[0]) * sin(a) + (y - c[1]) * cos(a)]);
+
+function rrect(x0, y0, x1, y1, r, n = 5) {
+  r = min(r, (x1 - x0) / 2, (y1 - y0) / 2); const out = [];
+  for (const [cx, cy, a0] of [[x1 - r, y0 + r, -90], [x1 - r, y1 - r, 0], [x0 + r, y1 - r, 90], [x0 + r, y0 + r, 180]]) for (let i = 0; i <= n; i++) out.push(pAt([cx, cy], r, (a0 + 90 * i / n) * D2R));
+  return out;
+}
+const arcPts = (c, r, a0, a1, n = 16) => Array.from({ length: n + 1 }, (_, i) => pAt(c, r, (a0 + (a1 - a0) * i / n) * D2R));
+
+function crClosed(P, n) {
+  const L = P.length, out = [];
+  for (let i = 0; i < L; i++) {
+    const p0 = P[(i - 1 + L) % L], p1 = P[i], p2 = P[(i + 1) % L], p3 = P[(i + 2) % L];
+    for (let j = 0; j < n; j++) { const t = j / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map(k => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3))); }
+  }
+  return out;
+}
+function crOpen(P, n = 8) {
+  const L = P.length, g = i => P[clamp(i, 0, L - 1)], out = [];
+  for (let i = 0; i < L - 1; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let j = 0; j < n; j++) { const t = j / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map(k => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3))); }
+  }
+  out.push(P[L - 1].slice());
+  return out;
+}
+
+function tube(C, wf, nc = 7) {
+  const m = C.length, Lf = [], Rt = []; let a0 = 0, a1 = 0;
+  for (let i = 0; i < m; i++) {
+    const a = C[max(0, i - 1)], b = C[min(m - 1, i + 1)], ang = atan2(b[1] - a[1], b[0] - a[0]), w = wf(i / (m - 1));
+    if (i === 0) a0 = ang; if (i === m - 1) a1 = ang;
+    Lf.push([C[i][0] - sin(ang) * w, C[i][1] + cos(ang) * w]); Rt.push([C[i][0] + sin(ang) * w, C[i][1] - cos(ang) * w]);
+  }
+  const e = C[m - 1], s = C[0], w1 = wf(1), w0 = wf(0), cap1 = [], cap0 = [];
+  for (let k = 1; k < nc; k++) { cap1.push(pAt(e, w1, a1 + PI / 2 - PI * k / nc)); cap0.push(pAt(s, w0, a0 - PI / 2 - PI * k / nc)); }
+  return Lf.concat(cap1, Rt.reverse(), cap0);
+}
+
+function hatchG(P, sp, ang) {
+  const b = bboxOf(P), a = ang * D2R, dx = cos(a), dy = sin(a), nx = -dy, ny = dx, cs = rectPoly(b), out = [];
+  const cn = cs.map(p => p[0] * nx + p[1] * ny), ct = cs.map(p => p[0] * dx + p[1] * dy), t0 = min(...ct) - 1, t1 = max(...ct) + 1;
+  for (let c = floor(min(...cn) / sp) * sp; c <= max(...cn); c += sp) out.push([[nx * c + dx * t0, ny * c + dy * t0], [nx * c + dx * t1, ny * c + dy * t1]]);
+  return clipSegs(out, P, true);
+}
+function dashPts(pts, pat) {
+  const out = []; let pi = 0, left = pat[0], on = true, cur = [pts[0]];
+  for (let i = 1; i < pts.length; i++) {
+    let a = pts[i - 1]; const b = pts[i]; let L = hypot(b[0] - a[0], b[1] - a[1]);
+    while (L > 1e-9) {
+      const t = min(left, L), p = [a[0] + (b[0] - a[0]) * t / L, a[1] + (b[1] - a[1]) * t / L];
+      if (on) cur.push(p);
+      L -= t; left -= t; a = p;
+      if (left <= 1e-9) { if (on && cur.length > 1) out.push(cur); on = !on; pi = (pi + 1) % pat.length; left = pat[pi]; cur = on ? [p] : []; }
+    }
+  }
+  if (on && cur.length > 1) out.push(cur);
+  return out;
+}
+
+function chain(pieces, tol) {
+  const near = (a, b) => abs(a[0] - b[0]) < tol && abs(a[1] - b[1]) < tol, left = pieces.map(q => q.slice()), out = [];
+  while (left.length) {
+    let cur = left.shift(), grew = true;
+    while (grew) {
+      grew = false;
+      for (let i = 0; i < left.length; i++) {
+        const q = left[i], e = cur[cur.length - 1], b = cur[0];
+        if (near(e, q[0])) cur = cur.concat(q.slice(1));
+        else if (near(e, q[q.length - 1])) cur = cur.concat(q.slice(0, -1).reverse());
+        else if (near(b, q[q.length - 1])) cur = q.slice(0, -1).concat(cur);
+        else if (near(b, q[0])) cur = q.slice(1).reverse().concat(cur);
+        else continue;
+        left.splice(i, 1); grew = true; break;
+      }
+    }
+    const closed = cur.length > 3 && near(cur[0], cur[cur.length - 1]);
+    out.push({ pts: closed ? cur.slice(0, -1) : cur, closed });
+  }
+  return out;
+}
+
+function along(C, step) {
+  const cum = [0]; for (let i = 1; i < C.length; i++) cum.push(cum[i - 1] + hypot(C[i][0] - C[i - 1][0], C[i][1] - C[i - 1][1]));
+  const tot = cum[cum.length - 1], out = []; let j = 0;
+  for (let d = step / 2; d < tot; d += step) { while (cum[j + 1] < d) j++; const a = C[j], b = C[j + 1], t = (d - cum[j]) / max(1e-9, cum[j + 1] - cum[j]); out.push({ p: lerp2(a, b, t), a: atan2(b[1] - a[1], b[0] - a[0]), u: d / tot }); }
+  return out;
+}
+
+function dot(cx, cy, r, step = 0.28) { const pts = [], turns = max(1, r / step); for (let i = 0; i <= turns * 24; i++) { const a = i / 24 * TAU, rr = r * (1 - i / (turns * 24)); pts.push([cx + rr * cos(a), cy + rr * sin(a)]); } return pts; }
+
+function cutBehind(L, polys) {
+  const pbs = polys.map(bboxOf);
+  for (const pen of PENS) {
+    const out = [];
+    for (const p of L[pen]) {
+      let keep = [p];
+      polys.forEach((poly, j) => {
+        const bb = pbs[j], next = [];
+        for (const k of keep) {
+          const b2 = bboxOf(k[0]); if (!bbHit(b2, bb)) { next.push(k); continue; }
+          for (const q of clipPath(k[0], k[1], poly, false)) next.push([q, false]);
+        }
+        keep = next;
+      });
+      out.push(...keep);
+    }
+    L[pen] = out;
+  }
+}
+
+const GSRC = {
+  A: [4, "M0,6 L2,0 L4,6 M0.9,3.9 L3.1,3.9"], B: [4, "M0,6 L0,0 L2.3,0 A2.3,1.5,1.6,1.5,-90,90 L0,3 M0,3 L2.5,3 A2.5,4.5,1.6,1.5,-90,90 L0,6"],
+  C: [4, "A2.4,3,2.1,3,-45,-315"], D: [4, "M0,0 L0,6 L1.8,6 A1.8,3,2.2,3,90,-90 L0,0"], E: [3.6, "M3.6,0 L0,0 L0,6 L3.6,6 M0,3 L2.8,3"],
+  F: [3.4, "M3.4,0 L0,0 L0,6 M0,3 L2.7,3"], G: [4.4, "A2.2,3,2.2,3,-40,-320 L4.4,3.4 L2.4,3.4"], H: [4, "M0,0 L0,6 M4,0 L4,6 M0,3 L4,3"],
+  I: [1.2, "M0.6,0 L0.6,6"], J: [3, "M3,0 L3,4.4 A1.5,4.4,1.5,1.6,0,170"], K: [4, "M0,0 L0,6 M3.8,0 L0,3.6 M1.3,2.5 L4,6"],
+  L: [3.4, "M0,0 L0,6 L3.4,6"], M: [5, "M0,6 L0,0 L2.5,4 L5,0 L5,6"], N: [4, "M0,6 L0,0 L4,6 L4,0"], O: [4.4, "A2.2,3,2.2,3,0,360"],
+  P: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2"], Q: [4.4, "A2.2,3,2.2,3,0,360 M2.8,4.4 L4.4,6.4"],
+  R: [4, "M0,6 L0,0 L2.3,0 A2.3,1.6,1.7,1.6,-90,90 L0,3.2 M2,3.2 L4,6"], S: [4, "A2,1.5,1.9,1.5,-20,-270 A2,4.5,2.0,1.5,-90,160"],
+  T: [4, "M0,0 L4,0 M2,0 L2,6"], U: [4, "M0,0 L0,3.8 A2,3.8,2,2.2,180,0 L4,0"], V: [4.4, "M0,0 L2.2,6 L4.4,0"],
+  W: [6, "M0,0 L1.5,6 L3,1.6 L4.5,6 L6,0"], X: [4, "M0,0 L4,6 M4,0 L0,6"], Y: [4.4, "M0,0 L2.2,3 L4.4,0 M2.2,3 L2.2,6"], Z: [4, "M0,0 L4,0 L0,6 L4,6"],
+  0: [3.8, "A1.9,3,1.9,3,0,360"], 1: [2.6, "M0.4,1.4 L1.8,0 L1.8,6"], 2: [3.8, "A1.9,1.9,1.9,1.9,-170,20 L0,6 L3.8,6"],
+  3: [3.8, "A1.8,1.5,1.7,1.5,-150,90 A1.9,4.4,1.9,1.6,-90,150"], 4: [4, "M3,6 L3,0 L0,4.2 L4,4.2"], 5: [3.8, "M3.6,0 L0.4,0 L0,2.8 A1.8,4.1,2,1.9,-130,150"],
+  6: [3.8, "M3.4,0 L0.2,4.2 A1.9,4.2,1.7,1.8,180,540"], 7: [3.8, "M0,0 L3.8,0 L1.4,6"], 8: [3.8, "A1.8,1.5,1.5,1.5,0,360 M3.7,4.4 A1.9,4.4,1.8,1.6,0,360"],
+  9: [3.8, "A1.9,1.8,1.7,1.8,0,360 M3.6,1.8 L0.4,6"],
+  "!": [1, "M0.5,0 L0.5,4.1 M0.5,5.4 A0.5,5.6,0.35,0.35,0,360"], "?": [3.4, "A1.7,1.7,1.7,1.7,-170,70 L1.7,4.1 M1.7,5.2 A1.7,5.6,0.35,0.35,0,360"],
+  ".": [1, "A0.5,5.5,0.4,0.4,0,360"], ",": [1, "M0.7,5.3 L0.2,6.8"], "'": [1, "M0.5,0 L0.3,1.7"], "-": [2.6, "M0.2,3 L2.4,3"], "+": [3.2, "M0.1,3 L3.1,3 M1.6,1.5 L1.6,4.5"],
+  ":": [1, "A0.5,1.8,0.4,0.4,0,360 M0.9,5.5 A0.5,5.5,0.4,0.4,0,360"], "&": [4.2, "M4,6 L0.9,1.4 A1.6,1.1,0.9,1.1,-170,100 L3.4,4.1 A2,4.4,1.7,1.6,-10,160 L0.1,4.6"],
+  "*": [3.2, "M1.6,0.6 L1.6,5.4 M0.2,1.6 L3,4.4 M3,1.6 L0.2,4.4"], "(": [1.8, "A1.9,3,1.5,3.3,235,125"], ")": [1.8, "A-0.1,3,1.5,3.3,-55,55"],
+  "/": [2.6, "M0.2,6.4 L2.4,-0.4"], "=": [3.2, "M0.2,2.2 L3,2.2 M0.2,3.8 L3,3.8"], "_": [3, "M0,6.4 L3,6.4"], "#": [4, "M1.4,0.4 L0.8,5.6 M3.2,0.4 L2.6,5.6 M0.2,2 L3.8,2 M0.1,4 L3.7,4"],
+  "²": [2.2, "A1.1,0.9,0.9,0.8,-170,20 L0.1,2.6 L2.1,2.6"],
+};
+function parseGlyph(src) {
+  const strokes = []; let cur = null;
+  for (const t of src.trim().split(/\s+/)) {
+    const c = t[0], n = t.slice(1).split(",").map(Number);
+    if (c === "M") { cur = [[n[0], n[1]]]; strokes.push(cur); }
+    else if (c === "L") cur.push([n[0], n[1]]);
+    else { const [cx, cy, rx, ry, a0, a1] = n, st = max(8, ceil(abs(a1 - a0) / 9)); if (!cur) { cur = []; strokes.push(cur); } for (let i = 0; i <= st; i++) { const a = (a0 + (a1 - a0) * i / st) * D2R; cur.push([cx + rx * cos(a), cy + ry * sin(a)]); } }
+  }
+  return strokes;
+}
+const GL = Object.fromEntries(Object.entries(GSRC).map(([k, [w, s]]) => [k, { w, strokes: parseGlyph(s) }]));
+const glyphOf = ch => GL[ch.toUpperCase()] || GL[ch] || GL["?"];
+function layoutT(str) { const gl = []; let x = 0; for (const ch of String(str)) { if (ch === " ") { x += 2.4; continue; } const g = glyphOf(ch); gl.push({ x, g }); x += g.w + 1.2; } return { gl, w: max(0, x - 1.2) }; }
+const textW = (str, cap) => layoutT(str).w * cap / 6;
+
+function textStrokes(str, ax, ay, cap, { h = "l", v = "t", ang = 0 } = {}) {
+  const L = layoutT(str), s = cap / 6, w = L.w * s, ox = h === "c" ? -w / 2 : h === "r" ? -w : 0, oy = v === "m" ? -cap / 2 : v === "b" ? -cap : 0, c = cos(ang), sn = sin(ang), out = [];
+  for (const { x, g } of L.gl) for (const st of g.strokes) out.push(st.map(([a, b]) => { const lx = ox + (x + a) * s, ly = oy + b * s; return [ax + lx * c - ly * sn, ay + lx * sn + ly * c]; }));
+  return out;
+}
+
+const AZ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", ci = c => c.charCodeAt(0) - 65, m26 = x => ((x % 26) + 26) % 26;
+const ROTORS = { I: ["EKMFLGDQVZNTOWYHXUSPAIBRCJ", "Q"], II: ["AJDKSIRUXBLHWTMCQGZNPYFVOE", "E"], III: ["BDFHJLCPRTXVZNYEIWGAKMUSQO", "V"], IV: ["ESOVPZJAYQUIRHXLNFTGKDCMWB", "J"], V: ["VZBRGITYUPSDNHLXAWMJQOFECK", "Z"] };
+const UKW_B = "YRUHQSLDPXNGOKMIEBFZCWVJAT";
+function enigma(key) {
+  const R = key.order.map(n => { const w = ROTORS[n][0].split("").map(ci), inv = []; w.forEach((v, i) => inv[v] = i); return { w, inv, notch: ci(ROTORS[n][1]) }; });
+  const pos = key.start.split("").map(ci), ring = key.rings, ref = UKW_B.split("").map(ci), plug = [...AZ].map((_, i) => i);
+  for (const p of key.plugs) { plug[ci(p[0])] = ci(p[1]); plug[ci(p[1])] = ci(p[0]); }
+  const thru = (r, i, x, inv) => m26((inv ? r.inv : r.w)[m26(x + pos[i] - ring[i])] - pos[i] + ring[i]);
+  const step = () => { if (pos[1] === R[1].notch) { pos[0] = m26(pos[0] + 1); pos[1] = m26(pos[1] + 1); } else if (pos[2] === R[2].notch) pos[1] = m26(pos[1] + 1); pos[2] = m26(pos[2] + 1); };
+  const press = c => { step(); let x = plug[ci(c)]; for (let i = 2; i >= 0; i--) x = thru(R[i], i, x, false); x = ref[x]; for (let i = 0; i < 3; i++) x = thru(R[i], i, x, true); return AZ[plug[x]]; };
+  return { press, run: s => [...s].map(press).join("") };
+}
+
+const DIG = ["ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE"];
+const clean = s => String(s || "").toUpperCase().replace(/[0-9]/g, d => "X" + DIG[+d] + "X").replace(/[^A-Z]+/g, "X").replace(/^X+|X+$/g, "");
+function keyFrom(o) {
+  const rnd = mulberry(o.seed * 977 + 13), sh = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const order = sh(["I", "II", "III", "IV", "V"]).slice(0, 3), rings = [0, 1, 2].map(() => floor(rnd() * 26)), al = sh([...AZ]), plugs = [];
+  for (let i = 0; i < 10; i++) plugs.push(al[2 * i] + al[2 * i + 1]);
+  const start = (clean(o.start) + "AAA").slice(0, 3);
+  return { order, rings, plugs, start };
+}
+const keyLine = k => `UKW B   WALZEN ${k.order.join(" ")}   RINGE ${k.rings.map(r => String(r + 1).padStart(2, "0")).join(" ")}   GRUND ${k.start.split("").join(" ")}`;
+const plugLine = k => "STECKER " + k.plugs.join(" ");
+
+const PAGES = { "190x250": [190, 250], "250x190": [250, 190], "280x280": [280, 280] };
+const mkL = () => ({ shade: [], line: [], colour: [] });
+const putL = (L, pen, pts, cl = false) => { if (pts.length > 1) L[pen].push([pts, cl]); };
+const words = (L, pen, str, x, y, cap, opt) => { for (const q of textStrokes(str, x, y, cap, opt)) putL(L, pen, q); };
+const fitCap = (str, cap, room) => min(cap, room / max(1e-6, textW(str, 1)));
+const merge = (into, L) => { for (const p of PENS) into[p].push(...L[p]); };
+const circle = (c, r, n) => ring(c[0], c[1], r, r, n || max(24, min(96, round(r * 6))));
+function clipToRect(L, b) { const R = rectPoly(b); for (const pen of PENS) { const out = []; for (const [q, cl] of L[pen]) { const bb = bboxOf(q); if (bb[0] >= b[0] && bb[1] >= b[1] && bb[2] <= b[2] && bb[3] <= b[3]) out.push([q, cl]); else for (const k of clipPath(q, cl, R, true)) out.push([k, false]); } L[pen] = out; } }
+
+function rotorHatch(P, n, sp) {
+  const ang = { I: [45], II: [-45], III: [0], IV: [90], V: [45, -45] }[n] || [45];
+  return ang.flatMap(a => hatchG(P, sp, a));
+}
+
+function menuOf(o, key) {
+  const crib = clean(o.crib).slice(0, 26) || "WETTERVORHERSAGE", cip = enigma(key).run(crib);
+  const nodes = [...new Set(crib + cip)], edges = [...crib].map((a, i) => ({ a: nodes.indexOf(a), b: nodes.indexOf(cip[i]), k: i + 1 }));
+
+  const disc = Array(nodes.length).fill(-1), low = [], adj = nodes.map(() => []); let tm = 0;
+  edges.forEach((e, i) => { adj[e.a].push([e.b, i]); adj[e.b].push([e.a, i]); });
+  const dfs = (u, pe) => { disc[u] = low[u] = tm++; for (const [v, ei] of adj[u]) { if (ei === pe) continue; if (disc[v] < 0) { dfs(v, ei); low[u] = min(low[u], low[v]); if (low[v] > disc[u]) edges[ei].bridge = true; } else low[u] = min(low[u], disc[v]); } };
+  nodes.forEach((_, i) => { if (disc[i] < 0) dfs(i, -1); });
+  for (const e of edges) e.loop = !e.bridge;
+
+  const rnd = mulberry(o.seed * 53 + crib.length), P = nodes.map((_, i) => [0.5 + 0.35 * cos(i / nodes.length * TAU) + (rnd() - 0.5) * 0.1, 0.5 + 0.35 * sin(i / nodes.length * TAU) + (rnd() - 0.5) * 0.1]);
+  const kk = 0.9 / sqrt(nodes.length);
+  for (let it = 0; it < 400; it++) {
+    const Fz = P.map(() => [0, 0]), temp = 0.08 * (1 - it / 400) + 0.002;
+    for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const dx = P[i][0] - P[j][0], dy = P[i][1] - P[j][1], d = max(1e-3, hypot(dx, dy)), f = kk * kk / d; Fz[i][0] += dx / d * f; Fz[i][1] += dy / d * f; Fz[j][0] -= dx / d * f; Fz[j][1] -= dy / d * f; }
+    for (const e of edges) { if (e.a === e.b) continue; const dx = P[e.a][0] - P[e.b][0], dy = P[e.a][1] - P[e.b][1], d = max(1e-3, hypot(dx, dy)), f = d * d / kk; Fz[e.a][0] -= dx / d * f; Fz[e.a][1] -= dy / d * f; Fz[e.b][0] += dx / d * f; Fz[e.b][1] += dy / d * f; }
+    P.forEach((p, i) => { Fz[i][0] += (0.5 - p[0]) * 0.6; Fz[i][1] += (0.5 - p[1]) * 0.6; const L = hypot(...Fz[i]), s = min(L, temp) / max(1e-9, L); p[0] += Fz[i][0] * s; p[1] += Fz[i][1] * s; });
+  }
+  const bb = bboxOf(P); P.forEach(p => { p[0] = (p[0] - bb[0]) / max(1e-6, bb[2] - bb[0]); p[1] = (p[1] - bb[1]) / max(1e-6, bb[3] - bb[1]); });
+  return { crib, cip, nodes, edges, P, loops: edges.filter(e => e.loop).length };
+}
+
+function drawMenu(L, M, B, nr, pens, labels = true) {
+  const pad = nr * 2.6, X = p => [B[0] + pad + p[0] * (B[2] - B[0] - 2 * pad), B[1] + pad + p[1] * (B[3] - B[1] - 2 * pad)], C = M.P.map(X), sils = C.map(c => circle(c, nr));
+  const seen = {}, E = mkL();
+  for (const e of M.edges) {
+    const a = C[e.a], b = C[e.b], id = min(e.a, e.b) + "-" + max(e.a, e.b), nth = seen[id] = (seen[id] || 0) + 1, dx = b[0] - a[0], dy = b[1] - a[1], d = max(1e-6, hypot(dx, dy));
+    const bend = nth === 1 ? 0 : (nth % 2 ? 1 : -1) * ceil((nth - 1) / 2) * nr * 1.6, mid = [(a[0] + b[0]) / 2 - dy / d * bend, (a[1] + b[1]) / 2 + dx / d * bend];
+    const pts = bend ? crOpen([a, mid, b], 10) : [a, b];
+    putL(E, e.loop ? pens.loop : pens.link, pts);
+    if (labels) {
+      const lab = String(e.k), cap = nr * 0.62, w = textW(lab, cap) + cap * 0.7, h = cap * 1.7, box = [mid[0] - w / 2, mid[1] - h / 2, mid[0] + w / 2, mid[1] + h / 2];
+      sils.push(rectPoly(box)); words(L, pens.label, lab, mid[0], mid[1], cap, { h: "c", v: "m" });
+    }
+  }
+  cutBehind(E, sils); merge(L, E);
+  M.nodes.forEach((n, i) => { putL(L, pens.node, circle(C[i], nr), true); words(L, pens.node, n, C[i][0], C[i][1], nr * 0.95, { h: "c", v: "m" }); });
+  return sils.slice(0, C.length);
+}
+
+function drum(L, c, r, cur, rotor, faceMode) {
+  const at = i => (-90 + m26(i - cur) * 360 / 26) * D2R, letters = faceMode === "letters" || (faceMode === "auto" && r >= 11);
+  putL(L, "line", circle(c, r), true);
+  putL(L, "shade", circle(c, r * 0.97), true);
+  if (letters) {
+    const cap = min(r * 0.15, 2.6);
+    for (let i = 0; i < 26; i++) { const a = at(i), p = pAt(c, r * 0.83, a); words(L, i === cur ? "line" : "shade", AZ[i], p[0], p[1], cap, { h: "c", v: "m", ang: a + PI / 2 }); }
+    putL(L, "shade", circle(c, r * 0.68), true);
+  } else {
+    for (let i = 0; i < 26; i++) { const a = at(i), long = i % 13 === 0; putL(L, "shade", [pAt(c, r * (long ? 0.74 : 0.82), a), pAt(c, r * 0.95, a)]); }
+    putL(L, "line", dot(...pAt(c, r * 0.66, at(0)), max(0.35, r * 0.05)), false);
+  }
+
+  const rin = letters ? r * 0.62 : r * 0.7, rb = r * 0.34, ww = r * 0.36, win = [c[0] - ww / 2, c[1] - rin + r * 0.02, c[0] + ww / 2, c[1] - rin + r * 0.34];
+  const band = ring(c[0], c[1], rin, rin, 64), hub = circle(c, rb);
+  let H = rotorHatch(band, rotor, max(0.75, r * 0.11)); H = clipSegs(H, hub, false); H = clipSegs(H, rectPoly(bbGrow(win, 0.3)), false);
+  for (const s of H) putL(L, "shade", s);
+  putL(L, "shade", band, true);
+  if (!letters) { putL(L, "line", rectPoly(win), true); words(L, "line", AZ[cur], (win[0] + win[2]) / 2, (win[1] + win[3]) / 2, min((win[3] - win[1]) * 0.7, (win[2] - win[0]) * 0.9), { h: "c", v: "m" }); }
+  putL(L, "line", hub, true);
+  putL(L, "line", ring(c[0], c[1], rb * 0.5, rb * 0.5, 6, PI / 6), true);
+  putL(L, "shade", circle(c, rb * 0.2), true);
+
+  const tp = c[1] - r - 0.4, tw = max(0.7, r * 0.12);
+  putL(L, "line", [[c[0] - tw, tp - tw * 1.3], [c[0] + tw, tp - tw * 1.3], [c[0], tp], [c[0] - tw, tp - tw * 1.3]], false);
+}
+function emptySpindle(L, c, r) {
+  const rb = r * 0.34; putL(L, "line", circle(c, rb), true); putL(L, "line", ring(c[0], c[1], rb * 0.5, rb * 0.5, 6, PI / 6), true);
+  putL(L, "shade", circle(c, r * 0.5), true);
+}
+
+function handSpec(o, rnd) {
+  const pick = (v, opts, w) => { if (v !== "mix") return v; let x = rnd() * w.reduce((a, b) => a + b, 0); for (let i = 0; i < opts.length; i++) if ((x -= w[i]) < 0) return opts[i]; return opts[0]; };
+  return {
+    right: rnd() < 0.85,
+    skin: pick(o.skin, ["light", "medium", "dark"], [1, 1, 1]),
+    nails: o.nails === "mix" ? pick("mix", ["short", "medium", "long"], [3, 2, 1]) : o.nails === "painted" ? pick("mix", ["short", "medium", "long"], [2, 3, 1]) : o.nails,
+    painted: o.nails === "painted" || (o.nails === "mix" && rnd() < 0.3),
+    ring: o.rings === "none" ? "none" : o.rings === "rings" ? pick("mix", ["band", "stone", "signet"], [2, 1, 1]) : pick("mix", ["none", "band", "stone", "signet"], [4, 2, 1, 1]),
+    watch: o.rings !== "none" && rnd() < 0.3,
+    arm: o.arm,
+  };
+}
+function hand(c, r, d, sp, rnd, accent) {
+  const n = [-d[1], d[0]], f = sp.right ? -1 : 1, P = (a, b) => [c[0] + d[0] * a * r + n[0] * b * f * r, c[1] + d[1] * a * r + n[1] * b * f * r];
+  const K = -0.5, parts = [], skinH = { light: 0, medium: 1, dark: 2 }[sp.skin], axis = atan2(d[1], d[0]) * 180 / PI;
+  const hatchOf = sil => skinH === 0 ? [] : skinH === 1 ? hatchG(sil, max(0.55, r * 0.085), axis + 35) : hatchG(sil, max(0.5, r * 0.07), axis + 35).concat(hatchG(sil, max(0.5, r * 0.07), axis - 35));
+
+  const F = [[-0.39, 0.64, -9, 0.88], [-0.13, 0.86, -3, 0.97], [0.14, 0.93, 2, 1], [0.4, 0.8, 7, 0.96]], fingers = [];
+  F.forEach(([b, len, ang, ws], i) => {
+    len *= 0.96 + rnd() * 0.08;
+    const a0 = K + (i === 1 || i === 2 ? 0.04 : 0), da = ang * D2R, tipAB = [a0 + len * cos(da), b + len * sin(da)];
+    const C = crOpen([P(a0, b), P(a0 + len * 0.5 * cos(da), b + len * 0.5 * sin(da) + 0.02), P(...tipAB)], 8);
+    const w = r * 0.1 * ws, wf = t => w * (1 - 0.18 * t), sil = tube(C, wf, 7);
+    const T = C[C.length - 1], ua = atan2(T[1] - C[C.length - 2][1], T[0] - C[C.length - 2][0]), u = [cos(ua), sin(ua)], v = [-u[1], u[0]], wt = wf(1);
+    const at = (s, q) => [T[0] + u[0] * s * r + v[0] * q, T[1] + u[1] * s * r + v[1] * q];
+    const m = C[0], det = [];
+    fingers.push({ i, C, sil, det, T, u, v, wt, at, w, len });
+  });
+
+  for (const fg of fingers) {
+    const { at, wt } = fg, nb = -0.17;
+    let nail;
+    if (sp.nails === "short") nail = [at(nb, -wt * 0.62), at(-0.03, -wt * 0.66), at(0.01, -wt * 0.45), at(0.025, 0), at(0.01, wt * 0.45), at(-0.03, wt * 0.66), at(nb, wt * 0.62)];
+    else if (sp.nails === "medium") nail = [at(nb, -wt * 0.62), at(0.0, -wt * 0.66), at(0.05, -wt * 0.5), at(0.08, -wt * 0.2), at(0.085, 0), at(0.08, wt * 0.2), at(0.05, wt * 0.5), at(0.0, wt * 0.66), at(nb, wt * 0.62)];
+    else nail = [at(nb, -wt * 0.62), at(0.0, -wt * 0.66), at(0.11, -wt * 0.42), at(0.19, -wt * 0.08), at(0.2, 0), at(0.19, wt * 0.08), at(0.11, wt * 0.42), at(0.0, wt * 0.66), at(nb, wt * 0.62)];
+    nail = crClosed(nail, 3);
+    parts.push({ sil: nail, det: [], hatch: sp.painted ? hatchG(nail, 0.32, axis + 80) : [], hatchPen: accent });
+  }
+
+  if (sp.ring !== "none") {
+    const fg = fingers[sp.ring === "signet" ? 0 : 1], q = fg.C[floor(fg.C.length * 0.26)], q2 = fg.C[floor(fg.C.length * 0.33)], v = fg.v, w = fg.w * 1.12;
+    const band = [[q[0] + v[0] * w, q[1] + v[1] * w], [q2[0] + v[0] * w, q2[1] + v[1] * w], [q2[0] - v[0] * w, q2[1] - v[1] * w], [q[0] - v[0] * w, q[1] - v[1] * w]], mid = lerp2(q, q2, 0.5);
+    if (sp.ring === "stone") parts.push({ sil: circle(mid, fg.w * 0.55, 16), det: [{ pts: circle(mid, fg.w * 0.25, 10), pen: "shade", cl: true }], hatch: [] });
+    if (sp.ring === "signet") parts.push({ sil: rotPts(rectPoly([mid[0] - fg.w * 0.6, mid[1] - fg.w * 0.6, mid[0] + fg.w * 0.6, mid[1] + fg.w * 0.6]), mid, atan2(fg.u[1], fg.u[0])), det: [], hatch: [] });
+    parts.push({ sil: band, det: [], hatch: hatchG(band, 0.3, axis), hatchPen: "line" });
+  }
+  for (const fg of fingers.slice().reverse()) parts.push({ sil: fg.sil, det: fg.det, hatch: hatchOf(fg.sil), finger: true });
+
+  const wristA = sp.arm === "sleeve" ? K - 0.8 : sp.arm === "cuff" ? K - 1.06 : K - 1.2;
+  if (sp.watch) {
+    const face = P(wristA, 0), sw = 0.5, strap = [P(wristA + 0.11, -sw), P(wristA + 0.11, sw), P(wristA - 0.11, sw), P(wristA - 0.11, -sw)];
+    parts.push({ sil: circle(face, r * 0.17, 24), det: [{ pts: circle(face, r * 0.12, 20), pen: "shade", cl: true }, { pts: [face, pAt(face, r * 0.09, (axis - 60) * D2R)], pen: "shade" }, { pts: [face, pAt(face, r * 0.06, (axis + 100) * D2R)], pen: "shade" }], hatch: [] });
+    parts.push({ sil: strap, det: [], hatch: [] });
+  }
+
+  const K2 = K - 1.15;
+  if (sp.arm === "cuff") {
+    const sc = [P(K2, 0.42), P(K2, -0.42), P(K2 - 0.2, -0.46), P(K2 - 0.2, 0.46)], jc = [P(K2 - 0.16, 0.54), P(K2 - 0.16, -0.54), P(K2 - 0.55, -0.58), P(K2 - 0.55, 0.58)];
+    parts.push({ sil: sc, det: [{ pts: circle(P(K2 - 0.1, -0.28), r * 0.045, 10), pen: "line", cl: true }], hatch: [] });
+    parts.push({ sil: jc, open: [P(K2 - 0.55, -0.58), P(K2 - 0.16, -0.54), P(K2 - 0.16, 0.54), P(K2 - 0.55, 0.58)], det: [{ pts: [P(K2 - 0.28, 0.55), P(K2 - 0.28, -0.55)], pen: "shade" }], hatch: hatchG(jc, max(0.6, r * 0.075), axis + 60) });
+  }
+  if (sp.arm === "sleeve") {
+    const sw = 0.5, sleeve = [P(K - 1.02, sw * 1.05), P(K - 1.02, -sw * 1.05), P(K - 14, -sw * 1.35), P(K - 14, sw * 1.35)], shirt = [P(K - 0.92, 0.44), P(K - 0.92, -0.44), P(K - 1.1, -0.47), P(K - 1.1, 0.47)];
+    parts.push({ sil: sleeve, det: [{ pts: [P(K - 1.4, sw * 1.07), P(K - 1.4, -sw * 1.07)], pen: "shade" }, { pts: circle(P(K - 1.24, -0.28), r * 0.06), pen: "shade", cl: true }], hatch: hatchG(sleeve, max(0.7, r * 0.09), axis + 60) });
+    parts.push({ sil: shirt, det: [], hatch: [] });
+  }
+
+  const end = sp.arm === "sleeve" ? K - 1.1 : sp.arm === "cuff" ? K2 - 0.1 : K - 1.45, wl = 0.37;
+  const backC = crOpen([P(end, -wl), P(K - 0.75, -0.44), P(K - 0.25, -0.52), P(K + 0.05, -0.5), P(K + 0.08, -0.25), P(K + 0.04, 0), P(K + 0.08, 0.25), P(K + 0.05, 0.5), P(K - 0.3, 0.54), P(K - 0.75, 0.46), P(end, wl)], 6);
+  const backSil = backC.concat([P(end - 0.01, 0)]);
+  parts.push({ sil: backSil, open: sp.arm === "sleeve" ? null : backC, det: [], hatch: hatchOf(backSil), joinTo: () => [thumb] });
+
+  const tC = crOpen([P(K - 0.7, 0.36), P(K - 0.42, 0.62), P(K - 0.1, 0.7), P(K + 0.12, 0.66)], 6), thumb = tube(tC, t => r * 0.12 * (1 - 0.15 * t), 7);
+  parts.push({ sil: thumb, det: [], hatch: hatchOf(thumb) });
+
+  for (const pt of parts) if (pt.finger) pt.joinTo = () => [backSil];
+  return parts;
+}
+function bombePiece(o, F, Ly, key, notes) {
+  const strip = 19, A = [F[0], F[1] + strip, F[2], F[3]], M = menuOf(o, key), across = +o.across, rowsB = +o.banks;
+
+  const gapR = 0.55, pitch = min((A[2] - A[0] - 1.6) / (across + 0.9), (A[3] - A[1] - 10.6) / (rowsB * 3 + (rowsB - 1) * gapR + 0.9)), r = pitch * 0.44;
+  const gw = across * pitch, gh = (rowsB * 3 + (rowsB - 1) * gapR) * pitch, gx = (A[0] + A[2]) / 2 - gw / 2, gy = A[1] + 9 + (o.hands > 0 && o.arm === "sleeve" ? min(pitch, (A[3] - A[1] - 9 - gh) / 2) : (A[3] - A[1] - 9 - gh) / 2);
+  const cab = [gx - pitch * 0.45, gy - pitch * 0.45, gx + gw + pitch * 0.45, gy + gh + pitch * 0.45];
+  const rnd = mulberry(o.seed * 7 + 3), cabL = mkL(), drumL = mkL(), handL = mkL(), ghostL = mkL(), sils = [];
+
+  putL(cabL, "line", rectPoly(cab), true); putL(cabL, "line", rectPoly(bbGrow(cab, 0.5)), true);
+  for (let b = 1; b < rowsB; b++) { const y = gy + (b * 3 + (b - 0.5) * gapR) * pitch; putL(cabL, "shade", [[cab[0], y - pitch * 0.12], [cab[2], y - pitch * 0.12]]); putL(cabL, "shade", [[cab[0], y + pitch * 0.12], [cab[2], y + pitch * 0.12]]); for (let x = cab[0] + pitch * 0.5; x < cab[2]; x += pitch) putL(cabL, "shade", circle([x, y], 0.35, 10), true); }
+  for (const [x, y] of [[cab[0] + 2, cab[1] + 2], [cab[2] - 2, cab[1] + 2], [cab[0] + 2, cab[3] - 2], [cab[2] - 2, cab[3] - 2]]) putL(cabL, "line", circle([x, y], 0.6, 12), true);
+
+  const plate = (o.plate || "VICTORY").toUpperCase(), pc = fitCap(plate, 3.2, gw * 0.4), pw = textW(plate, pc) + 6, pr = [(cab[0] + cab[2]) / 2 - pw / 2, cab[1] - pc - 5, (cab[0] + cab[2]) / 2 + pw / 2, cab[1] - 1.2];
+  putL(cabL, "line", rectPoly(pr), true); putL(cabL, "shade", rectPoly(bbGrow(pr, -0.7)), true); words(cabL, "line", plate, (pr[0] + pr[2]) / 2, (pr[1] + pr[3]) / 2, pc, { h: "c", v: "m" });
+
+  const st = key.start.split("").map(ci), centres = [];
+  let bank = 0;
+  for (let b = 0; b < rowsB; b++) for (let col = 0; col < across; col++, bank++) {
+    const e = M.edges[bank % M.edges.length], used = bank < M.edges.length || o.unused === "drums";
+    for (let k = 0; k < 3; k++) {
+      const c = [gx + (col + 0.5) * pitch, gy + (b * 3 + b * gapR + k + 0.5) * pitch];
+      centres.push({ c, b, k, used });
+      if (used) { drum(drumL, c, r, m26(st[k] + (k === 2 ? e.k : 0)), key.order[k], o.face); sils.push(circle(c, r * 1.02)); }
+      else { emptySpindle(drumL, c, r); sils.push(circle(c, r * 0.35)); }
+    }
+  }
+
+  const handSils = [], accent0 = o.cpen === "none" ? "line" : "colour";
+  if (o.hands > 0) {
+    const plateX = [pr[0] - r * 1.6, pr[2] + r * 1.6], xs = [...new Set(centres.map(q => q.c[0]))].sort((x, y) => x - y);
+    const side = q => q.b === rowsB - 1 && q.k === 2 ? "bottom"
+      : o.around !== "all" ? null
+      : q.b === 0 && q.k === 0 && !(q.c[0] > plateX[0] && q.c[0] < plateX[1]) ? "top"
+      : q.c[0] === xs[0] ? "left" : q.c[0] === xs[xs.length - 1] ? "right" : null;
+    const pool = centres.filter(q => q.used && side(q)), picked = [];
+    for (let i = 0; i < o.hands && pool.length; i++) {
+      let best = null, bd = -1;
+      for (let t = 0; t < 24; t++) { const q = pool[floor(rnd() * pool.length)], dmin = min(INF, ...picked.map(p => hypot(p.c[0] - q.c[0], p.c[1] - q.c[1]))); if (dmin > bd) { bd = dmin; best = q; } }
+      if (!best || bd < pitch * 1.8) continue;
+      picked.push(best);
+      const base = { bottom: -90, top: 90, left: 0, right: 180 }[side(best)], ang = base + (rnd() - 0.5) * 30, d = [cos(ang * D2R), sin(ang * D2R)];
+      const parts = hand(best.c, r * 1.25, d, handSpec(o, rnd), rnd, accent0), front = [];
+      for (const pt of parts) {
+        const P = mkL();
+        let outl = [[pt.open || pt.sil, !pt.open]];
+        for (const J of pt.joinTo ? pt.joinTo() : []) outl = outl.flatMap(([q, cl]) => clipPath(q, cl, J, false).map(k => [k, false]));
+        for (const [q, cl] of outl) putL(P, "line", q, cl);
+        for (const q of pt.det) putL(P, q.pen, q.pts, !!q.cl);
+        for (const s of pt.hatch || []) putL(P, pt.hatchPen || "shade", s);
+        if (front.length) cutBehind(P, front);
+        merge(handL, P); front.push(pt.sil);
+      }
+      handSils.push(...front);
+    }
+    if (picked.length < o.hands) notes.push(`room for ${picked.length} of ${o.hands} hands`);
+  }
+
+  if (o.ghost === "on") drawMenu(ghostL, M, [cab[0] + pitch * 0.3, cab[1] + pitch * 0.3, cab[2] - pitch * 0.3, cab[3] - pitch * 0.3], clamp(r * 0.5, 2, 3.6), { link: "shade", loop: o.cpen === "none" ? "shade" : "colour", node: "shade", label: "shade" });
+  cutBehind(ghostL, sils.concat(handSils)); cutBehind(drumL, handSils); cutBehind(cabL, handSils);
+  clipToRect(handL, F);
+
+  const top = Ly; Ly = mkL();
+  const ty = F[1], accent = o.cpen === "none" ? "line" : "colour", W = F[2] - F[0];
+  putL(Ly, "shade", [[F[0], ty + 15.5], [F[2], ty + 15.5]]);
+  const title = (o.title || "THE BOMBE").toUpperCase();
+  words(Ly, "line", title, F[0], ty, fitCap(title, 4.2, W * 0.55));
+  const stop = `STOP: ${key.order.join("-")}  ${key.start.split("").join(" ")}`;
+  words(Ly, accent, stop, F[2], ty, fitCap(stop, 3, W * 0.4), { h: "r" });
+  const l2 = `MENU: ${M.crib}  /  ${M.cip}   ${M.edges.length} LINKS, ${M.loops} ON LOOPS`;
+  words(Ly, "shade", l2, F[0], ty + 7, fitCap(l2, 1.9, W));
+  const l3 = "36 ENIGMAS ON ONE FRAME. RUN, RESET AND REPAIRED BY THE WRENS. INKTOBER 2026: HERO";
+  words(Ly, "shade", l3, F[0], ty + 11.5, fitCap(l3, 1.7, W));
+  cutBehind(Ly, handSils);
+  for (const L of [cabL, ghostL, drumL, handL, Ly]) merge(top, L);
+  if (!M.loops) notes.push("this menu has no loops; a real one would be hard to run");
+  return { count: centres.filter(q => q.used).length, what: `${across} x ${rowsB} Enigmas, ${M.loops} looped links`, check: ["the stop is the true key", enigma(key).run(M.crib) === M.cip, "crib enciphers to the menu"] };
+}
+
+function menuPiece(o, F, Ly, key, notes) {
+  const strip = 21, M = menuOf(o, key), A = [F[0], F[1] + 4, F[2], F[3] - strip - 4];
+  const nr = min(8, (A[2] - A[0]) / 16), accent = o.cpen === "none" ? "line" : "colour";
+  drawMenu(Ly, M, A, nr, { link: "line", loop: accent, node: "line", label: "shade" });
+  const ty = F[3] - strip + 3.5, W = F[2] - F[0], title = (o.title || "THE MENU").toUpperCase();
+  putL(Ly, "shade", [[F[0], ty - 2.5], [F[2], ty - 2.5]]);
+  words(Ly, "line", title, F[0], ty, fitCap(title, 4.2, W * 0.6));
+  const l2 = `CRIB  ${M.crib}`, l3 = `CIPHER ${M.cip}`;
+  words(Ly, "shade", l2, F[2], ty, fitCap(l2, 2, W * 0.38), { h: "r" }); words(Ly, "shade", l3, F[2], ty + 3.5, fitCap(l3, 2, W * 0.38), { h: "r" });
+  const l4 = "EACH LINK JOINS A LETTER OF THE GUESS TO THE LETTER IT BECAME, NUMBERED BY ITS PLACE. THE LOOPS ARE WHAT A BOMBE CAN TEST.";
+  words(Ly, "shade", l4, F[0], ty + 9, fitCap(l4, 1.7, W));
+  if (!M.loops) notes.push("this menu has no loops; try another seed or crib");
+  return { count: M.nodes.length, what: `${M.nodes.length} letters, ${M.edges.length} links, ${M.loops} on loops`, check: ["crib enciphers to the menu", enigma(key).run(M.crib) === M.cip, "yes"] };
+}
+
+const OSA_1911_S2 = "(1) If any person having in his possession or control any sketch, plan, model, article, note, document, or information which relates to or is used in a prohibited place or anything in such a place, or which has been made or obtained in contravention of this Act, or which has been entrusted in confidence to him by any person holding office under His Majesty or which he has obtained owing to his position as a person who holds or has held office under His Majesty, or as a person who holds or has held a contract made on behalf of his Majesty, or as a person who is or has been employed under a person who holds or has held such an office or contract,\u2014 (a) communicates the sketch, plan, model, article, note, document, or information to any person, other than a person to whom he is authorised to communicate it, or a person to whom it is in the interest of the State his duty to communicate it, or (b) retains the sketch, plan, model, article, note, or document in his possession or control when he has no right to retain it or when it is contrary to his duty to retain it: that person shall be guilty of a misdemeanour. (2) If any person receives any sketch, plan, model, article, note, document, or information, knowing, or having reasonable ground to believe, at the time when he receives it, that the sketch, plan, model, article, note, document, or information is communicated to him in contravention of this Act, he shall be guilty of a misdemeanour, unless he proves that the communication to him of the sketch, plan, model, article, note, document, or information was contrary to his desire. (3) A person guilty of a misdemeanour under this section shall be liable to imprisonment with or without hard labour for a term not exceeding two years, or to a fine, or to both imprisonment and a fine.";
+
+const SM = (P, n = 6) => crClosed(P, n);
+const WREN = (() => {
+  const R = [];
+  const add = (name, P, tone) => R.push({ name, P, bb: bboxOf(P), tone });
+  add("jacket", SM([[4, 124], [7, 105], [18, 92], [38, 84], [64, 83], [80, 90], [92, 103], [96, 124]], 8), u => 0.95 - 0.12 * max(0, 1 - abs(u[0] - 52) / 30) * max(0, (u[1] - 93) / 30));
+  add("lapelL", SM([[40, 86], [52, 93], [49, 117], [33, 97]], 6), () => 0.6);
+  add("lapelR", SM([[63, 85], [74, 94], [64, 117], [58, 94]], 6), () => 0.6);
+  add("neck", SM([[52, 64], [58, 72], [57.5, 79], [59.5, 85], [44, 87], [43, 79], [44, 66]], 6), u => 0.22 + 0.4 * clamp((77 - u[1]) / 9, 0, 1) * clamp((58 - u[0]) / 10 + 0.4, 0, 1) + 0.1 * clamp((50 - u[0]) / 6, 0, 1));
+  add("collarL", SM([[45, 81], [54, 86], [52, 94], [43, 87]], 5), () => 0.04);
+  add("collarR", SM([[59, 81], [65, 84], [61, 94], [57, 87]], 5), () => 0.04);
+  add("tie", SM([[53, 87.5], [58.5, 87.5], [57.5, 92], [59.2, 110], [56, 114], [53.5, 110], [55, 92]], 4), () => 0.95);
+  add("head", SM([[59, 17], [65, 25], [67.2, 33.5], [65.6, 38], [68.4, 44.5], [73, 51.2], [72.4, 53.2], [69.2, 54.2], [69.6, 56.4], [68.3, 58], [69.1, 60.1], [66.7, 62.6], [67.6, 66], [65, 70], [58, 71.8], [53, 70], [45, 64], [37, 53], [33, 40], [37, 25], [47, 16]], 6),
+    u => 0.02 + 0.32 * clamp((60 - u[0]) / 22, 0, 1) ** 1.5 + 0.18 * clamp((u[1] - 62) / 9, 0, 1) * clamp((64 - u[0]) / 10, 0, 1) + 0.1 * max(0, 1 - hypot(u[0] - 61, u[1] - 50) / 6));
+  add("hair", SM([[36, 23], [47, 19], [56, 22], [51, 30], [47.5, 40], [48.5, 52], [47, 60], [41, 64], [33, 60], [30.5, 48], [31, 34]], 6), u => 0.74 + 0.14 * sin((u[0] * 0.55 - u[1] * 0.35) * 1.3) + 0.08 * clamp((u[1] - 40) / 20, 0, 1));
+  add("fringe", SM([[57, 20], [63.5, 21.5], [64, 26], [60.5, 25.5], [57, 24]], 4), () => 0.7);
+  add("roll", ring(38, 58.5, 8.6, 5.6, 40, -0.25), u => { const d = hypot((u[0] - 38) / 8.6, (u[1] - 58.5) / 5.6); return 0.86 - 0.3 * max(0, 1 - abs(d - 0.55) / 0.25); });
+  add("ear", ring(50, 47, 3.3, 5.8, 32, 0.15), u => 0.3 + 0.35 * max(0, 1 - hypot((u[0] - 49.3) / 1.8, (u[1] - 47.5) / 3.6)));
+  add("cap", SM([[28, 21], [36, 11.5], [52, 7.5], [66, 9], [72, 13], [68, 18], [65.2, 22.6], [34.2, 30]], 6), u => 0.9 - 0.18 * clamp((14 - u[1]) / 6, 0, 1) * clamp((u[0] - 40) / 20, 0, 1));
+  add("band", [[33, 23.6], [64.4, 17], [65.2, 22.8], [34.2, 30]], () => 0.97);
+  add("brow", SM([[57.5, 36.2], [61, 34.4], [65.6, 35.2], [65.2, 36.5], [61, 35.8], [58, 37.2]], 4), () => 0.72);
+  add("eye", SM([[59.3, 40.6], [62, 39.4], [64.6, 40.7], [62.4, 42.3], [60, 41.9]], 4), () => 0.92);
+  add("nostril", ring(69.6, 52.5, 1.3, 0.7, 14, 0.3), () => 0.62);
+  add("lipU", SM([[66.4, 55.6], [69.5, 56.4], [68.3, 58], [66, 57.9]], 3), () => 0.6);
+  add("lipL", SM([[66.2, 58.4], [68.4, 58.3], [69.1, 60.1], [67, 61.4]], 3), () => 0.52);
+  add("mouth", [[65.2, 57.8], [68.4, 57.9], [68.4, 58.4], [65.2, 58.5]], () => 0.9);
+  add("buttonL", ring(48, 114, 1.4, 1.4, 14), () => 0.18);
+  add("buttonR", ring(63, 114, 1.4, 1.4, 14), () => 0.18);
+  return R;
+})();
+const LIPS = new Set(["lipU", "lipL"]);
+function wrenTone(u) {
+
+  const pool = max(0, 1 - hypot((u[0] - 80) / 22, (u[1] - 52) / 36)) ** 0.45;
+  let t = 0.04 + 0.85 * pool, name = "ground";
+  for (const r of WREN) if (u[0] >= r.bb[0] && u[0] <= r.bb[2] && u[1] >= r.bb[1] && u[1] <= r.bb[3] && polyInside(u, r.P)) { t = r.tone(u); name = r.name; }
+  return [clamp(t, 0, 1), name];
+}
+
+const ROLES = [
+
+  ["bombe", "BOMBE OPERATOR", "f", "wren", "wrencap", 5],
+  ["colossus", "COLOSSUS OPERATOR", "f", "wren", "wrencap", 2],
+  ["wrenoff", "WREN OFFICER", "f", "wrenoff", "tricorne", 1],
+  ["y_ats", "INTERCEPT OPERATOR", "f", "ats", "phones", 2],
+  ["y_waaf", "INTERCEPT OPERATOR", "f", "waaf", "phones", 1.5],
+  ["waaf", "TELEPRINTER OPERATOR", "f", "waaf", "waafcap", 1.2],
+  ["ats", "TELEPRINTER OPERATOR", "f", "ats", "atscap", 1],
+  ["breaker_f", "CODEBREAKER", "f", "cardigan", "", 2],
+  ["breaker_m", "CODEBREAKER", "m", "tweed", "", 2],
+  ["linguist_f", "TRANSLATOR", "f", "cardigan", "", 1],
+  ["linguist_m", "TRANSLATOR", "m", "pullover", "", 0.8],
+  ["index", "INDEXER", "f", "cardigan", "", 2.5],
+  ["hollerith", "HOLLERITH OPERATOR", "f", "cardigan", "", 1.2],
+  ["courier", "DISPATCH RIDER", "m", "leather", "helmet", 1],
+  ["courier_f", "DISPATCH RIDER", "f", "leather", "helmet", 0.5],
+  ["gpo", "POST OFFICE ENGINEER", "m", "workcoat", "", 1],
+];
+const SPECIAL_SEED = 1912;
+const roleById = id => ROLES.find(r => r[0] === id);
+const pickW = (rnd, opts, w) => { let x = rnd() * w.reduce((a, b) => a + b, 0); for (let i = 0; i < opts.length; i++) if ((x -= w[i]) < 0) return opts[i]; return opts[0]; };
+
+const HEIGHT_DY = { short: 9, average: 0, tall: -5 }, BUILD_W = { slight: 0.88, average: 1, stocky: 1.13, heavy: 1.27 };
+function personOf(n) {
+  const rnd = mulberry(n * 7919 + 17), R = (a, b) => a + (b - a) * rnd(), pick = a => a[floor(rnd() * a.length)];
+  const tot = ROLES.reduce((a, r) => a + r[5], 0); let x = rnd() * tot, role = ROLES[0];
+  for (const r of ROLES) if ((x -= r[5]) < 0) { role = r; break; }
+  const sex = role[2], p = {
+    n, role: role[0], caption: role[1], sex, dress: role[3], hat: role[4], facing: rnd() < 0.5 ? 1 : -1,
+    fs: R(-1, 1.5), br: R(-0.6, 1), nd: R(-0.4, 1), hump: R(-0.6, 1.6), nl: R(-1.6, 2.2) + (sex === "m" ? 0.6 : 0), tl: R(-0.8, 1), ul: R(-0.6, 0.8), ll: R(-0.6, 0.8),
+    cp: R(-1.6, 1.4) + (sex === "m" ? 0.5 : 0), jl: R(-1, 2) + (sex === "m" ? 1 : 0), age: R(0, 1) ** 1.6, skin: R(0, 1) ** 2,
+    hairTone: pick([0.92, 0.85, 0.78, 0.68, 0.55, 0.42]), hair: sex === "f" ? pick(["roll", "pageboy", "updo", "curls"]) : pick(["parted", "parted", "slicked", "wavy", "balding"]),
+    glasses: rnd() < 0.22, tache: sex === "m" && rnd() < 0.3, lipstick: sex === "f" && rnd() < 0.6, neck: sex === "m" ? 1.6 : 0,
+    height: pickW(rnd, ["short", "average", "tall"], [1, 2, 1]), build: pickW(rnd, ["slight", "average", "stocky", "heavy"], [1, 2, 1.4, 0.8]),
+  };
+  if (p.hair === "balding" && p.age < 0.4) p.hair = "parted";
+  if (n === SPECIAL_SEED) Object.assign(p, { height: "average", build: "slight", role: "breaker_m", caption: "CODEBREAKER", sex: "m", dress: "tweed", hat: "", facing: 1, fs: 0.2, br: 0.9, nd: 0.5, hump: 0.2, nl: 0.9, tl: 0.1, ul: 0.3, ll: 0.6, cp: 0.4, jl: 1.4, age: 0.2, skin: 0.1, hairTone: 0.9, hair: "parted", glasses: false, tache: false, lipstick: false, neck: 1.3 });
+  return p;
+}
+function personRegions(p) {
+  const Rg = [], add = (name, P, tone, n = 6) => { const Q = n ? crClosed(P, n) : P; Rg.push({ name, P: Q, bb: bboxOf(Q), tone: typeof tone === "number" ? () => tone : tone }); };
+  const { fs, br, nd, hump, nl, tl, ul, ll, cp, jl, age, skin, sex } = p, base = 0.02 + skin * 0.22, men = sex === "m";
+
+  const jacket = [[4, 124], [7, 105], [18, 92], [38, 84], [64, 83], [80, 90], [92, 103], [96, 124]].map(([x, y]) => [x + (men ? (x < 50 ? -3 : 3) : 0), y]);
+  const lapels = (t) => { add("lapelL", [[40, 86], [52, 93], [49, 117], [33, 97]], t); add("lapelR", [[63, 85], [74, 94], [64, 117], [58, 94]], t); };
+  const collarTie = (shirt, tie, striped = false) => {
+    add("collarL", [[45, 81], [54, 86], [52, 94], [43, 87]], shirt, 5); add("collarR", [[59, 81], [65, 84], [61, 94], [57, 87]], shirt, 5);
+    add("tie", [[53, 87.5], [58.5, 87.5], [57.5, 92], [59.2, 110], [56, 114], [53.5, 110], [55, 92]], striped ? u => tie - 0.3 * max(0, sin((u[0] - u[1]) * 1.4)) : tie, 4);
+  };
+  if (p.dress === "wren" || p.dress === "wrenoff") { add("jacket", jacket, 0.95, 8); lapels(0.6); collarTie(0.04, 0.95); for (const y of [104, 114]) { add("btnL" + y, ring(48, y, 1.4, 1.4, 14), 0.2, 0); add("btnR" + y, ring(63, y, 1.4, 1.4, 14), 0.2, 0); } if (p.dress === "wrenoff") add("ringband", [[8, 120], [20, 118], [20, 121], [8, 123]], 0.3, 0); }
+  else if (p.dress === "ats") { add("jacket", jacket, u => 0.84 + 0.04 * sin(u[1] * 2), 8); lapels(0.6); collarTie(0.32, 0.82); add("btn", ring(56, 112, 1.4, 1.4, 14), 0.15, 0); }
+  else if (p.dress === "waaf") { add("jacket", jacket, 0.8, 8); lapels(0.55); collarTie(0.14, 0.92); add("btn", ring(56, 112, 1.4, 1.4, 14), 0.15, 0); }
+  else if (p.dress === "cardigan") {
+    add("jacket", jacket, u => 0.8 + 0.1 * sin(u[0] * 2.4), 8);
+    add("blouse", [[44, 82], [62, 82], [60, 98], [56, 124], [52, 124], [48, 98]], 0.05, 5);
+    add("collarL", ring(48, 85, 5, 3.4, 20, 0.35), 0.03, 0); add("collarR", ring(59, 85, 5, 3.4, 20, -0.35), 0.03, 0);
+    add("brooch", ring(47, 95, 1.6, 1.6, 14), 0.8, 0);
+  } else if (p.dress === "tweed") { add("jacket", jacket, u => 0.84 + 0.08 * Math.sign(sin(u[1] * 0.9)) * sin((u[0] + u[1] * Math.sign(sin(u[1] * 0.9))) * 1.6), 8); lapels(0.6); collarTie(0.04, 0.9, true); }
+  else if (p.dress === "pullover") { add("jacket", jacket, u => 0.82 + 0.08 * sin(u[0] * 2.6), 8); add("vee", [[44, 82], [62, 82], [53, 104]], 0.04, 0); collarTie(0.04, 0.85, true); }
+  else if (p.dress === "workcoat") { add("jacket", jacket, 0.74, 8); lapels(0.5); collarTie(0.04, 0.85); add("pocket", [[64, 100], [74, 100], [74, 112], [64, 112]], 0.5, 0); add("pen", [[67, 96], [68.2, 96], [68.2, 104], [67, 104]], 0.95, 0); }
+  else if (p.dress === "leather") { add("jacket", jacket, u => 0.84 - 0.08 * max(0, sin(u[0] * 0.5 + u[1] * 0.3)), 8); add("collarup", [[38, 74], [52, 80], [66, 76], [70, 88], [52, 92], [34, 88]], 0.9, 6); add("scarf", [[42, 79], [62, 78], [60, 86], [44, 86]], 0.25, 5); }
+
+  add("neck", [[52, 64], [58 + p.neck * 0.5, 72], [57.5 + p.neck, 79], [59.5 + p.neck, 85], [44 - p.neck, 87], [43 - p.neck, 79], [44 - p.neck * 0.5, 66]], u => base + 0.2 + 0.4 * clamp((77 - u[1]) / 9, 0, 1) * clamp((58 - u[0]) / 10 + 0.4, 0, 1) + 0.1 * clamp((50 - u[0]) / 6, 0, 1));
+
+  const H = [[59, 17], [65 - fs * 1.5, 25], [67.2 + br, 33.5], [65.6 - nd, 38], [68.4 + hump * 0.6 + nl * 0.3, 44.5], [73 + nl, 51.2 - tl * 0.4], [72.4 + nl, 53.2 + tl * 0.3], [69.2 + ul * 0.3, 54.2],
+    [69.6 + ul, 56.4], [68.3 + ul * 0.6, 58], [69.1 + ll, 60.1], [66.7 + cp * 0.5, 62.6], [67.6 + cp, 66 + jl * 0.5], [65 + cp * 0.6, 70 + jl], [58, 71.8 + jl], [53, 70 + jl * 0.5], [45, 64], [37, 53], [33, 40], [37, 25], [47, 16]];
+  add("head", H, u => base + 0.32 * clamp((60 - u[0]) / 22, 0, 1) ** 1.5 + 0.18 * clamp((u[1] - 62 - jl) / 9, 0, 1) * clamp((64 - u[0]) / 10, 0, 1) + 0.1 * max(0, 1 - hypot(u[0] - 61, u[1] - 50) / 6)
+    + age * (0.35 * max(0, 1 - hypot((u[0] - 66 - ul * 0.5) / 1.2, (u[1] - 57) / 4)) + 0.3 * max(0, 1 - hypot((u[0] - 58.5) / 2.5, (u[1] - 41.5) / 1)) + 0.2 * max(0, 1 - abs(u[1] - 29) / 0.8) * clamp((u[0] - 56) / 6, 0, 1)));
+  add("ear", ring(50, 47, 3.3, 5.8, 32, 0.15), u => base + 0.28 + 0.35 * max(0, 1 - hypot((u[0] - 49.3) / 1.8, (u[1] - 47.5) / 3.6)), 0);
+
+  const ht = p.hairTone, flow = u => ht + 0.12 * sin((u[0] * 0.55 - u[1] * 0.35) * 1.3);
+  if (p.hair === "roll") { add("hair", [[36, 23], [47, 19], [56, 22], [51, 30], [47.5, 40], [48.5, 52], [47, 60], [41, 64], [33, 60], [30.5, 48], [31, 34]], flow); add("roll", ring(38, 58.5, 8.6, 5.6, 40, -0.25), u => { const d = hypot((u[0] - 38) / 8.6, (u[1] - 58.5) / 5.6); return ht + 0.05 - 0.3 * max(0, 1 - abs(d - 0.55) / 0.25); }, 0); add("fringe", [[57, 20], [63.5, 21.5], [64, 26], [60.5, 25.5], [57, 24]], ht, 4); }
+  else if (p.hair === "pageboy") { add("hair", [[36, 18], [50, 13], [60, 16], [64, 22], [57, 25], [51, 31], [48.5, 42], [51, 55], [54, 61], [47, 66], [38, 64], [32, 56], [30, 42], [31, 28]], flow); add("curl", ring(50, 62, 4, 3, 24), u => ht - 0.25 * max(0, 1 - hypot((u[0] - 50) / 4, (u[1] - 62) / 3)), 0); }
+  else if (p.hair === "updo") { add("hair", [[34, 24], [44, 17], [54, 17], [50, 28], [47.5, 40], [47, 52], [40, 58], [33, 52], [31, 38]], flow); add("pomp", ring(57, 17.5, 8.5, 5, 30, -0.15), u => ht - 0.2 * max(0, 1 - hypot((u[0] - 57) / 8.5, (u[1] - 17.5) / 5) * 1.6), 0); add("bun", ring(36, 54, 5.5, 5, 26), u => ht + 0.05 - 0.25 * abs(sin(hypot(u[0] - 36, u[1] - 54) * 1.2)), 0); }
+  else if (p.hair === "curls") { add("hair", [[34, 19], [48, 12], [60, 14], [66, 21], [59, 24], [52, 30], [49, 41], [50, 53], [44, 60], [35, 58], [30, 46], [30, 30]], u => ht - 0.22 * max(0, sin(u[0] * 1.5) * sin(u[1] * 1.5))); }
+  else if (p.hair === "balding") { add("hair", [[44, 30], [47.5, 38], [47, 45], [46.5, 54], [44, 60], [38, 60.5], [33.5, 51], [32, 38], [35, 28]], u => min(0.95, ht * 0.7 + 0.1 * sin(u[1] * 2))); }
+  else { const tall = p.hair === "wavy" ? 1.5 : 0;
+    add("hair", [[37, 23], [43, 15 - tall], [55, 14 - tall], [63, 16.5 - tall * 0.5], [65.5, 20], [59, 21], [52, 25], [47.5, 33], [47, 41], [46.5, 52], [44.5, 60], [38.5, 61], [33.5, 52], [32, 34]], p.hair === "slicked" ? u => ht + 0.06 * sin(u[1] * 2.6) : p.hair === "wavy" ? u => ht - 0.2 * max(0, sin(u[0] * 0.9 + u[1] * 0.4)) : u => ht - (abs(u[0] - 54 + (u[1] - 14) * 0.4) < 0.9 ? 0.5 : 0) + 0.06 * sin(u[0] * 1.8)); }
+
+  if (p.hat === "wrencap") { add("cap", [[28, 21], [36, 11.5], [52, 7.5], [66, 9], [72, 13], [68, 18], [65.2, 22.6], [34.2, 30]], u => 0.9 - 0.18 * clamp((14 - u[1]) / 6, 0, 1) * clamp((u[0] - 40) / 20, 0, 1)); add("band", [[33, 23.6], [64.4, 17], [65.2, 22.8], [34.2, 30]], 0.97, 0); }
+  else if (p.hat === "tricorne") { add("cap", [[30, 23], [33, 12], [46, 8], [60, 8.5], [73, 14], [67, 18], [64.5, 24], [36, 29.5]], u => 0.93 - 0.12 * clamp((12 - u[1]) / 4, 0, 1)); add("badge", ring(60.5, 15.2, 2.3, 2.8, 18), 0.3, 0); }
+  else if (p.hat === "atscap") { add("cap", [[35, 19], [48, 9.5], [62, 11.5], [66, 18], [37, 25]], u => abs(u[1] - (10.5 + abs(u[0] - 49) * 0.07)) < 0.9 ? 0.35 : 0.96); add("badge", ring(56, 16.5, 2, 2.4, 16), 0.3, 0); }
+  else if (p.hat === "waafcap") { add("cap", [[30, 17], [44, 8], [60, 7.5], [69, 12.5], [66.5, 18.5], [34, 24]], 0.66); add("band", [[33, 19.5], [66, 15.5], [66.6, 20], [34, 24.8]], 0.95, 0); add("peak", [[64, 18.6], [75, 21.5], [73.5, 23.6], [64, 22.4]], 0.97, 3); add("badge", ring(63.5, 13.6, 2, 2.2, 16), 0.3, 0); }
+  else if (p.hat === "helmet") {
+
+    add("cap", [[31, 27], [33, 13], [47, 5.5], [62, 8.5], [69, 17], [67, 24], [36, 31]], u => (abs(u[1] - 26.5 + (u[0] - 31) * 0.12) < 1.6 ? 0.95 : abs(u[0] - 49 + (u[1] - 6) * 0.3) < 0.7 ? 0.85 : 0.66 - 0.22 * max(0, 1 - hypot((u[0] - 50) / 9, (u[1] - 11) / 3))));
+    add("strap", [[44, 26], [47, 26], [52, 60], [49, 61]], 0.9, 0);
+    add("goggle", ring(62.5, 16, 5, 3.8, 28, -0.2), u => { const d = hypot((u[0] - 62.5) / 5, (u[1] - 16) / 3.8); return d < 0.55 ? 0.12 : 0.97; }, 0);
+    add("gstrap", [[36, 21], [58, 14.5], [58.5, 17], [36.5, 23.5]], 0.92, 0);
+  }
+  else if (p.hat === "phones") {
+    const C = crOpen([[46.5, 15], [50, 21], [51.4, 31], [50.6, 40.5]], 6); add("band", tube(C, () => 1.6, 5), 0.97, 0);
+    add("earpiece", ring(50.3, 46.5, 4.6, 5.6, 28), u => hypot((u[0] - 50.3) / 4.6, (u[1] - 46.5) / 5.6) < 0.45 ? 0.55 : 0.97, 0);
+    add("cord", tube(crOpen([[50, 52], [47, 66], [44, 80], [42, 96]], 6), () => 0.55, 5), 0.9, 0);
+  }
+
+  if (men) add("jawshade", [[52, 52], [60, 56], [64, 66 + jl * 0.5], [60, 70 + jl], [53, 69 + jl * 0.5], [48, 60]], u => base + 0.3 + 0.1 * clamp((60 - u[0]) / 8, 0, 1), 6);
+  if (men) add("brow", [[56.5, 36.4 - br * 0.2], [61, 33.6], [66 + br * 0.5, 34.6], [65.6 + br * 0.5, 37], [61, 36.4], [57, 38]], 0.9, 4);
+  else add("brow", [[57.5, 36.2 - br * 0.2], [61, 34.4], [65.6 + br * 0.5, 35.2], [65.2 + br * 0.5, 36.5], [61, 35.8], [58, 37.2]], 0.72, 4);
+  add("eye", [[59.3, 40.6], [62, 39.4], [64.6 - nd * 0.3, 40.7], [62.4, 42.3], [60, 41.9]], men ? 0.78 : 0.92, 4);
+  add("nostril", ring(69.6 + nl * 0.6, 52.5 + tl * 0.2, 1.3, 0.7, 14, 0.3), 0.62, 0);
+  const lipT = p.lipstick ? 0.62 : men ? 0.42 : 0.5;
+  add("lipU", [[66.4, 55.6], [69.5 + ul, 56.4], [68.3 + ul * 0.6, 58], [66, 57.9]], lipT, 3);
+  add("lipL", [[66.2, 58.4], [68.4 + ul * 0.6, 58.3], [69.1 + ll, 60.1], [67, 61.4]], lipT - 0.08, 3);
+  add("mouth", [[65.2, 57.8], [68.4 + ul * 0.6, 57.9], [68.4 + ul * 0.6, 58.4], [65.2, 58.5]], 0.9, 0);
+  if (p.tache) add("tache", [[64.5, 54.4], [69.2 + ul * 0.3, 54.6], [69.8 + ul, 56.2], [65, 56.6]], 0.86, 3);
+  if (p.glasses) {
+    const gx = 65.4 - nd * 0.4;
+    add("lens", ring(gx, 41, 1.6, 3.6, 24), u => hypot((u[0] - gx) / 1.6, (u[1] - 41) / 3.6) > 0.62 ? 0.96 : 0.25, 0);
+    add("arm", [[gx - 1.2, 39.6], [gx - 1.2, 40.6], [50.5, 43.2], [50.5, 42.2]], 0.92, 0);
+  }
+  const bw = BUILD_W[p.build] || 1, sh = -(bw - 1) * 9, TORSO = /^(jacket|lapel|collar|tie|btn|ringband|blouse|brooch|vee|pocket|pen|scarf|cord)/;
+  if (bw !== 1) for (const r of Rg) {
+    if (TORSO.test(r.name)) r.P = r.P.map(([x, y]) => [50 + (x - 50) * bw, y + sh * clamp((y - 70) / 14, 0, 1)]);
+    else if (r.name === "neck") r.P = r.P.map(([x, y]) => [51 + (x - 51) * bw, y + sh * clamp((y - 70) / 14, 0, 1)]);
+    else if (r.name === "head" || r.name === "jawshade") r.P = r.P.map(([x, y]) => { const k = clamp((y - 58) / 12, 0, 1) * clamp((67 - x) / 14, 0, 1); return [x - (bw - 1) * 10 * k, y + (bw - 1) * 9 * k]; });
+    r.bb = bboxOf(r.P);
+  }
+  if (p.build === "heavy") { const cy = 72 + jl + 3.5; Rg.splice(Rg.findIndex(r => r.name === "ear"), 0, (P => ({ name: "jowl", P, bb: bboxOf(P), tone: u => base + 0.3 - 0.15 * clamp(abs(u[1] - cy) / 2.5, 0, 1) }))(ring(57, cy + 1, 9.5, 3.2, 30, -0.15))); }
+  return Rg;
+}
+
+const accentOf = (p, name) => (name === "lipU" || name === "lipL") ? p.lipstick : name === "badge";
+function personTone(p, Rg, u) {
+  const dy = HEIGHT_DY[p.height] || 0, v = p.facing === 1 ? [u[0], u[1] - dy] : [100 - u[0], u[1] - dy];
+  const pool = max(0, 1 - hypot((v[0] - 80) / 22, (v[1] - 52) / 36)) ** 0.45;
+  let t = 0.04 + 0.85 * pool, name = "ground";
+  for (const r of Rg) if (v[0] >= r.bb[0] && v[0] <= r.bb[2] && v[1] >= r.bb[1] && v[1] <= r.bb[3] && polyInside(v, r.P)) { t = r.tone(v); name = r.name; }
+  return [clamp(t, 0, 1), name];
+}
+
+function portraitCells(o, A, cols, tone, opt = {}) {
+  const V = [10, 3, 96, 113], vw = V[2] - V[0], vh = V[3] - V[1], oval = (opt.frame || o.frame) === "oval";
+
+  const fitS = g => min((A[2] - A[0] - 2 * g) / vw, (A[3] - A[1] - 2 * g) / vh), s0 = fitS(0), grow = oval ? (vw * s0 / cols) * 1.22 * 0.6 + 1.8 - (opt.pad ?? 4) : 0;
+  const s = grow > 0 ? fitS(grow) : s0, ox = (A[0] + A[2]) / 2 - vw / 2 * s, oy = A[1] + ((A[3] - A[1]) - vh * s) / 2;
+  const U = (x, y) => [V[0] + (x - ox) / s, V[1] + (y - oy) / s], X = (u, v) => [ox + (u - V[0]) * s, oy + (v - V[1]) * s];
+  const cw = vw * s / cols, chh = cw * 1.22, rows = floor(vh * s / chh), oy2 = oy + (vh * s - rows * chh) / 2, gam = 100 / o.contrast, cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const p = [ox + (c + 0.5) * cw, oy2 + (r + 0.5) * chh], u = U(...p);
+    if (oval && ((u[0] - V[0] - vw / 2) / (vw / 2)) ** 2 + ((u[1] - V[1] - vh / 2) / (vh / 2)) ** 2 > 1) continue;
+    if (opt.skip && opt.skip(p)) continue;
+    const [t, name] = tone(u);
+    cells.push({ p, t: pow(t, gam), name, cw, chh });
+  }
+  const frame = L => { if (!oval) return; const c = X(V[0] + vw / 2, V[1] + vh / 2), rx = vw / 2 * s + cw * 0.7, ry = vh / 2 * s + chh * 0.6; putL(L, "line", ring(c[0], c[1], rx, ry, 160), true); putL(L, "shade", ring(c[0], c[1], rx + 1.2, ry + 1.2, 160), true); };
+  return { cells, X, s, cw, chh, frame, bottom: oval ? X(0, V[3])[1] + chh * 0.6 + 1.2 : oy + vh * s };
+}
+
+function streamFor(o, n) {
+  const ded = clean(o.message) || "FORXTHEXWRENS", msg = o.msgsrc === "osa" ? clean(OSA_1911_S2) : o.msgsrc === "both" ? clean(OSA_1911_S2) + "XXXX" + ded : ded;
+  return Array.from({ length: ceil(n / (msg.length + 2)) + 1 }, () => msg + "XX").join("").slice(0, n);
+}
+
+function inkCells(o, Ly, cells, letters, isAccent, accent, compact = false) {
+  const lo = o.minlet / 10;
+  cells.forEach((q, i) => {
+    const small = compact, ch = letters[i], gw = glyphOf(ch).w, cap = min(lerp(lo, q.chh * (small ? 0.8 : 0.92), q.t ** 1.4), q.cw * (small ? 0.85 : 0.95) * 6 / gw);
+    q.ch = ch;
+    const pen = isAccent(q.name) ? accent : q.t > 0.55 ? "line" : "shade";
+    words(Ly, pen, ch, q.p[0], q.p[1], cap, { h: "c", v: "m" });
+    if (q.t > 0.8 && pen !== accent && !small) words(Ly, pen, ch, q.p[0] + 0.17, q.p[1], cap, { h: "c", v: "m" });
+  });
+}
+
+function redacted(o, Ly, title, x, y, cap, h = "l") {
+  const cut = title.indexOf(",");
+  if (o.redact !== "bar" || cut < 0) { words(Ly, "line", title, x, y, cap, { h }); return; }
+  const head = title.slice(0, cut + 1), rest = title.slice(cut + 1).trim(), w = textW(head + " ", cap) + textW(rest, cap), x0 = h === "c" ? x - w / 2 : x;
+  const x1 = x0 + textW(head + " ", cap), bar = [x1, y - cap * 0.12, x1 + textW(rest, cap), y + cap * 1.12];
+  words(Ly, "line", head, x0, y, cap); putL(Ly, "line", rectPoly(bar), true); for (const q of hatchG(rectPoly(bar), 0.3, 0)) putL(Ly, "line", q);
+}
+
+function portraitStrip(o, F, Ly, key, strip, title, how) {
+  const accent = o.cpen === "none" ? "line" : "colour", ty = F[3] - strip + 3.5, W = F[2] - F[0];
+  putL(Ly, "shade", [[F[0], ty - 2.5], [F[2], ty - 2.5]]);
+  redacted(o, Ly, title, F[0], ty, fitCap(title, 4.2, W * 0.6));
+  const kl = keyLine(key); words(Ly, accent, kl, F[2], ty, fitCap(kl, 2, W * 0.38), { h: "r" });
+  const pl = plugLine(key); words(Ly, accent, pl, F[2], ty + 3.6, fitCap(pl, 2, W * 0.38), { h: "r" });
+  const l3 = `${how} ENIGMA, REFLECTOR B. NEARLY THREE IN FOUR AT BLETCHLEY WERE WOMEN.`;
+  words(Ly, "shade", l3, F[0], ty + 9.5, fitCap(l3, 1.7, W));
+  const l4 = "INKTOBER 2026: HERO. FOR THE ONES WHO NEVER SAID A WORD." + (o.msgsrc === "dedication" ? "" : " CONTAINS PUBLIC SECTOR INFORMATION LICENSED UNDER THE OPEN GOVERNMENT LICENCE V3.0.");
+  words(Ly, "shade", l4, F[0], ty + 13.6, fitCap(l4, 1.7, W));
+}
+const decodeCheck = (key, cells, plain) => { const back = enigma(key).run(cells.map(q => q.ch).join("")); return ["the letters decode to the message", back === plain, back.slice(0, 24) + "..."]; };
+function wrenPiece(o, F, Ly, key, notes) {
+  const strip = 24, A = [F[0] + 4, F[1] + 4, F[2] - 4, F[3] - strip - 2], accent = o.cpen === "none" ? "line" : "colour";
+
+  const lay = portraitCells(o, A, o.cols, wrenTone), { X, s, cw, chh } = lay;
+  const b0 = X(33.6, 26.8), b1 = X(64.8, 19.9), ta = atan2(b1[1] - b0[1], b1[0] - b0[0]), tc = lerp2(b0, b1, 0.52), tcap = 3.2 * s, tally = "H.M.S.", tw = textW(tally, tcap);
+  const inTally = p => { const dx = p[0] - tc[0], dy = p[1] - tc[1], a = dx * cos(ta) + dy * sin(ta), b = -dx * sin(ta) + dy * cos(ta); return abs(a) < tw / 2 + cw * 0.9 && abs(b) < tcap / 2 + chh * 0.45; };
+  const { cells, frame } = o.tally === "on" ? portraitCells(o, A, o.cols, wrenTone, { skip: inTally }) : lay;
+  const plain = streamFor(o, cells.length), cip = enigma(key).run(plain);
+  inkCells(o, Ly, cells, cip, n => LIPS.has(n), accent);
+  if (o.tally === "on") for (const dd of [0, 0.18]) words(Ly, accent, tally, tc[0] - sin(ta) * dd, tc[1] + cos(ta) * dd, tcap, { h: "c", v: "m", ang: ta });
+  frame(Ly);
+  portraitStrip(o, F, Ly, key, strip, (o.title || "WREN, NAME REDACTED").toUpperCase(), `READ ACROSS, ROW BY ROW${o.tally === "on" ? ", LEAVING OUT THE CAP TALLY" : ""}.`);
+  return { count: cells.length, what: `${cells.length} letters, ${o.cols} across`, check: decodeCheck(key, cells, plain) };
+}
+const withBody = (o, p) => ({ ...p, height: o.height && o.height !== "seed" ? o.height : p.height, build: o.build && o.build !== "seed" ? o.build : p.build });
+
+function personPiece(o, F, Ly, key, notes) {
+  const strip = 24, A = [F[0] + 4, F[1] + 4, F[2] - 4, F[3] - strip - 2], accent = o.cpen === "none" ? "line" : "colour";
+  const p = withBody(o, personOf(o.person)), Rg = personRegions(p), { cells, frame } = portraitCells(o, A, o.cols, u => personTone(p, Rg, u));
+  const plain = streamFor(o, cells.length), cip = enigma(key).run(plain);
+  inkCells(o, Ly, cells, cip, n => accentOf(p, n), accent);
+  frame(Ly);
+  portraitStrip(o, F, Ly, key, strip, (o.title || p.caption + ", NAME REDACTED").toUpperCase(), "READ ACROSS, ROW BY ROW.");
+  return { count: cells.length, what: `no. ${o.person}: ${p.caption.toLowerCase()}, ${p.height}, ${p.build}, ${p.dress}, ${p.hair}${p.glasses ? ", glasses" : ""}${p.tache ? ", moustache" : ""}; ${cells.length} letters`, check: decodeCheck(key, cells, plain) };
+}
+
+function castPiece(o, F, Ly, key, notes) {
+  const strip = 24, [gc, gr] = o.grid.split("x").map(Number), A = [F[0], F[1], F[2], F[3] - strip - 2], accent = o.cpen === "none" ? "line" : "colour";
+  const cap = 2.2, gap = 4, cwid = (A[2] - A[0] - gap * (gc - 1)) / gc, chgt = (A[3] - A[1] - gap * (gr - 1)) / gr, all = [], ppl = [];
+  for (let j = 0; j < gr; j++) for (let i = 0; i < gc; i++) {
+    const k = j * gc + i, p = withBody(o, personOf(o.person + k)), Rg = personRegions(p), x0 = A[0] + i * (cwid + gap), y0 = A[1] + j * (chgt + gap);
+    const box = [x0 + 1, y0 + 1, x0 + cwid - 1, y0 + chgt - cap * 2.4 - 2];
+    const lay = portraitCells(o, box, max(18, min(round(o.cols * cwid / (F[2] - F[0])), floor((box[2] - box[0]) * 0.86 / 1.75))), u => personTone(p, Rg, u), { pad: 1 });
+    ppl.push({ p, lay, x0, y0 });
+    for (const q of lay.cells) all.push(q);
+  }
+  const plain = streamFor(o, all.length), cip = enigma(key).run(plain);
+  let at = 0;
+  for (const { p, lay, x0, y0 } of ppl) {
+    const n = lay.cells.length; inkCells(o, Ly, lay.cells, cip.slice(at, at + n), nm => accentOf(p, nm), accent); at += n;
+    lay.frame(Ly);
+    const t = p.caption + ", NAME REDACTED", c = fitCap(t, cap, cwid - 2);
+    redacted(o, Ly, t, x0 + cwid / 2, min(y0 + chgt - c * 1.4, lay.bottom + 1.5), c, "c");
+  }
+  portraitStrip(o, F, Ly, key, strip, (o.title || "THE PEOPLE OF STATION X").toUpperCase(), "READ EACH PORTRAIT ACROSS, ROW BY ROW, LEFT TO RIGHT, TOP ROW FIRST.");
+  const roles = new Set(ppl.map(q => q.p.caption)).size;
+  return { count: all.length, what: `${ppl.length} people from no. ${o.person} (${roles} jobs), ${all.length} letters`, check: decodeCheck(key, all, plain) };
+}
+
+function build(o) {
+  const t0 = performance.now(), [PW, PH] = PAGES[o.page] || PAGES["190x250"], mg = o.margin, F = [mg, mg, PW - mg, PH - mg];
+  const Ly = mkL(), notes = [], key = keyFrom(o);
+  const info = o.piece === "wren" ? wrenPiece(o, F, Ly, key, notes) : o.piece === "person" ? personPiece(o, F, Ly, key, notes) : o.piece === "cast" ? castPiece(o, F, Ly, key, notes) : o.piece === "menu" ? menuPiece(o, F, Ly, key, notes) : bombePiece(o, F, Ly, key, notes);
+  if (o.cpen === "none") { Ly.line.push(...Ly.colour); Ly.colour = []; }
+  let bb = [INF, INF, -INF, -INF], finite = true;
+  for (const pen of PENS) for (const [q] of Ly[pen]) for (const [x, y] of q) { if (!isFinite(x) || !isFinite(y)) finite = false; bb = [min(bb[0], x), min(bb[1], y), max(bb[2], x), max(bb[3], y)]; }
+  const metres = Object.fromEntries(PENS.map(pen => [pen, Ly[pen].reduce((a, [q]) => { let t = 0; for (let i = 1; i < q.length; i++) t += hypot(q[i][0] - q[i - 1][0], q[i][1] - q[i - 1][1]); return a + t; }, 0) / 1000]));
+  const total = metres.line + metres.shade + metres.colour, ms = performance.now() - t0;
+  const gates = [
+    ["fits inside the margins", bb[0] >= mg - PASS - 0.01 && bb[1] >= mg - PASS - 0.01 && bb[2] <= PW - mg + PASS + 0.01 && bb[3] <= PH - mg + PASS + 0.01, `${(bb[2] - bb[0]).toFixed(0)} x ${(bb[3] - bb[1]).toFixed(0)} mm in ${PW - 2 * mg} x ${PH - 2 * mg}`],
+    ["every coordinate is a number", finite, finite ? "yes" : "no"],
+    [info.check[0], info.check[1], info.check[2]],
+    ["under 150 m of pen", total < 150, total.toFixed(1) + " m"],
+    ["builds in under 4 s", ms < 4000, (ms / 1000).toFixed(2) + " s"],
+  ];
+  return { o, W: PW, H: PH, layers: Ly, gates, notes, metres, count: info.count, what: info.what, key, ms };
+}
+
+const SELFTEST = enigma({ order: ["I", "II", "III"], rings: [0, 0, 0], start: "AAA", plugs: [] }).run("AAAAA");
+
+function draw(r) {
+  const cv = $("cv"), c = cv.getContext("2d"), wpx = min(760, (cv.parentElement.clientWidth || 784) - 24), s = wpx / r.W, col = { line: "#141414", shade: "#4a4a4a", colour: "#" + r.o.ccol };
+  cv.width = round(wpx * (devicePixelRatio || 1)); cv.height = round(r.H * s * (devicePixelRatio || 1)); cv.style.width = wpx + "px"; cv.style.height = round(r.H * s) + "px";
+  c.setTransform(cv.width / r.W, 0, 0, cv.height / r.H, 0, 0); c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineCap = c.lineJoin = "round";
+  for (const key of PENS) {
+    c.strokeStyle = col[key]; c.lineWidth = PEN[key];
+    for (const [q, cl] of r.layers[key]) { c.beginPath(); q.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); c.stroke(); }
+  }
+  $("stats").innerHTML = `<b>${r.o.piece}</b> · ${r.what} · ${r.ms.toFixed(0)} ms · Enigma self-test ${SELFTEST === "BDZGO" ? '<span class="pass">BDZGO</span>' : '<span class="fail">' + SELFTEST + "</span>"}<br>`
+    + `key: <b>${keyLine(r.key)}</b> · ${plugLine(r.key)}<br>`
+    + `thin 0.3: <b>${r.metres.shade.toFixed(1)} m</b> · line 0.4: <b>${r.metres.line.toFixed(1)} m</b> · colour: <b>${r.metres.colour.toFixed(1)} m</b><br>`
+    + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
+    + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
+}
+const penLayers = r => [{ name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line }, { name: "colour", colour: r.o.ccol, w: PEN.colour, paths: r.layers.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG bletchley studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+const IDS = ["piece", "title", "redact", "tally", "msgsrc", "seed", "start", "crib", "message", "across", "banks", "face", "unused", "hands", "around", "arm", "skin", "nails", "rings", "ghost", "plate", "person", "grid", "height", "build", "cols", "contrast", "minlet", "frame", "cpen", "ccol", "page", "margin", "ticks"];
+const NUM = new Set(["seed", "hands", "person", "cols", "contrast", "minlet", "margin"]);
+const read = () => Object.fromEntries(IDS.map(k => [k, NUM.has(k) ? +$(k).value : $(k).value]));
+let last = null, pending = 0;
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+function run(k) { sync(); if (last && k === "ccol") { last.o = { ...last.o, ...read() }; draw(last); return; } $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 30); }
+
+const BASE = { piece: "bombe", title: "", redact: "words", tally: "off", msgsrc: "both", seed: 12, start: "WRN", crib: "WETTERVORHERSAGE", message: "For the Wrens and everyone at Station X who kept the secret",
+  across: "12", banks: "3", face: "auto", unused: "drums", hands: 2, around: "below", arm: "cuff", skin: "mix", nails: "mix", rings: "mix", ghost: "on", plate: "VICTORY", person: 1, grid: "3x4", height: "seed", build: "seed", cols: 80, contrast: 125, minlet: 8, frame: "oval", cpen: "accent", ccol: "c0302a", page: "190x250", margin: 10, ticks: "split" };
+const P = o => ({ ...BASE, ...o });
+const PRESETS = {
+  wall: P({ hands: 0 }),
+  hands: P({ hands: 3, seed: 21, ccol: "2a4f9a" }),
+  crowd: P({ hands: 10, around: "all", arm: "hand", seed: 33, ccol: "b8288f" }),
+  close: P({ across: "4", banks: "1", hands: 2, seed: 4, page: "250x190", nails: "painted", rings: "rings" }),
+  wren: P({ piece: "wren" }),
+  wrenbold: P({ piece: "wren", cols: 56, minlet: 9, contrast: 120 }),
+  wrensq: P({ piece: "wren", page: "280x280", cols: 90, minlet: 9, redact: "bar" }),
+  menu: P({ piece: "menu", ccol: "c0302a" }),
+  person: P({ piece: "person", person: 7 }),
+  cast: P({ piece: "cast", person: 1, grid: "2x2", cols: 120, minlet: 8, page: "280x280" }),
+  cast6: P({ piece: "cast", person: 40, grid: "3x2", cols: 170, minlet: 7, page: "280x280" }),
+};
+const setAll = p => { for (const [k, v] of Object.entries(p)) if ($(k)) $(k).value = v; };
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setAll(PRESETS[b.dataset.preset]); run(); });
+IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `bletchley-${r.o.piece}-${r.key.start}-seed${r.o.seed}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, enigma, SELFTEST };
+setAll(PRESETS.wall);
+run();
+</script>
+</body>
+</html>

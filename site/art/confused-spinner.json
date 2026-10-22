@@ -1,0 +1,32 @@
+{
+  "studio": "confused-deck-studio.html",
+  "id": "confused-spinner",
+  "title": "Tolerance spinner",
+  "preset": "spinner",
+  "content": {},
+  "settings": {
+    "weight": "0.16",
+    "confusion": "35",
+    "seed": "11",
+    "entries": "10",
+    "sanity": "40",
+    "turn": "0",
+    "margin": "8",
+    "size": "big",
+    "headline": "ink",
+    "backers": "flaps",
+    "wheel": "pool",
+    "sheet": "all",
+    "view": "closed",
+    "paperA": "fbf9f4",
+    "paperB": "f2b705",
+    "paperW": "cfe3f2",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "43ad4be3d6d00c67eb83cb926632c03aaaace0e4c65153f86c3676657a64316a",
+  "svg": "site/art/confused-spinner.svg",
+  "image": "site/art/confused-spinner.webp",
+  "page": "280x280",
+  "seed": 11
+}

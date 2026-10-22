@@ -1,0 +1,32 @@
+{
+  "studio": "signal-book-studio.html",
+  "id": "signal-semachart",
+  "title": "Body language",
+  "preset": "semachart",
+  "content": {},
+  "settings": {
+    "msg": "ENGLAND EXPECTS",
+    "ckey": "3",
+    "gsize": "22",
+    "pitch": "0.6",
+    "angle": "45",
+    "tsize": "6",
+    "mount": "25",
+    "cipher": "none",
+    "alpha": "semaphore",
+    "layout": "chart",
+    "labels": "on",
+    "ghost": "on",
+    "ink": "heraldic",
+    "caption": "name",
+    "tpen": "#132c42",
+    "page": "190x250",
+    "marks": "on",
+    "ticks": "split"
+  },
+  "sourceHash": "6ed361f89288df0ddde20ac867a0ae70ba8dec9f5311514601b673e257448e23",
+  "svg": "site/art/signal-semachart.svg",
+  "image": "site/art/signal-semachart.webp",
+  "page": "190x250",
+  "seed": null
+}

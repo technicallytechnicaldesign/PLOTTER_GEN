@@ -1,0 +1,32 @@
+{
+  "studio": "confused-deck-studio.html",
+  "id": "confused-cutouts",
+  "title": "Cut-out headlines",
+  "preset": "cutouts",
+  "content": {},
+  "settings": {
+    "weight": "0.16",
+    "confusion": "25",
+    "seed": "4",
+    "entries": "10",
+    "sanity": "50",
+    "turn": "0",
+    "margin": "8",
+    "size": "trade",
+    "headline": "cut",
+    "backers": "flaps",
+    "wheel": "pool",
+    "sheet": "fronts",
+    "view": "closed",
+    "paperA": "fbf9f4",
+    "paperB": "d7263d",
+    "paperW": "cfe3f2",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "43ad4be3d6d00c67eb83cb926632c03aaaace0e4c65153f86c3676657a64316a",
+  "svg": "site/art/confused-cutouts.svg",
+  "image": "site/art/confused-cutouts.webp",
+  "page": "280x280",
+  "seed": 4
+}

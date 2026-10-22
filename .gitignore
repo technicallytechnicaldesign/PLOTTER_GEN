@@ -1,0 +1,13 @@
+*
+!/.gitignore
+!/.nojekyll
+!/README.md
+!/THIRD_PARTY_LICENSES.txt
+!/*.html
+!/site/
+!/site/**
+!/src/
+!/src/**
+**/*.md
+!/README.md
+**/node_modules/

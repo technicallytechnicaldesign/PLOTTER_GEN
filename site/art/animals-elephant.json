@@ -1,0 +1,33 @@
+{
+  "studio": "jointed-animal-studio.html",
+  "id": "animals-elephant",
+  "title": "Elephant",
+  "preset": "elephant",
+  "settings": {
+    "length": "230",
+    "stock": "1",
+    "seed": "7",
+    "detail": "1",
+    "front": "15",
+    "back": "10",
+    "bend": "0",
+    "nod": "0",
+    "wag": "0",
+    "margin": "10",
+    "animal": "elephant",
+    "joints": "hips",
+    "markings": "none",
+    "shade": "rim",
+    "fur": "off",
+    "accent": "on",
+    "letters": "on",
+    "view": "sheet",
+    "page": "280x280",
+    "ticks": "split"
+  },
+  "sourceHash": "34686721fb2920b1bbcca1510976c74430caa91fe24927e71bb83f99bf0b4aad",
+  "svg": "site/art/animals-elephant.svg",
+  "image": "site/art/animals-elephant.webp",
+  "page": "280x280",
+  "seed": 7
+}

@@ -1,0 +1,28 @@
+{
+  "studio": "gear-reverb-studio.html",
+  "id": "reverb-default",
+  "title": "Echo chamber",
+  "preset": "",
+  "content": {},
+  "settings": {
+    "seed": "7",
+    "gears": "14",
+    "mod": "1.5",
+    "gap": "8",
+    "reach": "16",
+    "p0": "2",
+    "p1": "2",
+    "over": "16",
+    "tilt": "0",
+    "yaw": "0",
+    "lens": "400",
+    "mingap": "0.5",
+    "frame": "organic",
+    "page": "190x250"
+  },
+  "sourceHash": "905c68e21202347744f27469cf8fe80b1ee47ac58ce229473322b6f7163fdd7e",
+  "svg": "site/art/reverb-default.svg",
+  "image": "site/art/reverb-default.webp",
+  "page": "190x250",
+  "seed": 7
+}
