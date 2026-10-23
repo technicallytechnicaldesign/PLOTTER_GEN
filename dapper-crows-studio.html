@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dapper Crows Studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+</head>
+<body>
+<header>
+  <h1>Dapper crows studio</h1>
+  <p class="sub">A murder of crows on telegraph wires, all dressed for the occasion: top hats, bowlers, fezzes and boaters, bow ties and cravats, a monocle and chain here and there, waistcoats in pinstripe, argyle or herringbone. Export a millimetre SVG with three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="murder">The murder</button><button data-preset="gossip">Gossip</button><button data-preset="duo">Duo</button><button data-preset="moonlit">Moonlit</button><button data-preset="ball">The ball</button></div>
+  </fieldset>
+  <fieldset><legend>The flock</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="21"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+    <label>Crows <output id="o-crows"></output><input type="range" id="crows" min="2" max="40" step="1" value="14"></label>
+    <label>Wires <output id="o-wires"></output><input type="range" id="wires" min="1" max="6" step="1" value="4"></label>
+    <label>Wire sag <output id="o-sag"></output><input type="range" id="sag" min="0" max="1" step="0.05" value="0.35"></label>
+    <label>Facing <select id="facing"><option value="mixed">mixed</option><option value="gossip">in pairs, facing each other</option><option value="same">all one way</option><option value="centre">towards the middle</option></select></label>
+    <label>Poles <select id="poles"><option value="edges">poles at the ends</option><option value="none">no poles</option></select></label>
+    <label>Sky <select id="moon"><option value="none">empty</option><option value="crescent">crescent moon</option></select></label>
+  </fieldset>
+  <fieldset><legend>Dress</legend>
+    <label>Hats <select id="hats"><option value="mixed">a mix</option><option value="top">top hats</option><option value="bowler">bowlers</option><option value="fez">fezzes</option><option value="boater">boaters</option><option value="crown">crowns</option></select></label>
+    <label>Hat size <output id="o-hatsize"></output><input type="range" id="hatsize" min="0.7" max="1.5" step="0.05" value="1"></label>
+    <label>Hat tilt (degrees) <output id="o-lean"></output><input type="range" id="lean" min="0" max="30" step="1" value="10"></label>
+    <label>Neckwear <select id="neck"><option value="mixed">a mix</option><option value="bow">bow ties</option><option value="cravat">cravats</option><option value="none">bare necks</option></select></label>
+    <label>Monocles <output id="o-monocle"></output><input type="range" id="monocle" min="0" max="1" step="0.05" value="0.3"></label>
+    <label>Waistcoats <output id="o-vest"></output><input type="range" id="vest" min="0" max="1" step="0.05" value="0.8"></label>
+    <label>Cloth <select id="cloth"><option value="mix">a mix</option><option value="pin">pinstripe</option><option value="gingham">gingham</option><option value="argyle">argyle</option><option value="herring">herringbone</option><option value="polka">polka dots</option><option value="regimental">regimental stripe</option></select></label>
+    <label>Cloth pattern pitch (mm) <output id="o-clothscale"></output><input type="range" id="clothscale" min="0.8" max="3" step="0.05" value="1.3"></label>
+  </fieldset>
+  <fieldset><legend>Feathers (second pen)</legend>
+    <label>Plumage <select id="plumage"><option value="full">hatched, crossed in shadow</option><option value="shadow">hatched in shadow only</option><option value="feathers">scalloped feathers</option><option value="none">bare outline</option></select></label>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.5" max="2.5" step="0.05" value="0.8"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Colour pen <select id="clothpen"><option value="8c1d2f">wine</option><option value="1f6f78">teal</option><option value="b57a00">mustard</option><option value="3a4f9a">navy</option></select></label>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Split export saves one SVG per pen (black outline, grey feathers, colour cloth), numbered in plotting order. All carry the same four corner ticks so Design Space sizes them identically: place each file at the same spot on the mat, swap pens between runs, and leave the paper on the mat.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">Every crow is one outline, a pear-shaped body with its head, a fanned tail, a folded wing, a beak and two feet that wrap the wire, built from a few dozen control points. Each part hides the lines behind it, so the hat sits over the head, the wing over the waistcoat and a crow on a lower wire stands in front of the one above. Cloth patterns (pinstripe, gingham, argyle, herringbone, polka dots, regimental stripes) are clipped to the waistcoat, cravat, bow tie and hatband. The feathers are hatched in the second pen and darkened with a cross layer on the back and belly. In Design Space: three layers to Pen, black 0.4 for the outline, black 0.3 (or grey) for the feathers, a colour pen for the cloth, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = 2 * Math.PI;
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function pip(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+const bboxOf = pts => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of pts) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+function spline(P, per) {
+  const n = P.length, out = [], g = i => P[(i + n) % n];
+  for (let i = 0; i < n; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let k = 0; k < per; k++) {
+      const t = k / per, t2 = t * t, t3 = t2 * t, f = a => 0.5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3);
+      out.push([f(0), f(1)]);
+    }
+  }
+  return out;
+}
+const ell = (cx, cy, rx, ry, n = 40, a0 = 0, a1 = TAU) => { const p = []; for (let k = 0; k <= n; k++) { const a = a0 + (a1 - a0) * k / n; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return a1 - a0 >= TAU - 1e-9 ? p.slice(0, -1) : p; };
+const quad = (a, b, c, n = 14) => { const p = []; for (let k = 0; k <= n; k++) { const t = k / n, u = 1 - t; p.push([u * u * a[0] + 2 * u * t * b[0] + t * t * c[0], u * u * a[1] + 2 * u * t * b[1] + t * t * c[1]]); } return p; };
+
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L; if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+
+function hatch(poly, ang, P) {
+  const bb = bboxOf(poly), cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2, R = Math.hypot(bb[2] - bb[0], bb[3] - bb[1]) / 2, dx = Math.cos(ang), dy = Math.sin(ang), L = [];
+  for (let t = -R + P / 2; t < R; t += P) L.push([[cx - dy * t - dx * R, cy + dx * t - dy * R], [cx - dy * t + dx * R, cy + dx * t + dy * R]]);
+  return L;
+}
+function patternLines(kind, bb, P, rmin) {
+  const [x0, y0, x1, y1] = bb, L = [], rings = [], h = y1 - y0;
+  if (kind === "pin" || kind === "gingham") for (let x = x0 + P / 2; x < x1; x += P) L.push([[x, y0], [x, y1]]);
+  if (kind === "gingham") for (let y = y0 + P / 2; y < y1; y += P) L.push([[x0, y], [x1, y]]);
+  if (kind === "regimental") for (let k = x0 - h; k < x1; k += P * 1.4) L.push([[k, y1], [k + h, y0]]);
+  if (kind === "argyle") {
+    const sl = 1.4, w = h / sl, st = P * 2.2;
+    for (let k = x0 - w; k < x1 + w; k += st) { L.push([[k, y0], [k + w, y1]]); L.push([[k + w, y0], [k, y1]]); }
+    for (let cx = x0 + st / 2; cx < x1; cx += st) for (let cy = y0 + st * sl / 2.4; cy < y1; cy += st * sl / 1.2) rings.push([cx, cy, rmin]);
+  }
+  if (kind === "herring") {
+    const rh = P * 0.9, cw = P * 0.6;
+    let row = 0;
+    for (let y = y0; y < y1; y += rh, row++) { let col = 0; for (let x = x0; x < x1; x += cw, col++) { const s = ((col >> 1) + row) % 2 ? 1 : -1; L.push([[x - s * cw * 0.4, y], [x + s * cw * 0.4, y + rh * 0.95]]); } }
+  }
+  if (kind === "polka") {
+    let row = 0;
+    for (let y = y0 + P / 2; y < y1; y += P, row++) for (let x = x0 + P / 2 + (row % 2 ? P / 2 : 0); x < x1; x += P) rings.push([x, y, Math.max(rmin, P * 0.2)]);
+  }
+  return { L, rings };
+}
+const insideBy = (poly, x, y, ins) => pip(poly, x, y) && (ins <= 0 || (pip(poly, x + ins, y) && pip(poly, x - ins, y) && pip(poly, x, y + ins) && pip(poly, x, y - ins)));
+function clipLines(lines, poly, ins, step, pred) {
+  const out = [];
+  for (const l of lines) {
+    const d = densify(l, false, step); let cur = [];
+    for (const [x, y] of d) {
+      if (insideBy(poly, x, y, ins) && (!pred || pred(x, y))) cur.push([x, y]);
+      else { if (cur.length > 1) out.push(cur); cur = []; }
+    }
+    if (cur.length > 1) out.push(cur);
+  }
+  return out;
+}
+
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "crows", "wires", "sag", "facing", "poles", "moon", "hats", "hatsize", "lean", "neck", "monocle", "vest", "cloth", "clothscale", "plumage", "pitch", "clothpen", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+const BODY = spline([[-0.80, -0.78], [-0.35, -1.10], [0.05, -1.32], [0.30, -1.62], [0.50, -1.86], [0.74, -1.90], [0.92, -1.76], [0.96, -1.60], [0.92, -1.45], [0.74, -1.30], [0.78, -1.05], [0.66, -0.62], [0.30, -0.38], [-0.20, -0.40], [-0.62, -0.58]], 8);
+const WING = spline([[0.38, -1.20], [0.18, -1.32], [-0.30, -1.15], [-0.95, -0.82], [-1.35, -0.62], [-1.0, -0.55], [-0.4, -0.62], [0.05, -0.78], [0.32, -0.98]], 8);
+const TAIL = [[-0.5, -1.0], [-1.5, -0.6], [-2.0, -0.2], [-1.75, -0.05], [-1.45, -0.18], [-1.2, -0.03], [-0.5, -0.55]];
+const BEAK = [[0.88, -1.74], [1.30, -1.58], [1.46, -1.45], [1.20, -1.44], [1.0, -1.38], [0.9, -1.45]];
+const VEST = spline([[0.70, -1.02], [0.60, -0.62], [0.30, -0.46], [0.05, -0.50], [0.12, -0.80], [0.38, -1.0]], 8);
+const EYE = [0.72, -1.64];
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), EDGE = 4, m = o.margin;
+  const rnd = mulberry32(o.seed * 7919 + 211), pitch = o.pitch;
+  const items = [];
+  const mkItem = T => {
+    const it = { poly: null, paths: [], bb: null, T };
+    it.solid = pts => { it.poly = pts.map(T); it.paths.push({ p: it.poly, closed: true, layer: "key" }); return it; };
+    it.line = (pts, layer = "key", closed = false) => { it.paths.push({ p: pts.map(T), closed, layer }); return it; };
+    it.runs = (rs, layer) => { for (const r of rs) it.paths.push({ p: r.map(T), closed: false, layer }); return it; };
+    items.push(it);
+    return it;
+  };
+  const x0 = m, x1 = W - m, y0 = m, y1 = H - m;
+  const worldId = p => p;
+
+  const R = o.wires, pole = o.poles === "edges";
+  const xa = x0 + (pole ? 10 : 0), xb = x1 - (pole ? 10 : 0), L = xb - xa;
+  const counts = Array.from({ length: R }, (_, r) => Math.floor(o.crows / R) + (r < o.crows % R ? 1 : 0));
+  const fullH = (y1 - y0) / R, scCap = Math.min((fullH - 3) / 2.75, L / Math.max(...counts) * 0.97 / 3.5 / 1.08) * 1.08;
+  const rowH = Math.min(fullH, scCap * 2.75 + 3 + o.sag * scCap * 1.2), stack = rowH * R;
+  const yTop = o.moon !== "none" ? y1 - stack : y0 + (y1 - y0 - stack) / 2;
+  const sagmm = o.sag * rowH * 0.22;
+  const wireEnd = r => yTop + rowH * (r + 1) - 2 - sagmm;
+  const skyRoom = yTop - y0 - 8, mR = Math.min(0.12 * Math.min(W, H), skyRoom / 2), mSide = rnd() < 0.5 ? 0.3 : 0.7;
+  if (o.moon !== "none" && mR >= 8) {
+    const R = mR, cx = W * mSide, cy = y0 + 4 + R + (skyRoom - 2 * R) * 0.35;
+    const it = mkItem(worldId);
+    {
+      const cut = [cx + R * 0.45, cy - R * 0.1], rc = R * 0.9, A = [], B = [];
+      for (let k = 0; k < 240; k++) {
+        const a = TAU * k / 240, p = [cx + R * Math.cos(a), cy + R * Math.sin(a)], q = [cut[0] + rc * Math.cos(a), cut[1] + rc * Math.sin(a)];
+        if (Math.hypot(p[0] - cut[0], p[1] - cut[1]) > rc) A.push(p);
+        if (Math.hypot(q[0] - cx, q[1] - cy) < R) B.push(q);
+      }
+      const rot = (arr, test) => { const n = arr.length; for (let s = 0; s < n; s++) if (Math.hypot(arr[s][0] - arr[(s + n - 1) % n][0], arr[s][1] - arr[(s + n - 1) % n][1]) > 3) return arr.slice(s).concat(arr.slice(0, s)); return arr; };
+      const Ao = rot(A), Bo = rot(B), poly = Math.hypot(Ao.at(-1)[0] - Bo[0][0], Ao.at(-1)[1] - Bo[0][1]) < Math.hypot(Ao.at(-1)[0] - Bo.at(-1)[0], Ao.at(-1)[1] - Bo.at(-1)[1]) ? Ao.concat(Bo) : Ao.concat(Bo.slice().reverse());
+      it.solid(poly);
+      for (const r of clipLines(hatch(poly, 0.5, pitch * 2.2), poly, 0.8, 0.3)) it.paths.push({ p: r, closed: false, layer: "shade" });
+    }
+  }
+
+  const wireY = (r, x) => { const t = (x - xa) / L; return wireEnd(r) + sagmm * 4 * t * (1 - t); };
+  const wireSlope = (r, x) => { const t = (x - xa) / L; return Math.atan(sagmm * 4 * (1 - 2 * t) / L); };
+  if (pole) for (const px of [xa - 5, xb + 5]) {
+    const it = mkItem(worldId), poly = [[px - 1.6, y0], [px + 1.6, y0], [px + 1.6, y1], [px - 1.6, y1]];
+    it.solid(poly);
+    for (const r of clipLines(hatch(poly, Math.PI / 2, pitch * 1.6), poly, 0.5, 0.3)) it.paths.push({ p: r, closed: false, layer: "shade" });
+    for (let r = 0; r < R; r++) {
+      const yy = wireY(r, px) + 2.5, arm = [[px - 5, yy - 1], [px + 5, yy - 1], [px + 5, yy + 0.4], [px - 5, yy + 0.4]];
+      it.paths.push({ p: arm, closed: true, layer: "key" });
+    }
+  }
+
+  const HATS = ["top", "top", "bowler", "bowler", "fez", "boater", "crown"], NECKS = ["bow", "bow", "cravat", "none"], CLOTHS = ["pin", "gingham", "argyle", "herring", "polka", "regimental"];
+  let nCrow = 0, hatsDrawn = 0, footErr = 0, minScale = 1e9, maxScale = 0;
+  const pickCloth = () => o.cloth === "mix" ? CLOTHS[Math.floor(rnd() * CLOTHS.length)] : o.cloth;
+
+  for (let r = 0; r < R; r++) {
+    const wpts = []; const wa = pole ? xa - 5 : xa, wb = pole ? xb + 5 : xb; for (let x = wa; x <= wb + 1e-9; x += 2) wpts.push([x, wireY(r, Math.min(wb, x))]);
+    if (wpts.at(-1)[0] < wb - 0.01) wpts.push([wb, wireY(r, wb)]);
+    mkItem(worldId).line(wpts, "key");
+    const cnt = counts[r]; if (!cnt) continue;
+    const sw = L / cnt;
+    for (let i = 0; i < cnt; i++) {
+      const rDir = rnd(), rHat = rnd(), rNeck = rnd(), rMono = rnd(), rVest = rnd(), rSize = rnd(), rJit = rnd(), rLean = rnd(), rCloth1 = pickCloth(), rCloth2 = pickCloth(), rCloth3 = pickCloth(), rCloth4 = pickCloth();
+      let dir = rDir < 0.5 ? 1 : -1;
+      if (o.facing === "same") dir = 1; else if (o.facing === "gossip") dir = i % 2 ? -1 : 1; else if (o.facing === "centre") dir = (xa + sw * (i + 0.5)) < W / 2 ? 1 : -1;
+      const sc = Math.min((rowH - 3 - o.sag * scCap * 1.2) / 2.75, sw * 0.97 / 3.5 / 1.08) * (0.9 + 0.18 * rSize);
+      const slack = Math.max(0, (sw - 3.5 * sc) / 2) * 0.9;
+      let cx = xa + sw * (i + 0.5) + (rJit * 2 - 1) * slack * 0.6;
+      if (o.facing === "gossip") cx += (i % 2 ? -1 : 1) * slack * 0.4;
+      const ox = cx + 0.27 * dir * sc, oy = wireY(r, ox), th = wireSlope(r, ox), c = Math.cos(th), s = Math.sin(th);
+      const T = ([x, y]) => { const X = x * dir * sc, Y = y * sc; return [ox + X * c - Y * s, oy + X * s + Y * c]; };
+      minScale = Math.min(minScale, sc); maxScale = Math.max(maxScale, sc); nCrow++;
+      const ins = 0.35 / sc, step = 0.3 / sc, Pn = pitch / sc, cpitch = o.clothscale * Math.min(1.5, Math.max(0.7, sc / 12));
+      footErr = Math.max(footErr, Math.abs(T([0.14, 0])[1] - wireY(r, T([0.14, 0])[0])));
+      const hatKind = o.hats === "mixed" ? HATS[Math.floor(rHat * HATS.length)] : o.hats;
+      const neckKind = o.neck === "mixed" ? NECKS[Math.floor(rNeck * NECKS.length)] : o.neck;
+      const monocle = rMono < o.monocle, vest = rVest < o.vest;
+
+      const tail = mkItem(T).solid(TAIL);
+      if (o.plumage !== "none") tail.runs(clipLines(hatch(TAIL, -0.5, Pn), TAIL, ins, step), "shade");
+      for (const [a, b] of [[[-0.55, -0.9], [-1.85, -0.2]], [[-0.55, -0.8], [-1.6, -0.1]], [[-0.55, -0.7], [-1.3, -0.1]]]) tail.line([a, b], "key");
+      const feet = mkItem(T);
+      for (const dx of [0, 0.28]) {
+        feet.line([[dx - 0.02, -0.55], [dx + 0.14 - 0.14, -0.13]], "key");
+        feet.line([[dx, -0.13], [dx + 0.24, -0.07], [dx + 0.33, 0.04]], "key");
+        feet.line([[dx, -0.13], [dx + 0.16, 0.0]], "key");
+        feet.line([[dx, -0.13], [dx - 0.24, -0.06], [dx - 0.32, 0.04]], "key");
+      }
+      mkItem(T).solid(BEAK).line([[0.95, -1.54], [1.27, -1.49]], "key").line([[1.0, -1.66], [1.07, -1.63]], "key");
+
+      const body = mkItem(T).solid(BODY);
+      if (o.plumage === "full" || o.plumage === "shadow") {
+        const shadowA = (x, y) => y > -1.0 || x < -0.1;
+        body.runs(clipLines(hatch(BODY, -1.0, Pn), BODY, ins, step, o.plumage === "full" ? undefined : shadowA), "shade");
+        if (o.plumage === "full") body.runs(clipLines(hatch(BODY, 0.45, Pn * 1.1), BODY, ins, step, (x, y) => y > -0.85 || x < -0.25), "shade");
+      } else if (o.plumage === "feathers") {
+        const rs = Math.max(0.05, pitch * 2.4 / sc), rows = [];
+        for (let y = -1.9, k = 0; y < -0.4; y += rs * 0.75, k++) for (let x = -0.8 + (k % 2) * rs; x < 1; x += 2 * rs) if (insideBy(BODY, x, y, rs)) rows.push(ell(x, y, rs, rs * 0.55, 6, 0, Math.PI));
+        body.runs(rows, "shade");
+      }
+
+      if (vest) {
+        const v = mkItem(T).solid(VEST), P = cpitch / sc;
+        const pat = patternLines(rCloth1, bboxOf(VEST), P, 0.3 / sc);
+        v.runs(clipLines(pat.L, VEST, ins, step), "colour");
+        for (const [px, py, pr] of pat.rings) if (insideBy(VEST, px, py, pr + ins)) v.line(ell(px, py, pr, pr, 12), "colour", true);
+        for (let k = 0; k < 3; k++) { const bx = 0.62 - k * 0.17, by = -0.96 + k * 0.18; if (insideBy(VEST, bx, by, 0.1)) v.line(ell(bx, by, Math.max(0.05, 0.3 / sc), Math.max(0.05, 0.3 / sc), 10), "key", true); }
+      }
+
+      const wing = mkItem(T).solid(WING);
+      for (let k = 0; k <= 5; k++) {
+        const a = [0.30 - k * 0.13, -1.15 + k * 0.04], b = [-1.25 + k * 0.14, -0.68 + k * 0.02];
+        wing.runs(clipLines([[a, b]], WING, ins, step), "shade");
+      }
+      if (o.plumage === "full") wing.runs(clipLines(hatch(WING, 0.2, Pn * 1.3), WING, ins, step), "shade");
+
+      const NC = [0.80, -1.19];
+      if (neckKind === "bow") {
+        const ang = 0.5 * dir * 0 + 0.55, ca = Math.cos(ang), sa = Math.sin(ang), Tb = ([x, y]) => T([NC[0] + x * ca - y * sa, NC[1] + x * sa + y * ca]);
+        for (const sg of [-1, 1]) {
+          const tri = [[0, 0], [sg * 0.2, -0.1], [sg * 0.2, 0.1]], it = mkItem(Tb).solid(tri), Pb = Math.max(pitch, 0.6) / sc;
+          it.runs(clipLines(patternLines("pin", bboxOf(tri), Pb, 0.2).L, tri, 0.3 / sc, step), "colour");
+        }
+        mkItem(Tb).solid(ell(0, 0, 0.045, 0.045, 10));
+      } else if (neckKind === "cravat") {
+        const cr = [[0.72, -1.27], [0.9, -1.15], [0.84, -0.84], [0.66, -0.98]], it = mkItem(T).solid(cr);
+        const pat = patternLines(rCloth2, bboxOf(cr), cpitch / sc, 0.3 / sc);
+        it.runs(clipLines(pat.L, cr, ins, step), "colour");
+        for (const [px, py, pr] of pat.rings) if (insideBy(cr, px, py, pr + ins)) it.line(ell(px, py, pr, pr, 12), "colour", true);
+      }
+
+      const eye = mkItem(T).solid(ell(EYE[0], EYE[1], 0.075, 0.075, 14));
+      eye.line(ell(EYE[0] + 0.015, EYE[1], Math.max(0.03, 0.28 / sc), Math.max(0.03, 0.28 / sc), 8), "key", true);
+      if (monocle) {
+        const mo = mkItem(T);
+        mo.line(ell(EYE[0] + 0.05, EYE[1], 0.18, 0.18, 30), "key", true);
+        mo.line(quad([EYE[0] + 0.05, EYE[1] + 0.18], [1.02, -1.0], [0.58, -0.92]), "key");
+      }
+
+      const hs = o.hatsize, lean = ((rLean * 2 - 1) * o.lean * Math.PI / 180) + 0, cl = Math.cos(lean), sl = Math.sin(lean);
+      const anchorY = hatKind === "fez" ? -1.78 : hatKind === "crown" ? -1.86 : -1.84;
+      const Th = ([x, y]) => T([0.63 + hs * (x * cl - y * sl), anchorY + hs * (x * sl + y * cl)]);
+      const hsc = sc * hs, hins = 0.35 / hsc, hstep = 0.3 / hsc, HP = cpitch / hsc;
+      const widthAt = (y, w0, w1, h) => w0 + (w1 - w0) * (-y / h);
+      const clothOn = (it, poly, kind) => {
+        const pat = patternLines(kind, bboxOf(poly), HP, 0.3 / hsc);
+        it.runs(clipLines(pat.L, poly, hins, hstep), "colour");
+        for (const [px, py, pr] of pat.rings) if (insideBy(poly, px, py, pr + hins)) it.line(ell(px, py, pr, pr, 12), "colour", true);
+      };
+      const shadeSide = (it, poly, x0s) => { if (o.plumage !== "none") it.runs(clipLines(hatch(poly, 1.3, pitch / hsc), poly, hins, hstep, x => x > x0s), "shade"); };
+      if (hatKind === "top") {
+        mkItem(Th).solid(ell(0, 0, 0.46, 0.07, 36));
+        const crown = [[-0.27, 0], [-0.30, -0.78], ...ell(0, -0.78, 0.30, 0.055, 16, Math.PI, TAU).slice(1, -1), [0.30, -0.78], [0.27, 0]];
+        const cr = mkItem(Th).solid(crown); cr.line(ell(0, -0.78, 0.30, 0.055, 16, 0, Math.PI), "key");
+        shadeSide(cr, crown, 0.1);
+        const bw = y => 0.27 + 0.03 * (-y / 0.78) + 0.01, band = [[-bw(-0.03), -0.03], [-bw(-0.2), -0.2], [bw(-0.2), -0.2], [bw(-0.03), -0.03]];
+        clothOn(mkItem(Th).solid(band), band, rCloth3);
+      } else if (hatKind === "bowler") {
+        mkItem(Th).solid(ell(0, 0, 0.44, 0.065, 36));
+        const dome = ell(0, 0, 0.30, 0.50, 30, Math.PI, TAU), cr = mkItem(Th).solid(dome);
+        shadeSide(cr, dome, 0.08);
+        const xw = y => 0.30 * Math.sqrt(Math.max(0, 1 - (y / 0.5) ** 2)) + 0.01, band = [[-xw(0.02), -0.02], [-xw(0.17), -0.17], [xw(0.17), -0.17], [xw(0.02), -0.02]];
+        clothOn(mkItem(Th).solid(band), band, rCloth3);
+      } else if (hatKind === "fez") {
+        const fez = [[-0.25, 0], [-0.20, -0.55], ...ell(0, -0.55, 0.20, 0.04, 12, Math.PI, TAU).slice(1, -1), [0.20, -0.55], [0.25, 0]], it = mkItem(Th).solid(fez);
+        clothOn(it, fez, rCloth3);
+        it.line(quad([0.0, -0.59], [0.34, -0.60], [0.31, -0.28]), "key");
+        it.line([[0.28, -0.28], [0.34, -0.28], [0.35, -0.12], [0.27, -0.12]], "key", true);
+      } else if (hatKind === "boater") {
+        mkItem(Th).solid(ell(0, 0, 0.56, 0.09, 40));
+        const crown = [[-0.26, 0], [-0.26, -0.32], ...ell(0, -0.32, 0.26, 0.05, 14, Math.PI, TAU).slice(1, -1), [0.26, -0.32], [0.26, 0]], cr = mkItem(Th).solid(crown);
+        cr.line(ell(0, -0.32, 0.26, 0.05, 14, 0, Math.PI), "key");
+        const band = [[-0.27, -0.02], [-0.27, -0.15], [0.27, -0.15], [0.27, -0.02]];
+        clothOn(mkItem(Th).solid(band), band, "pin");
+      } else {
+        const crown = [[-0.25, 0], [-0.29, -0.42], [-0.15, -0.27], [0, -0.55], [0.15, -0.27], [0.29, -0.42], [0.25, 0]], it = mkItem(Th).solid(crown);
+        const band = [[-0.26, -0.02], [-0.27, -0.13], [0.27, -0.13], [0.26, -0.02]];
+        clothOn(mkItem(Th).solid(band), band, rCloth3);
+        for (const [jx, jy] of [[-0.29, -0.42], [0, -0.55], [0.29, -0.42]]) it.line(ell(jx, jy - 0.04, Math.max(0.03, 0.3 / hsc), Math.max(0.03, 0.3 / hsc), 8), "key", true);
+      }
+      hatsDrawn++;
+    }
+  }
+
+  const out = { key: [], shade: [], colour: [] }, onPage = (x, y) => x >= EDGE && x <= W - EDGE && y >= EDGE && y <= H - EDGE;
+  for (const it of items) { const pts = it.paths.flatMap(p => p.p); it.bb = it.poly ? bboxOf(it.poly) : (pts.length ? bboxOf(pts) : [0, 0, 0, 0]); }
+  let samples = 0;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i], cand = [];
+    for (let j = i + 1; j < items.length; j++) { const q = items[j]; if (q.poly && q.bb[0] <= it.bb[2] && q.bb[2] >= it.bb[0] && q.bb[1] <= it.bb[3] && q.bb[3] >= it.bb[1]) cand.push(q); }
+    for (const pa of it.paths) {
+      const d = densify(pa.p, pa.closed, 0.3); samples += d.length;
+      const ok = d.map(([x, y]) => { if (!onPage(x, y)) return false; for (const q of cand) if (x >= q.bb[0] && x <= q.bb[2] && y >= q.bb[1] && y <= q.bb[3] && pip(q.poly, x, y)) return false; return true; });
+      runs(d, pa.closed, ok, pa.layer === "key" ? 0.4 : 0.8, out[pa.layer]);
+    }
+  }
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const pts = out.key.concat(out.shade, out.colour).reduce((a, [p]) => a + p.length, 0), ms = performance.now() - t0, total = len(out.key) + len(out.shade) + len(out.colour);
+  const gates = [
+    ["built in under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`],
+    ["total pen length under 150 m", total < 150, `${total.toFixed(1)} m`],
+    ["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB (estimate)`],
+    ["every crow wears a hat", hatsDrawn === nCrow, `${hatsDrawn} of ${nCrow}`],
+    ["feet sit on the wire (within 0.5 mm)", footErr < 0.5, `${footErr.toFixed(3)} mm`],
+  ];
+  return { W, H, o, ms, key: out.key, shade: out.shade, colour: out.colour, nCrow, minScale, maxScale, items: items.length, gates };
+}
+
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.colour, "#" + r.o.clothpen, 0.4); stroke(r.key, "#26200f", 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `<b>${r.nCrow}</b> crows (scale ${r.minScale.toFixed(1)} to ${r.maxScale.toFixed(1)} mm per unit) · ${r.items} parts · ${r.ms.toFixed(0)} ms<br>`
+    + `0.4 black (outline): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 (feathers): <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour (cloth): <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${n}: ${v}</span>`).join(" · ");
+}
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: r.o.clothpen, w: 0.4, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG dapper crows studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() { for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; } }
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const PRESETS = {
+  murder: { crows: 14, wires: 4, sag: 0.35, facing: "mixed", poles: "edges", moon: "none", hats: "mixed", hatsize: 1, lean: 10, neck: "mixed", monocle: 0.3, vest: 0.8, cloth: "mix", clothscale: 1.3, plumage: "full", pitch: 0.8, clothpen: "8c1d2f" },
+  gossip: { crows: 8, wires: 3, sag: 0.5, facing: "gossip", poles: "edges", moon: "none", hats: "mixed", hatsize: 1.1, lean: 16, neck: "bow", monocle: 0.4, vest: 1, cloth: "mix", clothscale: 1.2, plumage: "shadow", pitch: 0.8, clothpen: "1f6f78" },
+  duo: { crows: 2, wires: 1, sag: 0.3, facing: "gossip", poles: "none", moon: "none", hats: "top", hatsize: 1.15, lean: 8, neck: "bow", monocle: 1, vest: 1, cloth: "pin", clothscale: 1.1, plumage: "full", pitch: 0.7, clothpen: "3a4f9a" },
+  moonlit: { crows: 9, wires: 2, sag: 0.6, facing: "centre", poles: "edges", moon: "crescent", hats: "bowler", hatsize: 1, lean: 12, neck: "cravat", monocle: 0.3, vest: 0.7, cloth: "herring", clothscale: 1.3, plumage: "shadow", pitch: 0.9, clothpen: "b57a00" },
+  ball: { crows: 24, wires: 5, sag: 0.25, facing: "mixed", poles: "none", moon: "crescent", hats: "mixed", hatsize: 0.95, lean: 14, neck: "mixed", monocle: 0.4, vest: 0.9, cloth: "mix", clothscale: 1.1, plumage: "feathers", pitch: 0.7, clothpen: "8c1d2f" },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `dapper-crows-s${r.o.seed}-n${r.nCrow}-w${r.o.wires}-${r.o.hats}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
