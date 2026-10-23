@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zip Studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+</head>
+<body>
+<header>
+  <h1>Zip studio</h1>
+  <p class="sub">A picture, zipped, shown at every step: the 1-bit pixels, each row squeezed into its run lengths, the Huffman code tree grown from how often each run turns up, and the finished file punched into paper tape, one byte to a column. A zipper runs down the edge with the same bits on its teeth. The tape is real: decode it and you get the picture back, bit for bit. Export a millimetre SVG with three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="zip">ZIP!</button><button data-preset="hills">Hills</button><button data-preset="night">Night</button><button data-preset="page">Page of text</button><button data-preset="dust">Dusty</button><button data-preset="noise">Noise won't zip</button><button data-preset="open">Wide open</button></div>
+  </fieldset>
+  <fieldset><legend>Seed</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="26"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+  </fieldset>
+  <fieldset><legend>The picture</legend>
+    <label>Picture <select id="motif"><option value="zip">ZIP! lettering</option><option value="hills">sun over hills</option><option value="moon">moon and stars</option><option value="page">a page of text</option><option value="noise">pure noise</option></select></label>
+    <label>Grid (pixels a side) <output id="o-grid"></output><input type="range" id="grid" min="12" max="48" step="2" value="24"></label>
+    <label>Dust (pixels flipped) <output id="o-grain"></output><input type="range" id="grain" min="0" max="0.3" step="0.01" value="0"></label>
+    <label>Pixels <select id="pix"><option value="hatch">hatched, outlined</option><option value="squares">little squares</option><option value="dots">dots</option></select></label>
+  </fieldset>
+  <fieldset><legend>Runs and tree</legend>
+    <label>Run counts <select id="counts"><option value="on">written in the tokens</option><option value="off">hatched tokens, no numbers</option></select></label>
+    <label>Tree <select id="branch"><option value="plant">a potted plant</option><option value="angle">right angles</option><option value="straight">straight lines</option></select></label>
+    <label>0 and 1 on branches <select id="edges"><option value="on">yes</option><option value="off">no</option></select></label>
+    <label>Leaf size (mm) <output id="o-leaf"></output><input type="range" id="leaf" min="1" max="6" step="0.1" value="4"></label>
+  </fieldset>
+  <fieldset><legend>Tape and zipper</legend>
+    <label>Tape cell (mm) <output id="o-cell"></output><input type="range" id="cell" min="0.8" max="2" step="0.05" value="1.3"></label>
+    <label>Zipper <select id="zipper"><option value="on">down the right edge</option><option value="off">none</option></select></label>
+    <label>Unzipped (share of length) <output id="o-unzip"></output><input type="range" id="unzip" min="0.1" max="0.8" step="0.01" value="0.3"></label>
+    <label>Tooth width (mm) <output id="o-tooth"></output><input type="range" id="tooth" min="2" max="5" step="0.1" value="3"></label>
+    <label>Tooth pitch (mm) <output id="o-pitchz"></output><input type="range" id="pitchz" min="1.5" max="3" step="0.05" value="1.8"></label>
+    <label>Opening angle (degrees) <output id="o-angle"></output><input type="range" id="angle" min="4" max="10" step="0.5" value="6"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.6" max="2" step="0.05" value="0.8"></label>
+    <label>Colour pen <select id="pen"><option value="1098ad">cyan</option><option value="c2255c">magenta</option><option value="2f9e44">green</option><option value="e8590c">orange</option></select></label>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="6" max="30" step="1" value="14"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split-btn">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Dust and noise are what compression hates: watch the runs pile up, the tree spread and the tape grow past the picture it came from. The colour pen draws the code itself: the holes in the tape, the 0s and 1s on the branches and the marks on the zipper teeth. Split export saves one SVG per pen, numbered in plotting order, all with the same four corner ticks so Design Space sizes them identically.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">Each row of the picture is read left to right as alternating runs, white first (a row that starts black opens with a white run of 0). The runs are counted, and a Huffman tree gives the common lengths short codes and the rare ones long codes; it is drawn as the canonical tree that is actually written, 0 to the left and 1 to the right. The tape starts with a code book (the grid size, then every run length's code length) and the coded runs follow from the DATA mark, padded to a whole byte. The zipper teeth carry the opening bits of the same tape, a mark for each 1, alternating sides, though the slider and pull hide a few. In Design Space: three layers to Pen, black 0.4 for outlines, text and the tree, black 0.3 (or grey) for the hatching, the colour pen last, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = 2 * Math.PI;
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function noise1(rng) { const T = Array.from({ length: 256 }, () => rng() * 2 - 1); return x => { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return T[i & 255] * (1 - u) + T[(i + 1) & 255] * u; }; }
+
+function pip(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+const bboxOf = pts => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of pts) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+const ell = (cx, cy, rx, ry, n = 40) => { const p = []; for (let k = 0; k < n; k++) { const a = TAU * k / n; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return p; };
+const rect = (xa, ya, xb, yb) => [[xa, ya], [xb, ya], [xb, yb], [xa, yb]];
+const stadium = (cx, ya, yb, hw, n = 10) => { const p = []; for (let k = 0; k <= n; k++) { const a = Math.PI + Math.PI * k / n; p.push([cx + hw * Math.cos(a), ya + hw + hw * Math.sin(a)]); } for (let k = 0; k <= n; k++) { const a = Math.PI * k / n; p.push([cx + hw * Math.cos(a), yb - hw + hw * Math.sin(a)]); } return p; };
+
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = L > 1e-9 ? Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L : Math.hypot(p[k][0] - ax, p[k][1] - ay); if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+function hatchRects(rs, P) {
+  const dc = P * Math.SQRT2, lines = new Map();
+  for (const [xa, ya, xb, yb] of rs) {
+    for (let k = Math.ceil((xa - yb) / dc); k * dc <= xb - ya; k++) {
+      const c = k * dc, lo = Math.max(xa, ya + c), hi = Math.min(xb, yb + c);
+      if (hi - lo < 0.05) continue;
+      const seg = [[lo, lo - c], [hi, hi - c]], L = lines.get(k);
+      if (!L) { lines.set(k, [seg]); continue; }
+      const last = L.at(-1), e = last.at(-1);
+      if (Math.abs(e[0] - lo) < 1e-6 && Math.abs(e[1] - (lo - c)) < 1e-6) last.push(seg[1]); else L.push(seg);
+    }
+  }
+  return [...lines.values()].flat();
+}
+
+const GL = {
+  A: "0,6 0,2 2,0 4,2 4,6|0,3.4 4,3.4", B: "0,6 0,0 3,0 4,1 4,2 3,3 0,3|3,3 4,4 4,5 3,6 0,6", C: "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5", D: "0,0 0,6 2,6 4,4 4,2 2,0 0,0",
+  E: "4,0 0,0 0,6 4,6|0,3 3,3", F: "4,0 0,0 0,6|0,3 3,3", G: "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.4 2.2,3.4", H: "0,0 0,6|4,0 4,6|0,3 4,3", I: "1,0 3,0|2,0 2,6|1,6 3,6",
+  J: "4,0 4,5 3,6 1,6 0,5", K: "0,0 0,6|4,0 0,4|1.3,3 4,6", L: "0,0 0,6 4,6", M: "0,6 0,0 2,3 4,0 4,6", N: "0,6 0,0 4,6 4,0", O: "1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1 1,0",
+  P: "0,6 0,0 3,0 4,1 4,2 3,3 0,3", Q: "1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1 1,0|2.4,4.4 4,6", R: "0,6 0,0 3,0 4,1 4,2 3,3 0,3|2,3 4,6", S: "4,1 3,0 1,0 0,1 0,2 1,3 3,3 4,4 4,5 3,6 1,6 0,5",
+  T: "0,0 4,0|2,0 2,6", U: "0,0 0,5 1,6 3,6 4,5 4,0", V: "0,0 2,6 4,0", W: "0,0 1,6 2,3 3,6 4,0", X: "0,0 4,6|4,0 0,6", Y: "0,0 2,3 4,0|2,3 2,6", Z: "0,0 4,0 0,6 4,6",
+  0: "1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1 1,0|4,1 0,5", 1: "1,1 2,0 2,6|1,6 3,6", 2: "0,1 1,0 3,0 4,1 4,2 0,6 4,6", 3: "0,0 4,0 2,2 3,2 4,3 4,5 3,6 1,6 0,5", 4: "3,6 3,0 0,4 4,4",
+  5: "4,0 0,0 0,3 3,3 4,4 4,5 3,6 0,6", 6: "3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,4 3,3 0,3", 7: "0,0 4,0 1,6", 8: "1,3 0,2 0,1 1,0 3,0 4,1 4,2 3,3 1,3 0,4 0,5 1,6 3,6 4,5 4,4 3,3",
+  9: "4,3 1,3 0,2 0,1 1,0 3,0 4,1 4,5 3,6 1,6", "!": "2,0 2,4.2|1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", ".": "1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", "%": "0,6 4,0|0,0 1.2,0 1.2,1.2 0,1.2 0,0|2.8,4.8 4,4.8 4,6 2.8,6 2.8,4.8",
+  ">": "1,1 3,3 1,5", "=": "0.6,2 3.4,2|0.6,4 3.4,4", "-": "1,3 3,3",
+};
+const GLYPH = Object.fromEntries(Object.entries(GL).map(([k, v]) => [k, v.split("|").map(s => s.split(" ").map(q => q.split(",").map(Number)))]));
+const textW = (s, h) => { const u = h / 6; let w = 0; for (const ch of s) w += ch === " " ? 4 * u : 6 * u; return Math.max(0, w - 2 * u); };
+const fitH = (s, h, w) => Math.min(h, w / Math.max(1e-9, textW(s, 1)));
+function text(push, s, x, y, h, align = 0) {
+  const u = h / 6; let cx = x - textW(s, h) * align;
+  for (const ch of s.toUpperCase()) { if (ch === " ") { cx += 4 * u; continue; } const g = GLYPH[ch]; if (g) for (const st of g) push(st.map(([a, b]) => [cx + a * u, y + b * u])); cx += 6 * u; }
+}
+
+const LET = { Z: ["11111", "00001", "00010", "00100", "01000", "10000", "11111"], I: ["01110", "00100", "00100", "00100", "00100", "00100", "01110"], P: ["11110", "10001", "10001", "11110", "10000", "10000", "10000"], "!": ["00100", "00100", "00100", "00100", "00100", "00000", "00100"] };
+function picture(o) {
+  const N = o.grid, rng = mulberry32(o.seed * 7919 + 101), B = Array.from({ length: N }, () => new Uint8Array(N));
+  const each = f => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (f((i + 0.5) / N, (j + 0.5) / N, i, j)) B[j][i] = 1; };
+  if (o.motif === "zip") {
+    const word = "ZIP!", sx = Math.max(1, Math.floor((N - 2) / 23)), sy = Math.max(1, Math.floor(N * 0.55 / 7)), i0 = Math.floor((N - 23 * sx) / 2), j0 = Math.floor((N - 7 * sy) / 2);
+    for (let r = 0; r < 7 * sy; r++) for (let c = 0; c < 23 * sx; c++) {
+      const k = Math.floor(c / sx / 6), col = Math.floor(c / sx) - k * 6, lean = Math.floor((7 * sy - 1 - r) / (3.5 * sy));
+      if (col < 5 && LET[word[k]][Math.floor(r / sy)][col] === "1" && i0 + c + lean < N) B[j0 + r][i0 + c + lean] = 1;
+    }
+    const jt = j0 - 2, jb = j0 + 7 * sy + 1;
+    for (let k = 0; k < 3; k++) {
+      const len = Math.round(N * (0.5 - 0.13 * k + 0.1 * rng())), j1 = jt - 2 * k, j2 = jb + 2 * k;
+      if (j1 >= 1) for (let i = 1; i < Math.min(N - 1, 1 + len); i++) B[j1][i] = 1;
+      if (j2 <= N - 2) for (let i = 1 + 2 * k; i < Math.min(N - 1, 1 + 2 * k + len); i++) B[j2][i] = 1;
+    }
+  } else if (o.motif === "hills") {
+    const n1 = noise1(rng), n2 = noise1(rng), sx = 0.62 + 0.16 * rng(), sy = 0.27, sr = 0.13;
+    each((u, v, i, j) => {
+      const near = 0.69 + 0.08 * n1(u * 3.5) + 0.03 * n1(u * 9 + 40), far = 0.53 + 0.1 * n2(u * 2.5);
+      if (v > near) return true;
+      if (v > far) return j % 2 === 0;
+      const d = Math.hypot(u - sx, v - sy);
+      return Math.abs(d - sr) < 0.6 / N || d < sr * 0.4;
+    });
+  } else if (o.motif === "moon") {
+    const cx = 0.3 + 0.35 * rng(), cy = 0.34, r = 0.2, g = noise1(rng);
+    each((u, v) => { if (v > 0.85 + 0.05 * g(u * 3)) return true; return Math.hypot(u - cx, v - cy) < r && Math.hypot(u - cx - r * 0.45, v - cy + r * 0.3) > r * 0.85; });
+    const stars = Math.round(N * N * 0.025);
+    for (let a = 0, n = 0; a < stars * 6 && n < stars; a++) {
+      const i = Math.floor(rng() * N), j = Math.floor(rng() * N * 0.78);
+      if (Math.hypot((i + 0.5) / N - cx, (j + 0.5) / N - cy) < r + 2 / N || B[j][i]) continue;
+      B[j][i] = 1; n++;
+    }
+  } else if (o.motif === "page") {
+    const L = Math.round(0.18 * N), R = Math.round(0.82 * N) - 1, T = Math.round(0.07 * N), Bt = Math.round(0.93 * N) - 1, e = Math.max(2, Math.round(0.15 * N));
+    for (let j = T; j <= Bt; j++) for (let i = L; i <= R; i++) {
+      const cut = i - (R - e) > j - T;
+      if (cut) continue;
+      if (i === L || i === R || j === T || j === Bt || i - (R - e) === j - T) B[j][i] = 1;
+      if ((i === R - e && j <= T + e) || (j === T + e && i >= R - e)) B[j][i] = 1;
+    }
+    let j = T + 2;
+    if (e > 2) for (let i = L + 2; i < R - e - 1; i++) B[j][i] = 1;
+    for (j = T + e + 2; j <= Bt - 2; j += 2) {
+      const end = rng() < 0.2 ? L + 2 + Math.floor((R - L - 4) * (0.3 + 0.4 * rng())) : R - 2;
+      let i = L + 2;
+      while (i <= end) { const w = 2 + Math.floor(rng() * 5); for (let k = 0; k < w && i <= end; k++) B[j][i++] = 1; i++; }
+    }
+  } else {
+    each(() => rng() < 0.5);
+  }
+  if (o.grain > 0) { const rg = mulberry32(o.seed * 31 + 5); for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (rg() < o.grain) B[j][i] ^= 1; }
+  return B;
+}
+
+function rowRuns(r) { const t = []; let col = 0, n = 0; for (const v of r) { if (v === col) n++; else { t.push(n); col ^= 1; n = 1; } } t.push(n); return t; }
+function huffLengths(freq) {
+  const syms = [...freq.keys()].sort((a, b) => a - b);
+  if (syms.length === 1) return new Map([[syms[0], 1]]);
+  const nodes = syms.map(s => ({ w: freq.get(s), s, min: s }));
+  while (nodes.length > 1) { nodes.sort((a, b) => a.w - b.w || a.min - b.min); const a = nodes.shift(), b = nodes.shift(); nodes.push({ w: a.w + b.w, kids: [a, b], min: Math.min(a.min, b.min) }); }
+  const L = new Map(), walk = (n, d) => n.kids ? (walk(n.kids[0], d + 1), walk(n.kids[1], d + 1)) : L.set(n.s, d);
+  walk(nodes[0], 0);
+  return L;
+}
+function canonical(L) {
+  const list = [...L].filter(([, l]) => l > 0).sort((a, b) => a[1] - b[1] || a[0] - b[0]), C = new Map();
+  let code = 0, prev = list.length ? list[0][1] : 0;
+  list.forEach(([s, l], k) => { if (k) code = (code + 1) * 2 ** (l - prev); prev = l; C.set(s, code.toString(2).padStart(l, "0")); });
+  return C;
+}
+function decode(bits) {
+  let p = 0; const get = n => { let v = 0; for (let i = 0; i < n; i++) v = v * 2 + (bits[p++] || 0); return v; };
+  const N = get(6), k = get(4), L = new Map();
+  for (let s = 0; s <= N; s++) { const l = get(k); if (l) L.set(s, l); }
+  if (!L.size) return null;
+  const inv = new Map([...canonical(L)].map(([s, c]) => [c, s])), out = [];
+  for (let j = 0; j < N; j++) {
+    const r = new Uint8Array(N); let x = 0, col = 0, guard = 0;
+    while (x < N && guard++ < 4 * N + 4) {
+      let c = ""; while (!inv.has(c) && c.length < 64 && p < bits.length) c += bits[p++];
+      if (!inv.has(c)) return null;
+      for (let i = 0, n = inv.get(c); i < n && x < N; i++) r[x++] = col;
+      col ^= 1;
+    }
+    out.push(r);
+  }
+  return out;
+}
+
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "motif", "grid", "grain", "pix", "counts", "branch", "edges", "leaf", "cell", "zipper", "unzip", "tooth", "pitchz", "angle", "pitch", "pen", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), EDGE = 4, m = o.margin, P = o.pitch;
+  const F = { x0: m, y0: m, x1: W - m, y1: H - m }, frags = [], notes = [];
+  const add = (layer, z = 0) => (p, cl = false) => frags.push({ p, cl, layer, z });
+  const key = add("key"), shade = add("shade"), colour = add("colour");
+
+  const N = o.grid, B = picture(o), rows = B.map(rowRuns), freq = new Map();
+  for (const r of rows) for (const t of r) freq.set(t, (freq.get(t) || 0) + 1);
+  const L = huffLengths(freq), C = canonical(L), maxLen = Math.max(...L.values()), kBits = Math.max(1, Math.ceil(Math.log2(maxLen + 1)));
+  const bits = [], put = (v, n) => { for (let b = n - 1; b >= 0; b--) bits.push(Math.floor(v / 2 ** b) % 2); };
+  put(N, 6); put(kBits, 4); for (let s = 0; s <= N; s++) put(L.get(s) || 0, kBits);
+  const header = bits.length;
+  for (const r of rows) for (const t of r) for (const ch of C.get(t)) bits.push(+ch);
+  const total = bits.length; while (bits.length % 8) bits.push(0);
+  const bytes = bits.length / 8, tokens = rows.reduce((a, r) => a + r.length, 0), ratio = total / (N * N);
+  const dec = decode(bits), roundTrip = !!dec && dec.every((r, j) => r.every((v, i) => v === B[j][i]));
+
+  const Lz = F.y1 - F.y0, A = o.angle * Math.PI / 180, sA = Math.sin(A), cA = Math.cos(A), Wt = o.tooth, T = Wt * 0.9, so = o.unzip * Lz;
+  const clash = (0.7 * Wt + 0.8) / (2 * sA), Ls = Math.min(so, clash + 2), halfZ = Math.max(so * sA + Wt + T, Ls * sA + Wt + 1.1) + 0.8;
+  const zipOn = o.zipper === "on", zx = F.x1 - halfZ, cx0 = F.x0, cx1 = zipOn ? zx - halfZ - 5 : F.x1, Cw = cx1 - cx0;
+
+  const hh = Math.min(18, (F.y1 - F.y0) * 0.08), fu = hh / 10;
+  key([[0, 1.2], [4.2, 1.2], [5.4, 2.4], [13, 2.4], [13, 10], [0, 10]].map(([a, b]) => [cx0 + a * fu, F.y0 + b * fu]), true);
+  for (let k = 0, y = 3.2; y < 7.2; y += 0.75, k++) colour(k % 2 ? [[cx0 + 6.5 * fu, F.y0 + y * fu], [cx0 + 7.6 * fu, F.y0 + y * fu]] : [[cx0 + 5.4 * fu, F.y0 + y * fu], [cx0 + 6.5 * fu, F.y0 + y * fu]]);
+  key(rect(cx0 + 6 * fu, F.y0 + 7.6 * fu, cx0 + 7 * fu, F.y0 + 9.2 * fu), true);
+  const tx = cx0 + 13 * fu + 4, th = hh * 0.62, ty = F.y0 + hh * 0.2;
+  for (const d of [0, 0.22, 0.44]) text(p => key(p), "ZIP!", tx + d, ty, th);
+  const tw = textW("ZIP!", th) + 0.44, sw = cx1 - tx - tw - 5;
+  const s1 = `${N * N} > ${total} BITS`, s2 = ratio <= 1 ? `SAVED ${Math.round((1 - ratio) * 100)}%` : `GREW ${Math.round((ratio - 1) * 100)}%`;
+  const sh1 = fitH(s1, hh * 0.24, sw), sh2 = fitH(s2, hh * 0.3, sw);
+  text(p => key(p), s1, cx1, F.y0 + hh * 0.18, sh1, 1);
+  text(p => key(p), s2, cx1, F.y0 + hh * 0.18 + sh1 + 1.6, sh2, 1);
+
+  const lh = 2.2, label = (s, x, y, w) => text(p => key(p), s, x, y, fitH(s, lh, w));
+  let y = F.y0 + hh + 5;
+
+  const gapA = 8, side = Math.min((Cw - gapA) / 2, (F.y1 - y) * 0.4), cell = side / N, ox = cx0 + 0.8, oy = y + lh + 2.3;
+  label(`1 PICTURE ${N}X${N} = ${N * N} BITS`, cx0, y, side + 1.6);
+  key(rect(ox - 0.8, oy - 0.8, ox + side + 0.8, oy + side + 0.8), true);
+  const blackRects = [];
+  rows.forEach((r, j) => { let x = 0; r.forEach((n, k) => { if (k % 2 && n) blackRects.push([ox + x * cell, oy + j * cell, ox + (x + n) * cell, oy + (j + 1) * cell]); x += n; }); });
+  if (o.pix === "hatch") {
+    for (const l of hatchRects(blackRects, P)) shade(l);
+    const at = (i, j) => i >= 0 && j >= 0 && i < N && j < N ? B[j][i] : 0;
+    for (let j = 0; j <= N; j++) { let s = -1; for (let i = 0; i <= N; i++) { const e = i < N && at(i, j - 1) !== at(i, j); if (e && s < 0) s = i; if (!e && s >= 0) { key([[ox + s * cell, oy + j * cell], [ox + i * cell, oy + j * cell]]); s = -1; } } }
+    for (let i = 0; i <= N; i++) { let s = -1; for (let j = 0; j <= N; j++) { const e = j < N && at(i - 1, j) !== at(i, j); if (e && s < 0) s = j; if (!e && s >= 0) { key([[ox + i * cell, oy + s * cell], [ox + i * cell, oy + j * cell]]); s = -1; } } }
+  } else {
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (B[j][i]) {
+      const cx = ox + (i + 0.5) * cell, cy = oy + (j + 0.5) * cell;
+      if (o.pix === "squares") shade(rect(cx - cell * 0.36, cy - cell * 0.36, cx + cell * 0.36, cy + cell * 0.36), true);
+      else shade(ell(cx, cy, cell * 0.36, cell * 0.36, 10), true);
+    }
+  }
+  const ax0 = ox + side + 2, ax1 = ox + side + gapA - 2.4, ay = oy + side / 2;
+  key([[ax0, ay], [ax1, ay]]); key([[ax1 - 1.2, ay - 1], [ax1, ay], [ax1 - 1.2, ay + 1]]);
+
+  const rx0 = cx0 + side + gapA + 0.8, rW = cx1 - rx0, rh = side / N, maxRuns = Math.max(...rows.map(r => r.length));
+  label(`2 RUNS ${tokens} TOKENS`, rx0, y, rW);
+  const tokW = Math.min(rh * 2.4, rW / maxRuns), maxDig = String(Math.max(...[...freq.keys()])).length;
+  const dh = Math.min(rh * 0.58, (tokW * 0.86 - 0.5) / Math.max(1e-9, textW("8".repeat(maxDig), 1)));
+  const showCounts = o.counts === "on" && dh >= 0.85;
+  if (o.counts === "on" && !showCounts) notes.push("run counts too small to write");
+  const tokHatch = [];
+  rows.forEach((r, j) => r.forEach((n, k) => {
+    const xa = rx0 + k * tokW + tokW * 0.07, xb = rx0 + (k + 1) * tokW - tokW * 0.07, ya = oy + j * rh + rh * 0.1, yb = oy + (j + 1) * rh - rh * 0.1;
+    key(rect(xa, ya, xb, yb), true);
+    const s = String(n), dw = textW(s, dh), roomy = showCounts && k % 2 && xb - xa - dw - 0.8 > 1.1;
+    if (k % 2 && showCounts && !roomy && xb - xa > 1.2 && yb - ya > 1.2) key(rect(xa + 0.35, ya + 0.35, xb - 0.35, yb - 0.35), true);
+    if (k % 2 && (!showCounts || roomy)) tokHatch.push([roomy ? xa + dw + 0.8 : xa + 0.3, ya + 0.3, xb - 0.3, yb - 0.3]);
+    if (showCounts) text(p => key(p), s, roomy ? xa + 0.4 : (xa + xb) / 2, (ya + yb) / 2 - dh / 2, dh, roomy ? 0 : 0.5);
+  }));
+  for (const l of hatchRects(tokHatch.filter(r => r[2] > r[0] && r[3] > r[1]), Math.min(P, rh * 0.4))) shade(l);
+  y = oy + side + 0.8 + 5;
+
+  const R = F.y1 - y, cap = R * 0.5, tape = c => { const sh = 10.2 * c, g = Math.max(2.4, 1.6 * c), lead = Math.ceil(sh * 0.5 / c), bps = Math.floor((Cw - 2.2 * c) / c), nS = Math.ceil((bytes + lead) / bps); return { c, sh, g, lead, bps, nS, h: lh + 2.3 + nS * (sh + g) }; };
+  let tp = tape(o.cell);
+  for (let c = o.cell; c >= 0.8 - 1e-9 && tp.h > cap; c -= 0.05) tp = tape(Math.max(0.8, c));
+  if (tp.c < o.cell - 1e-9) notes.push(`tape cell shrunk to ${tp.c.toFixed(2)} mm to fit`);
+  const fitStrips = Math.max(1, Math.min(tp.nS, Math.floor((cap - lh - 2.3) / (tp.sh + tp.g))));
+  const tapeH = lh + 2.3 + fitStrips * (tp.sh + tp.g), tapeY = F.y1 - tapeH;
+  let punched = 0;
+  {
+    const { c, sh, g, lead, bps } = tp;
+    label(`4 ZIPPED ${total} BITS = ${bytes} BYTES`, cx0, tapeY, Cw);
+    let b = 0;
+    for (let s = 0; s < fitStrips && b < bytes; s++) {
+      const yt = tapeY + lh + 2.3 + s * (sh + g), yb = yt + sh, skip = s === 0 ? lead : 0, nb = Math.min(bps - skip, bytes - b), xs = cx0, xe = cx0 + 2.2 * c + (skip + nb) * c;
+      if (s === 0) key([[xe, yt], [xs + sh * 0.5, yt], [xs, yt + sh * 0.5], [xs, yb], [xe, yb], [xe, yt]]);
+      else key([[xs, yt], [xe, yt], [xe, yb], [xs, yb]], true);
+      const posY = t => yt + 0.6 * c + (t + (t >= 3 ? 1 : 0) + 0.5) * c;
+      for (let q = 0; q < skip + nb; q++) {
+        const hx = xs + 1.1 * c + (q + 0.5) * c;
+        shade(ell(hx, yt + 0.6 * c + 3.5 * c, 0.16 * c, 0.16 * c, 6), true);
+        if (q < skip) continue;
+        for (let t = 0; t < 8; t++) if (bits[b * 8 + t]) colour(ell(hx, posY(t), 0.34 * c, 0.34 * c, 10), true);
+        if (b === Math.floor(header / 8) && g >= 2.4) {
+          key([[hx - 0.6, yb + 1.5], [hx, yb + 0.5], [hx + 0.6, yb + 1.5]]);
+          text(p => key(p), "DATA", hx + 1.2, yb + 0.4, Math.min(1.4, g - 0.8));
+        }
+        b++;
+      }
+      const bx = xs + 1.1 * c + skip * c, room = Math.floor(header / 8) * c - 1.4, bh = Math.min(1.4, g - 0.8);
+      if (s === 0 && g >= 2.4 && room > 2) text(p => key(p), "CODE BOOK", bx, yb + 0.4, fitH("CODE BOOK", bh, room));
+    }
+    punched = b;
+  }
+
+  const tree = {}; for (const [s, code] of C) { let n = tree; for (const ch of code) { n.k = n.k || [null, null]; n = n.k[+ch] = n.k[+ch] || {}; } n.s = s; n.f = freq.get(s); }
+  const leaves = [], inner = []; let maxD = 1;
+  (function walk(n, d) { n.d = d; maxD = Math.max(maxD, d); if (n.k) { const ks = n.k.filter(Boolean); ks.forEach(c => walk(c, d + 1)); n.xi = ks.reduce((a, c) => a + c.xi, 0) / ks.length; n.w = ks.reduce((a, c) => a + c.w, 0); inner.push(n); } else { n.xi = leaves.length; n.w = n.f; leaves.push(n); } })(tree, 0);
+  const ty0 = y, ty1 = tapeY - 5, plant = o.branch === "plant", sp = Cw / leaves.length, fmax = Math.max(...leaves.map(n => n.f));
+  label(`3 CODE TREE ${leaves.length} SYMBOL${leaves.length > 1 ? "S" : ""}`, cx0, ty0, Cw);
+  const lbl = fitH("8".repeat(maxDig), 2, sp * 0.85), showLeafLbl = lbl >= 0.9;
+  if (!showLeafLbl) notes.push("leaf labels too small to write");
+  const potH = plant ? Math.min(7, (ty1 - ty0) * 0.12) : 0, rootY = ty1 - (plant ? potH + 1.4 : 1);
+  const leafLen = f => plant ? Math.min(o.leaf * (0.45 + 0.55 * Math.sqrt(f / fmax)), 12) : Math.max(0.5, Math.min(o.leaf * 0.35 * (0.5 + 0.5 * Math.sqrt(f / fmax)), sp * 0.4));
+  const ext = plant ? leafLen(fmax) : 2 * leafLen(fmax), topY = ty0 + lh + 2.3 + (showLeafLbl ? lbl + 0.8 : 0) + ext + 0.6;
+  const dy = Math.max(0.5, (rootY - topY) / maxD), X = n => cx0 + sp * (n.xi + 0.5), Y = n => rootY - n.d * dy;
+  if (dy < 2) notes.push("tree squeezed");
+  const eh = Math.min(1.8, dy * 0.3, sp * 0.9), showEdges = o.edges === "on" && eh >= 0.9;
+  const total0 = tree.w || 1, strokes = w => w / total0 > 0.5 ? 3 : w / total0 > 0.2 ? 2 : 1;
+  const edgeLabel = (bit, mx, my, gap) => { const s = String(bit), w = textW(s, eh); text(p => colour(p), s, bit ? mx + gap : mx - gap - w, my - eh / 2, eh); };
+  for (const n of inner) {
+    const px = X(n), py = Y(n);
+    if (o.branch === "angle") {
+      const ym = py - dy * 0.45, ks = n.k.filter(Boolean), xs = ks.map(X);
+      key([[px, py], [px, ym]]);
+      if (ks.length > 1) key([[Math.min(...xs), ym], [Math.max(...xs), ym]]);
+      n.k.forEach((c, i) => { if (!c) return; const cx = X(c), cy = Y(c), cyEnd = c.k ? cy : cy + leafLen(c.f); key([[cx, ym], [cx, cyEnd]]); if (showEdges) edgeLabel(i, cx, (ym + cyEnd) / 2, 0.7); });
+      key(ell(px, py, 0.35, 0.35, 8), true);
+      continue;
+    }
+    n.k.forEach((c, i) => {
+      if (!c) return;
+      const cx = X(c), cyN = Y(c), cy = c.k ? cyN : cyN + (plant ? 0 : leafLen(c.f)), k = strokes(c.w);
+      let pts;
+      if (plant) { pts = []; for (let q = 0; q <= 18; q++) { const t = q / 18, u = 1 - t, b0 = u * u * u, b1 = 3 * u * u * t, b2 = 3 * u * t * t, b3 = t * t * t; pts.push([b0 * px + b1 * px + b2 * cx + b3 * cx, b0 * py + b1 * (py - dy * 0.55) + b2 * (cy + dy * 0.45) + b3 * cy]); } }
+      else pts = [[px, py], [cx, cy]];
+      for (let s = 0; s < k; s++) { const off = (s - (k - 1) / 2) * 0.32; key(pts.map(([a, b]) => [a + off, b])); }
+      if (showEdges) { const mid = pts[Math.floor(pts.length / 2)] || [(px + cx) / 2, (py + cy) / 2]; edgeLabel(i, plant ? mid[0] : (px + cx) / 2, plant ? mid[1] : (py + cy) / 2, 0.7 + k * 0.16); }
+    });
+    if (!plant) key(ell(px, py, 0.35, 0.35, 8), true);
+  }
+  for (const n of leaves) {
+    const cx = X(n), cy = Y(n), len = leafLen(n.f);
+    let tipX = cx, tipY;
+    if (plant) {
+      const par = inner.find(q => q.k && q.k.includes(n)), lean = par ? (cx - X(par)) * 0.35 : 0, dl = Math.hypot(lean, dy) || 1, ux = lean / dl, uy = -dy / dl, wl = Math.min(len * 0.42, sp * 0.75), side1 = [], side2 = [];
+      for (let q = 0; q <= 12; q++) { const t = q / 12, a = t * len, hw = wl / 2 * Math.pow(Math.sin(Math.PI * t), 0.8); side1.push([cx + ux * a - uy * hw, cy + uy * a + ux * hw]); side2.push([cx + ux * a + uy * hw, cy + uy * a - ux * hw]); }
+      key(side1.concat(side2.reverse().slice(1, -1)), true);
+      if (len > 1.6) key([[cx + ux * len * 0.15, cy + uy * len * 0.15], [cx + ux * len * 0.75, cy + uy * len * 0.75]]);
+      tipX = cx + ux * len; tipY = Math.min(cy + uy * len, cy - wl / 2);
+    } else { key(ell(cx, cy, len, len, 14), true); tipY = cy - len; }
+    if (showLeafLbl) text(p => key(p), String(n.s), tipX, tipY - 0.8 - lbl, lbl, 0.5);
+  }
+  if (plant) {
+    const rx = X(tree), pw = Math.min(16, Cw * 0.14), yr = rootY;
+    key([[rx, rootY], [rx, rootY + 0.01]]);
+    const rim = rect(rx - pw / 2 - 0.8, yr, rx + pw / 2 + 0.8, yr + 1.4), body = [[rx - pw / 2, yr + 1.4], [rx + pw / 2, yr + 1.4], [rx + pw * 0.36, yr + 1.4 + potH], [rx - pw * 0.36, yr + 1.4 + potH]];
+    key(rim, true); key(body, true);
+    for (const l of hatchRects([[rx - pw * 0.3, yr + 2, rx + pw * 0.3, yr + 1.4 + potH - 0.6]], P)) shade(l);
+  }
+
+  const occ = [];
+  let teeth = 0, marked = 0;
+  if (zipOn) {
+    const zp = (sg, s, u, v) => {
+      let ax, ay, tx, ty;
+      if (s >= so) { ax = zx; ay = F.y0 + s; tx = 0; ty = 1; } else { const d = so - s; ax = zx + sg * d * sA; ay = F.y0 + so - d * cA; tx = -sg * sA; ty = cA; }
+      return [ax + sg * ty * u + tx * v, ay - sg * tx * u + ty * v];
+    };
+    const zk = add("key", 1), zs = add("shade", 1), zc = add("colour", 1), pz = o.pitchz, h = pz - 0.55, hr = h / 2, uc = -0.35 * Wt + hr;
+    for (let k = 0; ; k++) {
+      const s = 1.2 + k * pz; if (s + hr > Lz - 3.4) break;
+      const sg = k % 2 ? 1 : -1;
+      if (s < so && 2 * (so - s) * sA < 0.7 * Wt + 0.8) continue;
+      const pts = [[Wt, -hr], [uc, -hr]];
+      for (let q = 1; q < 8; q++) { const a = -Math.PI / 2 + Math.PI * q / 8; pts.push([uc - hr * Math.cos(a), hr * Math.sin(a)]); }
+      pts.push([uc, hr], [Wt, hr]);
+      zk(pts.map(([u, v]) => zp(sg, s, u, v)));
+      if (teeth < bits.length && bits[teeth]) { zc([zp(sg, s, Wt - 0.45, 0), zp(sg, s, -0.35 * Wt + 0.55, 0)]); marked++; }
+      teeth++;
+    }
+    for (const sg of [-1, 1]) {
+      for (const u of [Wt, Wt + T]) zk([zp(sg, 0, u, 0), zp(sg, so, u, 0), zp(sg, Lz, u, 0)]);
+      zk([zp(sg, 0, Wt, 0), zp(sg, 0, Wt + T, 0)]);
+      for (let s = 1; s < Lz - 1.6; s += 2) zs([zp(sg, s, Wt + T * 0.55, 0), zp(sg, Math.min(s + 1.2, so > s && so < s + 1.2 ? so : s + 1.2), Wt + T * 0.55, 0)]);
+    }
+    zk([zp(-1, Lz, Wt + T, 0), zp(1, Lz, Wt + T, 0)]);
+    zk(rect(zx - Wt * 0.8, F.y1 - 3, zx + Wt * 0.8, F.y1 - 1.2), true);
+    const ya = F.y0 + so - Ls * cA, yb2 = F.y0 + so + 2, ht = Ls * sA + Wt + 1.1, hb = Wt + 1.1;
+    const slider = [[zx - ht + 1, ya], [zx + ht - 1, ya], [zx + ht, ya + 1], [zx + hb, yb2 - 1], [zx + hb - 1, yb2], [zx - hb + 1, yb2], [zx - hb, yb2 - 1], [zx - ht, ya + 1]];
+    const kyY = yb2 - (yb2 - ya) * 0.35, tabHW = Wt * 0.8, tabEnd = Math.min(kyY + Math.max(10, 3.5 * Wt), F.y1 - 5), tab = stadium(zx, kyY - tabHW * 0.6, tabEnd, tabHW);
+    occ.push({ poly: slider, z: 2 }, { poly: tab, z: 3 });
+    add("key", 2)(slider, true);
+    for (const l of hatchRects([[zx - hb + 0.6, ya + 0.8, zx + hb - 0.6, yb2 - 0.8]], P)) add("shade", 2)(l);
+    for (const l of hatchRects([[zx - ht + 1.6, ya + 0.8, zx - hb - 0.2, ya + (yb2 - ya) * 0.3], [zx + hb + 0.2, ya + 0.8, zx + ht - 1.6, ya + (yb2 - ya) * 0.3]], P)) add("shade", 2)(l);
+    add("key", 3)(tab, true);
+    if (tabEnd - kyY > 4 * tabHW) add("key", 3)(stadium(zx, tabEnd - 2.6 * tabHW, tabEnd - 0.7 * tabHW, tabHW * 0.45), true);
+  }
+
+  const onPage = (x, y) => x >= EDGE && x <= W - EDGE && y >= EDGE && y <= H - EDGE;
+  const hidden = (x, y, z) => { for (const oc of occ) { if (oc.z <= z) continue; const i = 0.45; if (pip(oc.poly, x, y) || pip(oc.poly, x + i, y) || pip(oc.poly, x - i, y) || pip(oc.poly, x, y + i) || pip(oc.poly, x, y - i)) return true; } return false; };
+  const out = { key: [], shade: [], colour: [] };
+  for (const f of frags) {
+    const d = densify(f.p, f.cl, f.z && occ.length ? 0.3 : 1e9);
+    const ok = d.map(([x, y]) => onPage(x, y) && !(f.z && occ.length && hidden(x, y, f.z)));
+    runs(d, f.cl, ok, 0.3, out[f.layer]);
+  }
+
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const pts = out.key.concat(out.shade, out.colour).reduce((a, [p]) => a + p.length, 0), ms = performance.now() - t0, pen = len(out.key) + len(out.shade) + len(out.colour);
+  const gates = [
+    ["built in under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`],
+    ["total pen length under 150 m", pen < 150, `${pen.toFixed(1)} m`],
+    ["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB (estimate)`],
+    ["the tape decodes back to the picture", roundTrip, roundTrip ? "bit for bit" : "mismatch"],
+    ["every byte punched", punched === bytes, `${punched} of ${bytes}`],
+  ];
+  const info = `<b>${N}x${N}</b> = ${N * N} bits · <b>${tokens}</b> runs, ${L.size} lengths, longest code ${maxLen} · code book ${header} + data ${total - header} = <b>${total}</b> bits (${Math.round(ratio * 100)}%)` + (zipOn ? ` · ${teeth} teeth, ${marked} marked` : "") + (notes.length ? ` · <span class="note">${notes.join("; ")}</span>` : "");
+  return { W, H, o, ms, key: out.key, shade: out.shade, colour: out.colour, info, gates, bits, B, ratio };
+}
+
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.key, "#26200f", 0.4); stroke(r.colour, "#" + r.o.pen, 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `${r.info} · ${r.ms.toFixed(0)} ms<br>`
+    + `0.4 black (outlines, text, tree): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 (hatching, sprockets): <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour (the code): <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${n}: ${v}</span>`).join(" · ");
+}
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: r.o.pen, w: 0.4, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG zip studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() {
+  for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
+}
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { seed: 26, motif: "zip", grid: 24, grain: 0, pix: "hatch", counts: "on", branch: "plant", edges: "on", leaf: 4, cell: 1.3, zipper: "on", unzip: 0.3, tooth: 3, pitchz: 1.8, angle: 6, pitch: 0.8, pen: "1098ad" };
+const PRESETS = {
+  zip: { ...BASE },
+  hills: { ...BASE, motif: "hills", grid: 32, leaf: 3.4, pen: "2f9e44" },
+  night: { ...BASE, motif: "moon", grid: 32, branch: "angle", pix: "dots", pen: "c2255c" },
+  page: { ...BASE, motif: "page", grid: 40, branch: "straight", counts: "off", pen: "e8590c", unzip: 0.2 },
+  dust: { ...BASE, grain: 0.06, seed: 61 },
+  noise: { ...BASE, motif: "noise", grid: 20, pix: "squares", pen: "c2255c", unzip: 0.15 },
+  open: { ...BASE, motif: "hills", grid: 16, unzip: 0.62, angle: 8.5, tooth: 3.6, pitchz: 2.3, cell: 1.6, leaf: 4.5, pen: "e8590c" },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `zip-s${r.o.seed}-${r.o.motif}-${r.o.grid}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split-btn").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG, decode };
+run();
+</script>
+</body>
+</html>
