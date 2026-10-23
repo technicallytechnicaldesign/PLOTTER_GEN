@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fracture Studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+</head>
+<body>
+<header>
+  <h1>Fracture studio</h1>
+  <p class="sub">Reality, cracked like a pane of glass: an engraved world of hills, a cottage and a wanderer, broken from an impact into shards. Loose shards drift apart, some are rasterised into halftone pixels, the innermost are gone and show what was always behind the picture: its own wireframe, falling code or a circuit board, in the colour pen. Bits leak out on the wind, past the frame, and glitch bands slip the world sideways. Export a millimetre SVG with three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="breach">Breach</button><button data-preset="sky">Shattered sky</button><button data-preset="wanderer">The wanderer</button><button data-preset="glitch">Glitch</button><button data-preset="collapse">Collapse</button><button data-preset="hairline">Hairline</button><button data-preset="tear">Tear</button></div>
+  </fieldset>
+  <fieldset><legend>Seed</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="25"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+  </fieldset>
+  <fieldset><legend>The world</legend>
+    <label>Far range <select id="range"><option value="mountains">mountains with snow</option><option value="hills">rolling hills</option></select></label>
+    <label>Hill layers <output id="o-layers"></output><input type="range" id="layers" min="2" max="7" step="1" value="5"></label>
+    <label>Hilliness <output id="o-hills"></output><input type="range" id="hills" min="0.3" max="2" step="0.05" value="1"></label>
+    <label>Horizon (% down) <output id="o-horizon"></output><input type="range" id="horizon" min="25" max="70" step="1" value="46"></label>
+    <label>Trees <output id="o-trees"></output><input type="range" id="trees" min="0" max="40" step="1" value="18"></label>
+    <label>Cottage <select id="cottage"><option value="on">with smoke from the chimney</option><option value="off">none</option></select></label>
+    <label>Clouds <output id="o-clouds"></output><input type="range" id="clouds" min="0" max="6" step="1" value="3"></label>
+    <label>Sky <select id="sky"><option value="lined">engraved lines</option><option value="clear">clear</option></select></label>
+    <label>Sun across (%) <output id="o-sunx"></output><input type="range" id="sunx" min="5" max="95" step="1" value="26"></label>
+    <label>Sun height (%) <output id="o-sunh"></output><input type="range" id="sunh" min="0" max="90" step="1" value="40"></label>
+    <label>Wanderer <select id="figure"><option value="standing">standing on the ridge</option><option value="dissolving">dissolving into pixels</option><option value="none">nobody</option></select></label>
+    <label>Wanderer across (%) <output id="o-figx"></output><input type="range" id="figx" min="5" max="95" step="1" value="64"></label>
+    <label>Wanderer height (mm) <output id="o-figsize"></output><input type="range" id="figsize" min="8" max="60" step="1" value="24"></label>
+  </fieldset>
+  <fieldset><legend>The fracture</legend>
+    <label>Fracture <select id="mode"><option value="shatter">shattered like glass</option><option value="tear">torn down a vertical seam</option></select></label>
+    <label>Tear opening (mm) <output id="o-open"></output><input type="range" id="open" min="2" max="60" step="1" value="18"></label>
+    <label>Tear length (% of height) <output id="o-tearlen"></output><input type="range" id="tearlen" min="15" max="120" step="1" value="70"></label>
+    <label>Fray (mm) <output id="o-fray"></output><input type="range" id="fray" min="0" max="10" step="0.5" value="4"></label>
+    <label>Impacts <output id="o-impacts"></output><input type="range" id="impacts" min="1" max="3" step="1" value="1"></label>
+    <label>Impact across (%) <output id="o-ix"></output><input type="range" id="ix" min="5" max="95" step="1" value="58"></label>
+    <label>Impact down (%) <output id="o-iy"></output><input type="range" id="iy" min="5" max="95" step="1" value="32"></label>
+    <label>Web radius (mm) <output id="o-web"></output><input type="range" id="web" min="15" max="160" step="1" value="66"></label>
+    <label>Shards <output id="o-shards"></output><input type="range" id="shards" min="12" max="260" step="1" value="110"></label>
+    <label>Crowding at the impact <output id="o-crowd"></output><input type="range" id="crowd" min="0" max="1" step="0.05" value="0.55"></label>
+    <label>Breach (shards gone) <output id="o-breach"></output><input type="range" id="breach" min="0" max="1" step="0.05" value="0.55"></label>
+    <label>Pull apart <output id="o-pull"></output><input type="range" id="pull" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Rasterise <output id="o-raster"></output><input type="range" id="raster" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Aliased edges (reach) <output id="o-alias"></output><input type="range" id="alias" min="0" max="1" step="0.05" value="0.55"></label>
+    <label>Address labels <output id="o-labels"></output><input type="range" id="labels" min="0" max="1" step="0.05" value="0.3"></label>
+    <label>Pixel size (mm) <output id="o-pixel"></output><input type="range" id="pixel" min="0.8" max="3" step="0.1" value="1.4"></label>
+    <label>Running cracks <output id="o-running"></output><input type="range" id="running" min="0" max="1" step="0.05" value="0.5"></label>
+  </fieldset>
+  <fieldset><legend>Behind the world (colour pen)</legend>
+    <label>Substrate <select id="sub"><option value="mix">a mix, shard by shard</option><option value="wire">the world's own wireframe</option><option value="code">falling code</option><option value="circuit">a circuit board</option><option value="void">the void, a cross grid</option></select></label>
+    <label>Code <select id="code"><option value="hex">hex digits</option><option value="bin">ones and zeros</option></select></label>
+    <label>Glyph size (mm) <output id="o-glyph"></output><input type="range" id="glyph" min="0.8" max="2.5" step="0.05" value="1.3"></label>
+    <label>Trace pitch (mm) <output id="o-trace"></output><input type="range" id="trace" min="1" max="3" step="0.1" value="1.4"></label>
+  </fieldset>
+  <fieldset><legend>Leak and glitch</legend>
+    <label>Leaking bits <output id="o-leak"></output><input type="range" id="leak" min="0" max="1" step="0.05" value="0.5"></label>
+    <label>Wind (degrees) <output id="o-wind"></output><input type="range" id="wind" min="0" max="359" step="1" value="30"></label>
+    <label>Reach (mm) <output id="o-reach"></output><input type="range" id="reach" min="5" max="120" step="1" value="45"></label>
+    <label>Glitch bands <output id="o-bands"></output><input type="range" id="bands" min="0" max="10" step="1" value="3"></label>
+    <label>Slip (mm) <output id="o-slip"></output><input type="range" id="slip" min="0" max="12" step="0.5" value="3"></label>
+    <label>Colour split (mm) <output id="o-split"></output><input type="range" id="split" min="0" max="2" step="0.1" value="0.6"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.6" max="2" step="0.05" value="0.85"></label>
+    <label>Colour pen <select id="pen"><option value="1098ad">cyan</option><option value="c2255c">magenta</option><option value="2f9e44">green</option><option value="e8590c">orange</option></select></label>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="6" max="30" step="1" value="14"></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split-btn">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">A tear runs its seam down through Impact across and gapes widest at Impact down; Breach, Pull apart and Rasterise act on the crumbs along its edges. Split export saves one SVG per pen (black for the world and its cracks, grey for the hatching and the pixels, colour for what is behind it and the leaking bits), numbered in plotting order. All carry the same four corner ticks so Design Space sizes them identically.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">The world is drawn first, back to front, each hill hiding what lies behind it, then broken: shards are cells crowded toward each impact, their shared edges jagged the same way from both sides, so every shard is a real polygon. Near the breach the cracks lose their resolution and step along the pixel grid. Each shard keeps, loses or rasterises the lines that fell inside it, and moves as one piece, so its hatching stays whole. What shows through the gaps is clipped to the gaps, a little inside them, so the colour never touches the black. Bits are kept apart and knock out whatever they drift over. In Design Space: three layers to Pen, black 0.4 for the outlines and cracks, black 0.3 (or grey) for the hatching, the colour pen last, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = 2 * Math.PI;
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function noise1(rng) { const T = Array.from({ length: 256 }, () => rng() * 2 - 1); return x => { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return T[i & 255] * (1 - u) + T[(i + 1) & 255] * u; }; }
+function noise2(seed) {
+  const h = (i, j) => { let t = Math.imul(i, 374761393) ^ Math.imul(j, 668265263) ^ Math.imul(seed, 1442695041); t = Math.imul(t ^ t >>> 13, 1274126177); return ((t ^ t >>> 16) >>> 0) / 4294967296; };
+  return (x, y) => { const i = Math.floor(x), j = Math.floor(y), a = x - i, b = y - j, u = a * a * (3 - 2 * a), v = b * b * (3 - 2 * b); return (h(i, j) * (1 - u) + h(i + 1, j) * u) * (1 - v) + (h(i, j + 1) * (1 - u) + h(i + 1, j + 1) * u) * v; };
+}
+
+function pip(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+const bboxOf = pts => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of pts) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+function spline(P, per) {
+  const n = P.length, out = [], g = i => P[(i + n) % n];
+  for (let i = 0; i < n; i++) {
+    const p0 = g(i - 1), p1 = g(i), p2 = g(i + 1), p3 = g(i + 2);
+    for (let k = 0; k < per; k++) {
+      const t = k / per, t2 = t * t, t3 = t2 * t, f = a => 0.5 * (2 * p1[a] + (-p0[a] + p2[a]) * t + (2 * p0[a] - 5 * p1[a] + 4 * p2[a] - p3[a]) * t2 + (-p0[a] + 3 * p1[a] - 3 * p2[a] + p3[a]) * t3);
+      out.push([f(0), f(1)]);
+    }
+  }
+  return out;
+}
+const ell = (cx, cy, rx, ry, n = 40) => { const p = []; for (let k = 0; k < n; k++) { const a = TAU * k / n; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return p; };
+const rect = (xa, ya, xb, yb) => [[xa, ya], [xb, ya], [xb, yb], [xa, yb]];
+const polyArea = p => { let s = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++) s += (p[j][0] - p[i][0]) * (p[j][1] + p[i][1]); return s / 2; };
+
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = L > 1e-9 ? Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L : Math.hypot(p[k][0] - ax, p[k][1] - ay); if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+function hatch(poly, ang, P) {
+  const bb = bboxOf(poly), cx = (bb[0] + bb[2]) / 2, cy = (bb[1] + bb[3]) / 2, R = Math.hypot(bb[2] - bb[0], bb[3] - bb[1]) / 2, dx = Math.cos(ang), dy = Math.sin(ang), L = [];
+  for (let t = -R + P / 2; t < R; t += P) L.push([[cx - dy * t - dx * R, cy + dx * t - dy * R], [cx - dy * t + dx * R, cy + dx * t + dy * R]]);
+  return L;
+}
+const insideBy = (poly, x, y, ins) => pip(poly, x, y) && (ins <= 0 || (pip(poly, x + ins, y) && pip(poly, x - ins, y) && pip(poly, x, y + ins) && pip(poly, x, y - ins)));
+function clipLines(lines, poly, ins, step, pred) {
+  const out = [];
+  for (const l of lines) {
+    const d = densify(l, false, step); let cur = [];
+    for (const [x, y] of d) {
+      if (insideBy(poly, x, y, ins) && (!pred || pred(x, y))) cur.push([x, y]);
+      else { if (cur.length > 1) out.push(cur); cur = []; }
+    }
+    if (cur.length > 1) out.push(cur);
+  }
+  return out;
+}
+function clipPred(pts, pred) {
+  const out = []; let cur = [];
+  for (const p of pts) { if (pred(p[0], p[1])) cur.push(p); else { if (cur.length > 1) out.push(cur); cur = []; } }
+  if (cur.length > 1) out.push(cur);
+  return out;
+}
+const clipPredLines = (lines, step, pred) => lines.flatMap(l => clipPred(densify(l, false, step), pred));
+const stair = (pts, g) => { const out = []; for (const p of pts) { const s = [Math.round(p[0] / g) * g, Math.round(p[1] / g) * g], l = out.at(-1); if (l && l[0] === s[0] && l[1] === s[1]) continue; if (l && l[0] !== s[0] && l[1] !== s[1]) out.push([s[0], l[1]]); out.push(s); } return out; };
+const TONE_ANG = [0, Math.PI / 2, Math.PI / 4], TONE_AT = [0.15, 0.4, 0.66];
+function tonal(poly, dark, P, ang, pred) {
+  const out = [];
+  TONE_AT.forEach((t, i) => { for (const r of clipLines(hatch(poly, ang + TONE_ANG[i], P * (i === 2 ? 1.25 : 1)), poly, 0.3, 0.3, (x, y) => dark(x, y) > t && (!pred || pred(x, y)))) out.push(r); });
+  return out;
+}
+function bucketer(W, H, cell) {
+  const nx = Math.ceil(W / cell) + 1, ny = Math.ceil(H / cell) + 1, B = Array.from({ length: nx * ny }, () => []), NONE = [];
+  return {
+    add(bb, v) { for (let j = Math.max(0, Math.floor(bb[1] / cell)); j <= Math.min(ny - 1, Math.floor(bb[3] / cell)); j++) for (let i = Math.max(0, Math.floor(bb[0] / cell)); i <= Math.min(nx - 1, Math.floor(bb[2] / cell)); i++) B[j * nx + i].push(v); },
+    at(x, y) { const i = Math.floor(x / cell), j = Math.floor(y / cell); return i < 0 || j < 0 || i >= nx || j >= ny ? NONE : B[j * nx + i]; },
+  };
+}
+
+const GP = { TL: [0, 0], TR: [1, 0], ML: [0, 1], MR: [1, 1], BL: [0, 2], BR: [1, 2], TC: [0.5, 0], BC: [0.5, 2], FL: [0.15, 0.4] };
+const FONT = Object.fromEntries(Object.entries({
+  0: "TL TR BR BL TL", 1: "FL TC BC", 2: "TL TR MR ML BL BR", 3: "TL TR BR BL|ML MR", 4: "TL ML MR|TR BR", 5: "TR TL ML MR BR BL", 6: "TR TL BL BR MR ML", 7: "TL TR BR",
+  8: "TL TR BR BL TL|ML MR", 9: "MR ML TL TR BR BL", A: "BL TL TR BR|ML MR", B: "TL BL BR MR ML", C: "TR TL BL BR", D: "TR BR BL ML MR", E: "TR TL BL BR|ML MR", F: "TR TL BL|ML MR",
+}).map(([k, v]) => [k, v.split("|").map(s => s.split(" ").map(n => GP[n]))]));
+const FIG_R = [];
+for (let a = 90; a >= -50; a -= 10) FIG_R.push([0.068 * Math.cos(a * Math.PI / 180), 0.93 + 0.068 * Math.sin(a * Math.PI / 180)]);
+FIG_R.push([0.036, 0.862], [0.05, 0.848], [0.1, 0.835], [0.135, 0.815], [0.152, 0.785], [0.158, 0.7], [0.163, 0.61], [0.162, 0.54], [0.152, 0.505], [0.145, 0.47], [0.15, 0.38], [0.158, 0.3], [0.165, 0.245],
+  [0.072, 0.235], [0.064, 0.12], [0.06, 0.035], [0.092, 0.015], [0.092, 0], [0.018, 0], [0.018, 0.03], [0.02, 0.2], [0, 0.215]);
+const FIGURE = FIG_R.concat(FIG_R.slice(1, -1).reverse().map(([x, y]) => [-x, y]));
+
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "range", "layers", "hills", "horizon", "trees", "cottage", "clouds", "sky", "sunx", "sunh", "figure", "figx", "figsize",
+  "mode", "open", "tearlen", "fray", "impacts", "ix", "iy", "web", "shards", "crowd", "breach", "alias", "labels", "pull", "raster", "pixel", "running", "sub", "code", "glyph", "trace",
+  "leak", "wind", "reach", "bands", "slip", "split", "pitch", "pen", "page", "margin"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+function buildWorld(o, E, n2) {
+  const { x0, y0, x1, y1, item } = E, fw = x1 - x0, fh = y1 - y0, P = o.pitch;
+  const rw = mulberry32(o.seed * 7919 + 31), n1 = noise1(mulberry32(o.seed * 131 + 5));
+  const fbm = x => (n1(x) + 0.5 * n1(x * 2.03 + 17.1) + 0.25 * n1(x * 4.1 + 33.7)) / 1.75;
+  const hzY = y0 + fh * o.horizon / 100, sunLeft = o.sunx < 50;
+  const sunX = x0 + fw * o.sunx / 100, sunY = hzY - (hzY - y0) * o.sunh / 100, rs = fw * 0.05;
+
+  const DW = Math.ceil((x1 + 7 * 37 + 4) * 2), DH = Math.ceil((y1 + 4) * 2), DG = new Float32Array(DW * DH).fill(-1);
+  const dither = (x, y) => { const i = Math.max(0, Math.min(DW - 1, Math.round(x * 2))), j = Math.max(0, Math.min(DH - 1, Math.round(y * 2))), k = j * DW + i; return DG[k] < 0 ? (DG[k] = n2(i * 0.09, j * 0.09)) : DG[k]; };
+  if (o.sky === "lined") {
+    const it = item(), pred = (x, y) => { const f = (y - y0) / (hzY - y0); return Math.hypot(x - sunX, y - sunY) > rs * 2.3 && 0.5 * (1 - f) + 0.08 + 0.3 * (dither(x * 0.28, y * 1.1) - 0.5) > 0.2; };
+    for (let y = y0 + P * 1.6; y < hzY + fh * 0.1; y += P * 1.6) it.runs(clipPred(densify([[x0, y], [x1, y]], false, 0.5), pred), "shade");
+  }
+  { const it = item(); for (let a = 0; a < 36; a++) { const t = TAU * a / 36, r1 = rs * (a % 2 ? 1.65 : 2.1); it.line([[sunX + rs * 1.3 * Math.cos(t), sunY + rs * 1.3 * Math.sin(t)], [sunX + r1 * Math.cos(t), sunY + r1 * Math.sin(t)]], "shade"); } }
+  { const c = ell(sunX, sunY, rs, rs, 60); item().occ(c).line(c, "key", true); }
+  for (let c = 0; c < o.clouds; c++) {
+    const cw = fw * (0.14 + 0.16 * rw()), cx = x0 + cw / 2 + (fw - cw) * rw(), yb = y0 + (hzY - y0) * (0.16 + 0.5 * rw()), nC = 4 + Math.floor(rw() * 4), C = [];
+    for (let i = 0; i < nC; i++) { const t = (i + 0.5) / nC, r = cw * (0.09 + 0.13 * Math.sin(Math.PI * t) * (0.7 + 0.6 * rw())); C.push([cx - cw / 2 + cw * t, yb - r * 0.35, r]); }
+    const top = x => { let m = yb; for (const [a, b, r] of C) { const dx = x - a; if (Math.abs(dx) < r) m = Math.min(m, b - Math.sqrt(r * r - dx * dx)); } return m; };
+    const xl = Math.min(...C.map(q => q[0] - q[2])) + 0.3, xr = Math.max(...C.map(q => q[0] + q[2])) - 0.3, pts = [];
+    for (let x = xl; x <= xr; x += 0.5) pts.push([x, top(x)]);
+    pts.push([xr, yb], [xl, yb]);
+    item().occ(pts).line(pts, "key", true).runs(clipLines(hatch(pts, 0, P * 1.3), pts, 0.35, 0.4, (x, y) => (y - top(x)) / (yb - top(x) + 1e-9) > 0.5), "shade");
+  }
+  for (let b = 0, nb = 2 + Math.floor(rw() * 5); b < nb; b++) {
+    const s = 1 + rw() * 1.3, x = x0 + fw * (0.1 + 0.8 * rw()), y = y0 + (hzY - y0) * (0.1 + 0.55 * rw());
+    item().line(spline([[x - s, y - s * 0.05], [x - s * 0.5, y - s * 0.42], [x, y], [x + s * 0.5, y - s * 0.42], [x + s, y - s * 0.05]].concat([[x, y]]), 6).slice(0, 25), "key");
+  }
+
+  const nB = o.layers, bands = [];
+  for (let i = 0; i < nB; i++) {
+    const d = nB > 1 ? i / (nB - 1) : 1, base = hzY + (y1 - hzY) * (0.03 + 0.6 * Math.pow(d, 1.3)), amp = fh * 0.045 * o.hills * (0.7 + 1.3 * d), lam = fw * (0.16 + 0.3 * d), off = rw() * 200;
+    const mtn = i === 0 && o.range === "mountains";
+    const f = mtn ? x => { const u = x / lam * 1.3 + off; let r = 0; [[1, 1, 0], [2.3, 0.35, 9.1], [5.1, 0.12, 3.3]].forEach(([fq, w, c]) => { r += w * Math.pow(1 - Math.abs(n1(u * fq + c)), 2.2); }); return base + amp * 0.4 - amp * 2.6 * r; }
+      : x => base - amp * (0.5 + 0.5 * fbm(x / lam + off));
+    const arr = []; for (let x = x0 - 2; x <= x1 + 2.5; x += 0.5) arr.push(f(x));
+    const n = arr.length, at = x => { const t = (x - (x0 - 2)) * 2, k = t < 0 ? 0 : t > n - 2 ? n - 2 : t | 0, a = t - k; return arr[k] + (arr[k + 1] - arr[k]) * a; };
+    const sl = arr.map((v, k) => (arr[Math.min(n - 1, k + 2)] - arr[Math.max(0, k - 2)]) / ((Math.min(n - 1, k + 2) - Math.max(0, k - 2)) * 0.5));
+    const slope = x => sl[Math.max(0, Math.min(n - 1, Math.round((x - (x0 - 2)) * 2)))];
+    bands.push({ i, d, base, amp, at, slope, arr, mtn, top: Math.min(...arr), snowY: mtn ? Math.min(...arr) + (base - Math.min(...arr)) * 0.45 : -1e9 });
+  }
+  bands.forEach((B, i) => { B.vis = i < nB - 1 ? bands[i + 1].base - B.base + B.amp : y1 - B.base + B.amp; });
+  const darkOf = B => (x, y) => {
+    const t = y - B.at(x); if (t < 0) return 0;
+    const sl = B.slope(x), away = sunLeft ? sl : -sl, sh = Math.min(1, Math.max(0, away * 1.4)), lit = Math.min(1, Math.max(0, -away * 1.4));
+    const dt = Math.min(1, t / B.vis), dith = 0.2 * (dither(x + B.i * 37, y) - 0.5);
+    if (B.mtn && y < B.snowY + 3 * (dither(x * 0.6, 3) - 0.5)) return sh * 0.55 + dith;
+    return (0.06 + 0.42 * dt + 0.5 * sh - 0.22 * lit) * (0.5 + 0.5 * B.d) + 0.1 * B.d + dith;
+  };
+
+  const extras = Array.from({ length: nB }, () => []);
+  if (nB > 1) for (let t = 0; t < o.trees; t++) {
+    const i = Math.min(nB - 1, 1 + Math.floor(Math.pow(rw(), 0.7) * (nB - 1))), B = bands[i], x = x0 + 4 + (fw - 8) * rw();
+    const gy = B.at(x) + 0.4 + rw() * Math.min(B.vis * 0.45, B.amp * 1.2 + 3), h = fh * 0.03 * (0.45 + 1.3 * B.d) * (0.7 + 0.6 * rw());
+    extras[i].push({ kind: rw() < 0.55 ? "pine" : "round", x, gy, h, r: [rw(), rw(), rw(), rw(), rw(), rw(), rw(), rw(), rw(), rw()] });
+  }
+  const figX = x0 + fw * o.figx / 100;
+  if (o.cottage === "on") {
+    const ic = nB >= 3 ? nB - 2 : nB - 1, B = bands[ic];
+    let xc = x0 + fw * (0.15 + 0.7 * rw());
+    if (o.figure !== "none" && Math.abs(xc - figX) < fw * 0.15) xc = x0 + x1 - xc;
+    const hw = fw * 0.065 * (0.7 + 0.6 * B.d);
+    let gy = -1e9; for (let x = xc - hw * 0.6; x <= xc + hw * 0.6; x += 0.5) gy = Math.max(gy, B.at(x));
+    extras[ic].push({ kind: "cottage", x: xc, gy: gy + 0.6, h: hw });
+  }
+  const shadeSide = (cx, x) => (sunLeft ? x > cx : x < cx);
+  const drawExtra = T => {
+    const { x, gy, h, r } = T;
+    if (T.kind === "pine") {
+      const tiers = 3 + Math.floor(r[0] * 3), L = [], R = [], top = gy - h;
+      for (let t = 0; t < tiers; t++) {
+        const yt = top + (t + 1) * h * 0.82 / tiers, w = h * 0.3 * (t + 1) / tiers;
+        if (t) { L.push([x - w * 0.42, yt - h * 0.82 / tiers * 0.72]); R.push([x + w * 0.42, yt - h * 0.82 / tiers * 0.72]); }
+        L.push([x - w * (0.9 + 0.2 * r[1 + t]), yt]); R.push([x + w * (0.9 + 0.2 * r[5 + t % 4]), yt]);
+      }
+      const tw = h * 0.045, poly = [[x, top], ...L, [x - tw, gy - h * 0.18 + h * 0.02], [x - tw, gy], [x + tw, gy], [x + tw, gy - h * 0.16], ...R.reverse()];
+      item().occ(poly).line(poly, "key", true).runs(tonal(poly, (px) => shadeSide(x, px) ? 0.72 : 0.18, P * 0.85, 1.2), "shade");
+    } else if (T.kind === "round") {
+      const tr = rect(x - h * 0.035, gy - h * 0.4, x + h * 0.035, gy);
+      item().occ(tr).line(tr.slice(0, 1).concat([[x - h * 0.035, gy]], [[x + h * 0.035, gy]], [[x + h * 0.035, gy - h * 0.4]]), "key").runs(tonal(tr, () => 0.5, P * 0.8, 0), "shade");
+      const cy = gy - h * 0.62, cr = h * 0.36, crown = spline(Array.from({ length: 9 }, (_, k) => { const a = TAU * k / 9, q = cr * (0.84 + 0.26 * r[k]); return [x + q * Math.cos(a), cy + q * 0.92 * Math.sin(a)]; }), 6);
+      const sd = sunLeft ? [0.7, 0.7] : [-0.7, 0.7];
+      item().occ(crown).line(crown, "key", true).runs(tonal(crown, (px, py) => 0.12 + 0.6 * (0.5 + 0.5 * ((px - x) * sd[0] + (py - cy) * sd[1]) / cr), P * 0.85, 0.5), "shade");
+    } else {
+      const hw = h, wh = hw * 0.55, rh = hw * 0.45, ov = hw * 0.08, wy = gy - wh;
+      { const sm = []; for (let k = 0; k <= 40; k++) { const t = k / 40; sm.push([x + hw * 0.21 + Math.sin(t * 9) * hw * 0.08 * (0.3 + t) + t * hw * 0.5, wy - rh - rh * 0.35 - t * rh * 3]); } item().line(sm, "shade"); }
+      const ch = rect(x + hw * 0.15, wy - rh - rh * 0.35, x + hw * 0.27, wy - rh * 0.4);
+      item().occ(ch).line(ch, "key", true).runs(tonal(ch, () => 0.45, P * 0.8, 0), "shade");
+      const wall = rect(x - hw / 2, wy, x + hw / 2, gy), win = rect(x + hw * 0.12, wy + wh * 0.25, x + hw * 0.32, wy + wh * 0.6), door = rect(x - hw * 0.3, wy + wh * 0.35, x - hw * 0.12, gy);
+      const wit = item().occ(wall).line(wall, "key", true).line(win, "key", true).line([[x + hw * 0.22, wy + wh * 0.25], [x + hw * 0.22, wy + wh * 0.6]], "key").line([[x + hw * 0.12, wy + wh * 0.425], [x + hw * 0.32, wy + wh * 0.425]], "key").line(door.slice(0, 3).concat([door[3]]), "key");
+      wit.runs(clipLines(hatch(wall, Math.PI / 2, P * 1.1), wall, 0.3, 0.3, (px, py) => !pip(win, px, py) && !pip(door, px, py)), "shade");
+      const roof = [[x - hw / 2 - ov, wy], [x - hw * 0.3, wy - rh], [x + hw * 0.3, wy - rh], [x + hw / 2 + ov, wy]];
+      item().occ(roof).line(roof, "key", true).runs(tonal(roof, () => 0.45, P * 0.8, 0), "shade");
+    }
+  };
+  let fig = null;
+  bands.forEach((B, i) => {
+    const pts = []; for (let k = 0; k < B.arr.length; k++) pts.push([x0 - 2 + k * 0.5, B.arr[k]]);
+    const it = item().occ(pts.concat([[x1 + 2.5, y1 + 3], [x0 - 2, y1 + 3]])); it.test = (x, y) => y > B.at(x);
+    it.line(pts, "key");
+    const dark = darkOf(B);
+    for (let k = 1, t = P; t < B.vis * 1.15; k++, t += P) {
+      const th = k % 2 ? 0.42 : 0.14, line = [];
+      for (let x = x0; x <= x1; x += 0.5) { const s = B.at(x); line.push([x, s + t + (B.base - s) * Math.min(1, t / (B.amp * 3 + 1)) * 0.6]); }
+      const nx = bands[i + 1];
+      it.runs(clipPred(line, (x, y) => y < y1 + 0.5 && (!nx || y < nx.at(x) + 0.5) && dark(x, y) > th), "shade");
+    }
+    it.runs(clipPredLines(hatch(rect(x0, B.top, x1, Math.min(y1, B.base + B.vis)), sunLeft ? 0.75 : -0.75, P * 1.2), 0.4, (x, y) => y > B.at(x) + 0.4 && (i === nB - 1 || y < bands[i + 1].at(x) + 0.5) && dark(x, y) > 0.74), "shade");
+    extras[i].sort((a, b) => a.gy - b.gy).forEach(drawExtra);
+    if (i === nB - 1 && o.figure !== "none") {
+      const gy = B.at(figX) + 0.3, hf = o.figsize, poly = FIGURE.map(([px, py]) => [figX + px * hf, gy - py * hf]);
+      const fi = item().occ(poly).line(poly, "key", true).runs(tonal(poly, () => 0.75, P * 0.75, 0.9), "shade");
+      fi.fig = true;
+      fig = { x: figX, y: gy - hf * 0.5, h: hf, poly };
+    }
+  });
+  item().line(rect(x0, y0, x1, y1), "key", true);
+  return { bands, fig, sun: [sunX, sunY, rs], hzY };
+}
+
+function ownerIndex(shards, W, H) {
+  const SB = bucketer(W, H, 8);
+  shards.forEach((s, i) => { s.bb = bboxOf(s.poly); s.area = polyArea(s.poly); SB.add(s.bb, i); });
+  return (x, y) => { for (const i of SB.at(x, y)) { const s = shards[i]; if (x >= s.bb[0] && x <= s.bb[2] && y >= s.bb[1] && y <= s.bb[3] && pip(s.poly, x, y)) return i; } return -1; };
+}
+
+function buildTear(o, E) {
+  const { x0, y0, x1, y1, W, H } = E, fw = x1 - x0, fh = y1 - y0, rf = mulberry32(o.seed * 104729 + 7), nz = noise1(mulberry32(o.seed * 613 + 9));
+  const xc = x0 + fw * o.ix / 100, yw = y0 + fh * o.iy / 100, half = Math.max(5, fh * o.tearlen / 200), wmax = o.open;
+  const yS = y0 - 8, yE = y1 + 8, n = Math.ceil(yE - yS) + 2, seam = new Float64Array(n);
+  let off = 0, drift = (rf() - 0.5) * 0.15;
+  for (let k = 0; k < n; k++) { seam[k] = off; drift = (drift + (rf() - 0.5) * 0.03) * 0.97; off += drift + (rf() - 0.5) * 0.9 + (rf() < 0.03 ? (rf() - 0.5) * 3 : 0); }
+  const at = (A, y) => { const t = Math.max(0, Math.min(n - 1.001, y - yS)), k = Math.floor(t), a = t - k; return A[k] + (A[k + 1] - A[k]) * a; };
+  const shift = xc - at(seam, yw), Lc = y => at(seam, y) + shift;
+  const bump = y => Math.exp(-2.3 * ((y - yw) / half) ** 2), wOf = y => wmax * Math.max(0, bump(y) - 0.04) / 0.96;
+  const spread = Math.max(wmax * 0.9, fw * 0.18);
+  const warp = (p, side) => [p[0] + side * wOf(p[1]) / 2 * Math.exp(-Math.abs(p[0] - Lc(p[1])) / spread), p[1]];
+  const along = (f, ya, yb) => { const out = [[f(ya), ya]], s = Math.sign(yb - ya) || 1; for (let y = s > 0 ? Math.ceil(ya) : Math.floor(ya); s > 0 ? y < yb : y > yb; y += s) if (Math.abs(y - ya) > 0.1 && Math.abs(y - yb) > 0.1) out.push([f(y), y]); out.push([f(yb), yb]); return out; };
+  const shards = [], bigs = [], sub = o.sub === "mix" ? ["wire", "code", "circuit"][Math.floor(rf() * 3)] : o.sub;
+  for (const side of [-1, 1]) {
+    const fo = rf() * 50, depth = y => o.fray * (0.25 + 0.75 * bump(y)) * (0.55 + 0.9 * (0.5 + 0.5 * nz(y * 0.15 + fo)));
+    const edge = y => Lc(y) + side * depth(y);
+    const cuts = [[yS, 0]];
+    while (cuts.at(-1)[0] < yE) { const h = (1.5 + 5 * rf()) * (0.6 + o.fray / 6); cuts.push([Math.min(yE, cuts.at(-1)[0] + h), (rf() - 0.5) * Math.min(h * 0.6, o.fray + 0.5)]); }
+    cuts.at(-1)[1] = 0;
+    for (let i = 1; i < cuts.length; i++) { const lim = Math.min(cuts[i][0] - cuts[i - 1][0], (cuts[i + 1] || [yE + 99])[0] - cuts[i][0]) / 2.5; cuts[i][1] = Math.max(-lim, Math.min(lim, cuts[i][1])); }
+    const boundary = [];
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const [ya, sa] = cuts[i], [yb, sb] = cuts[i + 1], ym = (ya + yb) / 2;
+      let dsum = 0; for (let k = 0; k <= 4; k++) dsum += depth(ya + (yb - ya) * k / 4);
+      if (dsum / 5 < 0.7 || rf() < 0.06) { boundary.push(...along(Lc, ya, yb)); continue; }
+      const outer = along(edge, ya + sa, yb + sb), poly = outer.concat(along(Lc, yb, ya));
+      if (!(Math.abs(polyArea(poly)) > 0.3)) { boundary.push(...along(Lc, ya, yb)); continue; }
+      boundary.push(...outer);
+      shards.push({ poly, side, ym, u: 1 - bump(ym), big: false, r: [rf(), rf(), rf(), rf(), rf(), rf()] });
+    }
+    const far = side < 0 ? x0 - 40 : x1 + 40;
+    bigs.push({ poly: [[far, yS], ...boundary, [far, yE]], side, ym: yw, u: 0.95, big: true, r: [rf(), rf(), rf(), rf(), 1, rf()] });
+  }
+  shards.unshift(...bigs);
+  for (const s of shards) {
+    s.sub = sub; s.c = [xc, yw]; s.R = half;
+    const q = s.u + (s.r[0] - 0.5) * 0.6;
+    s.state = s.big ? "moved" : o.breach > 0 && q < o.breach * 0.9 ? "gone" : q < o.breach * 0.9 + 0.3 && s.r[1] < o.raster ? "pixel" : "moved";
+    s.g = s.poly.reduce((a, p) => [a[0] + p[0] / s.poly.length, a[1] + p[1] / s.poly.length], [0, 0]);
+    if (s.big) s.T = p => warp(p, s.side);
+    else {
+      const wp = s.poly.map(p => warp(p, s.side)), g = wp.reduce((a, p) => [a[0] + p[0] / wp.length, a[1] + p[1] / wp.length], [0, 0]);
+      const md = wp.reduce((a, p) => a + Math.hypot(p[0] - g[0], p[1] - g[1]), 0) / wp.length, amt = bump(s.ym) * o.pull;
+      const sc = Math.max(0.5, 1 - 0.35 / Math.max(md, 0.5)), rot = (s.r[3] - 0.5) * 0.5 * amt, dx = -s.side * wOf(s.ym) * 0.3 * s.r[2] * amt, dy = (s.r[4] - 0.3) * 3 * amt;
+      const cr = Math.cos(rot) * sc, sr = Math.sin(rot) * sc;
+      s.T = p => { const [px, py] = warp(p, s.side), ex = px - g[0], ey = py - g[1]; return [g[0] + dx + cr * ex - sr * ey, g[1] + dy + sr * ex + cr * ey]; };
+    }
+    s.tpoly = s.poly.map(s.T); s.tbb = bboxOf(s.tpoly);
+  }
+  shards.forEach((s, i) => { s.pri = 2 + i; });
+  const ownerOf = ownerIndex(shards, W, H);
+  const running = [];
+  for (let k = 0, K = Math.round(2 + o.running * 10); k < K; k++) {
+    const y = yw + (rf() - 0.5) * 2 * half, side = rf() < 0.5 ? -1 : 1, len = o.running * fw * 0.4 * (0.3 + rf()), pts = [];
+    let p = [Lc(y) + side * 0.4, y], a = (side < 0 ? Math.PI : 0) + (rf() - 0.5) * 1.6;
+    for (let d = 0; d < len; d += 1) { pts.push(p); a += (rf() - 0.5) * 0.25; p = [p[0] + Math.cos(a), p[1] + Math.sin(a) + (rf() - 0.5) * 0.4]; }
+    running.push(pts);
+  }
+  let lo = 1e9, hi = -1e9; for (let y = y0; y <= y1; y += 1) { lo = Math.min(lo, Lc(y)); hi = Math.max(hi, Lc(y)); }
+  const pad = wmax / 2 + o.fray * 2 + 4;
+  return { webs: [{ c: [xc, yw], R: half }], shards, ownerOf, running, tear: true, inGap: (x, y) => Math.abs(x - Lc(y)) < wOf(y) / 2 + 0.5, zbb: [lo - pad, y0, hi + pad, y1] };
+}
+
+function buildFracture(o, E) {
+  if (o.mode === "tear") return buildTear(o, E);
+  const { x0, y0, x1, y1, W, H } = E, fw = x1 - x0, fh = y1 - y0, rf = mulberry32(o.seed * 104729 + 7);
+  const webs = [{ c: [x0 + fw * o.ix / 100, y0 + fh * o.iy / 100], R: o.web, n: o.shards }];
+  for (let tries = 0; tries < 200 && webs.length < o.impacts; tries++) {
+    const R = o.web * (0.35 + 0.25 * rf()), c = [x0 + R * 0.3 + (fw - R * 0.6) * rf(), y0 + R * 0.3 + (fh - R * 0.6) * rf()];
+    if (webs.every(w => Math.hypot(w.c[0] - c[0], w.c[1] - c[1]) > (w.R + R) * 1.04)) webs.push({ c, R, n: Math.max(6, Math.round(o.shards * Math.pow(R / o.web, 1.5))) });
+  }
+  const ASP = 2.4, shards = [], running = [];
+  const keyOf = q => q[0].toFixed(3) + "," + q[1].toFixed(3);
+  webs.forEach((w, wi) => {
+    const r0 = w.R * (0.42 - 0.38 * o.crowd), Lmin = Math.log(r0), Lin = Math.log(w.R + r0), Lmax = Math.log(w.R * 1.45 + r0), Aw = Math.PI * ASP;
+    const area = (Lmax - Lmin) * 2 * Aw, nAll = Math.round(w.n * (Lmax - Lmin) / (Lin - Lmin)), dmin = 0.6 * Math.sqrt(area / nAll), S = [];
+    for (let t = 0; t < nAll * 40 && S.length < nAll; t++) {
+      const L = Lmin + (Lmax - Lmin) * rf(), A = (rf() * 2 - 1) * Aw;
+      if (S.every(s => { let dA = Math.abs(s[1] - A); dA = Math.min(dA, 2 * Aw - dA); return (s[0] - L) ** 2 + dA * dA > dmin * dmin; })) S.push([L, A]);
+    }
+    const all = S.flatMap((s, i) => [[s[0], s[1], i], [s[0], s[1] - 2 * Aw, i], [s[0], s[1] + 2 * Aw, i]]);
+    const toXY = (L, A) => { const r = Math.max(0, Math.exp(L) - r0), th = A / ASP; return [w.c[0] + r * Math.cos(th), w.c[1] + r * Math.sin(th)]; };
+    S.forEach((si, i) => {
+      if (Math.exp(si[0]) - r0 > w.R) return;
+      let P = [[Lmin, -Aw * 2, -1], [Lmax, -Aw * 2, -1], [Lmax, Aw * 2, -1], [Lmin, Aw * 2, -1]];
+      for (const sj of all) {
+        if (sj[2] === i && sj[1] === si[1]) continue;
+        const nx = sj[0] - si[0], ny = sj[1] - si[1]; if (nx * nx + ny * ny > 16 * dmin * dmin) continue;
+        const mx = (si[0] + sj[0]) / 2, my = (si[1] + sj[1]) / 2, side = q => (q[0] - mx) * nx + (q[1] - my) * ny, out = [];
+        for (let k = 0; k < P.length; k++) {
+          const a = P[k], b = P[(k + 1) % P.length], da = side(a), db = side(b);
+          if (da <= 0) out.push(a);
+          if ((da <= 0) !== (db <= 0)) { const t = da / (da - db), I = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; out.push(da <= 0 ? [I[0], I[1], sj[2]] : [I[0], I[1], a[2]]); }
+        }
+        P = out;
+      }
+      const poly = [];
+      P.forEach((v, k) => {
+        const u = P[(k + 1) % P.length], m = Math.max(1, Math.ceil(Math.hypot(u[0] - v[0], (u[1] - v[1]) / ASP) / 0.02)), pts = [];
+        for (let t = 0; t < m; t++) pts.push(toXY(v[0] + (u[0] - v[0]) * t / m, v[1] + (u[1] - v[1]) * t / m));
+        const B = toXY(u[0], u[1]), A0 = pts[0];
+        if (v[2] >= 0 && pts.length > 1) {
+          const flip = keyOf(A0) > keyOf(B), from = flip ? B : A0, to = flip ? A0 : B, dx = to[0] - from[0], dy = to[1] - from[1], Lc = Math.hypot(dx, dy) || 1;
+          let h = 0; for (const ch of keyOf(from) + keyOf(to)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+          const rj = mulberry32(h ^ o.seed), nx = -dy / Lc, ny = dx / Lc, seq = flip ? pts.slice(1).concat([B]).reverse() : pts.slice();
+          let off = 0, step = 0;
+          const jagged = seq.map((p, k2) => { const t = k2 / (seq.length - 1 || 1); if (k2) { const dd = Math.hypot(p[0] - seq[k2 - 1][0], p[1] - seq[k2 - 1][1]); step += dd; while (step > 1) { off += (rj() - 0.5) * 0.75; step -= 1; } } const e = off * Math.sin(Math.PI * t); return [p[0] + nx * e, p[1] + ny * e]; });
+          if (flip) { jagged.reverse(); poly.push(...jagged.slice(0, -1)); } else poly.push(...jagged);
+        } else poly.push(...pts);
+      });
+      const rr = Math.exp(si[0]) - r0;
+      if (!(Math.abs(polyArea(poly)) > 0.3)) return;
+      shards.push({ poly, web: wi, u: Math.min(1, rr / w.R), c: w.c, R: w.R, r: [rf(), rf(), rf(), rf(), rf(), rf()] });
+    });
+  });
+  webs.forEach(w => {
+    const K = Math.round(2 + o.running * 8 * w.R / o.web);
+    for (let k = 0; k < K; k++) {
+      const th = rf() * TAU, dir = [Math.cos(th), Math.sin(th)], nrm = [-dir[1], dir[0]], ext = w.R * (1.15 + o.running * 1.6 * rf()), pts = [];
+      let off = 0, bend = 0;
+      for (let r = w.R * 0.7; r <= ext; r += 1) { pts.push([w.c[0] + dir[0] * r + nrm[0] * off, w.c[1] + dir[1] * r + nrm[1] * off]); bend += (rf() - 0.5) * 0.04; off += bend + (rf() - 0.5) * 0.7; }
+      running.push(pts);
+    }
+  });
+  const ownerOf = ownerIndex(shards, W, H);
+  const subs = ["wire", "code", "circuit"], gz = o.breach * 0.95;
+  for (const s of shards) {
+    const q = s.u + (s.r[0] - 0.5) * 0.5;
+    s.state = o.breach > 0 && q < gz ? "gone" : q < gz + 0.28 && s.r[1] < o.raster ? "pixel" : "moved";
+    s.sub = o.sub === "mix" ? subs[Math.floor(s.r[2] * 3)] : o.sub;
+    const g = s.poly.reduce((a, p) => [a[0] + p[0] / s.poly.length, a[1] + p[1] / s.poly.length], [0, 0]), md = s.poly.reduce((a, p) => a + Math.hypot(p[0] - g[0], p[1] - g[1]), 0) / s.poly.length;
+    const amt = Math.pow(1 - s.u, 1.2), gap = 0.35 + o.pull * 1.6 * amt, sc = Math.max(0.5, 1 - gap / Math.max(md, 0.5)), rot = o.pull * (s.r[3] - 0.5) * 0.14 * amt;
+    const dl = Math.hypot(g[0] - s.c[0], g[1] - s.c[1]) || 1, dir = [(g[0] - s.c[0]) / dl, (g[1] - s.c[1]) / dl], tr = o.pull * 4 * amt * amt, cr = Math.cos(rot) * sc, sr = Math.sin(rot) * sc;
+    s.g = g; s.T = p => { const dx = p[0] - g[0], dy = p[1] - g[1]; return [g[0] + dir[0] * tr + cr * dx - sr * dy, g[1] + dir[1] * tr + sr * dx + cr * dy]; };
+    s.tpoly = s.poly.map(s.T); s.tbb = bboxOf(s.tpoly);
+  }
+  shards.map((s, i) => i).sort((a, b) => shards[b].u - shards[a].u || a - b).forEach((i, rank) => { shards[i].pri = 2 + rank; });
+  return { webs, shards, ownerOf, running };
+}
+
+function buildSubstrate(o, F, W, frac, world, used) {
+  const { x0, y0, x1, y1 } = F, out = [], rs = mulberry32(o.seed * 15485863 + 3), { shards, ownerOf } = frac;
+  const zb = frac.zbb || bboxOf(shards.flatMap(s => s.poly)), zx0 = Math.max(x0, zb[0]), zy0 = Math.max(y0, zb[1]), zx1 = Math.min(x1, zb[2]), zy1 = Math.min(y1, zb[3]);
+  if (zx0 >= zx1 || zy0 >= zy1) return out;
+  const predOf = type => (x, y) => x >= zx0 && x <= zx1 && y >= zy0 && y <= zy1 && (() => { const s = ownerOf(x, y); return s >= 0 && shards[s].sub === type; })();
+  const add = (paths, closed = false) => { for (const p of paths) out.push({ p, cl: closed }); };
+  if (used.has("wire")) {
+    const pred = predOf("wire"), { bands } = world, B0 = bands[0], lines = [];
+    for (let x = Math.ceil(zx0 / 4) * 4; x <= zx1; x += 4) lines.push([[x, zy0], [x, Math.min(zy1, B0.base + 2)]]);
+    for (let y = Math.ceil(zy0 / 4) * 4; y <= Math.min(zy1, B0.base + 2); y += 4) lines.push([[zx0, y], [zx1, y]]);
+    add(clipPredLines(lines, 0.4, (x, y) => y < B0.at(x) - 0.2 && pred(x, y)));
+    const [sx, sy, sr] = world.sun, sw = ell(sx, sy, sr, sr, 12);
+    add(clipPredLines(sw.map((p, i) => [p, sw[(i + 1) % 12]]).concat(sw.filter((_, i) => i % 2 === 0).map((p, i) => [p, sw[(i * 2 + 6) % 12]])), 0.3, (x, y) => y < B0.at(x) - 0.2 && pred(x, y)));
+    bands.forEach((B, i) => {
+      const nx = bands[i + 1], mx = 3 + 3.5 * B.d, h = mx * 0.62, vis = (x, y) => y > B.at(x) + 0.2 && (!nx || y < nx.at(x) - 0.2) && pred(x, y), L = [];
+      const xs = []; for (let x = x0 - mx + ((B.i * 1.7) % mx); x <= x1 + mx; x += mx) xs.push(x);
+      const vy = (x, r) => { const s = B.at(x), t = r * h; return s + t + (B.base - s) * Math.min(1, t / (B.amp * 3 + 1)) * 0.6; };
+      for (let r = 0; r * h < B.vis * 1.1; r++) for (let n = 0; n < xs.length - 1; n++) {
+        const a = [xs[n], vy(xs[n], r)], b = [xs[n + 1], vy(xs[n + 1], r)], a2 = [xs[n], vy(xs[n], r + 1)], b2 = [xs[n + 1], vy(xs[n + 1], r + 1)];
+        if (Math.max(a[1], b[1]) < zy0 - h || Math.min(a[1], b[1]) > zy1 || b[0] < zx0 || a[0] > zx1) continue;
+        L.push([a, b], [a, a2], (n + r) % 2 ? [a, b2] : [b, a2]);
+      }
+      add(clipPredLines(L, 0.4, vis));
+    });
+  }
+  if (used.has("code")) {
+    const pred = predOf("code"), gu = o.glyph, cw = gu * 1.9, rh = gu * 2.9, chars = o.code === "bin" ? "01" : "0123456789ABCDEF";
+    for (let x = zx0 + cw * 0.3; x < zx1 - gu; x += cw) {
+      let y = zy0 - rs() * rh * 8;
+      while (y < zy1) {
+        if (rs() < 0.35) { y += rh * (2 + rs() * 6); continue; }
+        const L = 3 + Math.floor(rs() * 14);
+        for (let g = 0; g < L && y < zy1; g++, y += rh) {
+          if (!pred(x + gu / 2, y + gu)) continue;
+          const ch = chars[Math.floor(rs() * chars.length)];
+          for (const s of FONT[ch]) add(clipPred(densify(s.map(([u, v]) => [x + u * gu, y + v * gu]), false, 0.3), pred));
+          if (g === L - 1) add(clipPred(densify(rect(x - gu * 0.35, y - gu * 0.35, x + gu * 1.35, y + gu * 2.35), true, 0.3).concat([[x - gu * 0.35, y - gu * 0.35]]), pred));
+        }
+        y += rh * (1 + rs() * 3);
+      }
+    }
+  }
+  if (used.has("circuit")) {
+    const pred = predOf("circuit"), gp = o.trace, nx = Math.floor((zx1 - zx0) / gp), ny = Math.floor((zy1 - zy0) / gp);
+    if (nx > 2 && ny > 2) {
+      const cx = i => zx0 + (i + 0.5) * gp, cy = j => zy0 + (j + 0.5) * gp, ok = new Uint8Array(nx * ny), occ = new Uint8Array(nx * ny), diag = new Set();
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) ok[j * nx + i] = pred(cx(i), cy(j)) && pred(cx(i) + gp * 0.45, cy(j)) && pred(cx(i) - gp * 0.45, cy(j)) && pred(cx(i), cy(j) + gp * 0.45) && pred(cx(i), cy(j) - gp * 0.45) ? 1 : 0;
+      const free = (i, j) => i >= 0 && j >= 0 && i < nx && j < ny && ok[j * nx + i] && !occ[j * nx + i];
+      const starts = [];
+      const nIC = Math.round(nx * ny / 900) + 1;
+      for (let t = 0, made = 0; t < 60 && made < nIC; t++) {
+        const w = 5 + Math.floor(rs() * 7), h = 3 + Math.floor(rs() * 4), i0 = 1 + Math.floor(rs() * (nx - w - 2)), j0 = 2 + Math.floor(rs() * (ny - h - 4));
+        if (i0 < 1 || j0 < 2) continue;
+        let fit = true; for (let j = j0 - 2; j <= j0 + h + 1 && fit; j++) for (let i = i0 - 1; i <= i0 + w; i++) if (!free(i, j)) { fit = false; break; }
+        if (!fit) continue;
+        made++;
+        for (let j = j0 - 1; j <= j0 + h; j++) for (let i = i0; i < i0 + w; i++) occ[j * nx + i] = 1;
+        const bx0 = cx(i0) - gp * 0.3, bx1 = cx(i0 + w - 1) + gp * 0.3, by0 = cy(j0), by1 = cy(j0 + h - 1);
+        add([rect(bx0, by0, bx1, by1)], true);
+        add([Array.from({ length: 9 }, (_, k) => [bx0 + gp * 0.4 + gp * 0.35 * Math.cos(Math.PI * k / 8), by0 + gp * 0.35 * Math.sin(Math.PI * k / 8)])]);
+        for (let i = i0; i < i0 + w; i += 2) { add([[[cx(i), by0], [cx(i), cy(j0 - 1)]], [[cx(i), by1], [cx(i), cy(j0 + h)]]]); starts.push([i, j0 - 2, 6], [i, j0 + h + 1, 2]); }
+      }
+      const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+      const pad = (i, j, r) => add([ell(cx(i), cy(j), gp * r, gp * r, 10)], true);
+      const walk = (i, j, d, startPad) => {
+        if (!free(i, j)) return;
+        const path = [[i, j]]; occ[j * nx + i] = 1;
+        const maxL = 4 + Math.floor(rs() * 40);
+        while (path.length < maxL) {
+          if (rs() < 0.2) d = (d + (rs() < 0.5 ? 1 : 7)) % 8;
+          const [di, dj] = DIRS[d], ni = i + di, nj = j + dj;
+          if (!free(ni, nj)) break;
+          if (di && dj && (diag.has(`${i + di},${j}|${i},${j + dj}`) || diag.has(`${i},${j + dj}|${i + di},${j}`))) break;
+          if (di && dj) diag.add(`${i},${j}|${ni},${nj}`);
+          i = ni; j = nj; occ[j * nx + i] = 1; path.push([i, j]);
+        }
+        if (path.length < 3) return;
+        add([path.map(([a, b]) => [cx(a), cy(b)])]);
+        if (startPad) pad(path[0][0], path[0][1], 0.36);
+        pad(i, j, rs() < 0.5 ? 0.36 : 0.25);
+      };
+      for (const [i, j, d] of starts) { const s = j < 0 || j >= ny ? null : [i, j]; if (s) { const p0 = [i, j]; if (free(...p0)) walk(i, j, d, false); } }
+      for (let t = 0; t < nx * ny / 6; t++) walk(Math.floor(rs() * nx), Math.floor(rs() * ny), Math.floor(rs() * 8), true);
+    }
+  }
+  if (used.has("void")) {
+    const pred = predOf("void"), L = [];
+    for (let y = Math.ceil(zy0 / 3.2) * 3.2; y <= zy1; y += 3.2) for (let x = Math.ceil(zx0 / 3.2) * 3.2; x <= zx1; x += 3.2) if (pred(x, y)) L.push([[x - 0.5, y], [x + 0.5, y]], [[x, y - 0.5], [x, y + 0.5]]);
+    add(clipPredLines(L, 0.25, pred));
+  }
+  return out;
+}
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), EDGE = 4, m = o.margin, P = o.pitch;
+  const items = [];
+  const item = () => {
+    const it = { poly: null, paths: [], bb: null, fig: false, test: null };
+    it.occ = pts => { it.poly = pts; return it; };
+    it.line = (pts, layer = "key", closed = false) => { it.paths.push({ p: pts, closed, layer }); return it; };
+    it.runs = (rs, layer) => { for (const r of rs) it.paths.push({ p: r, closed: false, layer }); return it; };
+    items.push(it);
+    return it;
+  };
+  const F = { W, H, x0: m, y0: m, x1: W - m, y1: H - m, item }, n2 = noise2(o.seed * 17 + 3);
+  const world = buildWorld(o, F, n2);
+
+  const surface = [], onPage = (x, y) => x >= EDGE && x <= W - EDGE && y >= EDGE && y <= H - EDGE;
+  for (const it of items) { const pts = it.paths.flatMap(p => p.p); it.bb = it.poly ? bboxOf(it.poly) : (pts.length ? bboxOf(pts) : [0, 0, 0, 0]); }
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i], cand = [];
+    for (let j = i + 1; j < items.length; j++) { const q = items[j]; if (q.poly && q.bb[0] <= it.bb[2] && q.bb[2] >= it.bb[0] && q.bb[1] <= it.bb[3] && q.bb[3] >= it.bb[1]) cand.push(q); }
+    for (const pa of it.paths) {
+      const d = densify(pa.p, pa.closed, 0.3), got = [];
+      const ok = d.map(([x, y]) => { for (const q of cand) if (x >= q.bb[0] && x <= q.bb[2] && y >= q.bb[1] && y <= q.bb[3] && (q.test ? q.test(x, y) : pip(q.poly, x, y))) return false; return true; });
+      runs(d, pa.closed, ok, 0.3, got);
+      for (const [p, cl] of got) surface.push({ p, cl, layer: pa.layer, fig: it.fig });
+    }
+  }
+
+  const frac = buildFracture(o, F), { shards, ownerOf } = frac, q = o.pixel;
+  const rg = mulberry32(o.seed * 49979687 + 11), R1 = frac.webs[0].R, c1 = frac.webs[0].c, glitch = [];
+  for (let t = 0; t < o.bands * 6 && glitch.length < o.bands; t++) {
+    const hg = 0.8 + 4.5 * rg() * rg(), yc = Math.min(F.y1 - hg, Math.max(F.y0, c1[1] + (rg() - 0.5) * 2 * R1 * 1.4)), g = [yc, yc + hg, (rg() < 0.5 ? -1 : 1) * o.slip * (0.35 + 0.65 * rg())];
+    if (!glitch.some(b => g[0] < b[1] + 1 && b[0] < g[1] + 1)) glitch.push(g);
+  }
+  const bandOf = y => { for (let i = 0; i < glitch.length; i++) if (y >= glitch[i][0] && y < glitch[i][1]) return i; return -1; };
+  const wa = o.wind * Math.PI / 180, wv = [Math.cos(wa), -Math.sin(wa)], wn = [-wv[1], wv[0]], fig = world.fig;
+  const figMask = fig && o.figure === "dissolving" ? (x, y) => ((x - fig.x) * wv[0] + (y - fig.y) * wv[1]) / (fig.h * 0.17) + 1.2 * (n2(x * 0.5, y * 0.5) - 0.5) + 0.6 * (fig.y - y) / fig.h > 0.15 : null;
+  const frags = [], cellKey = (x, y) => Math.floor(x / q) + "," + Math.floor(y / q);
+  const accum = (acc, pts) => { for (let i = 1; i < pts.length; i++) { const k = cellKey((pts[i][0] + pts[i - 1][0]) / 2, (pts[i][1] + pts[i - 1][1]) / 2); acc.set(k, (acc.get(k) || 0) + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); } };
+  shards.forEach(s => { s.acc = new Map(); });
+  const figAcc = new Map();
+  const emit = (pts, s, b, fz, w) => {
+    if (pts.length < 2 || s === -2) return;
+    if (fz) { accum(figAcc, pts); return; }
+    let pri = 1, frame = true;
+    if (s >= 0) {
+      const sh = shards[s];
+      if (sh.state === "gone") return;
+      pts = pts.map(sh.T);
+      if (sh.state === "pixel") { accum(sh.acc, pts); return; }
+      if (sh.u < o.alias) pts = stair(densify(pts, false, q * 0.25), q * 0.6);
+      pri = sh.pri; frame = false;
+    }
+    if (b >= 0) {
+      const dx = glitch[b][2]; pts = pts.map(([x, y]) => [x + dx, y]);
+      if (w.layer === "key" && o.split > 0) frags.push({ p: pts.map(([x, y]) => [x + o.split, y]), cl: false, layer: "colour", pri, frame });
+    }
+    frags.push({ p: pts, cl: false, layer: w.layer, pri, frame });
+  };
+  const walkSurface = w => {
+    const d = densify(w.p, w.cl, 0.3); if (w.cl) d.push(d[0]);
+    let cur = [], key = null, ks = -1, kb = -1, kf = false;
+    for (const p of d) {
+      let s = ownerOf(p[0], p[1]); if (s >= 0 && shards[s].big && (p[0] < F.x0 - 0.01 || p[0] > F.x1 + 0.01 || p[1] < F.y0 - 0.01 || p[1] > F.y1 + 0.01)) s = -2;
+      const b = bandOf(p[1]), fz = !!(w.fig && figMask && figMask(p[0], p[1])), k = s * 64 + b * 2 + (fz ? 1 : 0);
+      if (k !== key) { emit(cur, ks, kb, kf, w); cur = []; key = k; ks = s; kb = b; kf = fz; }
+      cur.push(p);
+    }
+    emit(cur, ks, kb, kf, w);
+  };
+  for (const w of surface) walkSurface(w);
+  for (const r of frac.running) for (const run of clipPred(r, (x, y) => (frac.tear || ownerOf(x, y) < 0) && x >= F.x0 && x <= F.x1 && y >= F.y0 && y <= F.y1)) walkSurface({ p: run, cl: false, layer: "key", fig: false });
+
+  const inFrame = (x, y) => x >= F.x0 - 0.01 && x <= F.x1 + 0.01 && y >= F.y0 - 0.01 && y <= F.y1 + 0.01;
+  let badShards = 0;
+  const labelBoxes = [];
+  for (const s of shards) {
+    if (!(Math.abs(s.area) > 0.05) || !Number.isFinite(s.area)) badShards++;
+    const d = densify(s.poly, true, 0.4);
+    const outer = clipPred(d.concat([d[0]]), (x, y) => { const dx = x - s.g[0], dy = y - s.g[1], l = Math.hypot(dx, dy) || 1; return inFrame(x, y) && ownerOf(x + dx / l * 0.6, y + dy / l * 0.6) < 0; });
+    const al = s.u < o.alias;
+    for (const p of outer) frags.push({ p: al ? stair(p, q) : p, cl: false, layer: "key", pri: 1, frame: true });
+    if (s.state === "gone") continue;
+    for (const p of clipPred(d.concat([d[0]]), inFrame)) {
+      const t = al ? stair(densify(p.map(s.T), false, q * 0.4), q) : p.map(s.T);
+      frags.push({ p: t, cl: false, layer: "key", pri: s.pri, frame: false });
+      if (al && o.split > 0) frags.push({ p: t.map(([x, y]) => [x + o.split, y + o.split * 0.4]), cl: false, layer: "colour", pri: s.pri, frame: false });
+    }
+    if (s.state === "moved" && !s.big && s.r[4] < o.labels) {
+      const gu = o.glyph * 0.75, n = 4, tw = n * gu * 1.7 - gu * 0.7, th = gu * 2, [cx, cy] = s.T(s.g), bx = [cx - tw / 2 - gu * 0.6, cy - th / 2 - gu * 0.6, cx + tw / 2 + gu * 0.6, cy + th / 2 + gu * 0.6];
+      if ([[bx[0], bx[1]], [bx[2], bx[1]], [bx[2], bx[3]], [bx[0], bx[3]]].every(([x, y]) => pip(s.tpoly, x, y) && inFrame(x, y))) {
+        const hex = Math.floor(s.r[5] * 65536).toString(16).toUpperCase().padStart(4, "0");
+        labelBoxes.push({ box: bx, pri: s.pri + 0.5 });
+        [...hex].forEach((ch, i) => { for (const st of FONT[ch]) frags.push({ p: st.map(([u, v]) => [cx - tw / 2 + i * gu * 1.7 + u * gu, cy - th / 2 + v * gu]), cl: false, layer: "colour", pri: s.pri + 0.5, frame: false }); });
+        const c = gu * 0.8;
+        for (const [ax, ay, sx, sy] of [[bx[0], bx[1], 1, 1], [bx[2], bx[1], -1, 1], [bx[2], bx[3], -1, -1], [bx[0], bx[3], 1, -1]]) frags.push({ p: [[ax + sx * c, ay], [ax, ay], [ax, ay + sy * c]], cl: false, layer: "colour", pri: s.pri + 0.5, frame: false });
+      }
+    }
+  }
+  const halftone = (acc, inside, pri, cells) => {
+    for (const [k, len] of acc) {
+      const [i, j] = k.split(",").map(Number), cx = (i + 0.5) * q, cy = (j + 0.5) * q;
+      if (inside && !inside(cx, cy)) continue;
+      const cov = len * P / (q * q), side = q * 0.9 * Math.min(1, Math.sqrt(cov * 1.3));
+      if (side < 0.45) continue;
+      frags.push({ p: rect(cx - side / 2, cy - side / 2, cx + side / 2, cy + side / 2), cl: true, layer: "shade", pri, frame: false });
+      if (cov > 0.9 && side > 1) frags.push({ p: rect(cx - side / 4, cy - side / 4, cx + side / 4, cy + side / 4), cl: true, layer: "shade", pri, frame: false });
+      if (cells) cells.push([cx, cy]);
+    }
+  };
+  let pixShards = 0;
+  for (const s of shards) if (s.state === "pixel") { pixShards++; halftone(s.acc, (x, y) => pip(s.tpoly, x, y), s.pri); }
+  const figCells = [];
+  halftone(figAcc, null, 1, figCells);
+
+  const used = new Set(shards.filter(s => s.state !== "pixel" || true).map(s => s.sub));
+  const behind = buildSubstrate(o, F, W, frac, world, used);
+  for (const b of behind) frags.push({ p: b.p, cl: b.cl, layer: "colour", pri: 0, frame: true });
+
+  const src = [];
+  for (const s of shards) if (s.state !== "moved") for (const p of densify(s.state === "gone" ? s.poly : s.tpoly, true, 1.5)) if (inFrame(p[0], p[1])) src.push(p);
+  for (const c of figCells) src.push(c, c);
+  const bits = [], BB = bucketer(W, H, 6), rb = mulberry32(o.seed * 2654435 + 13), N = Math.round(o.leak * 420);
+  for (let a = 0; a < N * 5 && bits.length < N && src.length; a++) {
+    const s = src[Math.floor(rb() * src.length)], d = o.reach * Math.pow(rb(), 1.7), side = (rb() - 0.5) * (4 + d * 0.55);
+    const sz = Math.max(0.7, q * (1.25 - 0.75 * d / o.reach) * (0.55 + 0.55 * rb())), cx = s[0] + wv[0] * d + wn[0] * side, cy = s[1] + wv[1] * d + wn[1] * side;
+    const bb = [cx - sz / 2, cy - sz / 2, cx + sz / 2, cy + sz / 2], kind = rb();
+    if (bb[0] < EDGE + 0.5 || bb[1] < EDGE + 0.5 || bb[2] > W - EDGE - 0.5 || bb[3] > H - EDGE - 0.5) continue;
+    const own = ownerOf(cx, cy); if ((own >= 0 && shards[own].state === "gone") || (frac.inGap && frac.inGap(cx, cy))) continue;
+    if (BB.at(cx, cy).concat(BB.at(bb[0], bb[1]), BB.at(bb[2], bb[3]), BB.at(bb[0], bb[3]), BB.at(bb[2], bb[1])).some(i => { const o2 = bits[i].bb; return bb[0] < o2[2] + 0.6 && o2[0] < bb[2] + 0.6 && bb[1] < o2[3] + 0.6 && o2[1] < bb[3] + 0.6; })) continue;
+    bits.push({ bb, kind }); BB.add([bb[0] - 4, bb[1] - 4, bb[2] + 4, bb[3] + 4], bits.length - 1);
+  }
+  let bitClash = 0;
+  for (let i = 0; i < bits.length; i++) for (let j = i + 1; j < bits.length; j++) { const A = bits[i].bb, B = bits[j].bb; if (A[0] < B[2] && B[0] < A[2] && A[1] < B[3] && B[1] < A[3]) bitClash++; }
+
+  const OB = bucketer(W, H, 8), occs = [];
+  const addOcc = (poly, pri, pad) => { const bb = bboxOf(poly); occs.push({ poly, pri, pad, bb }); OB.add([bb[0] - pad - 0.5, bb[1] - pad - 0.5, bb[2] + pad + 0.5, bb[3] + pad + 0.5], occs.length - 1); };
+  for (const s of shards) if (s.state !== "gone") addOcc(s.tpoly, s.pri, 0);
+  for (const L of labelBoxes) addOcc(rect(...L.box), L.pri, 0.2);
+  bits.forEach((b, i) => {
+    const [a, c, e, f] = b.bb, sq = rect(a, c, e, f), pri = 1000 + i;
+    addOcc(sq, pri, 0.3);
+    frags.push({ p: sq, cl: true, layer: "colour", pri, frame: false });
+    const s = e - a;
+    if (b.kind < 0.3 && s > 1.2) frags.push({ p: rect(a + s * 0.3, c + s * 0.3, e - s * 0.3, f - s * 0.3), cl: true, layer: "key", pri, frame: false });
+    else if (b.kind < 0.55 && s > 1) frags.push({ p: [[a + s * 0.3, f - s * 0.15], [e - s * 0.15, c + s * 0.3]], cl: false, layer: "shade", pri, frame: false }, { p: [[a + s * 0.15, c + s * 0.7], [a + s * 0.7, c + s * 0.15]], cl: false, layer: "shade", pri, frame: false });
+  });
+  const covered = (x, y, pri, extra) => {
+    for (const i of OB.at(x, y)) {
+      const oc = occs[i]; if (oc.pri <= pri) continue;
+      const ins = oc.pad + extra;
+      if (x < oc.bb[0] - ins || x > oc.bb[2] + ins || y < oc.bb[1] - ins || y > oc.bb[3] + ins) continue;
+      if (pip(oc.poly, x, y) || (ins > 0 && (pip(oc.poly, x + ins, y) || pip(oc.poly, x - ins, y) || pip(oc.poly, x, y + ins) || pip(oc.poly, x, y - ins)))) return true;
+    }
+    return false;
+  };
+  const out = { key: [], shade: [], colour: [] };
+  for (const f of frags) {
+    const d = densify(f.p, f.cl, 0.3), extra = f.pri === 0 ? 0.4 : 0;
+    const ok = d.map(([x, y]) => onPage(x, y) && (!f.frame || inFrame(x, y)) && !covered(x, y, f.pri, extra));
+    runs(d, f.cl, ok, f.layer === "key" ? 0.4 : 0.5, out[f.layer]);
+  }
+
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const pts = out.key.concat(out.shade, out.colour).reduce((a, [p]) => a + p.length, 0), ms = performance.now() - t0, total = len(out.key) + len(out.shade) + len(out.colour);
+  const gone = shards.filter(s => s.state === "gone").length;
+  const gates = [
+    ["built in under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`],
+    ["total pen length under 150 m", total < 150, `${total.toFixed(1)} m`],
+    ["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB (estimate)`],
+    ["every shard a proper polygon", badShards === 0, `${shards.length - badShards} of ${shards.length}`],
+    ["no two bits overlap", bitClash === 0, `${bits.length} bits`],
+  ];
+  const info = `<b>${frac.webs.length}</b> impact${frac.webs.length > 1 ? "s" : ""}, <b>${shards.length}</b> shards: ${gone} gone, ${pixShards} rasterised, ${shards.length - gone - pixShards} loose · behind: ${[...used].join(", ")} · <b>${bits.length}</b> bits · ${glitch.length} glitch bands`;
+  return { W, H, o, ms, key: out.key, shade: out.shade, colour: out.colour, items: items.length, info, gates };
+}
+
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.key, "#26200f", 0.4); stroke(r.colour, "#" + r.o.pen, 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `${r.info} · ${r.ms.toFixed(0)} ms<br>`
+    + `0.4 black (world, cracks): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 (hatching, pixels): <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour: <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${n}: ${v}</span>`).join(" · ");
+}
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: r.o.pen, w: 0.4, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG fracture studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() {
+  for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
+}
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { range: "mountains", layers: 5, hills: 1, horizon: 46, trees: 18, cottage: "on", clouds: 3, sky: "lined", sunx: 26, sunh: 40, figure: "standing", figx: 64, figsize: 24,
+  mode: "shatter", open: 18, tearlen: 70, fray: 4, impacts: 1, ix: 58, iy: 32, web: 66, shards: 110, crowd: 0.55, breach: 0.55, alias: 0.55, labels: 0.3, pull: 0.5, raster: 0.5, pixel: 1.4, running: 0.5, sub: "mix", code: "hex", glyph: 1.3, trace: 1.4,
+  leak: 0.5, wind: 30, reach: 45, bands: 3, slip: 3, split: 0.6, pitch: 0.85, pen: "1098ad" };
+const PRESETS = {
+  breach: { ...BASE },
+  sky: { ...BASE, range: "hills", layers: 4, horizon: 58, clouds: 4, ix: 46, iy: 24, web: 80, shards: 130, crowd: 0.4, breach: 0.5, pull: 0.35, raster: 0.3, sub: "wire", leak: 0.3, bands: 1, pen: "1098ad" },
+  wanderer: { ...BASE, figure: "dissolving", figx: 50, figsize: 46, trees: 8, ix: 30, iy: 22, web: 46, shards: 70, breach: 0.55, sub: "code", leak: 0.75, wind: 20, reach: 70, bands: 2, pen: "2f9e44" },
+  glitch: { ...BASE, ix: 64, iy: 52, web: 45, breach: 0.3, raster: 0.8, sub: "circuit", bands: 8, slip: 7, split: 1, leak: 0.35, pen: "c2255c" },
+  collapse: { ...BASE, impacts: 3, ix: 50, iy: 42, web: 100, shards: 200, crowd: 0.7, breach: 0.75, alias: 0.8, labels: 0.45, pull: 0.85, raster: 0.6, sub: "mix", leak: 0.9, reach: 80, bands: 5, slip: 5 },
+  tear: { ...BASE, mode: "tear", ix: 48, iy: 40, open: 26, tearlen: 78, fray: 4.5, breach: 0.5, pull: 0.6, raster: 0.5, sub: "code", alias: 0.6, labels: 0.4, leak: 0.55, wind: 80, reach: 50, bands: 3, figx: 70, pen: "c2255c" },
+  hairline: { ...BASE, figure: "standing", breach: 0, pull: 0.08, raster: 0, running: 0.9, sub: "void", leak: 0, bands: 0, split: 0, web: 75, shards: 70, crowd: 0.3, alias: 0, labels: 0 },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `fracture-s${r.o.seed}-${r.o.sub}`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split-btn").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const m = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!m) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(m[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
