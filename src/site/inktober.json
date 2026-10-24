@@ -264,24 +264,26 @@
       "room": "hall",
       "day": 17,
       "date": "2026-10-17",
-      "prompt": null,
-      "photo": null,
+      "prompt": "contraption",
+      "photo": "prints/inktober-17-contraption.jpg",
       "frame": {
-        "width": 210,
-        "height": 297
+        "width": 297,
+        "height": 210
       },
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../contraption-studio.html",
+      "description": "Saturday 17 October 2026, prompt \"contraption\". A physical pen plot of the DIMSA-DOOSA exploded assembly: numbered parts, a parts list, revision table and engineering notes, with a red circle and WHY? annotation."
     },
     {
       "id": "ink-18",
       "room": "hall",
       "day": 18,
       "date": "2026-10-18",
-      "prompt": null,
-      "photo": null,
+      "prompt": "flightless",
+      "photo": "prints/inktober-18-flightless.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -289,7 +291,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../kiwi-studio.html",
+      "description": "Sunday 18 October 2026, prompt \"flightless\". A physical pen plot of kiwi birds and kiwi fruit across the sheet, with black outlines and teal feather marks and fruit details."
     },
     {
       "id": "ink-19",
