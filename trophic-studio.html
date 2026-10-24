@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trophic Studio</title>
+<style>
+:root {
+  --page:#f4efe3; --surface:#fbf7ec; --ink:#26200f; --ink-2:#5b5340; --muted:#736b56;
+  --grid:#e2d9c3; --ring:rgba(56,44,16,0.14); --accent:#7a5c00; --on-accent:#ffffff;
+  --accent-2:#275e39; --good:#2f7a2f; --warn:#a06a00; --crit:#b03a30;
+  --font-body:Georgia,"Times New Roman",serif; --font-head:Georgia,"Times New Roman",serif;
+  --font-mono:ui-monospace,Consolas,monospace; --radius:4px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; } }
+:root[data-theme="dark"] {
+  --page:#171410; --surface:#211d16; --ink:#f0e9d8; --ink-2:#c4baa2; --muted:#8b8168;
+  --grid:#383226; --ring:rgba(240,233,216,0.12); --accent:#d9a514; --on-accent:#171410;
+  --accent-2:#7fbf94; --good:#4caf50; --warn:#e0a828; --crit:#e07a6e; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font-body); line-height:1.6; }
+header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font-weight:normal; font-size:1.8rem; margin:0; }
+.sub { color:var(--muted); font-style:italic; font-size:0.92rem; margin:2px 0 0; max-width:75ch; }
+.wrap { display:grid; grid-template-columns:300px 1fr; gap:24px; padding:16px 24px 48px; max-width:1200px; margin:0 auto; }
+@media (max-width:760px) { .wrap { grid-template-columns:1fr; padding:12px 16px 40px; } header { padding:20px 16px 4px; } }
+aside { background:var(--surface); border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px; align-self:start; }
+fieldset { border:0; border-top:1px solid var(--grid); margin:12px 0 0; padding:10px 0 0; }
+fieldset:first-of-type { border-top:0; margin-top:0; padding-top:0; }
+legend { font-style:italic; color:var(--accent); font-size:0.9rem; padding:0; }
+label { display:grid; grid-template-columns:1fr auto; align-items:center; font-size:0.86rem; color:var(--ink-2); margin:6px 0 0; }
+label output { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink); }
+input[type=range] { grid-column:1 / -1; width:100%; accent-color:var(--accent); margin:2px 0 0; }
+select { font:inherit; font-size:0.86rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:2px 4px; }
+.row { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+button { font:inherit; font-size:0.84rem; background:var(--page); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); padding:4px 10px; cursor:pointer; }
+button:hover { border-color:var(--accent); }
+button.go { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+main { min-width:0; }
+.paper { background:#fbf7ec; border:1px solid var(--grid); border-radius:var(--radius); box-shadow:0 1px 0 var(--ring); display:flex; justify-content:center; padding:12px; }
+canvas { display:block; max-width:100%; height:auto; }
+.stats { font-family:var(--font-mono); font-size:0.78rem; color:var(--ink-2); margin-top:10px; line-height:1.7; }
+.stats b { font-weight:normal; color:var(--ink); }
+.pass { color:var(--good); } .note { color:var(--warn); } .fail { color:var(--crit); }
+.hint { color:var(--muted); font-size:0.78rem; font-style:italic; line-height:1.45; margin:8px 0 0; }
+.foot { color:var(--muted); font-size:0.85rem; font-style:italic; margin-top:14px; max-width:75ch; }
+code { font-family:var(--font-mono); font-size:0.85em; }
+</style>
+<style id="studio-dock-css">
+aside fieldset > legend { cursor:pointer; user-select:none; display:flex; align-items:center; gap:6px; width:100%; }
+aside fieldset > legend::before { content:"\25BE"; font-style:normal; font-size:0.8em; color:var(--muted); width:0.9em; display:inline-block; transition:transform .12s; }
+aside fieldset.dock-folded > legend::before { transform:rotate(-90deg); }
+aside fieldset > legend:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+aside fieldset.dock-folded > :not(legend) { display:none !important; }
+aside fieldset.dock-folded { padding-bottom:0; }
+.dock-bar { display:flex; gap:6px; align-items:center; margin:0 0 10px; padding:0 0 8px; border-bottom:1px solid var(--grid); font-size:0.78rem; color:var(--muted); }
+.dock-bar span { margin-right:auto; font-style:italic; }
+.dock-bar button { font-size:0.76rem; padding:1px 8px; }
+.dock-frame { position:relative; }
+.dock-size { position:absolute; top:6px; right:6px; z-index:3; font:inherit; font-size:0.72rem; line-height:1.2; padding:3px 8px; background:var(--surface); color:var(--ink); border:1px solid var(--grid); border-radius:var(--radius); opacity:0.88; cursor:pointer; }
+.dock-size:hover { opacity:1; border-color:var(--accent); }
+@media (min-width:761px) {
+  .wrap > aside { position:sticky; top:10px; max-height:calc(100vh - 20px); overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+  html:not([data-dock-img="wide"]) .dock-frame canvas { max-height:calc(100vh - 48px); width:auto; }
+}
+@media (max-width:760px) {
+  .wrap { display:flex !important; flex-direction:column; }
+  .wrap > main { display:contents; }
+  .wrap > main > * { order:2; min-width:0; }
+  .wrap > main > .dock-frame { order:0; }
+  .wrap > aside { order:1; }
+  .dock-frame { position:sticky; top:0; z-index:4; box-shadow:0 6px 14px -8px var(--ring), 0 1px 0 var(--grid); }
+  html[data-dock-img="off"] .dock-frame { position:relative; box-shadow:none; }
+  .dock-frame canvas { width:auto; max-height:42vh; }
+  html[data-dock-img="s"] .dock-frame canvas { max-height:26vh; }
+  html[data-dock-img="l"] .dock-frame canvas { max-height:62vh; }
+  html[data-dock-img="off"] .dock-frame canvas { max-height:none; width:100%; }
+}
+</style>
+<script id="studio-dock">(function dock() {
+  if (typeof document === "undefined" || !document.querySelector) return;
+  const key = "plg-dock:" + location.pathname.split("/").pop();
+  const load = () => { try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; } };
+  const save = s => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (e) {} };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const run = () => {
+    const aside = document.querySelector(".wrap > aside"), main = document.querySelector(".wrap > main");
+    if (!aside || !main || aside.dataset.dock) return;
+    aside.dataset.dock = "1";
+    const sets = [...aside.querySelectorAll("fieldset")].filter(f => f.querySelector(":scope > legend"));
+    const name = f => f.querySelector(":scope > legend").textContent.trim();
+    let st = load() || { folded: phone() ? sets.slice(1).map(name) : [], img: phone() ? "m" : "fit" };
+    const persist = () => { st.folded = sets.filter(f => f.classList.contains("dock-folded")).map(name); save(st); };
+    const setFold = (f, on) => { f.classList.toggle("dock-folded", on); f.querySelector(":scope > legend").setAttribute("aria-expanded", String(!on)); };
+    for (const f of sets) {
+      const lg = f.querySelector(":scope > legend");
+      lg.setAttribute("role", "button"); lg.tabIndex = 0; lg.title = "Fold or open this group";
+      setFold(f, st.folded.includes(name(f)));
+      const flip = () => { setFold(f, !f.classList.contains("dock-folded")); persist(); };
+      lg.addEventListener("click", flip);
+      lg.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+    }
+    const bar = document.createElement("div");
+    bar.className = "dock-bar";
+    bar.innerHTML = '<span>Controls</span><button type="button" data-a="fold">Fold all</button><button type="button" data-a="open">Open all</button>';
+    bar.addEventListener("click", e => { const a = e.target.dataset && e.target.dataset.a; if (!a) return; for (const f of sets) setFold(f, a === "fold"); persist(); });
+    aside.prepend(bar);
+    const frame = main.firstElementChild;
+    if (!frame) return;
+    frame.classList.add("dock-frame");
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "dock-size";
+    const modes = () => phone() ? ["s", "m", "l", "off"] : ["fit", "wide"];
+    const label = { s: "Image S", m: "Image M", l: "Image L", off: "Unpinned", fit: "Fit window", wide: "Full width" };
+    const apply = () => {
+      if (!modes().includes(st.img)) st.img = phone() ? "m" : "fit";
+      document.documentElement.dataset.dockImg = st.img;
+      btn.textContent = label[st.img];
+      btn.title = phone() ? "Image size while pinned: small, medium, large, or scroll with the page" : "Fit the drawing to the window, or let it run full width";
+    };
+    btn.addEventListener("click", () => { const m = modes(); st.img = m[(m.indexOf(st.img) + 1) % m.length]; apply(); save(st); });
+    frame.appendChild(btn);
+    apply();
+    matchMedia("(max-width:760px)").addEventListener("change", apply);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();</script>
+</head>
+<body>
+<header>
+  <h1>Trophic studio</h1>
+  <p class="sub">A trophy built out of a food chain. Each tier is a trophic level packed with its creatures, plankton at the foot and the apex predator as the figurine on top, and because only a tenth of the energy climbs each step the tiers really do narrow into a pyramid. The headcounts in the margin are the creatures actually drawn. Export a millimetre SVG with three pen layers for Design Space.</p>
+</header>
+<div class="wrap">
+<aside>
+  <fieldset><legend>Presets</legend>
+    <div class="row"><button data-preset="ocean">Open ocean</button><button data-preset="pond">Pond</button><button data-preset="meadow">Meadow</button><button data-preset="plankton">Plankton did it</button><button data-preset="lindeman">Lindeman cup</button><button data-preset="ziggurat">Ziggurat</button><button data-preset="short">Short chain</button><button data-preset="big">12 x 12</button></div>
+  </fieldset>
+  <fieldset><legend>Seed</legend>
+    <label>Seed <output id="o-seed"></output><input type="range" id="seed" min="1" max="999" step="1" value="28"></label>
+    <div class="row"><button id="reroll">Reroll seed</button></div>
+  </fieldset>
+  <fieldset><legend>The food chain</legend>
+    <label>Ecosystem <select id="eco"><option value="ocean">ocean: diatoms to orca</option><option value="pond">pond: algae to pike</option><option value="meadow">meadow: clover to buzzard</option></select></label>
+    <label>Tiers below the champion <select id="tiers"><option value="4">four</option><option value="3">three</option></select></label>
+    <label>Rows of plankton <output id="o-rows"></output><input type="range" id="rows" min="2" max="8" step="0.5" value="5"></label>
+    <label>Size step per level <output id="o-grow"></output><input type="range" id="grow" min="1.3" max="2" step="0.05" value="1.7"></label>
+    <label>Crowding <output id="o-crowd"></output><input type="range" id="crowd" min="0.2" max="1" step="0.05" value="0.7"></label>
+  </fieldset>
+  <fieldset><legend>The trophy</legend>
+    <label>Tiers <select id="style"><option value="columns">on columns</option><option value="stacked">stacked steps</option></select></label>
+    <label>Taper per tier <output id="o-taper"></output><input type="range" id="taper" min="0.55" max="0.9" step="0.01" value="0.78"></label>
+    <label>Champion height <output id="o-fig"></output><input type="range" id="fig" min="0.16" max="0.32" step="0.01" value="0.24"></label>
+    <label>Handles <select id="handles"><option value="on">yes</option><option value="off">no</option></select></label>
+    <label>Laurels by the plaque <select id="laurels"><option value="on">yes</option><option value="off">no</option></select></label>
+    <label>Tier labels <select id="labels"><option value="roles">producers, consumers</option><option value="creatures">the creatures</option><option value="levels">level 1, 2, 3</option><option value="off">none</option></select></label>
+    <label>Margin notes <select id="notes"><option value="both">headcount and energy</option><option value="counts">headcount</option><option value="energy">energy</option><option value="off">none</option></select></label>
+    <label>Plaque <select id="plaque"><option value="champion">apex predator, first place</option><option value="plankton">for the plankton</option><option value="lindeman">Lindeman cup, est. 1942</option></select></label>
+    <label>Your own plaque <input type="text" id="custom" maxlength="28" placeholder="replaces the plaque" style="grid-column:1 / -1;font:inherit;font-size:0.86rem;background:var(--page);color:var(--ink);border:1px solid var(--grid);border-radius:var(--radius);padding:2px 6px;margin-top:2px"></label>
+    <label>Depth <output id="o-depth"></output><input type="range" id="depth" min="0.05" max="0.22" step="0.01" value="0.12"></label>
+    <label>View angle (degrees) <output id="o-angle"></output><input type="range" id="angle" min="20" max="55" step="1" value="35"></label>
+  </fieldset>
+  <fieldset><legend>Paper and pens</legend>
+    <label>Colour pen draws <select id="colour"><option value="champion">the champion and handles</option><option value="producers">the producers</option><option value="plaque">the plaque</option><option value="notes">the margin notes</option></select></label>
+    <label>Colour pen <select id="pen"><option value="e8590c">amber</option><option value="2f9e44">green</option><option value="1098ad">cyan</option><option value="c2255c">magenta</option></select></label>
+    <label>Hatch pitch (mm) <output id="o-pitch"></output><input type="range" id="pitch" min="0.6" max="2" step="0.05" value="0.9"></label>
+    <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
+    <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="6" max="30" step="1" value="12"></label>
+    <label>Caption <select id="caption"><option value="on">FIG. 28 strip</option><option value="off">none</option></select></label>
+    <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
+    <div class="row"><button class="go" id="export">Export SVG (all layers)</button><button id="split-btn">Export each pen separately</button></div>
+    <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
+    <p class="hint">Every creature is packed into its tier without touching another, so the counts in the left margin are honest: they are how many got drawn. The energy column is the ten percent rule, a tenth of the energy surviving each step up. The black pen draws outlines, the 0.3 pen the hatching, the colour pen whatever you pick above. Split export saves one SVG per pen, numbered in plotting order, all with the same four corner ticks so Design Space sizes them identically.</p>
+  </fieldset>
+</aside>
+<main>
+  <div class="paper"><canvas id="cv" width="760" height="1000"></canvas></div>
+  <div class="stats" id="stats">computing</div>
+  <p class="foot">The trophy is drawn in oblique projection: each tier is a block whose front, top and right faces show, the right face hatched, and anything behind something else (the handles behind the top tier, the back columns, a fish tail in the splash, wing feathers under coverts) is trimmed against the outline of what is in front. Creatures are packed by rejection: each one is built, wrapped in a few circles, and dropped at random spots until it fits clear of its neighbours. In Design Space: three layers to Pen, black 0.4 for outlines, black 0.3 (or grey) for the hatching, the colour pen last, Attach, Make.</p>
+</main>
+</div>
+
+<script>
+"use strict";
+const TAU = 2 * Math.PI;
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function pip(poly, x, y) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+const bboxOf = pts => { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const [x, y] of pts) { if (x < a) a = x; if (x > c) c = x; if (y < b) b = y; if (y > d) d = y; } return [a, b, c, d]; };
+const ell = (cx, cy, rx, ry, n = 40) => { const p = []; for (let k = 0; k < n; k++) { const a = TAU * k / n; p.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return p; };
+const rect = (xa, ya, xb, yb) => [[xa, ya], [xb, ya], [xb, yb], [xa, yb]];
+
+function densify(p, closed, step) {
+  const out = [], n = p.length, segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const [ax, ay] = p[i], [bx, by] = p[(i + 1) % n], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    for (let j = 0; j < k; j++) out.push([ax + (bx - ax) * j / k, ay + (by - ay) * j / k]);
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+const plen = (p, closed) => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); if (closed && p.length > 2) L += Math.hypot(p[0][0] - p.at(-1)[0], p[0][1] - p.at(-1)[1]); return L; };
+function simplify(p, tol) {
+  if (p.length < 3) return p;
+  const keep = new Uint8Array(p.length); keep[0] = keep[p.length - 1] = 1; const st = [[0, p.length - 1]];
+  while (st.length) {
+    const [i, j] = st.pop(); const [ax, ay] = p[i], [bx, by] = p[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy);
+    let worst = -1, wi = -1;
+    for (let k = i + 1; k < j; k++) { const d = L > 1e-9 ? Math.abs(dy * (p[k][0] - ax) - dx * (p[k][1] - ay)) / L : Math.hypot(p[k][0] - ax, p[k][1] - ay); if (d > worst) { worst = d; wi = k; } }
+    if (worst > tol) { keep[wi] = 1; st.push([i, wi], [wi, j]); }
+  }
+  return p.filter((_, k) => keep[k]);
+}
+function runs(p, closed, ok, minLen, out) {
+  if (ok.every(Boolean)) { if (plen(p, closed) >= minLen) out.push([closed ? p : simplify(p, 0.02), closed]); return; }
+  const n = p.length, start = closed ? ok.indexOf(false) : 0; let cur = [];
+  const flush = () => { if (cur.length > 1 && plen(cur, false) >= minLen) out.push([simplify(cur, 0.02), false]); cur = []; };
+  for (let k = 0; k < n; k++) { const i = closed ? (start + k) % n : k; if (ok[i]) cur.push(p[i]); else flush(); }
+  flush();
+}
+function clipPush(push, pts, closed, okFn, step = 0.25) {
+  const d = densify(pts, closed, step), tmp = [];
+  runs(d, closed, d.map(okFn), 0.2, tmp);
+  for (const [p, cl] of tmp) push(p, cl);
+}
+function hatchPoly(poly, P, ang) {
+  const c = Math.cos(ang * Math.PI / 180), s = Math.sin(ang * Math.PI / 180), rot = poly.map(([x, y]) => [x * c + y * s, -x * s + y * c]), out = [];
+  let y0 = Infinity, y1 = -Infinity; for (const [, y] of rot) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  for (let k = Math.ceil(y0 / P); k * P <= y1; k++) {
+    const y = k * P, xs = [];
+    for (let i = 0, j = rot.length - 1; i < rot.length; j = i++) { const [xi, yi] = rot[i], [xj, yj] = rot[j]; if ((yi > y) !== (yj > y)) xs.push(xi + (y - yi) * (xj - xi) / (yj - yi)); }
+    xs.sort((a, b) => a - b);
+    for (let q = 0; q + 1 < xs.length; q += 2) if (xs[q + 1] - xs[q] > 0.2) out.push([[xs[q] * c - y * s, xs[q] * s + y * c], [xs[q + 1] * c - y * s, xs[q + 1] * s + y * c]]);
+  }
+  return out;
+}
+function convexHull(pts) {
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo.at(-2), lo.at(-1), q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of p.reverse()) { while (up.length >= 2 && cr(up.at(-2), up.at(-1), q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+const cut = (iv, cs) => { let cur = iv; for (const [a, b] of cs) { const nx = []; for (const [x, y] of cur) { if (b <= x || a >= y) nx.push([x, y]); else { if (a > x) nx.push([x, a]); if (b < y) nx.push([b, y]); } } cur = nx; } return cur; };
+const inter = (iv, cs) => { const r = []; for (const [x, y] of iv) for (const [a, b] of cs) { const l = Math.max(x, a), h = Math.min(y, b); if (h > l) r.push([l, h]); } return r; };
+
+const GL = {
+  A: "0,6 0,2 2,0 4,2 4,6|0,3.4 4,3.4", B: "0,6 0,0 3,0 4,1 4,2 3,3 0,3|3,3 4,4 4,5 3,6 0,6", C: "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5", D: "0,0 0,6 2,6 4,4 4,2 2,0 0,0",
+  E: "4,0 0,0 0,6 4,6|0,3 3,3", F: "4,0 0,0 0,6|0,3 3,3", G: "4,1 3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,3.4 2.2,3.4", H: "0,0 0,6|4,0 4,6|0,3 4,3", I: "1,0 3,0|2,0 2,6|1,6 3,6",
+  J: "4,0 4,5 3,6 1,6 0,5", K: "0,0 0,6|4,0 0,4|1.3,3 4,6", L: "0,0 0,6 4,6", M: "0,6 0,0 2,3 4,0 4,6", N: "0,6 0,0 4,6 4,0", O: "1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1 1,0",
+  P: "0,6 0,0 3,0 4,1 4,2 3,3 0,3", Q: "1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1 1,0|2.4,4.4 4,6", R: "0,6 0,0 3,0 4,1 4,2 3,3 0,3|2,3 4,6", S: "4,1 3,0 1,0 0,1 0,2 1,3 3,3 4,4 4,5 3,6 1,6 0,5",
+  T: "0,0 4,0|2,0 2,6", U: "0,0 0,5 1,6 3,6 4,5 4,0", V: "0,0 2,6 4,0", W: "0,0 1,6 2,3 3,6 4,0", X: "0,0 4,6|4,0 0,6", Y: "0,0 2,3 4,0|2,3 2,6", Z: "0,0 4,0 0,6 4,6",
+  0: "1,0 3,0 4,1 4,5 3,6 1,6 0,5 0,1 1,0|4,1 0,5", 1: "1,1 2,0 2,6|1,6 3,6", 2: "0,1 1,0 3,0 4,1 4,2 0,6 4,6", 3: "0,0 4,0 2,2 3,2 4,3 4,5 3,6 1,6 0,5", 4: "3,6 3,0 0,4 4,4",
+  5: "4,0 0,0 0,3 3,3 4,4 4,5 3,6 0,6", 6: "3,0 1,0 0,1 0,5 1,6 3,6 4,5 4,4 3,3 0,3", 7: "0,0 4,0 1,6", 8: "1,3 0,2 0,1 1,0 3,0 4,1 4,2 3,3 1,3 0,4 0,5 1,6 3,6 4,5 4,4 3,3",
+  9: "4,3 1,3 0,2 0,1 1,0 3,0 4,1 4,5 3,6 1,6", "!": "2,0 2,4.2|1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", ".": "1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4",
+  ":": "1.6,1.4 2.4,1.4 2.4,2 1.6,2 1.6,1.4|1.6,4.6 2.4,4.6 2.4,5.2 1.6,5.2 1.6,4.6", "?": "0,1 1,0 3,0 4,1 4,2 2,3.4 2,4.2|1.6,5.4 2.4,5.4 2.4,6 1.6,6 1.6,5.4", "'": "2,0 2,1.8",
+  ">": "1,1 3,3 1,5", "=": "0.6,2 3.4,2|0.6,4 3.4,4", "-": "1,3 3,3",
+};
+const GLYPH = Object.fromEntries(Object.entries(GL).map(([k, v]) => [k, v.split("|").map(s => s.split(" ").map(q => q.split(",").map(Number)))]));
+const textW = (s, h) => { const u = h / 6; let w = 0; for (const ch of s) w += ch === " " ? 4 * u : 6 * u; return Math.max(0, w - 2 * u); };
+const fitH = (s, h, w) => Math.min(h, w / Math.max(1e-9, textW(s, 1)));
+function text(push, s, x, y, h, align = 0) {
+  const u = h / 6; let cx = x - textW(s, h) * align;
+  for (const ch of s.toUpperCase()) { if (ch === " ") { cx += 4 * u; continue; } const g = GLYPH[ch]; if (g) for (const st of g) push(st.map(([a, b]) => [cx + a * u, y + b * u])); cx += 6 * u; }
+}
+Object.assign(GLYPH, Object.fromEntries(Object.entries({
+  "%": "0.4,0.4 1.4,0.4 1.4,1.6 0.4,1.6 0.4,0.4|2.6,4.4 3.6,4.4 3.6,5.6 2.6,5.6 2.6,4.4|0,6 4,0", ",": "2.2,5.2 1.6,7", "/": "0.5,6 3.5,0", "+": "2,1.5 2,4.5|0.5,3 3.5,3",
+}).map(([k, v]) => [k, v.split("|").map(s => s.split(" ").map(q => q.split(",").map(Number)))])));
+const cleanT = (s, n) => [...String(s || "").toUpperCase()].filter(ch => ch === " " || GLYPH[ch]).join("").replace(/\s+/g, " ").trim().slice(0, n);
+
+const ellA = (cx, cy, rx, ry, r = 0) => { const n = Math.max(12, Math.min(72, Math.round(TAU * Math.max(rx, ry) / 0.5))); return ell(0, 0, rx, ry, n).map(([x, y]) => [cx + x * Math.cos(r) - y * Math.sin(r), cy + x * Math.sin(r) + y * Math.cos(r)]); };
+const quad = (a, c, b, n = 14) => { const o = []; for (let i = 0; i <= n; i++) { const t = i / n, v = 1 - t; o.push([v * v * a[0] + 2 * v * t * c[0] + t * t * b[0], v * v * a[1] + 2 * v * t * c[1] + t * t * b[1]]); } return o; };
+function smooth(pts, n = 6, closed = false) {
+  const out = [], N = pts.length, segs = closed ? N : N - 1;
+  for (let i = 0; i < segs; i++) {
+    const p0 = pts[closed ? (i - 1 + N) % N : Math.max(0, i - 1)], p1 = pts[i], p2 = pts[(i + 1) % N], p3 = pts[closed ? (i + 2) % N : Math.min(N - 1, i + 2)];
+    for (let j = 0; j < n; j++) { const t = j / n, t2 = t * t, t3 = t2 * t; out.push([0, 1].map(k => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3))); }
+  }
+  if (!closed) out.push(pts[N - 1]);
+  return out;
+}
+function lens(a, b, w, n = 18, pw = 1) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, up = [], lo = [];
+  for (let i = 0; i <= n; i++) { const t = i / n, h = w * Math.pow(Math.sin(Math.PI * Math.pow(t, 0.8)), pw); up.push([a[0] + dx * t + nx * h, a[1] + dy * t + ny * h]); lo.push([a[0] + dx * t - nx * h, a[1] + dy * t - ny * h]); }
+  return up.concat(lo.reverse().slice(1, -1));
+}
+const S2 = (L, pts) => pts.map(([x, y]) => [x * L, y * L]);
+
+function crew() {
+  const parts = [];
+  return {
+    parts,
+    line(p, z = 0, layer = "key") { parts.push({ p, cl: false, z, layer }); },
+    shape(p, z = 0, occ = false, layer = "key") { parts.push({ p, cl: true, z, layer, occ }); },
+    hatch(poly, pitch, ang, keep = null, z = 0, layer = "shade") {
+      for (const l of hatchPoly(poly, pitch, ang)) {
+        if (!keep) parts.push({ p: l, cl: false, z, layer });
+        else clipPush(q => parts.push({ p: q, cl: false, z, layer }), l, false, keep, 0.3);
+      }
+    },
+  };
+}
+
+function fishShape(f) {
+  const { L, d, m, root, e } = f, tl = L * f.tl, xr = -L / 2 + tl, bl = L / 2 - xr, n = 40, up = [], lo = [];
+  const prof = u => u <= m ? root + (1 - root) * Math.sin(u / m * Math.PI / 2) : Math.pow(Math.max(0, 1 - ((u - m) / (1 - m)) ** 2), e);
+  const hAt = x => { const u = Math.min(1, Math.max(0, (x - xr) / bl)); return d / 2 * prof(u) * (f.neck ? 1 - f.neck * Math.exp(-(((u - 0.8) / 0.06) ** 2)) : 1); };
+  for (let i = 0; i <= n; i++) { const x = xr + bl * i / n; up.push([x, -hAt(x) * 1.04]); lo.push([x, hAt(x) * 0.96]); }
+  const sp = L * f.sp, lr = lo[0], ur = up[0], tail = [];
+  if (f.tail === "fork") tail.push(...quad(lr, [xr - tl * 0.5, lr[1] + sp * 0.2], [-L / 2, sp]), ...quad([-L / 2, sp], [xr - tl * 0.55, sp * 0.25], [xr - tl * 0.45, 0]).slice(1), ...quad([xr - tl * 0.45, 0], [xr - tl * 0.55, -sp * 0.25], [-L / 2, -sp]).slice(1), ...quad([-L / 2, -sp], [xr - tl * 0.5, ur[1] - sp * 0.2], ur).slice(1, -1));
+  else if (f.tail === "fluke") tail.push(...quad(lr, [xr - tl * 0.7, lr[1]], [-L / 2, sp]), ...quad([-L / 2, sp], [xr - tl * 0.5, sp * 0.3], [xr - tl * 0.3, 0]).slice(1), ...quad([xr - tl * 0.3, 0], [xr - tl * 0.5, -sp * 0.3], [-L / 2 + tl * 0.1, -sp * 0.85]).slice(1), ...quad([-L / 2 + tl * 0.1, -sp * 0.85], [xr - tl * 0.7, ur[1]], ur).slice(1, -1));
+  else tail.push(...quad(lr, [xr - tl * 0.3, sp * 1.5], [-L / 2, sp * 0.9]), ...quad([-L / 2, sp * 0.9], [xr - tl * 0.6, sp * 0.1], [xr - tl * 0.4, 0]).slice(1), ...quad([xr - tl * 0.4, 0], [xr - tl * 0.6, -sp * 0.1], [-L / 2, -sp * 0.9]).slice(1), ...quad([-L / 2, -sp * 0.9], [xr - tl * 0.3, -sp * 1.5], ur).slice(1, -1));
+  const outline = up.concat(lo.slice(0, -1).reverse(), tail);
+  return { outline, up, lo, xr, hAt, tl };
+}
+const fishEye = (c, L, F, x, k = 0.035) => { const r = Math.max(0.3, k * L), y = -0.18 * F.hAt(x); c.shape(ellA(x, y, r, r), 2); if (r >= 0.9) c.shape(ellA(x, y, r * 0.4, r * 0.4), 2); };
+const gill = (c, F, x, z = 1) => { const h = F.hAt(x); c.line(quad([x, -0.78 * h], [x - h * 0.45, 0], [x, 0.78 * h]), z); };
+const backBand = (F, x0, x1, k) => { const a = [], b = []; for (let i = 0; i <= 24; i++) { const x = x0 + (x1 - x0) * i / 24; a.push([x, -F.hAt(x) * 1.04]); b.push([x, -k * F.hAt(x)]); } return a.concat(b.reverse()); };
+
+const SP = {};
+SP.diatom = { asp: 1, orient: "any", fn(L, R) {
+  const c = crew(), r = L / 2, k = R();
+  if (k < 0.45) {
+    c.shape(ellA(0, 0, r, r));
+    if (r >= 1.3) {
+      const ri = r * 0.68, n = Math.max(6, Math.min(28, Math.floor(TAU * ri / 0.55)));
+      c.shape(ellA(0, 0, ri, ri));
+      for (let i = 0; i < n; i++) { const a = TAU * i / n; c.line([[ri * Math.cos(a), ri * Math.sin(a)], [r * Math.cos(a), r * Math.sin(a)]]); }
+      if (ri >= 1.4) { const rc = Math.max(0.3, ri * 0.2); c.shape(ellA(0, 0, rc, rc)); }
+    }
+  } else if (k < 0.8) {
+    const b = 0.3 * r; c.shape(ellA(0, 0, r, b));
+    if (b >= 0.7) {
+      c.line([[-0.85 * r, 0], [-0.1 * r, 0]]); c.line([[0.1 * r, 0], [0.85 * r, 0]]);
+      const n = Math.floor(1.6 * r / 0.5);
+      for (let i = 0; i < n; i++) { const x = -0.8 * r + 1.6 * r * (i + 0.5) / n, yl = 0.85 * b * Math.sqrt(Math.max(0, 1 - (x / r) ** 2)); if (yl - 0.25 * b > 0.3) { c.line([[x, 0.25 * b], [x, yl]]); c.line([[x, -0.25 * b], [x, -yl]]); } }
+    }
+  } else {
+    const tri = s => Array.from({ length: 54 }, (_, i) => { const a = TAU * i / 54, q = s * (0.84 + 0.16 * Math.cos(3 * a)); return [q * Math.cos(a), q * Math.sin(a)]; });
+    c.shape(tri(r));
+    if (r >= 2.1) { c.shape(tri(r * 0.72)); for (let i = 0; i < 3; i++) { const a = TAU * i / 3; c.line([[0, 0], [0.72 * r * Math.cos(a), 0.72 * r * Math.sin(a)]]); c.shape(ellA(0.86 * r * Math.cos(a), 0.86 * r * Math.sin(a), 0.08 * r, 0.08 * r)); } }
+  }
+  return c;
+} };
+SP.copepod = { asp: 0.95, orient: "any", fn(L, R) {
+  const c = crew(), s = L;
+  c.shape(smooth(S2(s, [[0.42, 0], [0.3, -0.15], [0.05, -0.17], [-0.15, -0.11], [-0.19, 0], [-0.15, 0.11], [0.05, 0.17], [0.3, 0.15]]), 6, true), 1, true);
+  for (let i = 0; i < 4; i++) { const xa = -0.16 - i * 0.07, hh = 0.055 - i * 0.008; c.shape(rect(s * (xa - 0.07), -s * hh, s * xa, s * hh), -0.1 * i, true); }
+  for (const g of [-1, 1]) {
+    c.line([[-0.44 * s, g * 0.02 * s], [-0.53 * s, g * 0.07 * s], [-0.64 * s, g * 0.1 * s]], 0);
+    c.line(quad([0.37 * s, g * 0.06 * s], [0.56 * s, g * 0.42 * s], [-0.08 * s, g * 0.5 * s]), 0);
+    if (L >= 5) for (const t of [0.35, 0.6, 0.85]) { const a = quad([0.37 * s, g * 0.06 * s], [0.56 * s, g * 0.42 * s], [-0.08 * s, g * 0.5 * s], 20)[Math.round(t * 20)]; c.line([a, [a[0] - 0.06 * s, a[1] + g * 0.04 * s]], 0); }
+  }
+  if (L >= 4) { c.shape(ellA(0.33 * s, 0, Math.max(0.3, 0.03 * s), Math.max(0.3, 0.03 * s)), 2); c.line(quad([0.05 * s, -0.155 * s], [0.015 * s, 0], [0.05 * s, 0.155 * s]), 2); c.line(quad([-0.08 * s, -0.125 * s], [-0.11 * s, 0], [-0.08 * s, 0.125 * s]), 2); }
+  if (L >= 4 && R() < 0.4) for (const g of [-1, 1]) c.shape(ellA(-0.33 * s, g * 0.1 * s, 0.1 * s, 0.045 * s, g * 0.25), -1, true);
+  return c;
+} };
+SP.algae = { asp: 0.8, orient: "any", fn(L, R) {
+  const c = crew();
+  if (R() < 0.55) {
+    const r = L / 2; c.shape(ellA(0, 0, r, r));
+    if (r >= 2.4) { const rr = 0.86 * r, n = Math.floor(TAU * rr / 0.9); for (let i = 0; i < n; i++) { const a0 = TAU * i / n, a1 = a0 + TAU / n * 0.5; c.line([0, 1, 2, 3].map(j => { const a = a0 + (a1 - a0) * j / 3; return [rr * Math.cos(a), rr * Math.sin(a)]; })); } }
+    if (r >= 1.6) {
+      const ds = [];
+      for (let t = 0; t < 60 && ds.length < 5; t++) { const q = r * (0.13 + 0.08 * R()), a = R() * TAU, d = R() * (0.72 * r - q); const x = d * Math.cos(a), y = d * Math.sin(a); if (q >= 0.35 && ds.every(([u, v, w]) => Math.hypot(u - x, v - y) > w + q + 0.4)) ds.push([x, y, q]); }
+      for (const [x, y, q] of ds) c.shape(ellA(x, y, q, q));
+    }
+  } else {
+    const hw = Math.max(0.45, 0.1 * L), x0 = -L / 2 + hw, x1 = L / 2 - hw, cap = [];
+    for (let i = 0; i <= 12; i++) { const a = -Math.PI / 2 + Math.PI * i / 12; cap.push([x1 + hw * Math.cos(a), hw * Math.sin(a)]); }
+    for (let i = 0; i <= 12; i++) { const a = Math.PI / 2 + Math.PI * i / 12; cap.push([x0 + hw * Math.cos(a), hw * Math.sin(a)]); }
+    c.shape(cap);
+    const cells = Math.max(1, Math.round((x1 - x0) / Math.max(1, 2.6 * hw)));
+    for (let i = 1; i < cells; i++) { const x = x0 + (x1 - x0) * i / cells; c.line([[x, -hw], [x, hw]]); }
+    if (hw >= 0.8) { const per = 2.2 * hw, pts = []; for (let x = x0 - hw * 0.6; x <= x1 + hw * 0.6; x += 0.2) pts.push([x, 0.62 * hw * Math.sin(TAU * x / per)]); c.line(pts, 1, "key"); }
+  }
+  return c;
+} };
+SP.daphnia = { asp: 1, orient: "tilt", fn(L, R) {
+  const c = crew(), s = L;
+  c.shape(ellA(-0.02 * s, 0.06 * s, 0.3 * s, 0.24 * s, 0.4), 0, true);
+  c.shape(ellA(0.22 * s, -0.16 * s, 0.15 * s, 0.12 * s, 0.25), 1, true);
+  c.line([[-0.21 * s, 0.24 * s], [-0.44 * s, 0.42 * s]], 0);
+  c.line([[0.16 * s, -0.25 * s], [0.0, -0.4 * s], [-0.2 * s, -0.47 * s]], 0); c.line([[0.0, -0.4 * s], [-0.22 * s, -0.3 * s]], 0);
+  if (L >= 4) {
+    const er = Math.max(0.35, 0.045 * s); c.shape(ellA(0.27 * s, -0.17 * s, er, er), 2); if (er * 0.45 >= 0.3) c.shape(ellA(0.27 * s, -0.17 * s, er * 0.45, er * 0.45), 2);
+    c.line(smooth(S2(s, [[0.16, -0.06], [0.06, 0.08], [-0.08, 0.16], [-0.2, 0.18]]), 5), 1);
+    for (const [a, b] of [[[-0.2, -0.47], [-0.26, -0.43]], [[-0.11, -0.44], [-0.15, -0.38]], [[-0.22, -0.3], [-0.27, -0.25]]]) c.line(S2(s, [a, b]), 0);
+    const n = 1 + Math.floor(R() * 3); for (let i = 0; i < n; i++) { const q = 0.05 * s; if (q >= 0.35) c.shape(ellA((-0.14 + 0.11 * i) * s, -0.06 * s, q, q), 1); }
+  }
+  return c;
+} };
+SP.clover = { asp: 1, orient: "any", fn(L, R) {
+  const c = crew(), s = L;
+  if (R() < 0.6) {
+    c.line(quad([0, 0], [-0.08 * s, 0.25 * s], [-0.02 * s, 0.48 * s]), -1);
+    for (let i = 0; i < 3; i++) {
+      const a = -Math.PI / 2 + TAU * i / 3 + (R() - 0.5) * 0.3, tip = [0.4 * s * Math.cos(a), 0.4 * s * Math.sin(a)], lf = lens([0, 0], tip, 0.17 * s, 20, 0.45);
+      c.shape(lf, i, true);
+      if (L >= 5) { const v = [0.24 * s * Math.cos(a), 0.24 * s * Math.sin(a)], w = 0.09 * s; c.line([[v[0] + w * Math.cos(a + 2.2), v[1] + w * Math.sin(a + 2.2)], v, [v[0] + w * Math.cos(a - 2.2), v[1] + w * Math.sin(a - 2.2)]], i + 0.5); }
+    }
+  } else {
+    const lf = lens([-0.5 * s, 0], [0.5 * s, 0], 0.2 * s, 24, 0.8); c.shape(lf);
+    if (L >= 3) { c.line([[-0.5 * s, 0], [0.42 * s, 0]]); const n = Math.min(6, Math.floor(L / 1.4)); for (let i = 1; i <= n; i++) { const x = -0.4 * s + 0.8 * s * i / (n + 1), h = 0.2 * s * Math.sin(Math.PI * Math.pow((x / s + 0.5), 0.8)) * 0.8; if (h > 0.4) for (const g of [-1, 1]) c.line([[x - 0.06 * s, 0], [x + 0.06 * s, g * h]]); } }
+  }
+  return c;
+} };
+SP.caterpillar = { asp: 0.45, orient: "tilt", fn(L, R) {
+  const c = crew(), s = L, n = 8, ph = R() * TAU, r = 0.075 * s;
+  const at = t => [(-0.42 + 0.8 * t) * s, 0.05 * s * Math.sin(ph + t * 5)];
+  for (let i = 0; i < n; i++) {
+    const [x, y] = at(i / (n - 1) * 0.92);
+    c.shape(ellA(x, y, r, r * 1.05), i, true);
+    if (L >= 6) { c.line([[x, y + r * 1.05], [x - 0.02 * s, y + r * 1.45]], i - 0.5); if (r >= 1) c.shape(ellA(x, y - 0.35 * r, 0.25 * r, 0.25 * r), i + 0.2); }
+  }
+  const [hx, hy] = at(1), hr = 0.09 * s;
+  c.shape(ellA(hx, hy, hr, hr), n + 1, true);
+  if (L >= 5) { c.shape(ellA(hx + 0.35 * hr, hy - 0.2 * hr, Math.max(0.3, 0.18 * hr), Math.max(0.3, 0.18 * hr)), n + 2); for (const g of [-1, 1]) c.line(quad([hx + g * 0.3 * hr, hy - 0.9 * hr], [hx + g * 0.5 * hr, hy - 1.6 * hr], [hx + g * 0.1 * hr + 0.4 * hr, hy - 1.9 * hr]), n + 2); }
+  return c;
+} };
+SP.sparrow = { asp: 0.95, orient: "upright", fn(L, R, hp) {
+  const c = crew(), s = L;
+  const body = ellA(0, 0.05 * s, 0.3 * s, 0.19 * s, -0.25), head = ellA(0.27 * s, -0.2 * s, 0.13 * s, 0.13 * s);
+  c.shape(smooth(S2(s, [[-0.2, 0.0], [-0.55, 0.13], [-0.52, 0.21], [-0.18, 0.13]]), 3, true), -1, true);
+  c.shape(body, 0, true); c.shape(head, 1, true);
+  c.shape(S2(s, [[0.37, -0.25], [0.49, -0.2], [0.37, -0.15]]), 0.5, true);
+  const wing = lens([0.16 * s, -0.09 * s], [-0.36 * s, 0.07 * s], 0.09 * s, 20, 0.7); c.shape(wing, 2, true);
+  if (L >= 7) {
+    c.shape(ellA(0.3 * s, -0.22 * s, Math.max(0.3, 0.022 * s), Math.max(0.3, 0.022 * s)), 3);
+    c.hatch(wing, hp, -20, null, 2);
+    const cap = []; for (let i = 0; i <= 16; i++) { const a = Math.PI + 0.25 + (Math.PI - 0.7) * i / 16; cap.push([0.27 * s + 0.13 * s * Math.cos(a), -0.2 * s + 0.13 * s * Math.sin(a)]); }
+    c.hatch(cap, hp, 70, null, 1.5);
+    for (const g of [0, 0.06]) { c.line([[(0.02 + g) * s, 0.22 * s], [(0.0 + g) * s, 0.38 * s]], -0.5); c.line([[(-0.05 + g) * s, 0.4 * s], [(0.0 + g) * s, 0.38 * s], [(0.06 + g) * s, 0.4 * s]], -0.5); }
+  }
+  return c;
+} };
+SP.snake = { asp: 0.42, orient: "level", fn(L, R, hp) {
+  const c = crew(), s = L, ph = R() * TAU, w = 0.085 * s, A = 0.11 * s, lam = 0.5 * s, n = 80, mid = [], up = [], lo = [];
+  for (let i = 0; i <= n; i++) { const t = i / n, x = (-0.5 + 0.9 * t) * s, y = A * Math.sin(ph + TAU * x / lam); mid.push([x, y]); }
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, a = mid[Math.max(0, i - 1)], b = mid[Math.min(n, i + 1)], tl = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = -(b[1] - a[1]) / tl, ny = (b[0] - a[0]) / tl, hw = w / 2 * Math.min(1, Math.pow(t / 0.4, 0.8));
+    up.push([mid[i][0] + nx * hw, mid[i][1] + ny * hw]); lo.push([mid[i][0] - nx * hw, mid[i][1] - ny * hw]);
+  }
+  c.shape(up.concat(lo.reverse()), 0, true);
+  const e = mid[n], p = mid[n - 3], ang = Math.atan2(e[1] - p[1], e[0] - p[0]), hx = e[0] + Math.cos(ang) * 0.04 * s, hy = e[1] + Math.sin(ang) * 0.04 * s;
+  c.shape(ellA(hx, hy, 0.075 * s, 0.05 * s, ang), 1, true);
+  if (L >= 8) {
+    c.shape(ellA(hx + Math.cos(ang) * 0.025 * s - Math.sin(ang) * 0.018 * s, hy + Math.sin(ang) * 0.025 * s + Math.cos(ang) * 0.018 * s, Math.max(0.3, 0.012 * s), Math.max(0.3, 0.012 * s)), 2);
+    const tx = hx + Math.cos(ang) * 0.075 * s, ty = hy + Math.sin(ang) * 0.075 * s, fx = tx + Math.cos(ang) * 0.05 * s, fy = ty + Math.sin(ang) * 0.05 * s;
+    c.line([[tx, ty], [fx, fy], [fx + Math.cos(ang + 0.5) * 0.025 * s, fy + Math.sin(ang + 0.5) * 0.025 * s]], 1); c.line([[fx, fy], [fx + Math.cos(ang - 0.5) * 0.025 * s, fy + Math.sin(ang - 0.5) * 0.025 * s]], 1);
+    if (w >= 1.6) { const zz = []; let k = 0; for (let i = Math.round(n * 0.25); i <= n - 2; i += 2, k++) { const a = mid[Math.max(0, i - 1)], b = mid[Math.min(n, i + 1)], tl = Math.hypot(b[0] - a[0], b[1] - a[1]), g = k % 2 ? 1 : -1; zz.push([mid[i][0] - (b[1] - a[1]) / tl * g * w * 0.28, mid[i][1] + (b[0] - a[0]) / tl * g * w * 0.28]); } c.line(zz, 0.5); }
+  }
+  return c;
+} };
+function fishParts(kind, L, R, hp) {
+  const c = crew(), spec = {
+    herring: { d: 0.24, m: 0.55, root: 0.14, e: 0.9, tl: 0.2, tail: "fork", sp: 0.11 },
+    minnow: { d: 0.27, m: 0.52, root: 0.15, e: 0.85, tl: 0.2, tail: "fork", sp: 0.11 },
+    perch: { d: 0.36, m: 0.48, root: 0.12, e: 0.9, tl: 0.18, tail: "fork", sp: 0.13 },
+    pike: { d: 0.17, m: 0.42, root: 0.2, e: 1.25, tl: 0.13, tail: "fork", sp: 0.08 },
+    orca: { d: 0.27, m: 0.5, root: 0.12, e: 0.55, tl: 0.16, tail: "fluke", sp: 0.13 },
+    seal: { d: 0.3, m: 0.62, root: 0.22, e: 0.6, tl: 0.15, tail: "flip", sp: 0.1, neck: 0.15 },
+  }[kind], F = fishShape({ L, ...spec, d: spec.d * L });
+  const body = F.outline, xg = L / 2 - (kind === "pike" ? 0.26 : 0.22) * L, h = x => F.hAt(x);
+  c.shape(body, 0, true);
+  const big = L >= 9, finUp = (x0, x1, ht, back = 0.04) => c.line([[x1, -h(x1) * 1.02], [x0 - back * L, -h(x0) - ht * L], [x0, -h(x0) * 1.02]], 0), finDn = (x0, x1, ht) => c.line([[x1, h(x1) * 0.96], [x0 - 0.04 * L, h(x0) + ht * L], [x0, h(x0) * 0.96]], 0);
+  if (kind === "orca") {
+    const pitch = Math.max(0.62, hp * 0.8), belly = smooth(S2(L, [[-0.24, 0.055], [-0.2, 0.0], [-0.15, -0.015], [-0.1, 0.02], [-0.04, 0.07], [0.08, 0.085], [0.22, 0.08], [0.34, 0.06], [0.43, 0.03]]), 5);
+    for (let i = 0; i <= 30; i++) { const x = 0.43 * L - 0.67 * L * i / 30; belly.push([x, h(x) + 0.6]); }
+    const patch = ellA(0.3 * L, -0.035 * L, 0.07 * L, 0.022 * L, -0.12), eyeX = 0.385 * L, eyeY = -0.012 * L, er = Math.max(0.35, 0.011 * L), eyeHole = ellA(eyeX, eyeY, er + 0.5, er + 0.5);
+    const keep = ([x, y]) => !pip(belly, x, y) && !pip(patch, x, y) && !pip(eyeHole, x, y);
+    c.hatch(body, pitch, 40, keep, 0);
+    const fin = smooth(S2(L, [[0.1, -0.11], [0.02, -0.2], [-0.06, -0.3], [-0.09, -0.33], [-0.07, -0.25], [-0.05, -0.15], [-0.04, -0.11]]), 6);
+    c.shape(fin, -0.5, true); c.hatch(fin, pitch, 40, null, -0.5);
+    const flip = lens([0.25 * L, 0.06 * L], [0.12 * L, 0.21 * L], 0.032 * L, 18, 0.6); c.shape(flip, 1, true); c.hatch(flip, pitch, -30, null, 1);
+    c.shape(ellA(eyeX, eyeY, er, er), 2); c.line(quad([0.49 * L, 0.012 * L], [0.45 * L, 0.03 * L], [0.4 * L, 0.028 * L]), 1);
+    return c;
+  }
+  if (kind === "seal") {
+    const ex = 0.42 * L, ey = -0.35 * h(0.42 * L), er = Math.max(0.35, 0.03 * L);
+    c.shape(ellA(ex, ey, er, er), 2); if (er * 0.5 >= 0.3) c.shape(ellA(ex + er * 0.2, ey, er * 0.5, er * 0.5), 2);
+    c.shape(ellA(0.495 * L, 0, Math.max(0.3, 0.012 * L), Math.max(0.3, 0.012 * L)), 2);
+    if (big) for (let i = 0; i < 3; i++) c.line([[0.47 * L, (0.03 + 0.012 * i) * L], [0.56 * L, (0.02 + 0.04 * i) * L]], 2);
+    const fl = lens([0.15 * L, 0.6 * h(0.15 * L)], [0.04 * L, h(0.04 * L) + 0.09 * L], 0.035 * L, 16, 0.6); c.shape(fl, 1, true);
+    if (big) {
+      c.hatch(backBand(F, F.xr, 0.36 * L, 0.2), hp * 1.3, 30, null, 0.5);
+      for (let i = 0; i < 10; i++) { const x = (-0.25 + 0.55 * R()) * L, y = (R() * 1.2 - 0.6) * h(x), r = Math.max(0.35, (0.012 + 0.012 * R()) * L); if (pip(body, x, y)) c.shape(ellA(x, y, r, r * 0.8), 1.5); }
+    }
+    return c;
+  }
+  if (L >= 5) fishEye(c, L, F, L / 2 - 0.1 * L);
+  if (L >= 7) gill(c, F, xg);
+  if (kind === "herring" || kind === "pike") { if (big) c.hatch(backBand(F, F.xr, xg, 0.08), Math.max(0.62, hp), 25, null, 0.5); }
+  if (kind === "herring" || kind === "minnow") { finUp(-0.08 * L, 0.06 * L, 0.08); finDn(-0.2 * L, -0.1 * L, 0.05); }
+  if (kind === "minnow" && L >= 6) { for (let x = F.xr + 0.04 * L; x < xg - 0.04 * L; x += Math.max(0.9, 0.06 * L)) c.line([[x, -0.04 * L], [x, 0.03 * L]], 0.5); }
+  if (kind === "perch") {
+    const tips = [];
+    for (let i = 0; i <= 6; i++) { const x = (-0.12 + 0.32 * i / 6) * L, b = [x, -h(x) * 1.02], t = [x - 0.05 * L, -h(x) - (0.13 - 0.06 * Math.abs(i / 6 - 0.4)) * L]; c.line([b, t], 0); tips.push(t); }
+    c.line(tips, 0); finUp(-0.32 * L, -0.16 * L, 0.07); finDn(-0.25 * L, -0.14 * L, 0.06);
+    if (big) for (let i = 0; i < 5; i++) { const xc = (0.18 - 0.11 * i) * L, bw = 0.035 * L; c.hatch(rect(xc - bw, -h(xc) * 1.1, xc + bw, 0.35 * h(xc)), Math.max(0.62, hp), 80, ([x, y]) => pip(body, x, y), 0.5); }
+  }
+  if (kind === "pike") {
+    finUp(-0.36 * L, -0.24 * L, 0.06, 0.02); finDn(-0.37 * L, -0.25 * L, 0.05);
+    if (big) { c.line([[0.5 * L, 0.004 * L], [0.38 * L, 0.02 * L]], 1); for (let i = 0; i < 26; i++) { const x = (-0.3 + 0.55 * R()) * L, y = (R() * 1.4 - 0.5) * h(x) * 0.8, r = Math.max(0.4, 0.008 * L); if (pip(body, x, y) && x < xg) c.shape(ellA(x, y, r * 1.6, r, 0.2), 1); } }
+  }
+  if (big) c.shape(lens([xg - 0.03 * L, 0.35 * h(xg)], [xg - 0.13 * L, 0.7 * h(xg)], 0.02 * L, 14, 0.7), 1, true);
+  return c;
+}
+for (const k of ["herring", "minnow", "perch", "seal"]) SP[k] = { asp: k === "perch" ? 0.62 : k === "seal" ? 0.5 : 0.42, orient: "level", fn: (L, R, hp) => fishParts(k, L, R, hp) };
+
+const ECO = {
+  ocean: { sp: ["diatom", "copepod", "herring", "seal"], names: ["DIATOMS", "COPEPODS", "HERRING", "SEALS"], apex: "ORCA", latin: "ORCINUS ORCA", fig: "orca" },
+  pond: { sp: ["algae", "daphnia", "minnow", "perch"], names: ["ALGAE", "WATER FLEAS", "MINNOWS", "PERCH"], apex: "PIKE", latin: "ESOX LUCIUS", fig: "pike" },
+  meadow: { sp: ["clover", "caterpillar", "sparrow", "snake"], names: ["CLOVER", "CATERPILLARS", "SPARROWS", "ADDERS"], apex: "BUZZARD", latin: "BUTEO BUTEO", fig: "hawk" },
+};
+const ROLES = ["PRODUCERS", "PRIMARY CONSUMERS", "SECONDARY CONSUMERS", "TERTIARY CONSUMERS"];
+
+function splash(c, T, L, R) {
+  const b = T[1] + 0.035 * L, top = smooth([[0.22, 0], [0.2, -0.04], [0.13, -0.06], [0.08, -0.1], [0.03, -0.07], [0, -0.12], [-0.05, -0.07], [-0.1, -0.095], [-0.15, -0.05], [-0.21, -0.035], [-0.22, 0]].map(([x, y]) => [T[0] + x * L, b + y * L]), 6);
+  c.shape(top, 60, true);
+  for (const [x, y, d] of [[0.08, -0.1, 1], [0, -0.12, -1], [-0.1, -0.095, 1]]) { const sp = []; for (let i = 0; i <= 30; i++) { const t = i / 30, a = -Math.PI / 2 + d * t * 4.2, r = 0.03 * L * (1 - 0.6 * t); sp.push([T[0] + x * L + d * r * Math.cos(a) - d * 0.0 * L, b + y * L + 0.03 * L + r * Math.sin(a)]); } c.line(sp, 61); }
+  for (let i = 0; i < 6; i++) { const x = T[0] + (R() - 0.5) * 0.4 * L, y = b - (0.13 + 0.08 * R()) * L, r = Math.max(0.4, (0.006 + 0.005 * R()) * L); c.shape(ellA(x, y, r, r * 1.3), 61); }
+  for (const k of [0.25, 0.55]) { const pts = []; for (let i = 0; i <= 24; i++) { const x = -0.18 + 0.36 * i / 24; pts.push([T[0] + x * L, b - k * 0.045 * L + 0.004 * L * Math.sin(i * 1.3)]); } c.line(pts, 61); }
+  return [T[0], b];
+}
+function leaper(kind, L, R, hp) {
+  const f = fishParts(kind, L, R, hp), Rr = L / (kind === "pike" ? 1.1 : 1.4), rot = kind === "pike" ? -0.62 : -0.55, cr = Math.cos(rot), sr = Math.sin(rot);
+  const map = ([x, y]) => { const t = x / Rr, px = (Rr - y) * Math.sin(t), py = Rr - (Rr - y) * Math.cos(t); return [px * cr - py * sr, px * sr + py * cr]; };
+  const c = crew();
+  for (const p of f.parts) c.parts.push({ ...p, p: densify(p.p, p.cl, 0.6).map(map) });
+  const anchor = splash(c, map([-0.47 * L, 0]), L, R);
+  return { c, anchor };
+}
+function hawk(L, R, hp) {
+  const c = crew(), s = L, N = 7, dir = R() < 0.5 ? 1 : -1, P = (x, y) => [x * s, y * s];
+  c.shape(smooth([P(0, -0.2), P(0.09, -0.12), P(0.1, 0.05), P(0.06, 0.2), P(0, 0.24), P(-0.06, 0.2), P(-0.1, 0.05), P(-0.09, -0.12)], 6, true), 40, true);
+  const body = smooth([P(0, -0.2), P(0.09, -0.12), P(0.1, 0.05), P(0.06, 0.2), P(0, 0.24), P(-0.06, 0.2), P(-0.1, 0.05), P(-0.09, -0.12)], 6, true);
+  for (let y = -0.1, row = 0; y < 0.17; y += 0.035, row++) for (let x = -0.08 + (row % 2) * 0.018; x < 0.09; x += 0.036) { const a = P(x - 0.016, y), b = P(x + 0.016, y); if (pip(body, a[0], a[1] + 0.012 * s) && pip(body, b[0], b[1] + 0.012 * s)) c.line(quad(a, P(x, y + 0.025), b, 8), 40.5); }
+  c.shape(smooth([P(dir * 0.05, -0.29), P(dir * 0.13, -0.275), P(dir * 0.125, -0.235), P(dir * 0.095, -0.25), P(dir * 0.05, -0.24)], 4, true), 41, true);
+  c.shape(ellA(0, -0.27 * s, 0.075 * s, 0.075 * s), 42, true);
+  c.shape(ellA(dir * 0.03 * s, -0.285 * s, Math.max(0.4, 0.012 * s), Math.max(0.4, 0.012 * s)), 43);
+  c.line([P(dir * -0.005, -0.302), P(dir * 0.065, -0.296)], 43);
+  for (const g of [-1, 1]) {
+    const S = P(g * 0.07, -0.13), W = P(g * 0.34, -0.42), at = t => [S[0] + (W[0] - S[0]) * t, S[1] + (W[1] - S[1]) * t];
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1), b = at(0.15 + 0.85 * t), phi = (-55 + 130 * t) * Math.PI / 180, len = s * (0.2 + 0.1 * t), tip = [b[0] + g * Math.cos(phi) * len, b[1] - Math.sin(phi) * len];
+      c.shape(lens(b, tip, 0.032 * s, 18, 0.55), 10 + i, true); c.line([b, [b[0] + (tip[0] - b[0]) * 0.85, b[1] + (tip[1] - b[1]) * 0.85]], 10 + i);
+    }
+    for (let i = 0; i < N - 1; i++) {
+      const t = (i + 0.5) / (N - 1), b = at(0.1 + 0.85 * t), phi = (-55 + 130 * t) * Math.PI / 180, len = s * (0.2 + 0.1 * t) * 0.45, tip = [b[0] + g * Math.cos(phi) * len, b[1] - Math.sin(phi) * len], lf = lens(b, tip, 0.03 * s, 16, 0.55);
+      c.shape(lf, 20 + i, true); c.hatch(lf, Math.max(0.6, hp * 1.1), g > 0 ? 60 : 120, null, 20 + i);
+    }
+    const arm = lens(S, [W[0] + (W[0] - S[0]) * 0.04, W[1] + (W[1] - S[1]) * 0.04], 0.035 * s, 24, 0.5); c.shape(arm, 30, true); c.hatch(arm, Math.max(0.6, hp * 0.8), g > 0 ? 20 : 160, null, 30);
+    const th = lens(P(g * 0.05, 0.12), P(g * 0.06, 0.31), 0.035 * s, 16, 0.6); c.shape(th, 44, true); c.hatch(th, Math.max(0.6, hp), 75, null, 44);
+    const fx = g * 0.06; c.line([P(fx, 0.3), P(fx, 0.36)], 43);
+    for (const k of [-0.035, 0, 0.035]) c.line(quad(P(fx, 0.36), P(fx + k, 0.36), P(fx + k * 1.3, 0.375), 6), 43);
+  }
+  for (let j = 0; j < 5; j++) { const phi = (70 + 10 * j) * Math.PI / 180, b = P(0, 0.17), tip = [b[0] + Math.cos(phi) * 0.21 * s, b[1] + Math.sin(phi) * 0.21 * s]; c.shape(lens(b, tip, 0.028 * s, 16, 0.5), 5 + (j === 2 ? 2 : j % 2), true); }
+  return { c, anchor: P(0, 0.375) };
+}
+const champion = (fig, L, R, hp) => fig === "hawk" ? hawk(L, R, hp) : leaper(fig, L, R, hp);
+
+function circlesOf(parts) {
+  const pts = []; for (const p of parts) for (const q of p.p) pts.push(q);
+  const [x0, y0, x1, y1] = bboxOf(pts), ax = x1 - x0 >= y1 - y0 ? 0 : 1, lo = ax ? y0 : x0, hi = ax ? y1 : x1, across = ax ? x1 - x0 : y1 - y0;
+  const n = Math.max(1, Math.min(7, Math.round((hi - lo) / Math.max(across, 1e-6)) + 1)), out = [];
+  for (let k = 0; k < n; k++) {
+    const a = lo + (hi - lo) * k / n, b = lo + (hi - lo) * (k + 1) / n, sl = pts.filter(q => q[ax] >= a - 1e-9 && q[ax] <= b + 1e-9);
+    if (!sl.length) continue;
+    let m0 = 1e9, m1 = -1e9; for (const q of sl) { m0 = Math.min(m0, q[1 - ax]); m1 = Math.max(m1, q[1 - ax]); }
+    const cc = [0, 0]; cc[ax] = (a + b) / 2; cc[1 - ax] = (m0 + m1) / 2;
+    let r = 0; for (const q of sl) r = Math.max(r, Math.hypot(q[0] - cc[0], q[1] - cc[1]));
+    out.push([cc[0], cc[1], r]);
+  }
+  return out;
+}
+
+function build(o) {
+  const t0 = performance.now(), [W, H] = o.page.split("x").map(Number), EDGE = 4, m = o.margin, K = +o.tiers, eco = ECO[o.eco] || ECO.ocean, hp = o.pitch;
+  const frags = [], occ = [], notes = [], rng = mulberry32(o.seed * 7919 + 28);
+  const add = (layer, z) => (p, cl = false) => frags.push({ p, cl, layer, z }), occA = (poly, z) => occ.push({ poly, z, bb: bboxOf(poly) });
+  const col = what => o.colour === what ? "colour" : "key";
+  const capH = o.caption === "on" ? 8 : 0, side = o.notes !== "off" ? 17 : 0;
+  const X0 = m + side, X1 = W - m - side, Y0 = m, Y1 = H - m - capH, Wu = X1 - X0, Hu = Y1 - Y0;
+  const an = o.angle * Math.PI / 180, dep = o.depth * Wu, dx = dep * 0.5 * Math.cos(an), dy = dep * 0.5 * Math.sin(an);
+  const wp = Wu - dx, cx = X0 + wp / 2;
+
+  const box = (xa, ya, xb, yb, z, shade = true) => {
+    const K0 = add("key", z);
+    K0(rect(xa, ya, xb, yb), true);
+    K0([[xa, ya], [xa + dx, ya - dy], [xb + dx, ya - dy], [xb + dx, yb - dy], [xb, yb]]); K0([[xb, ya], [xb + dx, ya - dy]]);
+    if (shade) for (const l of hatchPoly([[xb, ya], [xb + dx, ya - dy], [xb + dx, yb - dy], [xb, yb]], hp, 62)) add("shade", z)(l);
+    occA([[xa, ya], [xa + dx, ya - dy], [xb + dx, ya - dy], [xb + dx, yb - dy], [xb, yb], [xa, yb]], z);
+  };
+
+  const hs = 0.022 * Hu, hpl = 0.12 * Hu, gc = o.style === "columns" ? Math.min(12, Math.max(5, 0.045 * Hu)) : 0, hq = 0.035 * Hu;
+  let hf = o.fig * Hu;
+  const cb = o.labels !== "off" ? Math.min(6, Math.max(3.6, 0.026 * Hu)) : 1.6, bd = 1.2, over = cb + 2 * bd + 0.8;
+    const w0 = wp * 0.86, wk = k => w0 * Math.pow(o.taper, k), spK = eco.sp.slice(0, K).map(n => SP[n]);
+  let R0 = o.rows, s0 = 0;
+  const rowsK = k => Math.max(k ? 1.5 : 1, R0 * Math.pow(0.55, k));
+  for (;;) {
+    let sum = 0; for (let k = 0; k < K; k++) sum += Math.pow(o.grow, k) * rowsK(k) * spK[k].asp * 1.18;
+    s0 = (Hu - hs - hpl - (K - 1) * gc - hq - hf - dy - K * over) / sum;
+    if (s0 >= 1.8) break;
+    if (R0 > 1.5) R0 -= 0.5; else if (hf > 0.1 * Hu) hf *= 0.85; else break;
+  }
+  if (R0 < o.rows) notes.push(`rows of plankton cut to ${R0} to keep them ${s0.toFixed(1)} mm`);
+  if (hf < o.fig * Hu - 1e-9) notes.push(`champion shrunk to ${(hf / Hu).toFixed(2)} of the height`);
+  const tiers = [];
+  let yb = Y1 - hs - hpl;
+  for (let k = 0; k < K; k++) {
+    if (k) yb -= gc;
+    const hw = s0 * Math.pow(o.grow, k) * rowsK(k) * spK[k].asp * 1.18, h = hw + over, w = wk(k);
+    tiers.push({ k, xa: cx - w / 2, xb: cx + w / 2, ya: yb - h, yb, w, h, z: 10 * (k + 1) });
+    yb -= h;
+  }
+
+  box(cx - wp / 2, Y1 - hs, cx + wp / 2, Y1, -1);
+  const wpl = wp * 0.92, pa = cx - wpl / 2, pb = cx + wpl / 2, py0 = Y1 - hs - hpl, py1 = Y1 - hs;
+  box(pa, py0, pb, py1, 0);
+  add("key", 1)(rect(pa + 1.5, py0 + 1.5, pb - 1.5, py1 - 1.5), true);
+  const plW = Math.min(wpl * 0.58, 120), plH = hpl * 0.66, plx = cx - plW / 2, ply = (py0 + py1) / 2 - plH / 2, PQ = add(col("plaque"), 2);
+  PQ(rect(plx, ply, plx + plW, ply + plH), true); PQ(rect(plx + 0.9, ply + 0.9, plx + plW - 0.9, ply + plH - 0.9), true);
+  for (const [sx, sy] of [[plx + 2.2, ply + 2.2], [plx + plW - 2.2, ply + 2.2], [plx + plW - 2.2, ply + plH - 2.2], [plx + 2.2, ply + plH - 2.2]]) { PQ(ell(sx, sy, 0.6, 0.6, 12), true); }
+  const own = cleanT(o.custom, 28);
+  let lines = own ? (own.length > 14 && own.includes(" ") ? (() => { const mid = own.length / 2; let best = -1; for (let i = 0; i < own.length; i++) if (own[i] === " " && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) best = i; return [own.slice(0, best), own.slice(best + 1)]; })() : [own])
+    : o.plaque === "plankton" ? ["IN HONOUR OF THE", eco.names[0], "WHO DID ALL THE WORK"] : o.plaque === "lindeman" ? ["THE LINDEMAN CUP", "TEN PERCENT LAW", "EST. 1942"] : ["APEX PREDATOR", "FIRST PLACE", eco.latin];
+  const tw = plW - 7, thMax = (plH - 4.5) / (lines.length * 1.55 - 0.55), th = Math.min(...lines.map(l => fitH(l, Math.min(thMax, 5.5), tw)));
+  lines.forEach((l, i) => text(PQ, l, cx, ply + plH / 2 - (lines.length * th * 1.55 - th * 0.55) / 2 + i * th * 1.55, i === 1 && lines.length === 3 ? th : th * 0.86, 0.5));
+  if (o.laurels === "on") {
+    const room = (wpl - plW) / 2 - 4.5, lh = Math.min(room * 0.7, hpl * 0.32);
+    if (room >= 7 && lh >= 2.4) for (const g of [-1, 1]) {
+      const a = [cx + g * (plW / 2 + 2), py1 - 2.5], cc = [cx + g * (plW / 2 + 2 + room * 0.95), py1 - hpl * 0.35], b = [cx + g * (plW / 2 + 2 + room * 0.55), py0 + 3];
+      const stem = quad(a, cc, b, 30); add("key", 2)(stem);
+      for (let i = 2; i <= 28; i += 3) {
+        const p = stem[i], q = stem[i + 1] || stem[i], tx = q[0] - p[0], ty = q[1] - p[1], tl = Math.hypot(tx, ty) || 1;
+        for (const sd of [-1, 1]) { const ang = Math.atan2(ty, tx) + sd * 0.7, len = lh * (0.7 + 0.3 * Math.sin(Math.PI * i / 30)); const tip = [p[0] + Math.cos(ang) * len, p[1] + Math.sin(ang) * len], lf = lens(p, tip, len * 0.22, 14, 0.8); add("key", 3 + i * 0.01)(lf, true); occA(lf, 3 + i * 0.01); }
+      }
+    }
+  }
+
+  const counts = [], sizes = [];
+  for (const t of tiers) {
+    const { k, xa, xb, ya, yb: yb2, z } = t, Kz = add("key", z + 1);
+    box(xa, ya, xb, yb2, z);
+    Kz(rect(xa + bd, ya + cb, xb - bd, yb2 - bd), true);
+    if (o.labels !== "off") { const lab = o.labels === "roles" ? ROLES[k] : o.labels === "creatures" ? eco.names[k] : `LEVEL ${k + 1}`, lh = fitH(lab, cb * 0.56, (xb - xa - 2 * bd) * 0.9); text(Kz, lab, (xa + xb) / 2, ya + (cb - lh) / 2 + 0.2, lh, 0.5); }
+    const win = { x0: xa + bd + 0.8, y0: ya + cb + 0.8, x1: xb - bd - 0.8, y1: yb2 - bd - 0.8 }, sp = spK[k];
+    const need = K - k + 1, layerOf = l => l === "key" && k === 0 && o.colour === "producers" ? "colour" : l;
+    let Lk = s0 * Math.pow(o.grow, k), shrink = 1, placed = 0;
+    for (let attempt = 0; attempt < 6; attempt++, shrink *= 0.82) {
+    const f0 = frags.length, o0 = occ.length;
+    const maxL = Math.min((win.x1 - win.x0) / (k ? need * 1.2 : 1.2), (win.y1 - win.y0) / sp.asp * 0.95) * shrink;
+    if (Lk > maxL * 0.92) Lk = maxL * 0.92;
+    const gap = Math.max(0.6, 0.05 * Lk), cell = Math.max(1, Lk * 0.7), grid = new Map(), key = (i, j) => i + "," + j;
+    const cellsOf = (x, y, r) => { const out = []; for (let i = Math.floor((x - r) / cell); i <= Math.floor((x + r) / cell); i++) for (let j = Math.floor((y - r) / cell); j <= Math.floor((y + r) / cell); j++) out.push(key(i, j)); return out; };
+    let fails = 0; placed = 0;
+    const maxFail = Math.round(4 + 40 * o.crowd), cap = k ? counts[k - 1] - 1 : 1500;
+    while (fails < maxFail && placed < cap) {
+      const L = Math.min(Lk * (0.85 + 0.3 * rng()), maxL), cr = sp.fn(L, rng, hp), circ = circlesOf(cr.parts);
+      let done = false;
+      for (let tr = 0; tr < 40 && !done; tr++) {
+        const fl = rng() < 0.5 ? -1 : 1, a = sp.orient === "any" ? rng() * TAU : sp.orient === "tilt" ? (rng() - 0.5) * 0.6 : sp.orient === "upright" ? (rng() - 0.5) * 0.25 : (rng() - 0.5) * 0.35;
+        const ca = Math.cos(a), sa = Math.sin(a), T = ([x, y]) => [x * fl * ca - y * sa, x * fl * sa + y * ca];
+        const cs = circ.map(([x, y, r]) => [...T([x, y]), r]);
+        let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9; for (const [x, y, r] of cs) { bx0 = Math.min(bx0, x - r); bx1 = Math.max(bx1, x + r); by0 = Math.min(by0, y - r); by1 = Math.max(by1, y + r); }
+        if (bx1 - bx0 > win.x1 - win.x0 || by1 - by0 > win.y1 - win.y0) continue;
+        const ox = win.x0 - bx0 + rng() * (win.x1 - win.x0 - (bx1 - bx0)), oy = win.y0 - by0 + rng() * (win.y1 - win.y0 - (by1 - by0));
+        const wc = cs.map(([x, y, r]) => [x + ox, y + oy, r]);
+        let hit = false;
+        for (const [x, y, r] of wc) { for (const kk of cellsOf(x, y, r + gap)) { const lst = grid.get(kk); if (lst && lst.some(([u, v, w]) => Math.hypot(u - x, v - y) < r + w + gap)) { hit = true; break; } } if (hit) break; }
+        if (hit) continue;
+        for (const q of wc) for (const kk of cellsOf(q[0], q[1], q[2])) { if (!grid.has(kk)) grid.set(kk, []); grid.get(kk).push(q); }
+        const zc = z + 2;
+        for (const p of cr.parts) { const pts = p.p.map(q => { const [x, y] = T(q); return [x + ox, y + oy]; }); frags.push({ p: pts, cl: p.cl, layer: layerOf(p.layer), z: zc + 0.1 * p.z }); if (p.occ) occA(pts, zc + 0.1 * p.z); }
+        done = true; placed++; fails = 0;
+      }
+      if (!done) fails++;
+    }
+    if (placed >= need || placed >= 1500 || attempt === 5) break;
+    frags.length = f0; occ.length = o0;
+    }
+    sizes.push(Lk);
+    counts.push(placed);
+  }
+
+  if (o.style === "columns") for (let k = 0; k + 1 < K; k++) {
+    const lo = tiers[k], up = tiers[k + 1], yTop = up.yb, yBot = lo.ya, cw = Math.max(2.5, 0.06 * up.w);
+    for (const back of [1, 0]) for (const xL of [up.xa + 1.5, up.xb - 1.5 - cw]) {
+      const ox = back ? dx * 0.8 : 0, oy = back ? -dy * 0.8 : 0, z = lo.z + (back ? 4 : 5), Kc = add("key", z), a = xL + ox, yt = yTop + oy, ybb = yBot + oy - (back ? 0 : 0);
+      const shaft = rect(a, yt + 1, a + cw, ybb - 1), outl = [[a - 0.6, yt], [a + cw + 0.6, yt], [a + cw + 0.6, yt + 1], [a + cw, yt + 1], [a + cw, ybb - 1], [a + cw + 0.6, ybb - 1], [a + cw + 0.6, ybb], [a - 0.6, ybb], [a - 0.6, ybb - 1], [a, ybb - 1], [a, yt + 1], [a - 0.6, yt + 1]];
+      Kc(outl, true); Kc([[a, yt + 1], [a + cw, yt + 1]]); Kc([[a, ybb - 1], [a + cw, ybb - 1]]);
+      for (const l of hatchPoly(rect(a + cw * 0.58, yt + 1, a + cw, ybb - 1), Math.max(0.6, hp * 0.8), 90)) add("shade", z)(l);
+      occA(outl, z); void shaft;
+    }
+  }
+
+  const top = tiers[K - 1], wq = Math.max(12, top.w * 0.45), qa = cx - wq / 2, qb = cx + wq / 2, qy1 = top.ya, qy0 = qy1 - hq;
+  box(qa, qy0, qb, qy1, top.z + 8);
+  const ax = cx + dx / 2, ay = qy0 - dy / 2, figZ = 100;
+  const probe = champion(eco.fig, 100, mulberry32(o.seed * 31 + 5), hp), pb2 = bboxOf(probe.c.parts.flatMap(p => p.p));
+  const dl = probe.anchor[0] - pb2[0], dr = pb2[2] - probe.anchor[0], du = probe.anchor[1] - pb2[1];
+  const halfMax = W / 2 - m - 2, sc = Math.min((ay - Y0 - 0.5) / du, (ax - (cx - halfMax)) / dl, (cx + halfMax - ax) / dr);
+  const fig = champion(eco.fig, 100 * sc, mulberry32(o.seed * 31 + 5), hp), fx = ax - fig.anchor[0], fy = ay - fig.anchor[1];
+  for (const p of fig.c.parts) { const pts = p.p.map(([x, y]) => [x + fx, y + fy]); frags.push({ p: pts, cl: p.cl, layer: p.layer === "key" ? col("champion") : p.layer, z: figZ + 0.1 * p.z }); if (p.occ) occA(pts, figZ + 0.1 * p.z); }
+
+  if (o.handles === "on") {
+    const t = top, hh = t.yb - t.ya, bw0 = Math.min(0.22 * t.w, 0.9 * hh), th2 = Math.max(1.4, 0.035 * t.w), Hc = add(col("champion"), t.z - 0.5);
+    for (const g of [-1, 1]) {
+      const x = g < 0 ? t.xa + 1 : t.xb + dx * 0.5 - 1, bw = Math.max(1, Math.min(bw0, (g < 0 ? x - m - 1 : W - m - 1 - x) / (1.25 + th2 / bw0))), ys = g < 0 ? 0 : -dy * 0.5, y1 = t.ya + 0.22 * hh + ys, y2 = t.yb - 0.25 * hh + ys;
+      const path = smooth([[x, y1], [x + g * bw * 0.9, y1 - 0.2 * hh], [x + g * bw * 1.25, y1 + 0.18 * hh], [x + g * bw * 0.7, y2 - 0.05 * hh], [x, y2]], 10);
+      const nrm = path.map((p, i) => { const a = path[Math.max(0, i - 1)], b = path[Math.min(path.length - 1, i + 1)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [-(b[1] - a[1]) / l, (b[0] - a[0]) / l]; });
+      const o1 = path.map((p, i) => [p[0] + nrm[i][0] * th2 / 2, p[1] + nrm[i][1] * th2 / 2]), o2 = path.map((p, i) => [p[0] - nrm[i][0] * th2 / 2, p[1] - nrm[i][1] * th2 / 2]);
+      const band = o1.concat(o2.reverse()); Hc(band, true); occA(band, t.z - 0.5);
+    }
+  }
+
+  const NT = add(col("notes"), 200), nth = 2.6;
+  if (o.notes !== "off") {
+    const ys = tiers.map(t => (t.ya + t.yb) / 2).concat([(qy0 + qy1) / 2]), cnt = counts.concat([1]), en = Array.from({ length: K + 1 }, (_, k) => String(Math.pow(10, K - k)));
+    const lx = cx - w0 / 2 - 2.5, rx = cx + w0 / 2 + dx + 2.5;
+    if (o.notes !== "energy") {
+      const h = Math.min(nth, ...cnt.map(c => fitH(String(c), nth, lx - m - 0.5)));
+      ys.forEach((y, i) => { text(NT, String(cnt[i]), lx, y - h / 2, h, 1); if (i < K) { const t = tiers[i]; NT([[lx + 0.8, y], [t.xa - 0.8, y]]); } });
+      text(NT, "HOW MANY", lx, ys[K] - 7, Math.min(2, fitH("HOW MANY", 2, lx - m)), 1);
+    }
+    if (o.notes !== "counts") {
+      const h = Math.min(nth, ...en.map(e => fitH(e, nth, W - m - rx - 0.5)));
+      ys.forEach((y, i) => {
+        text(NT, en[i], rx, y - h / 2, h, 0);
+        if (i < K) { const t = tiers[i]; NT([[t.xb + dx + 0.8, y], [rx - 0.8, y]]); }
+        if (i < K) { const y2 = ys[i + 1], ya = y - h / 2 - 1.2, yz = y2 + h / 2 + 1.2; if (ya - yz > 6) { const xa = rx + 1.2; NT([[xa, ya], [xa, yz]]); NT([[xa - 0.9, yz + 1.4], [xa, yz], [xa + 0.9, yz + 1.4]]); const lh = Math.min(2, fitH("10%", 2, W - m - xa - 2.4)); text(NT, "10%", xa + 1.6, (ya + yz) / 2 - lh / 2, lh, 0); } }
+      });
+      text(NT, "KCAL", rx, ys[K] - 7, Math.min(2, fitH("KCAL", 2, W - m - rx)), 0);
+    }
+  }
+
+  if (capH) {
+    const y = H - m - capH + 2, th3 = 3, C = add("key", 300);
+    C([[m, y], [W - m, y]]);
+    text(C, "FIG. 28 - TROPHIC LEVELS", m, y + 2.2, th3);
+    text(C, "ONE IN TEN MAKES IT UP", W - m, y + 2.2, th3, 1);
+  }
+
+  const onPage = (x, y) => x >= EDGE && x <= W - EDGE && y >= EDGE && y <= H - EDGE;
+  const hidden = (x, y, os) => { const i = 0.4; for (const oc of os) { if (x < oc.bb[0] - i || x > oc.bb[2] + i || y < oc.bb[1] - i || y > oc.bb[3] + i) continue; if (pip(oc.poly, x, y) || pip(oc.poly, x + i, y) || pip(oc.poly, x - i, y) || pip(oc.poly, x, y + i) || pip(oc.poly, x, y - i)) return true; } return false; };
+  const out = { key: [], shade: [], colour: [] };
+  let bx = [1e9, 1e9, -1e9, -1e9];
+  for (const f of frags) {
+    const bb = bboxOf(f.p), os = occ.filter(oc => oc.z > f.z && oc.bb[0] < bb[2] + 0.5 && oc.bb[2] > bb[0] - 0.5 && oc.bb[1] < bb[3] + 0.5 && oc.bb[3] > bb[1] - 0.5);
+    const d = os.length ? densify(f.p, f.cl, 0.3) : f.p, ok = d.map(([x, y]) => onPage(x, y) && !(os.length && hidden(x, y, os)));
+    runs(d, f.cl, ok, 0.25, out[f.layer]);
+  }
+  for (const L of Object.values(out)) for (const [p] of L) { const b = bboxOf(p); bx = [Math.min(bx[0], b[0]), Math.min(bx[1], b[1]), Math.max(bx[2], b[2]), Math.max(bx[3], b[3])]; }
+
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  const pts = out.key.concat(out.shade, out.colour).reduce((a, [p]) => a + p.length, 0), ms = performance.now() - t0, pen = len(out.key) + len(out.shade) + len(out.colour), tol = 1;
+  const falls = counts.every((c, i) => i === 0 || c < counts[i - 1]) && counts[K - 1] > 1;
+  const gates = [
+    ["built in under 4000 ms", ms < 4000, `${ms.toFixed(0)} ms`],
+    ["total pen length under 150 m", pen < 150, `${pen.toFixed(1)} m`],
+    ["SVG under 3 MB", pts * 16 < 3e6, `${(pts * 16 / 1024).toFixed(0)} KB (estimate)`],
+    ["every level has a creature", counts.every(c => c > 0), counts.join(" / ") + " / 1"],
+    ["the pyramid holds: fewer at each level up", falls, falls ? "it narrows all the way" : "a level outnumbers the one below"],
+    ["smallest plankton at least 1.5 mm", sizes[0] >= 1.5, `${sizes[0].toFixed(1)} mm`],
+    ["the drawing stays inside the margins", bx[0] >= m - tol && bx[1] >= m - tol && bx[2] <= W - m + tol && bx[3] <= H - m + tol, `${bx.map(v => v.toFixed(0)).join(", ")}`],
+  ];
+  const info = `<b>${o.eco}</b> · ${eco.names.slice(0, K).map((n, i) => `${counts[i]} ${n.toLowerCase()}`).join(", ")}, 1 ${eco.apex.toLowerCase()} · creature sizes ${sizes.map(s => s.toFixed(1)).join(" / ")} mm` + (notes.length ? ` · <span class="note">${notes.join("; ")}</span>` : "");
+  return { W, H, o, ms, key: out.key, shade: out.shade, colour: out.colour, info, gates, counts };
+}
+
+function draw(r) {
+  const cv = $("cv"), maxW = Math.min(760, Math.max(200, cv.parentElement.clientWidth - 26)), k = Math.min(maxW / r.W, Math.max(1.2, (innerHeight - 90) / r.H));
+  cv.width = Math.round(r.W * k * devicePixelRatio); cv.height = Math.round(r.H * k * devicePixelRatio);
+  cv.style.width = Math.round(r.W * k) + "px";
+  const c = cv.getContext("2d"); c.setTransform(k * devicePixelRatio, 0, 0, k * devicePixelRatio, 0, 0);
+  c.fillStyle = "#fbf7ec"; c.fillRect(0, 0, r.W, r.H); c.lineJoin = c.lineCap = "round";
+  const stroke = (paths, col, w) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [p, cl] of paths) { p.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); if (cl) c.closePath(); } c.stroke(); };
+  stroke(r.shade, "#6b6356", 0.3); stroke(r.key, "#26200f", 0.4); stroke(r.colour, "#" + r.o.pen, 0.4);
+  const len = ps => ps.reduce((a, [p, cl]) => a + plen(p, cl), 0) / 1000;
+  $("stats").innerHTML = `${r.info} · ${r.ms.toFixed(0)} ms<br>`
+    + `0.4 black (outlines): <b>${len(r.key).toFixed(1)} m</b>, ${r.key.length} paths · 0.3 (hatching): <b>${len(r.shade).toFixed(1)} m</b>, ${r.shade.length} paths · colour: <b>${len(r.colour).toFixed(1)} m</b>, ${r.colour.length} paths<br>`
+    + r.gates.map(([n, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${n}: ${v}</span>`).join(" · ");
+}
+
+const $ = id => document.getElementById(id);
+const IDS = ["seed", "eco", "tiers", "rows", "grow", "crowd", "style", "taper", "fig", "handles", "laurels", "labels", "notes", "plaque", "custom", "depth", "angle", "colour", "pen", "pitch", "page", "margin", "caption"];
+const read = () => Object.fromEntries(IDS.map(k => [k, $(k).type === "range" ? +$(k).value : $(k).value]));
+let last = null;
+
+const penLayers = r => [{ name: "key", colour: "000000", w: 0.4, paths: r.key }, { name: "shade", colour: "555555", w: 0.3, paths: r.shade }, { name: "colour", colour: r.o.pen, w: 0.4, paths: r.colour }].filter(L => L.paths.length);
+const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
+function toSVG(r, only = null, ticks = false) {
+  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
+    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([p, cl]) => `<path d="M${p.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+  return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG trophic studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
+    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+}
+
+function sync() {
+  for (const k of IDS) { const out = $("o-" + k); if (out) out.textContent = $(k).value; }
+}
+let pending = 0;
+function run() { sync(); $("stats").textContent = "computing"; clearTimeout(pending); pending = setTimeout(() => { last = build(read()); draw(last); }, 60); }
+
+const BASE = { seed: 28, eco: "ocean", tiers: "4", rows: 5, grow: 1.7, crowd: 0.7, style: "columns", taper: 0.78, fig: 0.24, handles: "on", laurels: "on", labels: "roles", notes: "both", plaque: "champion", custom: "", depth: 0.12, angle: 35, colour: "champion", pen: "e8590c", pitch: 0.9, page: "190x250", margin: 12, caption: "on" };
+const PRESETS = {
+  ocean: { ...BASE },
+  pond: { ...BASE, eco: "pond", seed: 14, pen: "1098ad", labels: "creatures" },
+  meadow: { ...BASE, eco: "meadow", seed: 9, pen: "2f9e44", grow: 1.6, fig: 0.27 },
+  plankton: { ...BASE, plaque: "plankton", colour: "producers", pen: "2f9e44", rows: 7, crowd: 0.9, labels: "creatures", seed: 61 },
+  lindeman: { ...BASE, eco: "pond", plaque: "lindeman", labels: "levels", colour: "notes", pen: "c2255c", style: "stacked", laurels: "off", taper: 0.72, seed: 42 },
+  ziggurat: { ...BASE, eco: "meadow", style: "stacked", taper: 0.62, handles: "off", depth: 0.18, angle: 45, labels: "creatures", notes: "counts", rows: 4, seed: 3 },
+  short: { ...BASE, tiers: "3", fig: 0.3, rows: 4, grow: 1.9, page: "250x190", margin: 10, seed: 77 },
+  big: { ...BASE, page: "280x280", eco: "meadow", rows: 6, crowd: 0.85, seed: 128, pen: "c2255c" },
+};
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { for (const [k, v] of Object.entries(PRESETS[b.dataset.preset])) $(k).value = v; run(); });
+$("reroll").onclick = () => { $("seed").value = 1 + Math.floor(Math.random() * 999); run(); };
+IDS.forEach(k => $(k).addEventListener("input", run));
+const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+const stem = r => `trophic-s${r.o.seed}-${r.o.eco}-${r.o.tiers}tiers`;
+$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
+$("split-btn").onclick = () => {
+  if (!last) return;
+  const ls = penLayers(last), ticks = $("ticks").value !== "off";
+  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
+};
+$("loadbtn").onclick = () => $("loadsvg").click();
+$("loadsvg").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = "";
+  const mm = (await f.text()).match(/<desc id="plg-settings">([\s\S]*?)<\/desc>/);
+  if (!mm) { $("stats").textContent = "That SVG carries no PLG settings (it was exported by another tool)."; return; }
+  for (const [k, v] of Object.entries(JSON.parse(mm[1].replace(/&lt;/g, "<").replace(/&amp;/g, "&")))) if (IDS.includes(k)) $(k).value = v;
+  run();
+};
+addEventListener("resize", () => last && draw(last));
+window.__studio = { build, read, PRESETS, penLayers, toSVG };
+run();
+</script>
+</body>
+</html>
