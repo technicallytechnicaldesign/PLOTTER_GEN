@@ -384,8 +384,8 @@
       "room": "hall",
       "day": 20,
       "date": "2026-10-20",
-      "prompt": null,
-      "photo": null,
+      "prompt": "lounge",
+      "photo": "prints/inktober-20-lounge.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -393,15 +393,17 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../lounge-studio.html",
+      "description": "Tuesday 20 October 2026, prompt \"lounge\". A physical pen plot of a CAD living-room plan, with teal cats on the sofa, coffee table and window seat, paw prints, a cat-block library and the note SOFA OCCUPIED. PLEASE ADVISE."
     },
     {
       "id": "ink-21",
       "room": "hall",
       "day": 21,
       "date": "2026-10-21",
-      "prompt": null,
-      "photo": null,
+      "prompt": "dapper crows",
+      "photo": "prints/inktober-21-dapper-crows.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -409,15 +411,17 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../dapper-crows-studio.html",
+      "description": "Wednesday 21 October 2026. A physical pen plot of nine dressed crows on four wires beneath a crescent moon, in pale ink on black card, wearing top hats, crowns and a bowler with waistcoats and bow ties."
     },
     {
       "id": "ink-22",
       "room": "hall",
       "day": 22,
       "date": "2026-10-22",
-      "prompt": null,
-      "photo": null,
+      "prompt": "beacon",
+      "photo": "prints/inktober-22-beacon.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -425,7 +429,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../beacon-studio.html",
+      "description": "Thursday 22 October 2026, prompt \"beacon\". A physical pen plot of a radio message to the stars: a black, blue and pink bitmap labelled 23 x 59 = 1357, an Arecibo-style telescope, curved signal tracks and stars."
     },
     {
       "id": "ink-23",
