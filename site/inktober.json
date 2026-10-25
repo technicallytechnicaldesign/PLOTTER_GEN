@@ -387,7 +387,7 @@
       "day": 20,
       "date": "2026-10-20",
       "prompt": "lounge",
-      "photo": "prints/inktober-20-lounge.jpg",
+      "photo": "prints/inktober-20-lounge.jpg?v=20261025-crop",
       "frame": {
         "width": 210,
         "height": 297
@@ -405,7 +405,7 @@
       "day": 21,
       "date": "2026-10-21",
       "prompt": "dapper crows",
-      "photo": "prints/inktober-21-dapper-crows.jpg",
+      "photo": "prints/inktober-21-dapper-crows.jpg?v=20261025-crop",
       "frame": {
         "width": 210,
         "height": 297
@@ -423,7 +423,7 @@
       "day": 22,
       "date": "2026-10-22",
       "prompt": "beacon",
-      "photo": "prints/inktober-22-beacon.jpg",
+      "photo": "prints/inktober-22-beacon.jpg?v=20261025-crop",
       "frame": {
         "width": 210,
         "height": 297
