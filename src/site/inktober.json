@@ -300,8 +300,8 @@
       "room": "hall",
       "day": 19,
       "date": "2026-10-19",
-      "prompt": null,
-      "photo": null,
+      "prompt": "confused",
+      "photo": "prints/inktober-19-confused.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -309,7 +309,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../confused-deck-studio.html",
+      "description": "Inktober day 19, prompt confused. A physical pen plot and cut card from the Confused deck: a toleranced flange drawing with a tolerance wheel, a pale blue brad and the window set to +/- vibes."
     },
     {
       "id": "ink-20",
@@ -386,8 +388,8 @@
       "room": "hall",
       "day": 24,
       "date": "2026-10-24",
-      "prompt": null,
-      "photo": null,
+      "prompt": "bake",
+      "photo": "prints/inktober-24-lightmap.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -395,7 +397,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../lightmap-studio.html",
+      "description": "Inktober day 24, prompt bake. A physical Lightmap pen plot on grey paper: an oblique scene of blocks and their hatched shadows above the baked lightmap and unfolded UV faces."
     },
     {
       "id": "ink-25",
@@ -418,8 +422,8 @@
       "room": "hall",
       "day": 26,
       "date": "2026-10-26",
-      "prompt": null,
-      "photo": null,
+      "prompt": "zip",
+      "photo": "prints/inktober-26-zip.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -427,7 +431,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../zip-studio.html",
+      "description": "Inktober day 26, prompt zip. A physical black and pink pen plot of compression: a 40 by 40 bitmap, run tokens, a code tree and a 931-bit stream beside a long zip, with 42 percent saved."
     },
     {
       "id": "ink-27",
@@ -450,8 +456,8 @@
       "room": "hall",
       "day": 28,
       "date": "2026-10-28",
-      "prompt": null,
-      "photo": null,
+      "prompt": "trophy",
+      "photo": "prints/inktober-28-trophic.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -459,7 +465,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../trophic-studio.html",
+      "description": "Inktober day 28, prompt trophy. A physical Trophic pen plot: 146 teal diatoms support 23 copepods, eight herring, two seals and an orca atop an ocean food-chain trophy, dedicated to the diatoms who did all the work."
     },
     {
       "id": "ink-29",
