@@ -311,11 +311,11 @@ export function createGallery(host, world, onChange) {
       for (const p of puppets) { const pose = puppetPose(p.rig, (time / 1000 + p.phase) * (p.rig.speed || 1)); for (const j of p.joints) j.g.rotation.z = -rad((pose[j.key] || 0) * (p.rig.amp?.[j.key] ?? 1));
         for (const m of p.slides) { const v = pose[m.pull] ?? 1; if (m.role === 'mid') m.sg.scale.y = v; else m.sg.position.set(m.ax[0] * (m.a - (1 - v) * m.len), m.ax[1] * (m.a - (1 - v) * m.len), 0); } }
     }
-    for(const state of wheels.values())if(!state.manual&&!still.matches)state.wheel.setTurn(state.base+cycleTurn(time-state.start));
+    for(const state of wheels.values())if(!state.manual){const elapsed=Math.max(0,time-state.start);state.wheel.setTurn(state.base+(still.matches?Math.floor(elapsed/3000):cycleTurn(elapsed)));}
     renderer.render(scene, camera);
   }
 
-  const animating = p => !still.matches && [...spinners, ...swingers, ...movies.map(m => m.g), ...[...wheels.values()].filter(w=>!w.manual).map(w=>w.g)].some(o => { const v = o.getWorldPosition(new THREE.Vector3()); return o.visible && o.parent.visible && Math.hypot(v.x - p.x, v.z - p.z) < 4500; });
+  const animating=p=>{const near=objects=>objects.some(o=>{const v=o.getWorldPosition(new THREE.Vector3());return o.visible&&o.parent.visible&&Math.hypot(v.x-p.x,v.z-p.z)<4500;});return near([...wheels.values()].filter(w=>!w.manual).map(w=>w.g))||(!still.matches&&near([...spinners, ...swingers, ...movies.map(m => m.g)]));};
   const ray = new THREE.Raycaster(), pickable = () => [...solids, ...doors, ...[...prints.values(),...wheelGroups.values()].filter(g => g.visible)];
   function pick(clientX, clientY) {
     const r = renderer.domElement.getBoundingClientRect();
@@ -329,6 +329,7 @@ export function createGallery(host, world, onChange) {
   }
   const show = (id, on) => { for(const g of [prints.get(id),wheelGroups.get(id)])if(g)g.visible=on; };
   const setWheel=(id,turn)=>{const state=wheels.get(id);if(state){state.manual=true;state.wheel.setTurn(turn);onChange();}};
+  const resumeWheel=id=>{const state=wheels.get(id);if(state){state.base=Math.round(state.wheel.turn);state.start=performance.now();state.manual=false;state.wheel.setTurn(state.base);onChange();}};
   const wheelTurn=id=>wheels.get(id)?.wheel.turn;
-  return { hangAll, resize, render, animating, pick, show, setWheel, wheelTurn, spot: id => spots.get(id) };
+  return { hangAll, resize, render, animating, pick, show, setWheel, resumeWheel, wheelTurn, spot: id => spots.get(id) };
 }

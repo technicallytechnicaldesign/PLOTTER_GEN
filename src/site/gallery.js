@@ -2,7 +2,7 @@ import {mountWheel,loadWheel} from './tolerance-wheel.js?v=20261025-wheel1';
 
 const ink=document.body.dataset.world==='inktober';
 const world=await import(ink?'./inktober-world.js?v=20261006-ink':'./gallery-world.js?v=20261006-ink');
-const {createGallery}=await import('./gallery-gl.js?v=20261025-wheel1');
+const {createGallery}=await import('./gallery-gl.js?v=20261025-wheel2');
 const HALL_NAME=world.HALL_NAME||'Entrance corridor';
 const {rooms,HALL,ROOM_W,ROOM_D,START,END,SCALE,locationAt,advance,destination}=world;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -88,9 +88,9 @@ function turntable(s){
  stage.onpointermove=e=>{if(!from)return;ry=from[2]+(e.clientX-from[0])*0.5;rx=Math.max(-80,Math.min(80,from[3]-(e.clientY-from[1])*0.5));pose()};
  stage.onpointerup=stage.onpointercancel=()=>from=null;
 }
-let wheelView=null,inspectionSerial=0;
+let wheelView=null,inspectionSerial=0,inspectedWheel=null;
 const wheelButton=document.createElement('button');wheelButton.type='button';wheelButton.id='wheel-open';wheelButton.hidden=true;$('fullscreen').before(wheelButton);
-function disposeWheel(){inspectionSerial++;wheelView?.dispose();wheelView=null;}
+function disposeWheel(){inspectionSerial++;wheelView?.dispose();wheelView=null;if(inspectedWheel){gl.resumeWheel(inspectedWheel);inspectedWheel=null;}}
 $('closer').addEventListener('close',disposeWheel);
 function inspect(s,wheelMode=false){
  stop();disposeWheel();const serial=inspectionSerial;$('piece-title').textContent=wheelMode?s.title+' / Tolerance wheel':s.title;
@@ -98,7 +98,7 @@ function inspect(s,wheelMode=false){
  $('piece-status').textContent='';
  if(wheelMode&&s.wheel){
   $('piece').textContent='Loading the tolerance wheel…';
-  loadWheel(s.wheel).then(data=>{if(serial!==inspectionSerial||!$('closer').open)return;wheelView=mountWheel($('piece'),data,{turn:Math.round(gl.wheelTurn(s.id)??data.initial),onTurn:value=>gl.setWheel(s.id,value)});}).catch(()=>{if(serial===inspectionSerial)$('piece').textContent='The wheel could not load. Close and try again.';});
+  loadWheel(s.wheel).then(data=>{if(serial!==inspectionSerial||!$('closer').open)return;inspectedWheel=s.id;wheelView=mountWheel($('piece'),data,{turn:Math.round(gl.wheelTurn(s.id)??data.initial),onTurn:value=>gl.setWheel(s.id,value)});}).catch(()=>{if(serial===inspectionSerial)$('piece').textContent='The wheel could not load. Close and try again.';});
  }else if(s.hang==='plinth')turntable(s);else $('piece').innerHTML=s.photo?'<img src="'+esc(safeURL(s.photo))+'" alt="'+esc(s.title)+'">':placeholder();
  $('piece-description').textContent=wheelMode?'A turning model of the Confused card. The front stays fixed while the disc brings each tolerance into the window.':s.description||(s.hang==='plinth'?'Space reserved for photographs of each face of a 3D piece. Drag to turn it.':'Space reserved for a photograph of a physical print.');
  for(const [id,url] of [['studio',s.studio],['decoder',s.decoder]]){const link=safeURL(url);$(id).hidden=!s.photo||!link;if(link)$(id).href=link;}
