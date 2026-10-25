@@ -1,7 +1,8 @@
+import {mountWheel,loadWheel} from './tolerance-wheel.js?v=20261025-wheel1';
 
 const ink=document.body.dataset.world==='inktober';
 const world=await import(ink?'./inktober-world.js?v=20261014-look4':'./gallery-world.js?v=20261014-look4');
-const {createGallery}=await import('./gallery-gl.js?v=20261014-look4');
+const {createGallery}=await import('./gallery-gl.js?v=20261025-wheel1');
 const HALL_NAME=world.HALL_NAME||'Entrance corridor';
 const {rooms,HALL,ROOM_W,ROOM_D,START,END,SCALE,locationAt,advance,destination}=world;
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -54,7 +55,8 @@ function applyFilters(){
  const visible=prints.filter(admitted),real=visible.filter(s=>s.photo&&!s.render);
  $('count').textContent=ink?`${real.length} of ${visible.length} days inked`:`${real.length} print photographs / ${visible.filter(s=>!s.photo).length} reserved spaces`;
  for(const s of prints){const on=admitted(s);gl.show(s.id,on);const b=$('scene').querySelector(`[data-print="${CSS.escape(s.id)}"]`);if(b)b.closest('li').hidden=!on}dirty=true;
- $('flat').innerHTML=visible.map(s=>`<button data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}"><span class="flat-photo">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:`<span class="flat-reserved" style="width:${dims(s).width*Math.min(1,250/dims(s).width,250/dims(s).height)}px;aspect-ratio:${dims(s).width}/${dims(s).height}">${placeholder()}</span>`}</span><span class="flat-title">${esc(s.title)}<br>${esc(ink?s.note:rooms.find(r=>r.id===s.room)?.name)}</span></button>`).join('');
+ $('flat').innerHTML=visible.map(s=>{const photo=`<button data-print="${esc(s.id)}" aria-label="Look closer at ${esc(s.title)}"><span class="flat-photo">${s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:`<span class="flat-reserved" style="width:${dims(s).width*Math.min(1,250/dims(s).width,250/dims(s).height)}px;aspect-ratio:${dims(s).width}/${dims(s).height}">${placeholder()}</span>`}</span><span class="flat-title">${esc(s.title)}<br>${esc(ink?s.note:rooms.find(r=>r.id===s.room)?.name)}</span></button>`;return s.wheel?`<div class="flat-work">${photo}<button type="button" class="wheel-open" data-wheel="${esc(s.id)}">Turn the tolerance wheel ↗</button></div>`:photo;}).join('');
+ $('flat').querySelectorAll('[data-wheel]').forEach(b=>b.onclick=()=>inspect(prints.find(s=>s.id===b.dataset.wheel),true));
  $('flat').querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>inspect(prints.find(s=>s.id===b.dataset.print)));
  if(ink){$('gallery-note').textContent=real.length?'One photograph of each day\'s ink. Empty frames are days still to come or still to be photographed.':'One frame for each day of Inktober. Photographs of the day\'s ink go in as they are made.';return}
  $('gallery-note').textContent=real.length?'Photographs of physical prints. Empty frames are reserved spaces.':'Reserved spaces for photographs of real, physical prints. No print photographs have been added yet.';
@@ -71,7 +73,7 @@ const viewport=$('viewport');viewport.onpointerdown=e=>{if(e.button!==0)return;d
 viewport.onpointermove=e=>{if(!drag||drag.id!==e.pointerId)return;if(Math.abs(e.clientX-drag.start)>5){drag.moved=true;viewport.setPointerCapture(e.pointerId)}if(drag.moved){p.yaw+=(e.clientX-drag.last)*.18;p.pitch=Math.max(-PITCH,Math.min(PITCH,p.pitch-(e.clientY-drag.lastY)*.12));camera()}drag.last=e.clientX;drag.lastY=e.clientY};
 window.addEventListener('pointerup',()=>{if(drag?.moved)viewport.focus({preventScroll:true});setTimeout(()=>drag=null,0)});viewport.onpointercancel=()=>drag=null;viewport.addEventListener('click',e=>{if(drag?.moved){e.preventDefault();e.stopImmediatePropagation()}},true);
 
-viewport.addEventListener('click',e=>{if(e.target.closest('#scene'))return;const hit=gl?.pick(e.clientX,e.clientY);if(hit?.room)jump(hit.room);else if(hit?.print)inspect(prints.find(s=>s.id===hit.print))});
+viewport.addEventListener('click',e=>{if(e.target.closest('#scene'))return;const hit=gl?.pick(e.clientX,e.clientY);if(hit?.room)jump(hit.room);else if(hit?.print)inspect(prints.find(s=>s.id===hit.print),hit.exhibit==='wheel')});
 viewport.addEventListener('pointermove',e=>{if(drag||e.pointerType!=='mouse'||!gl)return;viewport.style.cursor=gl.pick(e.clientX,e.clientY)?'pointer':''});
 $('reset-view').onclick=()=>{p.pitch=0;jump('corridor')};$('wing').onchange=()=>jump($('wing').value);
 for(const id of ['nsfw','swearing'])$(id).onchange=()=>{if($('closer').open)$('closer').close();applyFilters()};
@@ -87,7 +89,22 @@ function turntable(s){
  stage.onpointermove=e=>{if(!from)return;ry=from[2]+(e.clientX-from[0])*0.5;rx=Math.max(-80,Math.min(80,from[3]-(e.clientY-from[1])*0.5));pose()};
  stage.onpointerup=stage.onpointercancel=()=>from=null;
 }
-function inspect(s){stop();$('piece-title').textContent=s.title;if(s.hang==='plinth')turntable(s);else $('piece').innerHTML=s.photo?`<img src="${esc(safeURL(s.photo))}" alt="${esc(s.title)}">`:placeholder();$('piece-description').textContent=s.description||(s.hang==='plinth'?'Space reserved for photographs of each face of a 3D piece. Drag to turn it.':'Space reserved for a photograph of a physical print.');$('piece-status').textContent='';for(const [id,url] of [['studio',s.studio],['decoder',s.decoder]]){const link=safeURL(url);$(id).hidden=!s.photo||!link;if(link)$(id).href=link}$('closer').showModal()}
+let wheelView=null,inspectionSerial=0;
+const wheelButton=document.createElement('button');wheelButton.type='button';wheelButton.id='wheel-open';wheelButton.hidden=true;$('fullscreen').before(wheelButton);
+function disposeWheel(){inspectionSerial++;wheelView?.dispose();wheelView=null;}
+$('closer').addEventListener('close',disposeWheel);
+function inspect(s,wheelMode=false){
+ stop();disposeWheel();const serial=inspectionSerial;$('piece-title').textContent=wheelMode?s.title+' / Tolerance wheel':s.title;
+ wheelButton.hidden=!s.wheel;wheelButton.textContent=wheelMode?'View the photograph':'Turn the tolerance wheel';wheelButton.onclick=()=>inspect(s,!wheelMode);
+ $('piece-status').textContent='';
+ if(wheelMode&&s.wheel){
+  $('piece').textContent='Loading the tolerance wheel…';
+  loadWheel(s.wheel).then(data=>{if(serial!==inspectionSerial||!$('closer').open)return;wheelView=mountWheel($('piece'),data,{turn:Math.round(gl.wheelTurn(s.id)??data.initial),onTurn:value=>gl.setWheel(s.id,value)});}).catch(()=>{if(serial===inspectionSerial)$('piece').textContent='The wheel could not load. Close and try again.';});
+ }else if(s.hang==='plinth')turntable(s);else $('piece').innerHTML=s.photo?'<img src="'+esc(safeURL(s.photo))+'" alt="'+esc(s.title)+'">':placeholder();
+ $('piece-description').textContent=wheelMode?'A turning model of the Confused card. The front stays fixed while the disc brings each tolerance into the window.':s.description||(s.hang==='plinth'?'Space reserved for photographs of each face of a 3D piece. Drag to turn it.':'Space reserved for a photograph of a physical print.');
+ for(const [id,url] of [['studio',s.studio],['decoder',s.decoder]]){const link=safeURL(url);$(id).hidden=!s.photo||!link;if(link)$(id).href=link;}
+ if(!$('closer').open)$('closer').showModal();
+}
 async function close(){if(document.fullscreenElement)await document.exitFullscreen();$('closer').close();viewport.focus({preventScroll:true})}$('close').onclick=close;$('closer').addEventListener('cancel',e=>{e.preventDefault();close()});
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('closer').requestFullscreen()}catch{$('piece-status').textContent='Fullscreen is unavailable here; the large inspection view is still open.'}};
 try{const response=await fetch(ink?'inktober.json':'print-gallery.json',{cache:'no-cache'});if(!response.ok)throw Error();const data=await response.json();prints=world.prepare?world.prepare(data.prints):data.prints;buildWorld();buildMap();applyFilters();setSimple();fit();new ResizeObserver(fit).observe($('viewport'));frame=requestAnimationFrame(animate)}catch(error){$('status').textContent='The print gallery could not load. Reload or return to Studios.';console.error(error)}

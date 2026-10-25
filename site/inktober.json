@@ -379,7 +379,14 @@
         "swearing": false
       },
       "studio": "../confused-deck-studio.html",
-      "description": "Inktober day 19, prompt confused. A physical pen plot and cut card from the Confused deck: a toleranced flange drawing with a tolerance wheel, a pale blue brad and the window set to +/- vibes."
+      "description": "Inktober day 19, prompt confused. A physical pen plot and cut card from the Confused deck: a toleranced flange drawing with a tolerance wheel, a pale blue brad and the window set to +/- vibes.",
+      "wheel": "prints/models/inktober-19-tolerance-wheel.json",
+      "box": {
+        "width": 105,
+        "height": 147,
+        "depth": 40
+      },
+      "modelScale": 1.25
     },
     {
       "id": "ink-20",

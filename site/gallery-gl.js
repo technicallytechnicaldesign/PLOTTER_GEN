@@ -1,6 +1,7 @@
 
 
 import * as THREE from './three.module.min.js';
+import {createWheel,loadWheel,cycleTurn} from './tolerance-wheel.js?v=20261025-wheel1';
 import { puppetPose } from './hero-motion.js?v=20261014-look4';
 
 const INK = '#4c555b', FRAME = '#303a40', PAPER = '#ffffff', MUTED = '#69767d', DASH = '#a8b1b7';
@@ -43,6 +44,7 @@ export function createGallery(host, world, onChange) {
   host.prepend(renderer.domElement);
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(60, 1, 5, 24000), aniso = renderer.capabilities.getMaxAnisotropy();
   const lineMat = new THREE.LineBasicMaterial({ color: INK }), solids = [], spinners = [], swingers = [], puppets = [], movies = [], prints = new Map();
+  const wheels = new Map(), wheelGroups = new Map();
   const mats = new Map(), once = (key, make) => mats.get(key) || (mats.set(key, make()), mats.get(key));
 
   const basic = opt => new THREE.MeshBasicMaterial({ polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, ...opt });
@@ -192,10 +194,19 @@ export function createGallery(host, world, onChange) {
     obstacles.push({ x: at.x, z: at.z, r: pw * 0.75 + 40 });
     const g = place(new THREE.Group(), at.x, 0, at.z, -at.side * 90);
     const side = once('plinth-side', () => paint(64, 64, (c, W, H) => { c.fillStyle = PAPER; c.fillRect(0, 0, W, H); c.globalAlpha = 0.6; hatch(c, 0, 0, W, H, 8, '#9aa7ab'); }, { res: 2, repeat: true }));
-    const label = paint(pw, PLINTH_H, (c, W) => { c.fillStyle = PAPER; c.fillRect(0, 0, W, PLINTH_H); write(c, s.title, W / 2, 40, 12, '#47545c'); });
+    const label = paint(pw, PLINTH_H, (c, W) => { c.fillStyle = PAPER; c.fillRect(0, 0, W, PLINTH_H); write(c, s.title, W / 2, 40, 12, '#47545c'); if(s.wheel) write(c,'TOLERANCE WHEEL / CLICK TO TURN',W/2,66,10,'#47545c'); });
     const sideMap = side.clone(); sideMap.repeat.set(pw / 64, PLINTH_H / 64); sideMap.needsUpdate = true;
     const baseMats = [basic({ map: sideMap }), basic({ map: sideMap }), basic({ color: '#f6f7f7' }), basic({ color: PAPER }), basic({ map: label }), basic({ color: PAPER })];
     const base = new THREE.Mesh(new THREE.BoxGeometry(pw, PLINTH_H, pw), baseMats); base.position.y = -(FLOOR - PLINTH_H / 2); outline(base, base.geometry); g.add(base);
+    if (s.wheel) {
+      g.userData.print=s.id;g.userData.exhibit='wheel';wheelGroups.set(s.id,g);
+      loadWheel(s.wheel).then(data=>{
+        const wheel=createWheel(data),k=SCALE*(s.modelScale||1);
+        wheel.group.scale.setScalar(k);wheel.group.position.y=-(FLOOR-PLINTH_H-1);g.add(wheel.group);
+        wheels.set(s.id,{wheel,g,data,start:performance.now(),base:data.initial||0,manual:false});onChange();
+      }).catch(e=>console.error(e));
+      return;
+    }
     if (s.model) { modelOn(g, s, -(FLOOR - PLINTH_H - 1)); g.userData.print = s.id; return; }
     if (s.standee) { standeeOn(g, s, -(FLOOR - PLINTH_H - 1)); g.userData.print = s.id; return; }
     const faces = [], boxMats = [];
@@ -274,7 +285,7 @@ export function createGallery(host, world, onChange) {
   const spots = new Map();
   function hangAll(all) {
 
-    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else if (h.s.hang === 'plinth' && h.s.box) { const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else if ((h.s.model || h.s.standee) && h.s.box) { frame(h.s, h.w, h.h, h.x, h.z, h.angle); const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
+    if (world.hangHall) for (const h of world.hangHall(all.filter(s => s.room === 'hall'))) { if (h.s.hang === 'peg' && h.s.puppet) dangle(h.s, h.w, h.h, h.x, h.z, h.angle); else if (h.s.hang === 'plinth' && h.s.box) { const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else if ((h.s.model || h.s.standee || h.s.wheel) && h.s.box) { frame(h.s, h.w, h.h, h.x, h.z, h.angle); const inward = h.angle === 90 ? 1 : -1, pw = Math.max(h.s.box.width, h.s.box.depth) * SCALE + 90; plinth(h.s, { x: h.x + inward * (pw * 0.75 + 160), z: h.z, side: -inward }); } else frame(h.s, h.w, h.h, h.x, h.z, h.angle); spots.set(h.s.id, h); }
     for (const r of rooms) {
       const works = all.filter(s => s.room === r.id), pegged = works.filter(s => s.hang === 'peg'); let walls = roomWalls(r);
       if (pegged.length) { garland(pegged, walls.find(w => w.id === 'far')); walls = walls.filter(w => w.id !== 'far'); }
@@ -300,21 +311,24 @@ export function createGallery(host, world, onChange) {
       for (const p of puppets) { const pose = puppetPose(p.rig, (time / 1000 + p.phase) * (p.rig.speed || 1)); for (const j of p.joints) j.g.rotation.z = -rad((pose[j.key] || 0) * (p.rig.amp?.[j.key] ?? 1));
         for (const m of p.slides) { const v = pose[m.pull] ?? 1; if (m.role === 'mid') m.sg.scale.y = v; else m.sg.position.set(m.ax[0] * (m.a - (1 - v) * m.len), m.ax[1] * (m.a - (1 - v) * m.len), 0); } }
     }
+    for(const state of wheels.values())if(!state.manual&&!still.matches)state.wheel.setTurn(state.base+cycleTurn(time-state.start));
     renderer.render(scene, camera);
   }
 
-  const animating = p => !still.matches && [...spinners, ...swingers, ...movies.map(m => m.g)].some(o => { const v = o.getWorldPosition(new THREE.Vector3()); return o.visible && o.parent.visible && Math.hypot(v.x - p.x, v.z - p.z) < 4500; });
-  const ray = new THREE.Raycaster(), pickable = () => [...solids, ...doors, ...[...prints.values()].filter(g => g.visible)];
+  const animating = p => !still.matches && [...spinners, ...swingers, ...movies.map(m => m.g), ...[...wheels.values()].filter(w=>!w.manual).map(w=>w.g)].some(o => { const v = o.getWorldPosition(new THREE.Vector3()); return o.visible && o.parent.visible && Math.hypot(v.x - p.x, v.z - p.z) < 4500; });
+  const ray = new THREE.Raycaster(), pickable = () => [...solids, ...doors, ...[...prints.values(),...wheelGroups.values()].filter(g => g.visible)];
   function pick(clientX, clientY) {
     const r = renderer.domElement.getBoundingClientRect();
     ray.setFromCamera(new THREE.Vector2((clientX - r.left) / r.width * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1), camera);
     for (const hit of ray.intersectObjects(pickable(), true)) {
       if (hit.object.isLine || hit.object.isLineSegments) continue;
-      for (let o = hit.object; o; o = o.parent) { if (o.userData.print) return { print: o.userData.print }; if (o.userData.room) return { room: o.userData.room }; }
+      for (let o = hit.object; o; o = o.parent) { if (o.userData.print) return { print: o.userData.print, exhibit:o.userData.exhibit }; if (o.userData.room) return { room: o.userData.room }; }
       return null;
     }
     return null;
   }
-  const show = (id, on) => { const g = prints.get(id); if (g) g.visible = on; };
-  return { hangAll, resize, render, animating, pick, show, spot: id => spots.get(id) };
+  const show = (id, on) => { for(const g of [prints.get(id),wheelGroups.get(id)])if(g)g.visible=on; };
+  const setWheel=(id,turn)=>{const state=wheels.get(id);if(state){state.manual=true;state.wheel.setTurn(turn);onChange();}};
+  const wheelTurn=id=>wheels.get(id)?.wheel.turn;
+  return { hangAll, resize, render, animating, pick, show, setWheel, wheelTurn, spot: id => spots.get(id) };
 }
