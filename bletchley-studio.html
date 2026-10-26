@@ -245,9 +245,10 @@ html[data-dock-all] aside .dock-off { opacity:0.45; }
     <label>Page <select id="page"><option value="190x250">190 x 250 (A4 / Letter safe)</option><option value="250x190">250 x 190 landscape</option><option value="280x280">280 x 280 (12 x 12 mat)</option></select></label>
     <label>Margin (mm) <output id="o-margin"></output><input type="range" id="margin" min="4" max="30" step="1" value="10"></label>
     <label>Corner ticks <select id="ticks"><option value="split">in split files only</option><option value="on">in every file</option><option value="off">never</option></select></label>
-    <div class="row"><button class="go" id="export">Export SVG (all pens)</button><button id="split">Export each pen separately</button></div>
+    <div class="row"><button class="go" id="export">Export Cricut files</button><button id="split">Export pens / passes</button></div>
+    <div class="row"><button id="fullsvg">Export full SVG (compact)</button></div>
     <div class="row"><button id="loadbtn">Load settings from an SVG</button><input type="file" id="loadsvg" accept=".svg,image/svg+xml" hidden></div>
-    <p class="hint">Plot the thin pen first, then the black line, then the colour pen. Each split file carries four corner ticks so the runs land in register.</p>
+    <p class="hint">Cricut files keep every stroke and use at most 4,000 strokes per upload. Large plates split by pen and numbered pass. Allow multiple downloads; import every pass, set each to Draw with its named pen, align the corner ticks, and Attach before Make. Do not centre each pass separately. With ticks off, align by the original page coordinates. The full compact SVG keeps the whole artwork in one file, but may still exceed Cricut's contour limit.</p>
   </fieldset>
 </aside>
 <main>
@@ -1037,16 +1038,44 @@ function draw(r) {
   $("stats").innerHTML = `<b>${r.o.piece}</b> · ${r.what} · ${r.ms.toFixed(0)} ms · Enigma self-test ${SELFTEST === "BDZGO" ? '<span class="pass">BDZGO</span>' : '<span class="fail">' + SELFTEST + "</span>"}<br>`
     + `key: <b>${keyLine(r.key)}</b> · ${plugLine(r.key)}<br>`
     + `thin 0.3: <b>${r.metres.shade.toFixed(1)} m</b> · line 0.4: <b>${r.metres.line.toFixed(1)} m</b> · colour: <b>${r.metres.colour.toFixed(1)} m</b><br>`
+    + `<b>${penLayers(r).reduce((n, L) => n + L.paths.length, 0).toLocaleString()} pen strokes</b> · ${penLayers(r).reduce((n, L) => n + Math.ceil(L.paths.length / SVG_BATCH), 0)} compact SVG paths · ${cricutFileCount(r)} Cricut file(s), at most ${CRICUT_RUN_LIMIT.toLocaleString()} strokes per file<br>`
     + (r.notes.length ? `<span class="note">${r.notes.join("; ")}</span><br>` : "")
     + r.gates.map(([nm, ok, v]) => `<span class="${ok ? "pass" : "fail"}">${ok ? "pass" : "FAIL"}</span> ${nm}: ${v}`).join("<br>");
 }
 const penLayers = r => [{ name: "shade", colour: "333333", w: PEN.shade, paths: r.layers.shade }, { name: "line", colour: "000000", w: PEN.line, paths: r.layers.line }, { name: "colour", colour: r.o.ccol, w: PEN.colour, paths: r.layers.colour }].filter(L => L.paths.length);
 const cornerTicks = (W, H, a = 3, e = 1) => [[[e, e + a], [e, e], [e + a, e]], [[W - e - a, e], [W - e, e], [W - e, e + a]], [[W - e, H - e - a], [W - e, H - e], [W - e - a, H - e]], [[e + a, H - e], [e, H - e], [e, H - e - a]]].map(p => [p, false]);
-function toSVG(r, only = null, ticks = false) {
-  const f = v => v.toFixed(3), group = L => `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n`
-    + [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])].map(([q, cl]) => `<path d="M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}" fill="none"/>`).join("\n") + "\n</g>";
+const CRICUT_RUN_LIMIT = 4000;
+const SVG_BATCH = 32;
+function svgGroup(L, paths) {
+  const f = v => v.toFixed(3), ds = paths.map(([q, cl]) => `M${q.map(([x, y]) => f(x) + "," + f(y)).join(" L")}${cl ? " Z" : ""}`), chunks = [];
+  for (let i = 0; i < ds.length; i += SVG_BATCH) chunks.push(`<path d="${ds.slice(i, i + SVG_BATCH).join(" ")}" fill="none"/>`);
+  return `<g id="pen-${L.name}" stroke="#${L.colour}" stroke-width="${L.w}" stroke-linecap="round" stroke-linejoin="round">\n${chunks.join("\n")}\n</g>`;
+}
+function toSVG(r, only = null, ticks = false, selected = null) {
+  if (!r.gates.every(g => g[1])) throw new Error('Export blocked: correct the failed plate gates first.');
+  const layers = selected || penLayers(r).filter(L => !only || L.name === only);
   return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${r.W}mm" height="${r.H}mm" viewBox="0 0 ${r.W} ${r.H}">\n<title>PLG bletchley studio${only ? " (" + only + ")" : ""}</title>\n<desc id="plg-settings">${JSON.stringify(r.o).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</desc>\n`
-    + penLayers(r).filter(L => !only || L.name === only).map(group).join("\n") + "\n</svg>";
+    + layers.map(L => svgGroup(L, [...L.paths, ...(ticks ? cornerTicks(r.W, r.H) : [])])).join("\n") + "\n</svg>";
+}
+function cricutFileCount(r) {
+  const layers = penLayers(r), total = layers.reduce((n, L) => n + L.paths.length, 0);
+  if (total + (r.o.ticks === "on" ? layers.length * 4 : 0) <= CRICUT_RUN_LIMIT) return 1;
+  const room = CRICUT_RUN_LIMIT - (r.o.ticks !== "off" ? 4 : 0);
+  return layers.reduce((n, L) => n + Math.ceil(L.paths.length / room), 0);
+}
+function cricutFiles(r, separate = false) {
+  const layers = penLayers(r), total = layers.reduce((n, L) => n + L.paths.length, 0);
+  if (!separate && total + (r.o.ticks === "on" ? layers.length * 4 : 0) <= CRICUT_RUN_LIMIT)
+    return [{ name: stem(r) + ".svg", svg: toSVG(r, null, r.o.ticks === "on"), runs: total + (r.o.ticks === "on" ? layers.length * 4 : 0) }];
+  const files = [], ticks = r.o.ticks !== "off", room = CRICUT_RUN_LIMIT - (ticks ? 4 : 0);
+  layers.forEach((L, penIndex) => {
+    const count = Math.ceil(L.paths.length / room);
+    for (let i = 0; i < count; i++) {
+      const paths = L.paths.slice(i * room, (i + 1) * room);
+      files.push({ name: `${stem(r)}-pen${penIndex + 1}-${L.name}-pass${i + 1}of${count}.svg`, svg: toSVG(r, L.name, ticks, [{ ...L, paths }]), runs: paths.length + (ticks ? 4 : 0) });
+    }
+  });
+  return files;
 }
 
 const IDS = ["piece", "title", "redact", "tally", "msgsrc", "seed", "start", "crib", "message", "across", "banks", "face", "unused", "hands", "around", "arm", "skin", "nails", "rings", "ghost", "plate", "person", "grid", "height", "build", "cols", "contrast", "minlet", "frame", "cpen", "ccol", "page", "margin", "ticks"];
@@ -1077,12 +1106,11 @@ document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { setA
 IDS.forEach(k => $(k).addEventListener("input", () => run(k)));
 const save = (text, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: "image/svg+xml" })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 const stem = r => `bletchley-${r.o.piece}-${r.key.start}-seed${r.o.seed}`;
-$("export").onclick = () => { if (last) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + ".svg"); };
-$("split").onclick = () => {
-  if (!last) return;
-  const ls = penLayers(last), ticks = $("ticks").value !== "off";
-  ls.forEach((L, i) => setTimeout(() => save(toSVG(last, L.name, ticks), `${stem(last)}-${i + 1}of${ls.length}-${L.name}.svg`), i * 500));
-};
+const exportable=()=>{const o=read();if(!last||JSON.stringify(last.o)!==JSON.stringify(o)){clearTimeout(pending);last=build(o);draw(last);}if(!last.gates.every(g=>g[1])){$('stats').textContent='Export blocked: correct the failed plate gates first.';return false;}return true;};
+const downloadFiles = files => files.forEach((file, i) => setTimeout(() => save(file.svg, file.name), i * 500));
+$("export").onclick = () => { if (exportable()) downloadFiles(cricutFiles(last)); };
+$("split").onclick = () => { if (exportable()) downloadFiles(cricutFiles(last, true)); };
+$("fullsvg").onclick = () => { if (exportable()) save(toSVG(last, null, $("ticks").value === "on"), stem(last) + "-full.svg"); };
 $("loadbtn").onclick = () => $("loadsvg").click();
 $("loadsvg").onchange = async e => {
   const f = e.target.files[0]; if (!f) return; e.target.value = "";
@@ -1092,7 +1120,7 @@ $("loadsvg").onchange = async e => {
   run();
 };
 addEventListener("resize", () => last && draw(last));
-window.__studio = { build, read, PRESETS, penLayers, toSVG, enigma, SELFTEST };
+window.__studio = { build, read, PRESETS, penLayers, toSVG, cricutFiles, CRICUT_RUN_LIMIT, enigma, SELFTEST };
 setAll(PRESETS.wall);
 run();
 </script>
