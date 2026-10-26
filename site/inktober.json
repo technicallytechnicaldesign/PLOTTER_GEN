@@ -447,16 +447,18 @@
       "room": "hall",
       "day": 23,
       "date": "2026-10-23",
-      "prompt": null,
-      "photo": null,
+      "prompt": "hero",
+      "photo": "prints/inktober-23-hero.jpg",
       "frame": {
-        "width": 210,
-        "height": 297
+        "width": 297,
+        "height": 210
       },
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../bletchley-studio.html",
+      "description": "Inktober day 23, prompt hero. A physical white pen plot on brown paper: The Bombe, twelve lettered drums and the Wrens' hands at work, with the Victory label."
     },
     {
       "id": "ink-24",
@@ -481,8 +483,8 @@
       "room": "hall",
       "day": 25,
       "date": "2026-10-25",
-      "prompt": null,
-      "photo": null,
+      "prompt": "fracture",
+      "photo": "prints/inktober-25-fracture.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -490,7 +492,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../fracture-studio.html",
+      "description": "Inktober day 25, prompt fracture. A physical black and white pen plot on green paper: a mountain landscape and wanderer split by a vertical tear of white pixel squares."
     },
     {
       "id": "ink-26",
@@ -515,8 +519,8 @@
       "room": "hall",
       "day": 27,
       "date": "2026-10-27",
-      "prompt": null,
-      "photo": null,
+      "prompt": "dumb",
+      "photo": "prints/inktober-27-dumb.jpg",
       "frame": {
         "width": 210,
         "height": 297
@@ -524,7 +528,9 @@
       "content": {
         "nsfw": false,
         "swearing": false
-      }
+      },
+      "studio": "../dumb-studio.html",
+      "description": "Inktober day 27, prompt dumb. A physical pen plot of a dumb terminal with a face peering over the CRT, DUMB and ERROR ID-10-T on the screen, and the caption FAULT: USER."
     },
     {
       "id": "ink-28",
